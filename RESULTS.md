@@ -1,0 +1,13508 @@
+# Results
+
+Latest checks after constructor-derived supplied-recursive adapter
+==================================================================
+
+Added `certify_constructor_derived_recursive_stratified_set_valued_constructor_completeness(...)`,
+a thin adapter that derives a recursive branch-consumption certificate from a
+supported displayed stratification and then returns the existing
+`SuppliedRecursiveStratifiedSetValuedConstructorCompletenessCertificate`.
+This covers single polynomial decisions, polynomial/affine/quadratic/Sturm
+decision arrangements, axis-aligned affine box arrangements, single affine
+halfspace decisions, and 2D/3D affine halfspace arrangements.  The helper still
+requires the caller to state the parent root dimension/rank when that displayed
+constructor is embedded in a higher-dimensional state set, and it does not
+claim to generate the displayed stratification from arbitrary interval input
+data.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py three_body_symmetry/__init__.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "polynomial_decision_set_valued_constructor_scope or constructor_derived_set_valued_helper_rejects_unsupported_constructor or affine_decision_set_valued_constructor_scope or verified_polynomial_arrangement_set_valued_scope"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "polynomial_decision_scope"
+```
+
+Initial result: py_compile passed, the focused finite-target constructor-derived
+adapter slice passed with `4 passed`, and the focused open-time adapter slice
+passed with `1 passed`.
+
+Latest checks after supplied-recursive wrapper event-order default
+==================================================================
+
+Made `certify_supplied_recursive_stratified_set_valued_constructor_completeness(...)`
+reuse the branch recursive-consumption certificate as the event-order
+consumption certificate when no explicit event-order certificate is supplied.
+This covers the common represented-equality case where branch and event-order
+ambiguities are carried by the same constructor-derived stratified tree, while
+still accepting an explicit event-order certificate for asymmetric cases and
+still rejecting raw boolean/manual flags.  This removes duplicate supplied
+proof evidence from representative axis-aligned affine box, affine halfspace
+decision, and generic supplied-recursive theorem paths without changing the
+boundary: arbitrary interval-input recursive branch/event partition generation
+remains open.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "affine_box_set_valued_constructor_scope or affine_halfspace_decision_set_valued_scope or supplied_recursive_stratified_set_valued_constructor_completeness_closes_displayed_equality_tree"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "axis_aligned_affine_box_scope or affine_halfspace_decision_scope"
+```
+
+Result: py_compile passed, the focused finite-target supplied-recursive default
+slice passed with `3 passed`, and the focused open-time default slice passed
+with `2 passed`.  The full `tests/test_finite_target_completeness.py` file
+exited successfully with `89` collected tests, the full
+`tests/test_open_time_atlas.py` file exited successfully with `62` collected
+tests, the LAST_PRO milestone suite passed with `6 passed`, the focused
+closed-form atlas/verifier slice passed with `2 passed`, collect-only reported
+`89` finite-target tests and `62` open-time tests, and compileall passed.
+
+Latest checks after affine set-valued wrapper derives recursive evidence
+========================================================================
+
+Made `certify_affine_halfspace_arrangement_set_valued_constructor_completeness(...)`
+derive its own recursive branch/event consumption certificate when the caller
+omits one.  For a 2D affine halfspace arrangement it now invokes the 2D
+arrangement recursive adapter; for a 3D arrangement it invokes the 3D adapter.
+The derived certificate is reused for event-order consumption unless a caller
+supplies an explicit event-order certificate.  Explicit recursive certificates
+remain accepted, so partial and negative cases can still expose unresolved
+descent obligations.  This reduces supplied proof evidence for the represented
+affine interval-box theorem surface without claiming arbitrary interval-input
+recursive partition generation.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "affine_halfspace_arrangement_set_valued_constructor_completeness_feeds_validated_scope or affine_halfspace_3d_arrangement_set_valued_constructor_scope_is_spatial"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "affine_point_child_scope or spatial_affine_halfspace_arrangement_scope"
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_closed_form.py -k "regularized_locally_finite_atlas or independent_chart_verifier or generalized_fuchsian"
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m compileall three_body_symmetry tests
+```
+
+Result: py_compile passed, the focused finite-target affine set-valued wrapper
+slice passed with `2 passed`, the focused open-time wrapper slice passed with
+`2 passed`, and the LAST_PRO milestone suite passed with `6 passed`.  The full
+`tests/test_finite_target_completeness.py` file exited successfully with `89`
+collected tests, the full `tests/test_open_time_atlas.py` file exited
+successfully with `62` collected tests, the focused closed-form atlas/verifier
+slice passed with `2 passed`, collect-only reported `89` finite-target tests
+and `62` open-time tests, and compileall passed.
+
+Latest checks after automatic affine recursive adapters
+=======================================================
+
+Made the affine recursive-consumption adapters self-contained for supported
+proof-certified displayed affine stratifications.  When no child map is
+supplied, the axis-aligned affine box, single affine halfspace decision,
+2D oblique affine halfspace arrangement, and 3D oblique affine halfspace
+arrangement adapters now derive their lower-dimensional child certificates
+from the parent constructor.  A stale halfspace-decision default that pointed
+at the polynomial child constructor was corrected.  Explicit partial child
+maps remain partial, so unsupported or omitted equality leaves still report
+unresolved descent obligations.  This continues to be a displayed finite
+stratification theorem and does not claim arbitrary interval-input recursive
+branch/event partition generation.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "affine_box_set_valued_constructor_scope or affine_halfspace_decision_set_valued_scope or affine_halfspace_arrangement_derives_point_child_consumptions or affine_halfspace_3d_arrangement_derives_spatial_oblique_cells"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "axis_aligned_affine_box_scope or affine_halfspace_decision_scope or affine_point_child_scope or spatial_affine_halfspace_arrangement_scope"
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_closed_form.py -k "regularized_locally_finite_atlas or independent_chart_verifier or generalized_fuchsian"
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m compileall three_body_symmetry tests
+```
+
+Result: py_compile passed, the focused finite-target affine adapter slice
+passed with `4 passed`, and the focused open-time affine adapter slice passed
+with `4 passed`.  The full `tests/test_finite_target_completeness.py` file
+exited successfully with `89` collected tests, the full
+`tests/test_open_time_atlas.py` file exited successfully with `62` collected
+tests, the LAST_PRO milestone suite passed with `6 passed`, the focused
+closed-form atlas/verifier slice passed with `2 passed`, collect-only reported
+`89` finite-target tests and `62` open-time tests, and compileall passed.
+
+Latest checks after automatic polynomial recursive adapters
+===========================================================
+
+Made the polynomial recursive-consumption adapters self-contained for
+proof-certified displayed polynomial stratifications.  When no child map is
+supplied, `certify_polynomial_decision_recursive_consumption(...)` and
+`certify_polynomial_decision_arrangement_recursive_consumption(...)` now derive
+terminal zero-dimensional `PolynomialRootChild` certificates for every already
+isolated equality root.  Explicit partial child maps remain partial, so missing
+equality leaves still report unresolved descent obligations.  Representative
+finite-target and open-time tests now exercise the omitted-child path directly.
+This remains scoped to displayed one-dimensional polynomial arrangements and
+does not claim arbitrary interval-input recursive partition generation.
+
+Verification:
+
+```text
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "recursive_constructor_source_scope_helper or descent_accounting or polynomial_decision_set_valued_constructor_scope or verified_polynomial_arrangement_set_valued_scope or quadratic_double_root_set_valued_scope or computed_polynomial_root_set_valued_scope or sturm_polynomial_set_valued_constructor_scope or polynomial_decision_arrangement_recursive"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "polynomial_decision_scope or mixed_constructor_branch_event_scope or quadratic_simple_root or quadratic_double_root or coincident_quadratic"
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_closed_form.py -k "regularized_locally_finite_atlas or independent_chart_verifier or generalized_fuchsian"
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m compileall three_body_symmetry tests
+```
+
+Result: the focused finite-target adapter slice passed with `7 passed`, and
+the focused open-time adapter slice passed with `5 passed`.  py_compile passed,
+the full `tests/test_finite_target_completeness.py` file exited successfully
+with `89` collected tests, the full `tests/test_open_time_atlas.py` file exited
+successfully with `62` collected tests, the LAST_PRO milestone suite passed
+with `6 passed`, the focused closed-form atlas/verifier slice passed with
+`2 passed`, collect-only reported `89` finite-target tests and `62` open-time
+tests, and compileall passed.
+
+Latest checks after nested polynomial-root child consumption
+===========================================================
+
+Extended the oblique affine line-child constructors so line-restricted affine
+arrangements feed their own equality roots through
+`derive_polynomial_decision_arrangement_child_consumptions(...)`.  A 2D
+affine halfspace equality line or a 3D two-plane spatial line can now consume
+restricted one-dimensional roots as terminal `PolynomialRootChild` descendants
+instead of requiring a supplied child for the nested line arrangement.  The
+quadratic, computed-root, Sturm, and open-time set-valued tests were also
+converted to use the automatic polynomial-root children directly.  This remains
+a represented finite-arrangement theorem and does not claim arbitrary
+interval-input recursive partition generation.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "polynomial_root_child or polynomial_decision_set_valued_constructor_scope or verified_polynomial_arrangement_set_valued_scope or affine_decision_set_valued_constructor_scope or quadratic_double_root_set_valued_scope or computed_polynomial_root_set_valued_scope or sturm_polynomial_set_valued_constructor_scope or line_child_consumptions or spatial_line_child"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "polynomial_decision_scope or quadratic_simple_root or quadratic_double_root or coincident_quadratic or mixed_quadratic or sturm_cubic or sturm_quartic or sturm_boundary or sturm_coincident or sturm_multiple or mixed_constructor_branch_event_scope or mixed_oblique_affine_arrangement_scope"
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_closed_form.py -k "regularized_locally_finite_atlas or independent_chart_verifier or generalized_fuchsian"
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m compileall three_body_symmetry tests
+```
+
+Result: py_compile passed, the focused finite-target nested polynomial-root
+slice passed with `8 passed`, and the focused open-time nested polynomial-root
+slice passed with `12 passed`.  The full
+`tests/test_finite_target_completeness.py` file exited successfully with `89`
+collected tests, the full `tests/test_open_time_atlas.py` file exited
+successfully with `62` collected tests, the LAST_PRO milestone suite passed
+with `6 passed`, the focused closed-form atlas/verifier slice passed with
+`2 passed`, collect-only reported `89` finite-target tests and `62` open-time
+tests, and compileall passed.
+
+Latest checks after automatic polynomial root children
+======================================================
+
+Added `derive_polynomial_decision_child_consumptions(...)` and
+`derive_polynomial_decision_arrangement_child_consumptions(...)` for represented
+one-dimensional polynomial equality strata.  The constructor consumes equality
+roots that the parent polynomial/affine/quadratic/Sturm arrangement has already
+isolated and emits terminal zero-dimensional `PolynomialRootChild` certificates
+with the root interval, value interval, derivative or second-derivative data
+when present, and multiplicity data when present.  Representative finite-target
+and open-time polynomial decision paths, affine-decision arrangements, and
+mixed branch/event scopes now use constructor-derived polynomial root children
+instead of supplied positive-margin placeholder children.  This remains scoped
+to displayed one-dimensional polynomial arrangements and does not claim
+arbitrary interval-input recursive partition generation.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py three_body_symmetry/finite_target_completeness.py three_body_symmetry/__init__.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "constructor_source_scope_manifest or recursive_constructor_source_scope_helper or descent_accounting or polynomial_decision_set_valued_constructor_scope or verified_polynomial_arrangement_set_valued_scope or affine_decision_set_valued_constructor_scope or mixed_constructor_set_valued_scope or mixed_oblique_affine_arrangement_scope"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "polynomial_decision_scope or mixed_constructor_branch_event_scope or mixed_oblique_affine_arrangement_scope"
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_closed_form.py -k "regularized_locally_finite_atlas or independent_chart_verifier or generalized_fuchsian"
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m compileall three_body_symmetry tests
+```
+
+Result: py_compile passed, the focused finite-target polynomial-root child
+slice passed with `7 passed`, and the focused open-time polynomial-root child
+slice passed with `3 passed`.  The full
+`tests/test_finite_target_completeness.py` file exited successfully with `89`
+collected tests, the full `tests/test_open_time_atlas.py` file exited
+successfully with `62` collected tests, the LAST_PRO milestone suite passed
+with `6 passed`, the focused closed-form atlas/verifier slice passed with
+`2 passed`, collect-only reported `89` finite-target tests and `62` open-time
+tests, and compileall passed.
+
+Latest checks after automatic affine halfspace decision child
+=============================================================
+
+Added `derive_affine_halfspace_decision_child_consumptions(...)` for the
+single-oblique-discriminator halfspace constructor.  The parent still uses the
+structure-rich `f <= -epsilon`, `|f| <= epsilon`, `f >= epsilon` partition, but
+the recursive child is now derived from the exact hyperplane `f=0`: a point in
+1D, a line segment in 2D, or a plane slice in 3D.  The finite-target and
+open-time affine halfspace decision paths now consume
+`AffineHalfspaceDecisionChild` instead of supplied positive-margin placeholder
+children.  This remains a represented one-discriminator constructor and does
+not claim arbitrary interval-input recursive partition generation.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py three_body_symmetry/finite_target_completeness.py three_body_symmetry/__init__.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "affine_halfspace_decision"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "affine_halfspace_decision_scope"
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_closed_form.py -k "regularized_locally_finite_atlas or independent_chart_verifier or generalized_fuchsian"
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m compileall three_body_symmetry tests
+```
+
+Result: py_compile passed, the focused finite-target affine halfspace decision
+slice passed with `3 passed`, and the focused open-time affine halfspace
+decision slice passed with `1 passed`.  The full
+`tests/test_finite_target_completeness.py` file exited successfully with `89`
+collected tests, the full `tests/test_open_time_atlas.py` file exited
+successfully with `62` collected tests, the LAST_PRO milestone suite passed
+with `6 passed`, the focused closed-form atlas/verifier slice passed with
+`2 passed`, collect-only reported `89` finite-target tests and `62` open-time
+tests, and compileall passed.
+
+Latest checks after automatic axis-aligned affine box children
+==============================================================
+
+Added `derive_affine_box_decision_arrangement_child_consumptions(...)` for the
+represented axis-aligned affine box arrangement grammar.  The constructor
+recovers exact coordinate roots from the defining affine coefficients, groups
+coincident same-axis decision ids, leaves the unfixed coordinates as the child
+domain, and emits terminal `AxisAlignedAffineBoxChild` certificates with
+strict dimension descent.  The finite-target and open-time axis-aligned affine
+box paths now consume constructor-derived equality children instead of supplied
+positive-margin placeholder children.  This remains scoped to represented
+axis-aligned affine boxes; oblique hyperplanes and arbitrary interval-input
+recursive partition generation remain outside this theorem.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py three_body_symmetry/finite_target_completeness.py three_body_symmetry/__init__.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "affine_box_decision_arrangement_derives_box_slabs or affine_box_set_valued_constructor_scope or coincident_axis_child or constructor_source_scope_manifest"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "axis_aligned_affine_box_scope"
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_closed_form.py -k "regularized_locally_finite_atlas or independent_chart_verifier or generalized_fuchsian"
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m compileall three_body_symmetry tests
+```
+
+Result: py_compile passed, the focused finite-target axis-aligned affine box
+slice passed with `4 passed`, and the focused open-time axis-aligned affine box
+slice passed with `1 passed`.  The full `tests/test_finite_target_completeness.py`
+file exited successfully with `89` collected tests, the full
+`tests/test_open_time_atlas.py` file exited successfully with `62` collected
+tests, the LAST_PRO milestone suite passed with `6 passed`, the focused
+closed-form atlas/verifier slice passed with `2 passed`, collect-only reported
+`89` finite-target tests and `62` open-time tests, and compileall passed.
+
+Latest checks after coincident spatial plane-child construction
+===============================================================
+
+Extended the represented 3D affine halfspace arrangement layer to handle
+coincident oblique plane decision ids.  The 3D polyhedron builder now
+deduplicates identical halfspace constraints before vertex/volume checks, so
+same-plane decision ids no longer break the cover certificate by overcounting
+duplicate faces.  `derive_affine_halfspace_3d_arrangement_plane_child_consumptions(...)`
+now treats single-boundary and coincident multi-boundary equality cells as one
+exact geometric plane and emits `AffineHalfspacePlaneChild` when the clipped
+plane slice is certified.  A distinct-parallel-plane regression keeps that
+case from being collapsed into a lower-dimensional child.  This remains a
+finite represented affine-arrangement constructor, not arbitrary interval-input
+recursive partition generation.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py three_body_symmetry/finite_target_completeness.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "coincident_plane_child or distinct_parallel_planes or terminal_plane_child_without_remaining_decisions or spatial_oblique_cells"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "coincident_spatial_affine_plane_child or terminal_spatial_affine_plane_child_scope or spatial_affine_halfspace_arrangement_scope"
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_closed_form.py -k "regularized_locally_finite_atlas or independent_chart_verifier or generalized_fuchsian"
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m compileall three_body_symmetry tests
+```
+
+Result: py_compile passed, the focused finite-target spatial plane slice passed
+with `4 passed`, and the focused open-time spatial plane slice passed with
+`3 passed`.  The full `tests/test_finite_target_completeness.py` file exited
+successfully with `88` collected tests, the full `tests/test_open_time_atlas.py`
+file exited successfully with `62` collected tests, the LAST_PRO milestone
+suite passed with `6 passed`, the focused closed-form atlas/verifier slice
+passed with `2 passed`, collect-only reported `88` finite-target tests and
+`62` open-time tests, and compileall passed.
+
+Latest checks after coincident affine line-child construction
+=============================================================
+
+Extended `derive_affine_halfspace_arrangement_line_child_consumptions(...)`
+from single-boundary line strata to coincident multi-boundary strata that
+define the same geometric affine line.  The constructor now skips all defining
+decision ids when pulling remaining affine decisions back to the line, so a
+same-line simultaneous equality cell can be consumed as an exact terminal
+`AffineHalfspaceLineChild` without a supplied placeholder child.  A companion
+guard keeps distinct parallel boundaries from being treated as coincident lower
+dimensional strata.  This is still a represented 2D affine-arrangement child
+constructor; arbitrary interval-input recursive partition generation remains
+outside the theorem.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "coincident_oblique or line_child"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "coincident_affine_line_child or affine_line_child_scope"
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_closed_form.py -k "regularized_locally_finite_atlas or independent_chart_verifier or generalized_fuchsian"
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m compileall three_body_symmetry tests
+```
+
+Result: py_compile passed, the focused finite-target line/coincident slice
+passed with `5 passed`, and the focused open-time affine-line slice passed
+with `3 passed`.  The full `tests/test_finite_target_completeness.py` file
+exited successfully with `86` collected tests, the full
+`tests/test_open_time_atlas.py` file exited successfully with `61` collected
+tests, the LAST_PRO milestone suite passed with `6 passed`, the focused
+closed-form atlas/verifier slice passed with `2 passed`, collect-only reported
+`86` finite-target tests and `61` open-time tests, and compileall passed.
+
+Latest checks after replacing supplied affine children with automatic spatial children
+====================================================================================
+
+Removed supplied placeholder children from the representative affine
+arrangement completeness tests where constructor-derived evidence is now
+available.  The 2D validated affine arrangement path now consumes
+`derive_affine_halfspace_arrangement_child_consumptions(...)` directly, and
+the 3D oblique two-plane finite-target/open-time/set-valued paths now consume
+`derive_affine_halfspace_3d_arrangement_child_consumptions(...)` directly.
+Those 3D proofs expose `AffineHalfspacePlaneChild` and
+`AffineHalfspaceSpatialLineChild` child sources instead of a generic supplied
+positive-margin child.  This is still a represented finite affine-arrangement
+claim; arbitrary interval-input recursive partition generation remains
+outside the theorem.
+
+Verification:
+
+```text
+python3 -m py_compile tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "spatial_oblique_cells or affine_halfspace_3d_arrangement_set_valued_constructor_scope_is_spatial or affine_halfspace_arrangement_set_valued_constructor_completeness_feeds_validated_scope"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "spatial_affine_halfspace_arrangement_scope"
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_closed_form.py -k "regularized_locally_finite_atlas or independent_chart_verifier or generalized_fuchsian"
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m compileall three_body_symmetry tests
+```
+
+Result: py_compile passed, the focused finite-target automatic-affine slice
+passed with `3 passed`, and the focused open-time spatial affine slice passed
+with `1 passed`.  The full `tests/test_finite_target_completeness.py` file
+exited successfully with `85` collected tests, the full
+`tests/test_open_time_atlas.py` file exited successfully with `60` collected
+tests, the LAST_PRO milestone suite passed with `6 passed`, the focused
+closed-form atlas/verifier slice passed with `2 passed`, collect-only reported
+`85` finite-target tests and `60` open-time tests, and compileall passed.
+
+Latest checks after exact spatial plane sign-clipping construction
+=================================================================
+
+Strengthened the 3D affine plane-child constructor so one-plane equality cells
+with remaining fixed sign decisions no longer need supplied placeholder child
+evidence.  `derive_affine_halfspace_3d_arrangement_plane_child_consumptions(...)`
+now projects the exact plane-box slice into plane coordinates and clips that
+polygon by the parent cell's remaining strict sign inequalities before
+emitting the terminal 2D plane child.  As a result, the tested two-plane and
+three-plane spatial affine arrangements are now consumed by automatic
+constructor-derived children only: plane children for one-plane cells, spatial
+line or 1D affine-arrangement children for two-plane cells, and spatial point
+children for three-plane cells.  The theorem boundary is unchanged:
+arbitrary interval-input recursive branch/event partition generation remains
+outside this represented affine-arrangement claim.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "spatial_line_child or spatial_point_child or terminal_plane_child_without_remaining_decisions"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "spatial_line_child_source or spatial_point_child_source or terminal_spatial_affine_plane_child_scope"
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_closed_form.py -k "regularized_locally_finite_atlas or independent_chart_verifier or generalized_fuchsian"
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "spatial_line_child or spatial_point_child or terminal_plane_child_without_remaining_decisions or constructor_source_scope_manifest"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "spatial_line_child_source or spatial_point_child_source or terminal_spatial_affine_plane_child_scope"
+python3 -m compileall three_body_symmetry tests
+```
+
+Result: py_compile passed, the focused finite-target spatial child slice passed
+with `3 passed`, and the focused open-time spatial child slice passed with
+`3 passed`.  The full `tests/test_finite_target_completeness.py` file exited
+successfully with `85` collected tests, the full `tests/test_open_time_atlas.py`
+file exited successfully with `60` collected tests, the LAST_PRO milestone
+suite passed with `6 passed`, the focused closed-form atlas/verifier slice
+passed with `2 passed`, collect-only reported `85` finite-target tests and
+`60` open-time tests, the broader finite-target child/manifest slice passed
+with `4 passed`, the broader open-time child slice passed with `3 passed`, and
+compileall passed.
+
+Latest checks after spatial affine line/point child construction
+===============================================================
+
+Extended the 3D oblique affine recursive-child constructors beyond terminal
+planes.  `derive_affine_halfspace_3d_arrangement_line_child_consumptions(...)`
+now handles equality cells with two independent affine planes by constructing
+the exact spatial line, clipping it against the parent box and remaining sign
+constraints, and either emitting a terminal one-dimensional spatial line child
+or consuming the line-restricted affine decisions through the 1D arrangement
+constructor.  `derive_affine_halfspace_3d_arrangement_point_child_consumptions(...)`
+handles independent three-plane cells by solving the exact intersection point
+and checking it against the parent box/sign vector.  The combined
+`derive_affine_halfspace_3d_arrangement_child_consumptions(...)` now derives
+the supported spatial plane, line, and point children.  New source types
+`AffineHalfspaceSpatialLineChild` and `AffineHalfspaceSpatialPointChild` are
+registered in `CONSTRUCTOR_DERIVED_RECURSIVE_SOURCE_SCOPES`, and open-time
+descent details report these child constructor sources.  This is still a
+represented affine-arrangement descent theorem, not arbitrary interval-input
+recursive branch/event partition generation.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py three_body_symmetry/finite_target_completeness.py three_body_symmetry/open_time_atlas.py three_body_symmetry/__init__.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "spatial_line_child or spatial_point_child or terminal_plane_child_without_remaining_decisions or constructor_source_scope_manifest"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "spatial_line_child_source or spatial_point_child_source or terminal_spatial_affine_plane_child_scope"
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_closed_form.py -k "regularized_locally_finite_atlas or independent_chart_verifier or generalized_fuchsian"
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m compileall three_body_symmetry tests
+```
+
+Result: py_compile passed, the focused finite-target spatial child/manifest
+slice passed with `4 passed`, and the focused open-time spatial child slice
+passed with `3 passed`.  The full `tests/test_finite_target_completeness.py`
+file exited successfully with `85` collected tests, the full
+`tests/test_open_time_atlas.py` file exited successfully with `60` collected
+tests, the LAST_PRO milestone suite passed with `6 passed`, the focused
+closed-form atlas/verifier slice passed with `2 passed`, collect-only reported
+`85` finite-target tests and `60` open-time tests, and compileall passed.
+
+Latest checks after terminal spatial affine plane-child construction
+===================================================================
+
+Extended the constructor-derived recursive equality descent one dimension up.
+`derive_affine_halfspace_3d_arrangement_plane_child_consumptions(...)` now
+handles the scoped 3D case where an oblique affine arrangement has a single
+defining equality plane and no remaining affine decisions.  The constructor
+computes the exact plane, intersects it with the parent box by box-edge
+crossings, checks a positive projected polygon area, and emits a terminal
+two-dimensional recursive child.  The new source type
+`AffineHalfspacePlaneChild` is registered in
+`CONSTRUCTOR_DERIVED_RECURSIVE_SOURCE_SCOPES` with
+`finite_2d_affine_halfspace_plane_child_interval_boxes`; recursive descent
+ledgers now also report child constructor source types.  This remains a
+represented single-plane affine-arrangement case, not arbitrary interval-input
+recursive branch/event partition generation.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py three_body_symmetry/finite_target_completeness.py three_body_symmetry/open_time_atlas.py three_body_symmetry/__init__.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "terminal_plane_child_without_remaining_decisions or constructor_source_scope_manifest"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "terminal_spatial_affine_plane_child_scope"
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_closed_form.py -k "regularized_locally_finite_atlas or independent_chart_verifier or generalized_fuchsian"
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "terminal_plane_child_without_remaining_decisions or terminal_line_child_without_remaining_decisions or point_child_consumptions or line_child_consumptions or constructor_source_scope_manifest"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "terminal_spatial_affine_plane_child_scope or terminal_affine_line_child_scope or affine_point_child_scope or affine_line_child_scope"
+python3 -m compileall three_body_symmetry tests
+```
+
+Result: py_compile passed, the focused finite-target plane/manifest slice
+passed with `2 passed`, and the focused open-time plane-child slice passed
+with `1 passed`.  The full `tests/test_finite_target_completeness.py` file
+exited successfully with `83` collected tests, the full
+`tests/test_open_time_atlas.py` file exited successfully with `58` collected
+tests, the LAST_PRO milestone suite passed with `6 passed`, the focused
+closed-form atlas/verifier slice passed with `2 passed`, collect-only reported
+`83` finite-target tests and `58` open-time tests, the broader finite-target
+child-constructor slice passed with `5 passed`, the broader open-time child
+scope slice passed with `4 passed`, and compileall passed.
+
+Latest checks after terminal affine line-child construction
+==========================================================
+
+Closed the zero-decision equality-line case for the recursive stratified
+branch/event constructor.  `derive_affine_halfspace_arrangement_line_child_consumptions(...)`
+now emits a constructor-derived terminal one-dimensional child when a 2D
+oblique affine equality cell has a single defining boundary and no remaining
+affine decisions to pull back to the line.  The new source type
+`AffineHalfspaceLineChild` is registered in
+`CONSTRUCTOR_DERIVED_RECURSIVE_SOURCE_SCOPES` with the finite
+`finite_1d_affine_halfspace_line_child_interval_boxes` scope, so finite-target
+and open-time ledgers can consume this exact lower-dimensional stratum without
+manual child evidence.  This remains a scoped represented affine-arrangement
+case; arbitrary interval-input recursive branch/event partition generation is
+still outside the theorem.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py three_body_symmetry/finite_target_completeness.py three_body_symmetry/open_time_atlas.py three_body_symmetry/__init__.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "terminal_line_child_without_remaining_decisions or point_child_consumptions or line_child_consumptions or constructor_source_scope_manifest"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "terminal_affine_line_child_scope or affine_point_child_scope or affine_line_child_scope"
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_closed_form.py -k "regularized_locally_finite_atlas or independent_chart_verifier or generalized_fuchsian"
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m compileall three_body_symmetry tests
+```
+
+Result: py_compile passed, the focused finite-target line/point/manifest slice
+passed with `4 passed`, and the focused open-time line/point slice passed with
+`3 passed`.  The full `tests/test_finite_target_completeness.py` file exited
+successfully with `82` collected tests, the full `tests/test_open_time_atlas.py`
+file exited successfully with `57` collected tests, the LAST_PRO milestone
+suite passed with `6 passed`, the focused closed-form atlas/verifier slice
+passed with `2 passed`, collect-only reported `82` finite-target tests and
+`57` open-time tests, and compileall passed.
+
+Latest checks after affine point-child recursive construction
+============================================================
+
+Extended the scoped 2D oblique affine recursive-construction path from line
+children to point children.  `derive_affine_halfspace_arrangement_point_child_consumptions(...)`
+now recognizes equality cells with two independent affine boundaries, solves
+their exact intersection point, checks the point against the parent box and
+cell sign vector, and emits a terminal zero-dimensional child consumption.
+`derive_affine_halfspace_arrangement_child_consumptions(...)` combines line and
+point children, so a transverse two-line affine arrangement can consume all
+equality cells without manually supplied child certificates.  The new source
+type is registered in `CONSTRUCTOR_DERIVED_RECURSIVE_SOURCE_SCOPES` as a
+scoped zero-dimensional affine point child; arbitrary interval-input recursive
+partition generation remains outside the claim.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py three_body_symmetry/finite_target_completeness.py three_body_symmetry/__init__.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "point_child_consumptions or line_child_consumptions or constructor_source_scope_manifest"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "affine_point_child_scope or affine_line_child_scope"
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m compileall three_body_symmetry tests
+```
+
+Result: py_compile passed, the focused finite-target line/point/manifest slice
+passed with `3 passed`, and the focused open-time line/point slice passed with
+`2 passed`.  The full `tests/test_finite_target_completeness.py` file passed
+with `81` collected tests, the full `tests/test_open_time_atlas.py` file
+passed with `56` collected tests, the LAST_PRO milestone suite passed with
+`6 passed`, and compileall passed.
+
+Latest checks after affine line-child recursive construction
+===========================================================
+
+Added the first automatic lower-dimensional child constructor for 2D oblique
+affine halfspace arrangements.  `derive_affine_halfspace_arrangement_line_child_consumptions(...)`
+handles parent equality cells with a single defining affine boundary by
+parameterizing the exact line, intersecting it with the parent box and
+remaining sign inequalities, pulling the remaining affine decisions back to
+one dimension, and consuming the resulting 1D affine arrangement when it is
+terminal after coefficient-root construction.  The open-time set-valued
+constructor detail now includes recursive descent counts for affine halfspace
+arrangement evidence, so this constructor-derived descent is visible in the
+theorem ledger.  This is a scoped represented affine-arrangement step; it does
+not claim arbitrary interval-input recursive partition generation.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py three_body_symmetry/__init__.py tests/test_finite_target_completeness.py
+python3 -m py_compile three_body_symmetry/open_time_atlas.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "line_child_consumptions"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "affine_line_child_scope or affine_halfspace_arrangement_scope"
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m compileall three_body_symmetry tests
+```
+
+Result: py_compile passed, the focused finite-target line-child slice passed
+with `1 passed`, the focused open-time affine/line-child slice passed with
+`3 passed`, the full `tests/test_finite_target_completeness.py` file passed
+with `80` collected tests, the full `tests/test_open_time_atlas.py` file
+passed with `55` collected tests, the LAST_PRO milestone suite passed with
+`6 passed`, and compileall passed.
+
+Latest checks after recursive descent proof note
+================================================
+
+Hardened the finite recursive branch/event consumption theorem without adding a
+new top-level witness.  `RecursiveStratifiedBranchEventConsumptionCertificate`
+now exposes `strict_descent_edge_count`, `unresolved_descent_edge_count`, and
+`descent_well_founded`, and certification requires the recursive equality
+edges to be strict dimension/rank descents.  Added
+`docs/recursive-stratified-branch-event-consumption-theorem.md`, which states
+the finite supplied/constructor-derived recursive theorem, proves it by
+induction over the lexicographic `(dimension, rank)` descent, and explicitly
+keeps arbitrary interval-input recursive partition generation outside the
+claim.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py three_body_symmetry/finite_target_completeness.py tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "recursive_stratified_consumption_exposes_well_founded_descent_counts or recursive_stratified_branch_event_theorem_note or constructor_source_scope_helper"
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py
+python3 -m compileall three_body_symmetry tests
+```
+
+Result: py_compile passed, the focused finite-target recursive-descent slice
+passed with `3 passed`, the full `tests/test_finite_target_completeness.py`
+file passed with `79` collected tests, the full `tests/test_open_time_atlas.py`
+file passed with `54` tests, the LAST_PRO milestone suite passed with
+`6 passed`, and compileall passed.
+
+Latest checks after recursive source-scope helper consolidation
+==============================================================
+
+Made constructor-derived recursive provenance queryable from the recursive
+consumption certificate itself: `RecursiveStratifiedBranchEventConsumptionCertificate`
+now exposes its carried source tree kind and `constructor_source_type`, while
+`recursive_constructor_source_scope(...)` returns the manifest-backed source
+type, finite interval-box scope id, detail text, and display label.  The
+validated set-valued theorem and open-time reduction now consume that shared
+helper instead of maintaining parallel source-scope tables.  Mixed
+constructor-derived branch/event pairs still report
+`finite_mixed_constructor_branch_event_interval_boxes`, and the arbitrary
+interval-input recursive partition theorem remains explicitly unclaimed.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py three_body_symmetry/finite_target_completeness.py three_body_symmetry/open_time_atlas.py three_body_symmetry/__init__.py tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "constructor_source_scope_helper or constructor_source_scope_manifest or mixed_constructor_set_valued_scope or affine_decision_set_valued_constructor_scope"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "affine_decision or mixed_constructor_branch_event_scope or mixed_oblique_affine_arrangement_scope or polynomial_root_bracket_scope"
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py
+python3 -m compileall three_body_symmetry tests
+```
+
+Result: py_compile passed, the focused finite-target source-scope slice passed
+with `4 passed`, the focused open-time source-scope slice passed with
+`3 passed`, the full `tests/test_finite_target_completeness.py` file passed
+with `77` collected tests, the full `tests/test_open_time_atlas.py` file
+passed with `54` tests, the LAST_PRO milestone suite passed with `6 passed`,
+and compileall passed.
+
+Latest checks after constructor source-scope manifest guard
+==========================================================
+
+Centralized constructor-derived recursive source scope metadata in
+`CONSTRUCTOR_DERIVED_RECURSIVE_SOURCE_SCOPES` and made the finite-target and
+open-time mixed-scope helpers consume that shared manifest.  Added a regression
+that scans every `source_type="..."` emitted by `stratified_branch_tree.py` and
+fails if any current constructor source lacks a declared finite interval-box
+scope, or if the manifest contains a stale source.  This makes the existing
+set-valued constructor coverage executable instead of relying on parallel
+hand-maintained helper tables.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py three_body_symmetry/open_time_atlas.py tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "constructor_source_scope_manifest or mixed_oblique_affine_arrangement_scope or affine_decision_set_valued_constructor_scope"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "mixed_oblique_affine_arrangement_scope or mixed_constructor_branch_event_scope"
+```
+
+Result: py_compile passed, the focused finite-target manifest/source-scope
+slice passed with `3 passed`, the focused open-time mixed-scope slice passed
+with `2 passed`, the full `tests/test_finite_target_completeness.py` file
+passed with `76 passed`, the full `tests/test_open_time_atlas.py` file passed
+with `54 passed`, the LAST_PRO milestone suite passed with `6 passed`, and
+compileall passed.
+
+Latest checks after mixed oblique affine arrangement scope promotion
+===================================================================
+
+Extended the shared mixed branch/event constructor-scope path to include the
+2D and 3D oblique affine halfspace arrangement constructors.  A supplied
+recursive branch tree sourced from `AffineHalfspace3DArrangement` and a
+separate event-order tree sourced from `AffineDecisionArrangement` now preserve
+both constructor sources through the validated set-valued theorem and open-time
+reduction ledger, reporting `finite_mixed_constructor_branch_event_interval_boxes`
+instead of an anonymous supplied-recursive scope.  The 3D side keeps the
+polyhedron value-bound and volume-cover provenance visible in the proof text.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py three_body_symmetry/open_time_atlas.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m pytest tests/test_finite_target_completeness.py -k "mixed_oblique_affine_arrangement_scope"
+python3 -m pytest tests/test_open_time_atlas.py -k "mixed_oblique_affine_arrangement_scope"
+```
+
+Result: py_compile passed, the focused finite-target mixed-oblique scope slice
+passed with `1 passed`, the open-time mixed-oblique scope slice passed with
+`1 passed`, the full `tests/test_finite_target_completeness.py` file passed
+with `75 passed`, the full `tests/test_open_time_atlas.py` file passed with
+`54 passed`, the LAST_PRO milestone suite passed with `6 passed`, and
+compileall passed.
+
+Latest checks after affine decision arrangement scope promotion
+==============================================================
+
+Promoted coefficient-derived one-dimensional affine decision arrangements to
+their own constructor source type and validated interval-input scope.  The
+affine constructor now reports `AffineDecisionArrangement` through its source
+tree and recursive consumption, defaulting to the
+`affine_decision_arrangement` recursion kind.  The validated scope now reports
+`finite_affine_decision_arrangement_interval_boxes`, preserving computed
+affine roots, one-sided boundary brackets, grouped simultaneous equality
+strata, and recursive equality children separately from the broader computed
+polynomial-root arrangement scope.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py three_body_symmetry/finite_target_completeness.py three_body_symmetry/open_time_atlas.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m pytest tests/test_finite_target_completeness.py -k "affine_decision_arrangement or affine_decision_set_valued_constructor_scope"
+python3 -m pytest tests/test_open_time_atlas.py -k "supplied_recursive_stratified_set_valued_subset or simultaneous_affine_equality_stratum"
+```
+
+Result: py_compile passed, the focused finite-target affine-decision scope
+slice passed with `4 passed`, the open-time affine-decision reduction slice
+passed with `2 passed`, the full `tests/test_finite_target_completeness.py`
+file passed with `74 passed`, the full `tests/test_open_time_atlas.py` file
+passed with `53 passed`, the LAST_PRO milestone suite passed with `6 passed`,
+and compileall passed.
+
+Latest checks after mixed branch/event constructor scope promotion
+=================================================================
+
+Preserved mixed constructor-derived branch/event provenance through the
+supplied-recursive set-valued theorem, validated interval-scope wrapper, and
+open-time reduction ledger.  When branch and event-order recursive trees come
+from different supported constructors, the represented scope now reports
+`finite_mixed_constructor_branch_event_interval_boxes` instead of falling back
+to anonymous supplied-recursive interval boxes.  This covers finite products of
+already constructor-derived branch and event partitions while still leaving
+arbitrary interval-input recursive partition generation open.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py three_body_symmetry/open_time_atlas.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "mixed_constructor_set_valued_scope"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "mixed_constructor_branch_event_scope"
+```
+
+Result: py_compile passed, the focused finite-target mixed-constructor scope
+slice passed with `1 passed`, the open-time mixed-constructor scope slice
+passed with `1 passed`, the LAST_PRO milestone suite passed with `6 passed`,
+the full `tests/test_finite_target_completeness.py` file passed with
+`73 passed`, the full `tests/test_open_time_atlas.py` file passed with
+`53 passed`, and compileall passed.
+
+Latest checks after single-polynomial decision scope promotion
+=============================================================
+
+Promoted constructor-derived single-polynomial decision stratifications
+through the supplied-recursive set-valued theorem and open-time reduction
+ledgers.  These one-discriminator polynomial partitions now report the
+represented scope
+`finite_polynomial_decision_stratification_interval_boxes`, preserving
+strict sign cells, verified simple root brackets, and recursive equality
+children instead of appearing as anonymous supplied recursive trees.  The
+multi-polynomial arrangement theorem remains separate, and arbitrary
+interval-input partition generation remains open.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py three_body_symmetry/finite_target_completeness.py three_body_symmetry/open_time_atlas.py three_body_symmetry/__init__.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "polynomial_decision_set_valued_constructor_scope or polynomial_decision_stratifier"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "polynomial_decision_scope"
+```
+
+Result: py_compile passed, the focused finite-target polynomial-decision
+scope slice passed with `3 passed`, the open-time polynomial-decision scope
+slice passed with `1 passed`, the LAST_PRO milestone suite passed with
+`6 passed`, and compileall passed.
+
+Latest checks after affine halfspace decision scope promotion
+=============================================================
+
+Promoted constructor-derived single affine halfspace decision stratifications
+through the supplied-recursive set-valued theorem and open-time reduction
+ledgers.  These oblique one-discriminator partitions now report the represented
+scope `finite_affine_halfspace_decision_interval_boxes`, preserving separated
+halfspace cells, the explicit central equality slab, and recursive equality
+children instead of appearing as anonymous supplied recursive trees.  The
+multi-halfspace arrangement theorem remains separate, and arbitrary
+interval-input partition generation remains open.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py three_body_symmetry/open_time_atlas.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "affine_halfspace_decision_set_valued_scope or affine_halfspace_decision_lifts"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "affine_halfspace_decision_scope"
+```
+
+Result: py_compile passed, the focused finite-target affine-halfspace-decision
+scope slice passed with `2 passed`, the open-time halfspace-decision scope
+slice passed with `1 passed`, the LAST_PRO milestone suite passed with
+`6 passed`, and compileall passed.
+
+Latest checks after axis-aligned affine box scope promotion
+===========================================================
+
+Promoted constructor-derived axis-aligned affine box arrangements through the
+supplied-recursive set-valued theorem and open-time reduction ledgers.  These
+arrangements now report the represented scope
+`finite_axis_aligned_affine_box_arrangement_interval_boxes`, preserving their
+coordinate equality slabs, Cartesian sign boxes, and recursive equality
+children instead of appearing as anonymous supplied recursive trees.  The
+arbitrary interval-input partition theorem remains open.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py three_body_symmetry/open_time_atlas.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "affine_box_set_valued_constructor_scope or affine_box_decision_arrangement_derives"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "axis_aligned_affine_box_scope or affine_box"
+```
+
+Result: py_compile passed, the focused finite-target affine-box/set-valued
+scope slice passed with `2 passed`, the open-time affine-box scope slice
+passed with `1 passed`, the LAST_PRO milestone suite passed with `6 passed`,
+and compileall passed.
+
+Latest checks after polynomial arrangement scope promotion
+==========================================================
+
+Extended the constructor-derived scope promotion beyond Sturm arrangements.
+The supplied-recursive set-valued theorem now preserves verified simple
+root-bracket polynomial arrangements, computed polynomial-root arrangements,
+quadratic tangent double-root arrangements, and Sturm arrangements as distinct
+validated input scopes instead of collapsing them into anonymous supplied
+recursive equality trees.  The open-time reduction ledger now names those
+constructor sources as well, while still recording that arbitrary interval-box
+partition generation remains open.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py three_body_symmetry/open_time_atlas.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "set_valued_scope_is_constructor_derived or polynomial_decision_arrangement_recursive"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "verified_polynomial_root_bracket_scope or quadratic_simple_root_equality_strata or quadratic_double_root_tangent_stratum or coincident_quadratic_simple_root_stratum or supplied_recursive_stratified_set_valued_subset"
+```
+
+Result: py_compile passed, the focused finite-target constructor-scope slice
+passed with `4 passed`, the open-time constructor-scope reduction slice passed
+with `5 passed`, the LAST_PRO milestone suite passed with `6 passed`, and
+compileall passed.
+
+Latest checks after constructor-derived Sturm scope promotion
+==============================================================
+
+Promoted constructor-derived Sturm polynomial decision arrangements through
+the set-valued theorem surface without adding a new certificate layer.
+`certify_polynomial_decision_arrangement_recursive_consumption(...)` now tags
+Sturm-derived arrangements as `sturm_polynomial_decision_arrangement`, and the
+supplied-recursive/validated/open-time ledgers report the represented scope as
+`finite_sturm_polynomial_decision_arrangement_interval_boxes` instead of an
+anonymous supplied recursive tree.  This keeps exact rational root isolation,
+multiplicity/equality strata, and recursive equality children visible while
+still recording that arbitrary interval-input partition generation remains
+open.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py three_body_symmetry/finite_target_completeness.py three_body_symmetry/open_time_atlas.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "sturm_polynomial_set_valued_constructor_scope or sturm_polynomial_decision_arrangement or polynomial_decision_arrangement_recursive"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "sturm_cubic_root_strata or sturm_quartic_root_strata or sturm_boundary_root_strata or sturm_coincident_root_strata or sturm_multiple_root_strata"
+```
+
+Result: py_compile passed, the focused finite-target Sturm/set-valued slice
+passed with `8 passed`, and the open-time Sturm reduction slice passed with
+`5 passed`.
+
+Latest checks after supplied-entry Banach majorant hardening
+============================================================
+
+Hardened `SuppliedGeneralizedFuchsianAnalyticRemainderMajorantCertificate`
+without adding a new theorem layer.  The supplied-entry constructor now records
+the retained weight cutoff, first omitted weight, closed Cauchy polydisc scope,
+Banach contraction slack `1 - q`, self-map margin `R - (B*D + q*R)`, and the
+fact that these constants are pointwise supplied-entry data rather than uniform
+interval-box constants.  The constructor rejects both `q >= 1` and
+self-map-ball failures even when the contraction inequality alone is satisfied.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py three_body_symmetry/certificate_language.py three_body_symmetry/certificate_checker.py tests/test_finite_target_completeness.py tests/test_certificate_checker.py tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_certificate_checker.py -k "fast_reduced_order_generalized_fuchsian_stop_checker"
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "generalized_fuchsian_analytic_remainder or generalized_fuchsian_stop_chart or total_collision_generalized"
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest -q tests/test_open_time_atlas.py -k "constructor_attaches_independent_ordinary_checked_prefix_without_overclaiming or finite_planar_atlas or spatial_ks_target_chart or supplied_spatial_ordinary_ks_checked_prefix"
+python3 -m pytest -q tests/test_closed_form.py -k "constructor_checked_prefix or supplied_spatial_ordinary_ks_checked_prefix or independent_chart_verifier or regularized_locally_finite_atlas"
+```
+
+Result: py_compile passed, the fast serialized generalized-Fuchsian checker
+slice passed with `1 passed`, the focused finite-target total-collision slice
+passed with `6 passed`, the LAST_PRO milestone suite passed with `6 passed`,
+compileall passed, the steering-relevant open-time checked-prefix slice passed
+with `4 passed`, and the closed-form independent-verifier/audit slice passed
+with `3 passed`.
+
+Latest checks after TC5/TC6 total-collision proof hardening
+============================================================
+
+Strengthened `docs/total-collision-generalized-fuchsian-stop-proof.md` without
+adding a new certificate layer.  TC5 now records an explicit retained weight
+cutoff `W_*`, the generated weight formula, range/kernel projection for
+resonant row solves, triangular log-degree induction, and a no-hidden-finite-row
+selector uniqueness argument.  TC6 now records the closed Cauchy polydisc, the
+finite numerator majorants used to derive defect/right-inverse/Lipschitz
+constants, the weighted first-omitted-row Banach norm, projected physical
+residual tail accounting, and the explicit self-map/contraction inequalities
+that turn the finite Puiseux-log rows into an analytic chart with computable
+tails.
+
+Verification:
+
+```text
+python3 -m py_compile tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m compileall three_body_symmetry tests
+```
+
+Initial result: py_compile passed, and the LAST_PRO milestone suite passed with
+`6 passed`; compileall passed.
+
+Latest checks after spatial affine halfspace arrangement constructor
+====================================================================
+
+Added `AffineHalfspaceArrangement3DCellCertificate`,
+`AffineHalfspaceArrangement3DStratificationCertificate`,
+`certify_affine_halfspace_3d_arrangement_stratified_branch_event_tree(...)`,
+and `certify_affine_halfspace_3d_arrangement_recursive_consumption(...)` in
+`three_body_symmetry/stratified_branch_tree.py`.  The constructor enumerates
+finite trichotomy cells for oblique affine discriminants in a 3D box, recovers
+polyhedron vertices from active halfspace triples, checks affine value bounds
+on every nonempty cell, and certifies a volume-cover guard before recursive
+equality-slab consumption.  The existing
+`AffineHalfspaceArrangementSetValuedConstructorCompletenessCertificate` now
+also accepts this 3D arrangement certificate and exposes the scoped validated
+input class `finite_3d_affine_halfspace_arrangement_interval_boxes`, while
+still recording that arbitrary interval-input partition generation is not
+claimed.
+`construct_open_time_locally_finite_atlas_theorem(...)` now also has a focused
+regression proving that the validated 3D affine halfspace scope removes the
+displayed set-valued branch/event blocker through the open-time reduction, and
+the finite-target reduction detail distinguishes 3D polyhedron/volume evidence
+from the earlier 2D polygon/area evidence.
+The same reduction detail now recognizes constructor-derived simultaneous
+close-pair branch partitions when they are consumed through the recursive
+stratified theorem, so a real spatial close-pair split no longer appears as an
+anonymous supplied equality tree in the open-time proof ledger.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py three_body_symmetry/__init__.py tests/test_finite_target_completeness.py
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py tests/test_finite_target_completeness.py
+python3 -m py_compile three_body_symmetry/open_time_atlas.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "affine_halfspace_3d_arrangement or affine_halfspace_arrangement_set_valued or validated_set_valued_constructor"
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "affine_halfspace_3d_arrangement or affine_halfspace_arrangement or affine_halfspace_decision or affine_box_decision_arrangement or set_valued_constructor"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "spatial_affine_halfspace_arrangement_scope or affine_halfspace_arrangement_scope"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "constructor_close_pair_partition_scope or supplied_recursive_stratified_set_valued_subset"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "affine_halfspace_arrangement_scope or validated_set_valued or supplied_recursive_stratified_set_valued or uniform_margin_set_valued"
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m compileall three_body_symmetry tests
+```
+
+Initial result: all py_compile commands passed; the focused 3D/set-valued
+wrapper slice passed with `4 passed`; the broader affine/set-valued
+constructor slice passed with `13 passed`; the new 2D/3D open-time affine
+halfspace scope slice passed with `2 passed`; the close-pair/supplied-recursive
+open-time slice passed with `2 passed`; the open-time set-valued consumer slice
+passed with `6 passed`; the LAST_PRO milestone suite passed with `6 passed`;
+and compileall passed.
+
+Latest checks after constructor-derived arithmetic backend gate
+===============================================================
+
+Added `ProofGradeArithmeticBackendCertificate` and
+`certify_rational_interval_arithmetic_backend_soundness(...)` in
+`three_body_symmetry/certificate_checker.py`.  The checker-kernel manifest no
+longer accepts `proof_grade_arithmetic_backend_sound=True` as a raw assertion;
+it must receive a proof-grade arithmetic backend certificate.  The new backend
+certificate checks exact `Fraction` endpoints, rational interval addition,
+subtraction, multiplication, reciprocal, Horner polynomial evaluation,
+derivative scaling, sign trichotomy, and finite-float-to-Fraction embedding
+before `derive_certificate_language_soundness_from_checker_kernel(...)` can
+close the soundness gate.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/certificate_checker.py three_body_symmetry/closed_form.py three_body_symmetry/__init__.py tests/test_closed_form.py tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_closed_form.py -k "certificate_language_soundness_deriv or raw_arithmetic_soundness or proof_grade_arithmetic_soundness or pointwise_closed_form_route_certifies"
+python3 -m pytest -q tests/test_closed_form.py -k "pointwise_closed_form_route or computable_atlas_enumeration or certificate_language_soundness"
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_certificate_checker.py -k verifier_arithmetic_audit
+python3 - <<'PY'
+from three_body_symmetry import (
+    certify_pointwise_open_time_locally_finite_atlas_theorem,
+    certify_rational_interval_arithmetic_backend_soundness,
+    certify_certificate_checker_kernel_support,
+    derive_certificate_language_soundness_from_checker_kernel,
+    derive_computable_atlas_certificate_enumeration_from_pointwise_theorem,
+    certify_general_closed_form_solution_target,
+)
+th = certify_pointwise_open_time_locally_finite_atlas_theorem(dimension=3, compact_time_rate=1.3, total_collision_policy_id='maximal_classical_stop')
+arith = certify_rational_interval_arithmetic_backend_soundness()
+sound = derive_certificate_language_soundness_from_checker_kernel(certify_certificate_checker_kernel_support(proof_grade_arithmetic_backend_certificate=arith))
+enum = derive_computable_atlas_certificate_enumeration_from_pointwise_theorem(th)
+cert = certify_general_closed_form_solution_target('regularized locally finite atlas', general_theorem_certificate=th, certificate_language_soundness_certificate=sound, computable_atlas_enumeration_certificate=enum)
+print('arithmetic', arith.proof_certified, arith.missing_obligations)
+print('soundness', sound.proof_certified, sound.missing_obligations)
+print('closed_form', cert.status, cert.proof_certified, cert.blocking_obligations)
+PY
+python3 -m compileall three_body_symmetry tests
+```
+
+Initial result: py_compile passed; the focused closed-form arithmetic/soundness
+slice passed with `5 passed`; the broader closed-form pointwise/gate slice
+passed with `10 passed`; the LAST_PRO milestone suite passed with `6 passed`;
+the certificate-checker arithmetic audit slice passed with `2 passed`; the
+direct pointwise route probe printed `arithmetic True ()`, `soundness True ()`,
+and `closed_form certified True ()`; and compileall passed.
+
+Latest checks after checker-kernel-derived soundness gate
+=========================================================
+
+Added `CertificateCheckerKernelSupportCertificate` and
+`certify_certificate_checker_kernel_support(...)` in
+`three_body_symmetry/certificate_checker.py`, plus
+`derive_certificate_language_soundness_from_checker_kernel(...)` in
+`three_body_symmetry/closed_form.py`.  The closed-form soundness gate can now
+derive ordinary Taylor, planar Levi-Civita, spatial KS, finite Fuchsian stop,
+generalized Fuchsian stop, transition, branch-union, chart-chain, and verifier
+kernel support from the checker kernel manifest rather than a raw set of
+chart-family booleans.  The proof-grade arithmetic backend remains explicit:
+without `proof_grade_arithmetic_backend_sound=True`, the derived soundness
+certificate still blocks proof certification.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/certificate_checker.py three_body_symmetry/closed_form.py three_body_symmetry/__init__.py tests/test_closed_form.py tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_closed_form.py -k "certificate_language_soundness_deriv or proof_grade_arithmetic_soundness or aggregate_total_stop_shortcut or pointwise_closed_form_route_certifies"
+python3 -m pytest -q tests/test_closed_form.py -k "pointwise_closed_form_route or computable_atlas_enumeration or certificate_language_soundness"
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_certificate_checker.py -k verifier_arithmetic_audit
+python3 - <<'PY'
+from three_body_symmetry import (
+    certify_pointwise_open_time_locally_finite_atlas_theorem,
+    certify_certificate_checker_kernel_support,
+    derive_certificate_language_soundness_from_checker_kernel,
+    derive_computable_atlas_certificate_enumeration_from_pointwise_theorem,
+    certify_general_closed_form_solution_target,
+)
+th = certify_pointwise_open_time_locally_finite_atlas_theorem(dimension=3, compact_time_rate=1.3, total_collision_policy_id='maximal_classical_stop')
+sound = derive_certificate_language_soundness_from_checker_kernel(certify_certificate_checker_kernel_support(proof_grade_arithmetic_backend_sound=True))
+enum = derive_computable_atlas_certificate_enumeration_from_pointwise_theorem(th)
+cert = certify_general_closed_form_solution_target('regularized locally finite atlas', general_theorem_certificate=th, certificate_language_soundness_certificate=sound, computable_atlas_enumeration_certificate=enum)
+print(cert.status, cert.proof_certified, cert.blocking_obligations)
+PY
+python3 -m compileall three_body_symmetry tests
+```
+
+Initial result: py_compile passed; the focused closed-form soundness slice
+passed with `5 passed`; the broader closed-form pointwise/gate slice passed
+with `10 passed`; the LAST_PRO milestone suite passed with `6 passed`; the
+certificate-checker arithmetic audit slice passed with `2 passed`; and
+the direct pointwise closed-form route probe printed `certified True ()`; and
+compileall passed.
+
+Latest checks after pointwise-derived computable enumeration gate
+=================================================================
+
+Added `derive_computable_atlas_certificate_enumeration_from_pointwise_theorem(...)`
+in `three_body_symmetry/closed_form.py`.  The closed-form enumeration gate can
+now be derived from a proof-certified
+`PointwiseOpenTimeLocallyFiniteAtlasTheoremCertificate` and its finite-target
+chart/outcome grammar instead of requiring the caller to pass a manual bundle
+of enumeration booleans.  The derived certificate records the source theorem,
+finite-target chart families, and allowed atlas-or-stop outcomes; it refuses to
+certify for non-exact/non-computable input models.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/closed_form.py three_body_symmetry/__init__.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_closed_form.py -k "computable_atlas_enumeration_deriv or generalized_fuchsian_enumeration_data or pointwise_closed_form_route_certifies"
+python3 -m pytest -q tests/test_closed_form.py -k "pointwise_closed_form_route or computable_atlas_enumeration or certificate_language_soundness"
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m compileall three_body_symmetry tests
+```
+
+Initial result: py_compile passed; the closed-form enumeration focused slice
+passed with `4 passed`; the broader closed-form pointwise/gate slice passed
+with `8 passed`; the LAST_PRO milestone suite passed with `6 passed`; and
+compileall passed.
+
+Latest checks after open-time affine arrangement set-valued integration
+=======================================================================
+
+Added an open-time theorem regression for the constructor-derived oblique
+affine halfspace arrangement route.  The test builds a finite 2D affine
+halfspace arrangement, recursively consumes its equality slabs, wraps it as an
+`AffineHalfspaceArrangementSetValuedConstructorCompletenessCertificate`, then
+passes the validated theorem wrapper into
+`construct_open_time_locally_finite_atlas_theorem(...)`.  The open-time
+certificate now has coverage proving that this structured arrangement input
+scope removes the displayed `set_valued_constructor_branch_event_completeness`
+obligation while still leaving theorem-level proof promotion to the independent
+checker/audit gates.
+
+Verification:
+
+```text
+python3 -m py_compile tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_open_time_atlas.py -k "affine_halfspace_arrangement_scope or validated_set_valued or supplied_recursive_stratified_set_valued or uniform_margin_set_valued"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "set_valued_constructor_branch_event_completeness or affine_halfspace_arrangement_scope or supplied_search_refinement"
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m compileall three_body_symmetry tests
+```
+
+Initial result: py_compile passed; the open-time set-valued integration slice
+passed with `4 passed`; the broader open-time set-valued blocker slice passed
+with `2 passed`; the LAST_PRO milestone suite passed with `6 passed`; and
+compileall passed.
+
+Latest checks after affine halfspace arrangement set-valued theorem wrapper
+==========================================================================
+
+Added `AffineHalfspaceArrangementSetValuedConstructorCompletenessCertificate`
+and `certify_affine_halfspace_arrangement_set_valued_constructor_completeness(...)`
+in `three_body_symmetry/finite_target_completeness.py`.  This lifts the finite
+2D oblique affine halfspace arrangement from a local stratification certificate
+into the set-valued constructor theorem surface: the arrangement must be
+proof-certified, area-cover certified, and recursively consumed for both branch
+and event-order obligations before it can feed
+`certify_validated_set_valued_constructor_completeness_theorem(...)`.  The
+validated wrapper now reports the explicit input scope
+`finite_2d_affine_halfspace_arrangement_interval_boxes`, preserving the
+separation from arbitrary interval-input recursive partition generation.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py three_body_symmetry/open_time_atlas.py three_body_symmetry/__init__.py tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "affine_halfspace_arrangement_set_valued or validated_set_valued_constructor or supplied_recursive_stratified"
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "affine_halfspace_arrangement or affine_halfspace_decision or affine_box_decision_arrangement or set_valued_constructor"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "supplied_recursive_stratified_set_valued or uniform_margin_set_valued or supplied_search_refinement or validated_set_valued"
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m compileall three_body_symmetry tests
+```
+
+Initial result: py_compile passed; the set-valued constructor wrapper slice
+passed with `3 passed`; the broader finite-target constructor slice passed
+with `11 passed`; the open-time set-valued consumer slice passed with
+`4 passed`; the LAST_PRO milestone suite passed with `6 passed`; the full
+finite-target suite passed; and compileall passed.
+
+Latest checks after halfspace-arrangement area-cover guard
+==========================================================
+
+Hardened `certify_affine_halfspace_arrangement_stratified_branch_event_tree(...)`
+in `three_body_symmetry/stratified_branch_tree.py`.  Each clipped polygon cell
+now records affine value bounds for every discriminator, and the arrangement
+certificate computes the rectangle area, the sum of nonempty clipped-cell
+areas, and a cover-gap bound.  Certification now depends on that area-cover
+guard as well as the per-cell sign/slab constraints, so the constructor no
+longer relies only on the trichotomy enumeration argument for the finite 2D
+oblique affine arrangement.  This strengthens the supplied finite arrangement
+constructor without claiming arbitrary interval-input recursive partition
+generation.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k affine_halfspace_arrangement
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "affine_halfspace_arrangement or affine_halfspace_decision or affine_box_decision_arrangement"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "supplied_recursive_stratified_set_valued or uniform_margin_set_valued or supplied_search_refinement"
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m compileall three_body_symmetry tests
+```
+
+Initial result: py_compile passed; the affine halfspace arrangement slice
+passed with `3 passed`; the broader affine arrangement/halfspace/box slice
+passed with `7 passed`; the open-time set-valued consumer slice passed with
+`3 passed`; the LAST_PRO milestone suite passed with `6 passed`; the full
+finite-target suite passed; and compileall passed.
+
+Latest checks after 2D affine halfspace arrangement constructor
+===============================================================
+
+Added `certify_affine_halfspace_arrangement_stratified_branch_event_tree(...)`
+to `three_body_symmetry/stratified_branch_tree.py`.  This lifts multiple
+oblique affine discriminants on a two-dimensional interval box into convex
+polygon cells: every discriminator contributes the trichotomy
+`f <= -epsilon`, `|f| <= epsilon`, `f >= epsilon`; the constructor enumerates
+all sign patterns, clips the rectangle by the corresponding halfplanes,
+terminal-certifies strict sign cells with margin `epsilon`, and leaves
+slab-intersecting cells as recursive equality strata.  The companion
+`certify_affine_halfspace_arrangement_recursive_consumption(...)` consumes the
+finite polygon-cell arrangement through the existing recursive descent
+theorem.  This remains a scoped 2D affine-arrangement constructor, not
+arbitrary interval-input partition generation.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py three_body_symmetry/__init__.py tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "affine_halfspace_arrangement or affine_halfspace_decision or affine_box_decision_arrangement"
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_open_time_atlas.py -k "supplied_recursive_stratified_set_valued or uniform_margin_set_valued or supplied_search_refinement"
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m compileall three_body_symmetry tests
+```
+
+Initial result: py_compile passed; the focused affine arrangement/halfspace/box
+slice passed with `5 passed`; the full finite-target suite passed with
+`59 passed`; the open-time set-valued consumer slice passed with `3 passed`;
+the LAST_PRO milestone suite passed with `6 passed`; and compileall passed.
+
+Latest checks after oblique affine halfspace-cell partition constructor
+======================================================================
+
+Added `certify_affine_halfspace_decision_stratified_branch_event_tree(...)` to
+`three_body_symmetry/stratified_branch_tree.py`.  This is the structure-rich
+counterpart to the axis-aligned box constructor: for a single oblique affine
+discriminator on an interval box it keeps the partition in halfspace cells
+`f <= -epsilon`, `|f| <= epsilon`, and `f >= epsilon` rather than hulling the
+oblique boundary into boxes.  The separated halfspace cells are
+terminal-certified with positive margin, while the central hyperplane slab is
+an explicit equality stratum consumed by
+`certify_affine_halfspace_decision_recursive_consumption(...)`.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py three_body_symmetry/__init__.py tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "affine_halfspace_decision or affine_box_decision_arrangement"
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_open_time_atlas.py -k "supplied_recursive_stratified_set_valued or uniform_margin_set_valued or supplied_search_refinement"
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m compileall three_body_symmetry tests
+```
+
+Initial result: py_compile passed; the focused affine halfspace/box slice
+passed with `4 passed`; the full finite-target suite passed with `58 passed`;
+the open-time set-valued consumer slice passed with `3 passed`; and the
+LAST_PRO milestone suite passed with `6 passed`; and compileall passed.
+
+Latest checks after axis-aligned affine box partition constructor
+================================================================
+
+Added the first higher-dimensional interval-box decision-arrangement
+constructor to `three_body_symmetry/stratified_branch_tree.py`.
+`certify_affine_box_decision_arrangement_stratified_branch_event_tree(...)`
+now consumes axis-aligned affine discriminants on a finite box, computes
+coordinate roots from coefficients, inserts equality slabs, forms the
+Cartesian product of coordinate pieces, certifies strict-sign boxes and
+simultaneous equality slabs, and rejects oblique hyperplanes rather than
+hulling them into interval boxes.  The companion
+`certify_affine_box_decision_arrangement_recursive_consumption(...)` feeds the
+derived box arrangement into the existing recursive descent theorem via
+constructor-derived child certificates.  This advances the interval-box
+constructor side without claiming arbitrary recursive partition generation.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py three_body_symmetry/__init__.py tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "affine_box_decision_arrangement or polynomial_decision_arrangement_recursive"
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_open_time_atlas.py -k "supplied_recursive_stratified_set_valued or uniform_margin_set_valued or supplied_search_refinement"
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m compileall three_body_symmetry tests
+```
+
+Initial result: py_compile passed; the focused affine-box/polynomial recursive
+slice passed with `3 passed`; the full finite-target suite passed with
+`56 passed`; the open-time set-valued consumer slice passed with `3 passed`;
+the LAST_PRO milestone suite passed with `6 passed`; and compileall passed.
+
+Latest checks after standalone pointwise theorem declaration
+===========================================================
+
+Added `docs/regularized-locally-finite-atlas-closed-form-theorem.md` as the
+standalone finish-line theorem note for the exact/computable-input route.  The
+note states the `d in {2,3}` computable-input scope, the ordinary Taylor,
+planar Levi-Civita, spatial KS, and generalized Fuchsian/Puiseux-log
+total-stop chart grammar, the two finite-target outcomes, the
+maximal-classical total-collision stop policy, the fair certificate
+enumeration proof chain, and the separation from the stronger interval-box
+set-valued constructor theorem whose arbitrary recursive partition generation
+remains open.  `tests/test_last_pro_instructions.py` now locks that theorem
+declaration down.
+
+Verification:
+
+```text
+python3 -m py_compile tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_closed_form.py tests/test_finite_target_completeness.py -k "pointwise_regularized_atlas_closed_form or pointwise_closed_form_route or certificate_search_completeness or set_valued_constructor or total_collision_generalized_fuchsian_proof_note"
+python3 -m compileall three_body_symmetry tests
+```
+
+Initial result: py_compile passed and the LAST_PRO executable milestone suite
+passed with `6 passed`; the adjacent closed-form/finite-target focused slice
+passed with `15 passed`; and compileall passed.
+
+Latest checks after executable LAST_PRO milestone audit
+======================================================
+
+Added `tests/test_last_pro_instructions.py` as a focused regression for the
+latest Pro steering milestone.  The audit locks down the exact/computable
+pointwise closed-form route, the direct pointwise theorem object, the explicit
+soundness/enumeration gates, the separate scoped interval-box constructor
+theorem, the TC1-TC7 public total-collision proof note with expanded TC5/TC6
+normal-form and majorant details, and the generalized Fuchsian checker hygiene
+split between fast reduced-order CI coverage and marked slow tests.
+
+Verification:
+
+```text
+python3 -m py_compile tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_closed_form.py tests/test_finite_target_completeness.py -k "pointwise_regularized_atlas_closed_form or pointwise_closed_form_route or certificate_search_completeness or set_valued_constructor or total_collision_generalized_fuchsian_proof_note"
+python3 -m pytest -q tests/test_certificate_checker.py -k fast_reduced_order_generalized_fuchsian_stop_checker_ci_fixture
+python3 -m compileall three_body_symmetry tests
+```
+
+Initial result: py_compile passed; the new LAST_PRO audit passed with
+`5 passed`; the adjacent closed-form/finite-target focused slice passed with
+`15 passed`; the fast generalized stop-checker CI fixture passed with
+`1 passed`; and compileall passed.
+
+Latest checks after TC5/TC6 proof-audit expansion
+=================================================
+
+`docs/total-collision-generalized-fuchsian-stop-proof.md` now expands the
+proof-critical TC5/TC6 steps.  TC5 records the Poincare-Dulac resonant row
+equation, the descending log-degree triangular solve, and the selector
+constant row.  TC6 records the Banach inverse/defect/Lipschitz constants,
+self-map inequalities, and primitive Cauchy tail data consumed by the
+generalized total-stop checker.
+
+Verification:
+
+```text
+python3 -m py_compile tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "total_collision_generalized_fuchsian_proof_note or pointwise_finite_target_atlas_or_stop or analytic_lemma_registry"
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m compileall three_body_symmetry tests
+```
+
+Initial result: py_compile passed; the focused finite-target proof-audit slice
+passed with `3 passed`; the full finite-target suite passed with `54 passed`;
+and compileall passed.
+
+Latest checks after constructor-only finite-target search hardening
+==================================================================
+
+`certify_finite_target_certificate_search_completeness(...)` now rejects raw
+boolean placeholders for the theorem certificate, uniform-margin refinement
+certificates, stratified branch/event trees, and recursive stratified
+consumption certificates.  The named set-valued blockers
+`recursive_set_valued_branch_partition_consumption` and
+`event_order_partition_consumption_theorem` can still be closed by the existing
+constructor-derived uniform-margin or recursive-stratified certificates, but
+not by broad boolean witnesses.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "certificate_search_completeness or set_valued_constructor or recursive_stratified"
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_open_time_atlas.py tests/test_closed_form.py -k "set_valued_constructor or certificate_search or recursive_stratified"
+python3 -m compileall three_body_symmetry tests
+```
+
+Initial result: py_compile passed; the focused finite-target search and
+set-valued constructor slice passed with `10 passed`; the full finite-target
+suite passed with `53 passed`; the focused open-time/closed-form consumer slice
+passed with `2 passed`; and compileall passed.
+
+Latest checks after removing aggregate total-stop soundness shortcut
+===================================================================
+
+`CertificateLanguageSoundnessCertificate` no longer lets the legacy
+`total_stop_sound=True` field stand in for the two checker-specific obligations.
+The pointwise closed-form route now requires explicit `fuchsian_stop_sound` and
+`generalized_fuchsian_stop_sound` evidence, matching the split certificate
+language used by the finite Fuchsian-log and generalized Fuchsian/Puiseux-log
+total-stop checkers.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/closed_form.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_closed_form.py -k "certificate_language_soundness or pointwise_closed_form_route or pointwise_regularized_atlas_closed_form"
+python3 -m pytest --collect-only -q tests/test_closed_form.py tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_closed_form.py
+python3 -m compileall three_body_symmetry tests
+```
+
+Initial result: py_compile passed; the focused closed-form soundness and
+pointwise route slice passed with `9 passed`; collect-only reported `58`
+closed-form tests and `58` certificate-checker tests; the full closed-form
+suite passed with `58 passed`; and compileall passed. After removing the
+legacy aggregate field from the complete soundness test helper, py_compile
+passed again, the focused pointwise route slice passed with `6 passed`, and the
+full closed-form suite passed again with `58 passed`.
+
+Latest checks after generalized Fuchsian checker test hygiene
+=============================================================
+
+The expensive degree-4 generalized Fuchsian total-stop checker path remains
+cached and marked `slow`.  A separate cached degree-2 generalized
+Fuchsian/Puiseux-log stop-chart fixture now exercises the same independent
+interval/Cauchy checker obligations as a fast CI regression without rebuilding
+the full slow certificate path.
+
+Verification:
+
+```text
+python3 -m py_compile tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_certificate_checker.py -k fast_reduced_order_generalized_fuchsian_stop_checker_ci_fixture
+python3 -m pytest -q tests/test_certificate_checker.py -m "not slow"
+python3 -m pytest -q tests/test_certificate_checker.py -m slow
+```
+
+Initial result: py_compile passed, the new reduced-order generalized stop
+fixture passed with `1 passed`, the fast independent-checker slice passed with
+`54 passed`, and the marked slow generalized Fuchsian slice passed with
+`4 passed`.
+
+Latest checks after independent checker arithmetic audit
+=======================================================
+
+`IndependentChartVerifierCertificate` now exposes a proof-grade arithmetic
+audit without changing the existing checker certification semantics:
+
+- `proof_grade_arithmetic_obligation_ids` lists chart, event, transition,
+  branch-union, and chart-chain obligations that were actually certified by
+  interval/rational residual, Cauchy-tail, exact event-isolation, exact
+  rational state-continuity, exact aggregate-containment, or exact
+  time-coverage checks.
+- `proof_grade_arithmetic_blockers` reports missing proof-grade obligations
+  instead of accepting a broad verifier-kernel flag as arithmetic soundness.
+- `proof_grade_arithmetic_checked_bundle_certified` is true only for checked
+  bundles whose chart, event, transition, branch-union, and chart-chain
+  arithmetic obligations are certified.
+- Open-time theorem certificates now expose the same checker arithmetic status,
+  and the closed-form audit imports the blocker ids under the
+  `independent_chart_verifier_arithmetic:` prefix.
+- Chart-chain time coverage now has its own
+  `chart_chain_exact_rational_time_coverage` obligation, checked with exact
+  rational comparisons over the serialized binary-float physical-time
+  endpoints.  A one-chart checked prefix therefore no longer reports a
+  chart-chain arithmetic backend blocker.
+- Branch-union interval aggregation now has its own
+  `branch_union_exact_rational_interval_aggregation` obligation, checked with
+  exact rational comparisons over the serialized aggregate and leaf target
+  endpoints.  Constructor-produced checked branch-union prefixes therefore no
+  longer report a branch-union arithmetic backend blocker when their leaf
+  chains are also arithmetic-checked.
+- Ordinary, planar LC, and spatial KS transitions now have
+  `transition_exact_rational_state_continuity`, which re-evaluates serialized
+  chart states and handoff times with exact rational arithmetic over
+  binary-float coefficients, parameters, masses, and tolerances.
+
+Focused regressions prove that a chart-only ordinary Taylor bundle, an
+ordinary-plus-exact-rational event bundle, an exact-rational chart-chain
+coverage certificate, an exact-rational branch-union aggregate certificate,
+and ordinary/LC/KS transition bundles pass their arithmetic portions.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/certificate_checker.py tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_certificate_checker.py -k "arithmetic_audit or independent_checker_accepts_serialized_ordinary_taylor_chart or ordinary_ks_entry_event or verifier_certificate_attaches"
+python3 -m py_compile three_body_symmetry/open_time_atlas.py three_body_symmetry/closed_form.py tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_open_time_atlas.py -k "constructor_attaches_independent_ordinary_checked_prefix_without_overclaiming"
+python3 -m pytest -q tests/test_closed_form.py -k "constructor_checked_prefix_without_proof_promotion"
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest -q tests/test_certificate_checker.py tests/test_open_time_atlas.py -k "arithmetic_audit or independent_checker_accepts_serialized_ordinary_taylor_chart or ordinary_ks_entry_event or verifier_certificate_attaches or constructor_attaches_independent_ordinary_checked_prefix_without_overclaiming"
+python3 -m pytest -q tests/test_closed_form.py -k "constructor_checked_prefix_without_proof_promotion or pointwise_closed_form_route_requires_proof_grade_arithmetic_soundness or pointwise_regularized_atlas_closed_form"
+python3 -m pytest -q tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_closed_form.py
+python3 -m pytest -q tests/test_open_time_atlas.py
+python3 -m py_compile three_body_symmetry/certificate_checker.py three_body_symmetry/open_time_atlas.py three_body_symmetry/closed_form.py tests/test_certificate_checker.py tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_certificate_checker.py -k "chart_chain_coverage or chart_chain_target_coverage_gap or arithmetic_audit or verifier_certificate_attaches"
+python3 -m pytest -q tests/test_certificate_checker.py -k "branch_union or arithmetic_audit or chart_chain_coverage"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "branch_union_checked_prefix"
+python3 -m pytest -q tests/test_closed_form.py -k "branch_union_checked_prefix"
+python3 -m pytest -q tests/test_certificate_checker.py -k "transition or verifier_certificate_attaches"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "supplied_spatial_ordinary_ks_checked_prefix"
+python3 -m pytest -q tests/test_closed_form.py -k "supplied_spatial_ordinary_ks_checked_prefix"
+```
+
+Initial result: py_compile passed and the focused checker arithmetic audit slice
+passed with `5 passed`.  The focused open-time and closed-form audit wiring
+tests each passed with `1 passed`; the combined focused affected slices passed
+with `6 passed` and `5 passed`.  `compileall` passed.  The full independent
+checker suite passed with `57 passed`, the full closed-form suite passed with
+`57 passed`, and the full open-time suite passed with `45 passed`.  After
+adding exact-rational chart-chain time coverage, py_compile passed, the focused
+chart-chain/arithmetic slice passed with `5 passed`, and the same three full
+affected suites passed again with `57`, `57`, and `45` tests.  The final
+`compileall` pass also succeeded.  After adding exact-rational branch-union
+interval aggregation, py_compile passed; focused branch-union checker,
+open-time, and closed-form slices passed with `9`, `2`, and `2` tests.  The
+full independent checker, closed-form, and open-time suites passed again with
+`57`, `57`, and `45` tests, followed by a final successful `compileall` pass.
+After adding exact-rational transition state continuity, py_compile passed;
+the focused transition checker slice passed with `11 passed`, and the focused
+open-time and closed-form supplied ordinary/KS checked-prefix slices each
+passed with `1 passed`.  The full independent checker, closed-form, and
+open-time suites passed again with `57`, `57`, and `45` tests, followed by a
+final successful `compileall` pass.
+
+Latest checks after closed-form gate hardening
+==============================================
+
+The pointwise regularized-atlas closed-form route now has two stricter existing
+gates:
+
+- `CertificateLanguageSoundnessCertificate` requires
+  `proof_grade_arithmetic_backend_sound`, so verifier-kernel soundness cannot
+  silently stand in for proof-grade arithmetic.
+- `ComputableAtlasCertificateEnumerationCertificate` now requires the full
+  finite-certificate search language: chart-family words, pair labels,
+  rational domains, truncation orders, rational/interval coefficients, tail
+  budgets, generalized-Fuchsian exponent data, selector constants, Cauchy
+  majorants, transition witnesses, collision policy data, independent-checker
+  dovetailing, fair dovetailing, and finite target-query termination.
+
+Focused regressions now prove that missing proof-grade arithmetic or missing
+generalized-Fuchsian enumeration data blocks the pointwise closed-form route
+without reintroducing the interval-box `set_valued_constructor_branch_event`
+blocker.
+
+The same theorem object now also binds the finish-line statement from
+`LAST_PRO_INSTRUCTIONS.md`: the allowed primitive set is ordinary Taylor,
+planar Levi-Civita binary, spatial KS binary, and generalized
+Fuchsian/Puiseux-log total-stop charts; the finite-target alternatives are a
+finite ordinary/LC/KS chain reaching the target or a finite ordinary/LC/KS/
+total-stop chain certifying the first unselected total collision before or at
+the target; endpoint-regime classification is explicitly not required.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/closed_form.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_closed_form.py -k "pointwise_closed_form_route or pointwise_regularized_atlas_closed_form or set_valued_constructor_regularized or public_api_exports"
+python3 -m pytest -q tests/test_closed_form.py
+python3 -m compileall three_body_symmetry tests
+python3 -c "from three_body_symmetry.closed_form import certify_certificate_language_soundness, certify_computable_atlas_certificate_enumeration; s=certify_certificate_language_soundness(ordinary_taylor_sound=True, levi_civita_sound=True, spatial_ks_sound=True, total_stop_sound=True, transition_sound=True, branch_union_sound=True, chart_chain_sound=True, verifier_kernel_sound=True); e=certify_computable_atlas_certificate_enumeration(chart_family_words_enumerated=True, rational_domains_enumerated=True, rational_tail_budgets_enumerated=True, collision_policy_data_enumerated=True, dovetailing_fairness_certified=True, finite_target_query_terminates_certified=True); print(s.missing_obligations); print(e.missing_obligations)"
+```
+
+Initial result: py_compile passed and the focused closed-form route slice passed
+with `10 passed`. The full closed-form audit file passed with `57` tests,
+compileall passed, and the public constructor probe reports the new missing
+obligations when legacy broad flags are supplied without proof-grade arithmetic
+or the finer enumeration data.
+
+Latest checks after public theorem API and obligation-type alignment
+===================================================================
+
+`PointwiseRegularizedAtlasClosedFormTheoremCertificate` now uses
+`TheoremPipelineObligation` entries for its theorem obligations, matching the
+steering note's theorem-pipeline shape rather than the older closed-form detail
+record.  The pointwise closed-form theorem classes and constructors are also
+exported through the package API:
+
+- `PointwiseRegularizedAtlasClosedFormTheoremCertificate`
+- `MaximalClassicalTotalCollisionPolicyCertificate`
+- `certify_pointwise_regularized_atlas_closed_form_theorem(...)`
+- `certify_maximal_classical_total_collision_policy(...)`
+- `certify_certificate_language_soundness(...)`
+- `certify_computable_atlas_certificate_enumeration(...)`
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/closed_form.py three_body_symmetry/__init__.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_closed_form.py -k "pointwise_closed_form_route or pointwise_regularized_atlas_closed_form or set_valued_constructor_regularized or public_api_exports"
+python3 -m pytest -q tests/test_closed_form.py
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_closed_form.py tests/test_finite_target_completeness.py tests/test_certificate_checker.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_closed_form.py tests/test_finite_target_completeness.py tests/test_certificate_checker.py tests/test_open_time_atlas.py
+```
+
+Initial result: py_compile passed and the focused public-API/pointwise-route
+slice passed with `7 passed`. The full closed-form audit file passed with
+`54` tests, compileall passed, collect-only reported `204` tests across the
+affected files, and the full affected four-file suite completed at `[100%]`
+with exit code 0.
+
+Latest checks after closing pointwise/set-valued audit split gaps
+=================================================================
+
+The closed-form audit split is now explicit at the status level:
+
+- exact/computable point-input proof: `certified_pointwise_regularized_atlas_route`
+- interval-box constructor proof: `certified_set_valued_constructor_regularized_atlas_route`
+
+The set-valued route status is only reachable when an
+`OpenTimeLocallyFiniteAtlasTheoremCertificate` has no constructor, analytic, or
+independent-verifier blockers.  Current ordinary constructors still leave the
+recursive interval branch/event-order theorem separate.
+
+`CertificateLanguageSoundnessCertificate` now names the total-stop checker
+obligations separately instead of relying only on the older aggregate
+`total_stop_sound` field:
+
+- `fuchsian_stop_sound`
+- `generalized_fuchsian_stop_sound`
+
+The legacy constructor argument `total_stop_sound=True` no longer populates
+either explicit obligation.  The pointwise closed-form route therefore reports
+`certificate_language_soundness:fuchsian_stop_sound` or
+`certificate_language_soundness:generalized_fuchsian_stop_sound` unless those
+checker-soundness witnesses are supplied directly.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/closed_form.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_closed_form.py -k "pointwise_closed_form_route or pointwise_regularized_atlas_closed_form or set_valued_constructor_regularized"
+python3 -m pytest -q tests/test_closed_form.py
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_closed_form.py tests/test_finite_target_completeness.py tests/test_certificate_checker.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_closed_form.py tests/test_finite_target_completeness.py tests/test_certificate_checker.py tests/test_open_time_atlas.py
+```
+
+Initial result: py_compile passed and the focused closed-form audit split slice
+passed with `6 passed`. The full closed-form audit file passed with `53` tests,
+compileall passed, collect-only reported `203` tests across the affected files,
+and the full affected four-file suite completed at `[100%]` with exit code 0.
+
+Latest checks after explicit pointwise closed-form theorem object
+=================================================================
+
+`closed_form.py` now has the named theorem object requested by the latest
+instructions:
+
+- `MaximalClassicalTotalCollisionPolicyCertificate`
+- `PointwiseRegularizedAtlasClosedFormTheoremCertificate`
+- `certify_maximal_classical_total_collision_policy(...)`
+- `certify_pointwise_regularized_atlas_closed_form_theorem(...)`
+
+The top-level closed-form audit accepts this theorem object directly as the
+exact/computable-input `regularized_locally_finite_atlas` route.  It still
+keeps the interval-box set-valued constructor route separate, and it rejects a
+selected-continuation total-collision policy when the theorem is supposed to be
+maximal-classical.
+
+Added `docs/total-collision-generalized-fuchsian-stop-proof.md`, a standalone
+TC1-TC7 proof audit for the generalized Fuchsian/Puiseux-log total-stop chain:
+zero angular momentum, binary-degenerate exclusion, central-shape limit,
+reduced hyperbolicity, finite generalized entry data, Cauchy-majorized
+remainder, and verifier-checkable maximal-classical total-stop chart.
+
+Performance cleanup: generalized Fuchsian test helpers now cache the supplied
+branch and stop-chart fixtures, and the expensive generalized stop-checker
+regressions are marked with `pytest.mark.slow`.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/closed_form.py tests/test_closed_form.py tests/test_finite_target_completeness.py tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_closed_form.py -k "pointwise_closed_form_route or pointwise_regularized_atlas_closed_form"
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "generalized_fuchsian"
+python3 -m pytest -q tests/test_certificate_checker.py -k "generalized_fuchsian"
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest -q tests/test_closed_form.py
+python3 -m pytest --collect-only -q tests/test_closed_form.py tests/test_finite_target_completeness.py tests/test_certificate_checker.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_closed_form.py tests/test_finite_target_completeness.py tests/test_certificate_checker.py tests/test_open_time_atlas.py
+```
+
+Initial result: py_compile passed, the pointwise closed-form route/object slice
+passed with `4 passed`, the finite-target generalized Fuchsian slice passed with
+`9 passed`, the generalized Fuchsian checker slice passed with `4 passed`,
+compileall passed, the full closed-form audit file passed with `51` tests,
+collect-only reported `201` tests across the affected files, and the full
+affected four-file suite completed at `[100%]` with exit code 0.
+
+Latest checks after pointwise closed-form theorem closure
+=========================================================
+
+The closed-form audit now accepts the exact/computable point-input
+`PointwiseOpenTimeLocallyFiniteAtlasTheoremCertificate` as a theorem certificate
+for `regularized_locally_finite_atlas`.  This pointwise route no longer inherits
+the interval-box `set_valued_constructor_branch_event_completeness` blocker.
+Instead it requires two typed gates: `CertificateLanguageSoundnessCertificate`
+for the supported chart/transition/branch verifier language, and
+`ComputableAtlasCertificateEnumerationCertificate` for fair computable
+enumeration of chart-family words, rational domains, tail budgets, collision
+policy data, and finite-target termination.
+
+The interval-box constructor theorem remains separate and still reports the
+recursive branch/event-order blockers until that constructor theorem is
+implemented.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/closed_form.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_closed_form.py -k "pointwise_closed_form_route"
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_closed_form.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_closed_form.py tests/test_open_time_atlas.py
+```
+
+Result: py_compile passed, the focused pointwise closed-form route tests passed
+with `2 passed`, compileall passed, direct status probing showed the ungated
+pointwise theorem blocked only on `certificate_language_soundness` and
+`computable_atlas_certificate_enumeration`, the gated route returned
+`certified_pointwise_regularized_atlas_route` with no blockers, collect-only
+reported `93` tests across the closed-form/open-time files, and the combined
+closed-form/open-time run exited successfully at `[100%]`.
+
+Latest checks after terminal selector/total-collision strata
+============================================================
+
+`certify_terminal_policy_stratified_branch_event_tree(...)` now consumes two
+named zero-margin terminal classes from the recursive branch/event theorem:
+selector-policy leaves backed by `SelectorPolicyLeafCertificate`, and
+total-collision cluster leaves backed by `TotalCollisionClusterLeafCertificate`
+plus a supplied entry/stop certificate.  These leaves can now terminate the
+recursive stratified consumption theorem instead of requiring an artificial
+lower-dimensional child, while still refusing to derive such leaves from
+arbitrary interval inputs.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "terminal_selector_policy or terminal_total_collision_cluster"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "terminal_selector_policy_strata"
+```
+
+Initial result: py_compile passed, focused finite-target terminal-policy tests
+passed with `2 passed`, and the focused open-time terminal selector-policy test
+passed with `1 passed`. The full affected finite-target/open-time/closed-form
+run passed with `70 passed`, compileall passed, and collect-only reported `142`
+tests across the affected files.
+
+Latest checks after Sturm polynomial multiplicity isolation
+===========================================================
+
+`certify_sturm_polynomial_decision_arrangement_stratified_branch_event_tree(...)`
+now derives higher-degree one-dimensional polynomial arrangements without
+supplied root brackets, including multiple roots.  The constructor rationalizes
+coefficients, isolates distinct roots of the exact square-free part by Sturm
+variation counts, recovers root multiplicities from exact derivative/gcd
+evidence, accepts brackets only after interval value/lower-derivative/
+leading-derivative checks, certifies one-sided boundary-root brackets, groups
+coincident roots across decisions only when exact rational gcd evidence proves
+a common root in the overlapping brackets,
+certifies sign cells by exact no-root/sign evidence plus subdivided interval
+margins, and then feeds those strata into the existing recursive-consumption
+pipeline.  Multiple higher-degree roots are now explicit recursive equality
+strata rather than blockers hidden in boxes.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py three_body_symmetry/__init__.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "sturm_polynomial"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "sturm_cubic_root_strata or sturm_quartic_root_strata or sturm_boundary_root_strata or sturm_coincident_root_strata or sturm_multiple_root_strata"
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py tests/test_closed_form.py
+```
+
+Initial result: py_compile passed, the focused finite-target Sturm slice
+passed with `6 passed`, and the focused open-time Sturm reduction slice passed
+with `5 passed`. The full affected finite-target/open-time/closed-form run
+passed with `67 passed`, compileall passed, and collect-only reported `139`
+tests across the affected files.
+
+Latest checks after quadratic multiple-root stratification
+==========================================================
+
+`certify_quadratic_decision_arrangement_stratified_branch_event_tree(...)` now
+groups mixed simple/double coincidences and coincident quadratic double roots
+into simultaneous multiple equality strata.  The constructor still derives all
+roots from affine/quadratic coefficient formulas, builds disjoint brackets from
+root-group spacing, verifies defining value containment, checks simple members
+by nonzero first derivative, checks double members by zero first-derivative
+containment plus nonzero second derivative, and verifies nondefining
+discriminants remain sign-separated.  The grouped quadratic sign cells now use
+an exact degree-two range calculation, avoiding false failures from interval
+dependency in expanded double-root polynomials such as `(x-a)^2`.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "mixed_quadratic or coincident_double or coincident_quadratic or quadratic_decision_arrangement or polynomial_decision_arrangement"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "mixed_quadratic_multiple_root_stratum or coincident_quadratic_simple_root_stratum or quadratic_double_root_tangent_stratum or quadratic_simple_root_equality_strata"
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py tests/test_closed_form.py
+```
+
+Initial result: py_compile passed, the focused finite-target quadratic /
+polynomial multiple-root slice passed with `7 passed`, and the focused
+open-time quadratic set-valued reduction slice passed with `4 passed`. The
+full affected finite-target/open-time/closed-form run passed with `56 passed`,
+compileall passed, and collect-only reported `128` tests across the affected
+files.
+
+Latest checks after coincident quadratic simple-root strata
+===========================================================
+
+`certify_quadratic_decision_arrangement_stratified_branch_event_tree(...)` now
+groups coincident simple roots across affine/quadratic decision functions into
+one simultaneous higher-codimension equality stratum.  The constructor still
+derives roots from coefficients, builds disjoint brackets from root-group
+spacing, verifies each defining polynomial contains zero, verifies each
+defining derivative excludes zero, and checks every nondefining polynomial has
+strict sign on the shared root bracket.  Mixed double-root coincidences remain
+future multiple-root cases.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "quadratic_decision_arrangement or affine_decision_arrangement or polynomial_decision_arrangement or supplied_recursive_stratified_set_valued"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "coincident_quadratic_simple_root_stratum or quadratic_double_root_tangent_stratum or quadratic_simple_root_equality_strata or boundary_affine_equality_stratum or simultaneous_affine_equality_stratum or supplied_recursive_stratified_set_valued or uniform_margin_set_valued or supplied_search_refinement"
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py tests/test_closed_form.py
+```
+
+Initial result: py_compile passed, the focused finite-target quadratic /
+affine / polynomial recursive stratified slice passed with `9 passed`, and the
+focused open-time supplied/uniform/quadratic/affine set-valued slice passed
+with `8 passed`. The full affected finite-target/open-time/closed-form run
+passed with `53 passed`, compileall passed, and collect-only reported `125`
+tests across the affected files.
+
+Latest checks after quadratic double-root tangent stratification
+===============================================================
+
+`certify_quadratic_decision_arrangement_stratified_branch_event_tree(...)`
+now handles a single quadratic double root in the compact domain as a tangent
+multiplicity-two equality stratum.  The constructor computes the double root
+from the coefficients, chooses a centered or one-sided bracket inside the
+domain, verifies zero containment for the polynomial and first derivative,
+verifies the second derivative interval excludes zero, keeps complementary
+cells as positive-margin leaves, and requires recursive lower-dimensional/rank
+consumption for the tangent equality leaf.  Mixed or coincident double roots
+across decisions remain future higher-codimension cases.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "quadratic_decision_arrangement or affine_decision_arrangement or polynomial_decision_arrangement or supplied_recursive_stratified_set_valued"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "quadratic_double_root_tangent_stratum or quadratic_simple_root_equality_strata or boundary_affine_equality_stratum or simultaneous_affine_equality_stratum or supplied_recursive_stratified_set_valued or uniform_margin_set_valued or supplied_search_refinement"
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py tests/test_closed_form.py
+```
+
+Initial result: py_compile passed, the focused finite-target quadratic /
+affine / polynomial recursive stratified slice passed with `8 passed`, and the
+focused open-time supplied/uniform/quadratic/affine set-valued slice passed
+with `7 passed`. The full affected finite-target/open-time/closed-form run
+passed with `51 passed`, compileall passed, and collect-only reported `123`
+tests across the affected files.
+
+Latest checks after quadratic simple-root stratification construction
+=====================================================================
+
+`certify_quadratic_decision_arrangement_stratified_branch_event_tree(...)`
+now derives affine/quadratic one-dimensional decision arrangements from
+coefficients without supplied root brackets.  Real simple quadratic roots in
+the compact domain are computed with the quadratic formula, separated roots
+receive disjoint one-quarter-gap brackets, boundary roots receive one-sided
+brackets, and the existing interval polynomial arrangement checker verifies
+sign cells, value containment, and nonzero derivative on equality brackets.
+Double roots and coincident quadratic roots remain explicit blockers for a
+future multiple-root stratum theorem.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py three_body_symmetry/__init__.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "quadratic_decision_arrangement or affine_decision_arrangement or polynomial_decision_arrangement or supplied_recursive_stratified_set_valued"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "quadratic_simple_root_equality_strata or boundary_affine_equality_stratum or simultaneous_affine_equality_stratum or supplied_recursive_stratified_set_valued or uniform_margin_set_valued or supplied_search_refinement"
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py tests/test_closed_form.py
+```
+
+Initial result: py_compile passed, the focused finite-target quadratic /
+affine / polynomial recursive stratified slice passed with `8 passed`, and the
+focused open-time supplied/uniform/quadratic/affine set-valued slice passed
+with `6 passed`. The full affected finite-target/open-time/closed-form run
+passed with `50 passed`, compileall passed, and collect-only reported `122`
+tests across the affected files.
+
+Latest checks after affine boundary equality-stratum construction
+=================================================================
+
+`certify_affine_decision_arrangement_stratified_branch_event_tree(...)` now
+constructs equality strata for affine roots on compact-domain boundaries.  A
+boundary root receives a one-sided root bracket inside the domain, while the
+same interval-checked polynomial arrangement machinery verifies value
+containment, nonzero derivative, strict sign on complementary cells, and
+recursive lower-dimensional/rank consumption for that equality leaf.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "affine_decision_arrangement or polynomial_decision_arrangement or supplied_recursive_stratified_set_valued"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "boundary_affine_equality_stratum or simultaneous_affine_equality_stratum or supplied_recursive_stratified_set_valued or uniform_margin_set_valued or supplied_search_refinement"
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py tests/test_closed_form.py
+```
+
+Initial result: py_compile passed, the focused finite-target affine /
+polynomial recursive stratified slice passed with `6 passed`, and the focused
+open-time supplied/uniform/simultaneous/boundary set-valued slice passed with
+`5 passed`. The full affected finite-target/open-time/closed-form run passed
+with `47 passed`, compileall passed, and collect-only reported `119` tests
+across the affected files.
+
+Latest checks after simultaneous affine equality-stratum construction
+====================================================================
+
+`certify_affine_decision_arrangement_stratified_branch_event_tree(...)` now
+handles coincident interior affine roots by grouping them into one simultaneous
+equality stratum.  The grouped stratum records all defining affine
+discriminants, verifies zero containment and nonzero derivative for each
+defining function, verifies nondefining discriminants stay separated on the
+root bracket, and remains a recursive lower-dimensional/rank leaf for the
+existing stratified consumption theorem.  Boundary affine roots remain outside
+this constructor.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "affine_decision_arrangement or polynomial_decision_arrangement or supplied_recursive_stratified_set_valued"
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py three_body_symmetry/__init__.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_open_time_atlas.py -k "simultaneous_affine_equality_stratum or supplied_recursive_stratified_set_valued or uniform_margin_set_valued or supplied_search_refinement"
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py tests/test_closed_form.py
+```
+
+Initial result: py_compile passed and the focused finite-target affine /
+polynomial recursive stratified slice passed with `5 passed`. The focused
+open-time supplied/uniform/simultaneous set-valued slice passed with `4
+passed`, the full affected finite-target/open-time/closed-form run passed with
+`45 passed`, compileall passed, and collect-only reported `117` tests across
+the affected files.
+
+Latest checks after affine decision root-construction theorem
+=============================================================
+
+`certify_affine_decision_arrangement_stratified_branch_event_tree(...)` now
+derives one-dimensional affine branch/equality strata from coefficients rather
+than supplied root brackets.  For affine discriminants with separated interior
+roots, the constructor computes each root, creates disjoint one-quarter-gap
+brackets from neighboring root/domain spacings, and then feeds those brackets
+through the existing interval-checked polynomial arrangement constructor.
+Boundary and coincident roots remain explicit unsupported cases for later
+boundary/simultaneous-stratum constructors.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py three_body_symmetry/__init__.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "affine_decision_arrangement or polynomial_decision_arrangement or supplied_recursive_stratified_set_valued"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "supplied_recursive_stratified_set_valued or uniform_margin_set_valued or supplied_search_refinement"
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py tests/test_closed_form.py
+```
+
+Result: py_compile passed, the finite-target affine/polynomial recursive
+stratified slice passed with `5 passed`, and the open-time supplied/uniform
+set-valued slice passed with `3 passed`. The full affected
+finite-target/open-time/closed-form run passed, compileall passed, and
+collect-only reported `116` tests across the affected files.
+
+Latest checks after supplied recursive stratified set-valued constructor bridge
+=============================================================================
+
+`SuppliedRecursiveStratifiedSetValuedConstructorCompletenessCertificate` now
+closes the aggregate finite-target set-valued constructor theorem for a
+supplied finite recursive equality tree.  The bridge consumes
+constructor-derived recursive stratified branch/event-order consumption
+certificates, derives the corresponding finite-target certificate-search
+completeness object, and can be passed through the open-time reduction as the
+same public `set_valued_constructor_branch_event_completeness` obligation used
+by the uniform-margin theorem.  It explicitly does not construct recursive
+stratifications from arbitrary interval inputs.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py three_body_symmetry/open_time_atlas.py three_body_symmetry/__init__.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "supplied_recursive_stratified_set_valued or polynomial_decision_arrangement or recursive_stratified"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "supplied_recursive_stratified_set_valued or uniform_margin_set_valued or supplied_search_refinement"
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py tests/test_closed_form.py
+```
+
+Result: py_compile passed, focused finite-target recursive stratified slice
+passed with `6 passed`, focused open-time supplied/uniform set-valued slice
+passed with `3 passed`, full affected finite-target/open-time/closed-form run
+passed, compileall passed, and collect-only reported `114` tests across the
+affected files.
+
+Latest checks after closing pointwise generalized Fuchsian entry data
+====================================================================
+
+`arbitrary_total_collision_germ_finite_generalized_fuchsian_entry_data` is now
+`internally_proven` with proof mode
+`internal_stable_manifold_cauchy_majorant_entry_proof`.  This closes the
+pointwise finite-target analytic lemma audit: exact incoming total-collision
+germs get finite generalized Fuchsian/Puiseux-log entry data from reduced
+hyperbolic stable coordinates, finite Poincare-Dulac selector rows, and Cauchy
+estimates on a chosen local analytic polydisc.  This is not a set-valued
+interval constructor theorem; recursive branch/event partition construction
+and uniform extraction of checker constants from arbitrary interval inputs
+remain open.
+
+Status probe:
+
+```bash
+python3 -c "from three_body_symmetry.finite_target_completeness import certify_finite_target_completeness_theorem; ft=certify_finite_target_completeness_theorem(dimension=3); rec={r.lemma_id:r for r in ft.analytic_lemma_registry.records}; print('entry_status', rec['arbitrary_total_collision_germ_finite_generalized_fuchsian_entry_data'].status, rec['arbitrary_total_collision_germ_finite_generalized_fuchsian_entry_data'].proof_mode); print('audit_complete', ft.analytic_lemma_registry.audit_complete); print('unaudited', ft.unaudited_analytic_lemma_ids); print('critical', ft.critical_unaudited_analytic_lemma_ids); print('proof_certified', ft.proof_certified)"
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py tests/test_finite_target_completeness.py tests/test_closed_form.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "pointwise_finite_target_atlas_or_stop or analytic_lemma_registry or supplied_finite_fuchsian_log_stop_chart_does_not_audit or uniform_margin_refinement"
+python3 -m pytest -q tests/test_closed_form.py -k "regularized_locally_finite_atlas or closed_form_audit_consumes_open_time"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "locally_finite or finite_target or pointwise_open_time"
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_closed_form.py tests/test_open_time_atlas.py
+python3 -m compileall three_body_symmetry tests
+```
+
+Status probe output:
+
+```text
+entry_status internally_proven internal_stable_manifold_cauchy_majorant_entry_proof
+audit_complete True
+unaudited ()
+critical ()
+proof_certified True
+```
+
+Focused and affected pytest results:
+
+```text
+4 passed
+2 passed
+11 passed
+34 passed
+```
+
+Latest checks after closing the conditional total-stop bridge
+============================================================
+
+`arbitrary_total_collision_germ_entry_to_stop_chart` is now internally proven
+as the bridge from arbitrary-germ generalized Fuchsian entry data to a checked
+maximal-classical stop chart.  `total_collision_stop_chart_existence` is also
+internally proven as the theorem-level consequence of that bridge.  Both rows
+remain conditional on `arbitrary_total_collision_germ_finite_generalized_fuchsian_entry_data`,
+which is now the only critical finite-target analytic audit blocker.
+
+Status probe:
+
+```bash
+python3 -c "from three_body_symmetry.finite_target_completeness import certify_finite_target_completeness_theorem; ft=certify_finite_target_completeness_theorem(dimension=3); rec={r.lemma_id:r for r in ft.analytic_lemma_registry.records}; print('entry_to_stop_status', rec['arbitrary_total_collision_germ_entry_to_stop_chart'].status, rec['arbitrary_total_collision_germ_entry_to_stop_chart'].proof_mode); print('total_stop_status', rec['total_collision_stop_chart_existence'].status, rec['total_collision_stop_chart_existence'].proof_mode); print('critical', ft.critical_unaudited_analytic_lemma_ids); print('blockers', ft.analytic_lemma_audit_blockers); print('proof_certified', ft.proof_certified)"
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py tests/test_finite_target_completeness.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "analytic_lemma_registry or finite_target_completeness_theorem"
+python3 -m pytest -q tests/test_closed_form.py -k "regularized_locally_finite_atlas or closed_form_audit_consumes_open_time"
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_closed_form.py tests/test_open_time_atlas.py
+python3 -m compileall three_body_symmetry tests
+```
+
+Status probe output:
+
+```text
+entry_to_stop_status internally_proven internal_generalized_entry_to_checked_stop_chart_proof
+total_stop_status internally_proven internal_total_collision_stop_existence_from_entry_bridge
+critical ('arbitrary_total_collision_germ_finite_generalized_fuchsian_entry_data',)
+blockers ('arbitrary_total_collision_germ_finite_generalized_fuchsian_entry_data',)
+proof_certified False
+```
+
+Focused and affected pytest results:
+
+```text
+1 passed
+2 passed
+34 passed
+```
+
+Latest checks after promoting `poincare_dulac_fuchsian_log_selector_completeness`
+to an internal finite triangular stable-normal-form proof:
+
+`poincare_dulac_fuchsian_log_selector_completeness` is now
+`internally_proven` with proof mode
+`internal_poincare_dulac_stable_selector_proof`.  The row proves finite
+selector-row completeness after the reduced hyperbolic normal form is supplied:
+positive stable rates give a Poincare-domain triangular resonant normal form,
+variation of constants gives finite polynomials in McGehee time, and cubic
+collision time converts those into fractional/Puiseux powers with finite
+log-polynomial selectors.  It does not derive arbitrary-germ Cauchy remainder
+majorants or total-stop chart existence.
+
+Status probe:
+
+```bash
+python3 -c "from three_body_symmetry.finite_target_completeness import certify_finite_target_completeness_theorem; ft=certify_finite_target_completeness_theorem(dimension=3); rec={r.lemma_id:r for r in ft.analytic_lemma_registry.records}; print('selector_status', rec['poincare_dulac_fuchsian_log_selector_completeness'].status, rec['poincare_dulac_fuchsian_log_selector_completeness'].proof_mode); print('selector_blocker', 'poincare_dulac_fuchsian_log_selector_completeness' in ft.analytic_lemma_audit_blockers); print('tier_b', ft.tier_b_unaudited_analytic_lemma_ids); print('blockers', ft.analytic_lemma_audit_blockers); print('proof_certified', ft.proof_certified)"
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py tests/test_finite_target_completeness.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_obstructions.py -k "poincare_dulac_stable_normal_form or stable_log_selector_chain"
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "analytic_lemma_registry or finite_target_completeness_theorem"
+python3 -m pytest -q tests/test_closed_form.py -k "regularized_locally_finite_atlas or closed_form_audit_consumes_open_time"
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_closed_form.py tests/test_open_time_atlas.py
+python3 -m compileall three_body_symmetry tests
+```
+
+Status probe output:
+
+```text
+selector_status internally_proven internal_poincare_dulac_stable_selector_proof
+selector_blocker False
+tier_b ('arbitrary_total_collision_germ_finite_generalized_fuchsian_entry_data', 'arbitrary_total_collision_germ_entry_to_stop_chart', 'total_collision_stop_chart_existence')
+blockers ('arbitrary_total_collision_germ_finite_generalized_fuchsian_entry_data', 'arbitrary_total_collision_germ_entry_to_stop_chart', 'total_collision_stop_chart_existence')
+proof_certified False
+```
+
+Focused pytest results:
+
+```text
+3 passed
+1 passed
+1 passed
+34 passed
+```
+
+Latest checks after promoting `reduced_hyperbolic_total_collision_entry`
+to an internal reduced McGehee hyperbolic-entry proof:
+
+```bash
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py tests/test_finite_target_completeness.py tests/test_closed_form.py
+python3 -c "from three_body_symmetry.finite_target_completeness import certify_finite_target_completeness_theorem; ft=certify_finite_target_completeness_theorem(dimension=3); rec={r.lemma_id:r for r in ft.analytic_lemma_registry.records}; print('hyperbolic_status', rec['reduced_hyperbolic_total_collision_entry'].status, rec['reduced_hyperbolic_total_collision_entry'].proof_mode); print('hyperbolic_blocker', 'reduced_hyperbolic_total_collision_entry' in ft.analytic_lemma_audit_blockers); print('tier_b', ft.tier_b_unaudited_analytic_lemma_ids); print('blockers', ft.analytic_lemma_audit_blockers); print('proof_certified', ft.proof_certified)"
+python3 -m pytest -q tests/test_obstructions.py -k "finite_reduced_shape_length or central_targets_are_reduced_hyperbolic or equilateral_linearized_spectrum or symmetric_unequal_mass_euler_linearized_spectrum"
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "analytic_lemma_registry or finite_target_completeness_theorem"
+python3 -m pytest -q tests/test_closed_form.py -k "regularized_locally_finite_atlas or closed_form_audit_consumes_open_time"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "locally_finite or independent_chart_verifier or finite_target"
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_closed_form.py tests/test_open_time_atlas.py
+python3 -m compileall three_body_symmetry tests
+```
+
+Status probe output:
+
+```text
+hyperbolic_status internally_proven internal_reduced_mcgehee_hyperbolic_entry_proof
+hyperbolic_blocker False
+tier_b ('poincare_dulac_fuchsian_log_selector_completeness', 'arbitrary_total_collision_germ_finite_generalized_fuchsian_entry_data', 'arbitrary_total_collision_germ_entry_to_stop_chart', 'total_collision_stop_chart_existence')
+blockers ('poincare_dulac_fuchsian_log_selector_completeness', 'arbitrary_total_collision_germ_finite_generalized_fuchsian_entry_data', 'arbitrary_total_collision_germ_entry_to_stop_chart', 'total_collision_stop_chart_existence')
+proof_certified False
+```
+
+Focused pytest results:
+
+```text
+11 passed
+1 passed
+1 passed
+10 passed
+34 passed
+```
+
+This row proves only the reduced target/orientation bridge: McGehee quotient
+convergence, Lagrange/Euler reduced spectra, stable-manifold finite reduced
+length, and the zero-angular rotation gauge.  It does not claim
+Poincare-Dulac selector completeness, arbitrary generalized Fuchsian entry
+data, or total-stop chart existence.
+
+Latest checks after promoting `binary_degenerate_total_collision_exclusion`
+to an internal Jacobi perturbed-Kepler blow-up proof:
+
+```bash
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py tests/test_finite_target_completeness.py tests/test_closed_form.py
+python3 -c "from three_body_symmetry.finite_target_completeness import certify_finite_target_completeness_theorem; ft=certify_finite_target_completeness_theorem(dimension=3); rec={r.lemma_id:r for r in ft.analytic_lemma_registry.records}; print('binary_status', rec['binary_degenerate_total_collision_exclusion'].status, rec['binary_degenerate_total_collision_exclusion'].proof_mode); print('binary_blocker', 'binary_degenerate_total_collision_exclusion' in ft.analytic_lemma_audit_blockers); print('tier_b', ft.tier_b_unaudited_analytic_lemma_ids); print('blockers', ft.analytic_lemma_audit_blockers); print('proof_certified', ft.proof_certified)"
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "analytic_lemma_registry or finite_target_completeness_theorem"
+python3 -m pytest -q tests/test_closed_form.py -k "regularized_locally_finite_atlas or closed_form_audit_consumes_open_time"
+python3 -m pytest -q tests/test_obstructions.py -k "binary_degenerate or perturbed_kepler or jacobi_kepler"
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_closed_form.py tests/test_open_time_atlas.py
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_closed_form.py tests/test_open_time_atlas.py tests/test_obstructions.py
+```
+
+```text
+py_compile passed
+binary_status internally_proven internal_jacobi_perturbed_kepler_blowup_proof
+binary_blocker False
+tier_b ('reduced_hyperbolic_total_collision_entry', 'poincare_dulac_fuchsian_log_selector_completeness', 'arbitrary_total_collision_germ_finite_generalized_fuchsian_entry_data', 'arbitrary_total_collision_germ_entry_to_stop_chart', 'total_collision_stop_chart_existence')
+blockers ('reduced_hyperbolic_total_collision_entry', 'poincare_dulac_fuchsian_log_selector_completeness', 'arbitrary_total_collision_germ_finite_generalized_fuchsian_entry_data', 'arbitrary_total_collision_germ_entry_to_stop_chart', 'total_collision_stop_chart_existence')
+proof_certified False
+1 focused finite-target audit regression passed
+2 focused closed-form/open-time audit regressions passed
+5 focused Jacobi/perturbed-Kepler obstruction regressions passed
+full affected finite-target/closed-form/open-time slice passed
+compileall passed
+collect-only reported 47 closed-form, 29 finite-target-completeness, 30 open-time, and 171 obstruction tests
+```
+
+The binary-degenerate row now records the Jacobi reduction and
+perturbed-Kepler blow-up proof: a binary-degenerate total collapse would force
+both tight-pair and outer Jacobi coordinates to have the same Kepler
+`u^(2/3)` collision scale, giving
+`|r|/|rho| -> (m12/M)^(1/3)>0` and contradicting degeneration.  This removes
+the coordinate-energy-defect gap but leaves the reduced-hyperbolic target,
+Poincare-Dulac selector completeness, arbitrary generalized-Fuchsian entry,
+arbitrary entry-to-stop, and aggregate total-stop theorem rows open.
+
+Latest checks after reducing `total_collision_central_configuration_asymptotic`
+to an internally proven McGehee shape-compactness consequence conditional on
+the Tier B binary-degenerate exclusion theorem:
+
+```bash
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py tests/test_finite_target_completeness.py tests/test_closed_form.py
+python3 -c "from three_body_symmetry.finite_target_completeness import certify_finite_target_completeness_theorem; ft=certify_finite_target_completeness_theorem(dimension=3); rec={r.lemma_id:r for r in ft.analytic_lemma_registry.records}; print('central_status', rec['total_collision_central_configuration_asymptotic'].status, rec['total_collision_central_configuration_asymptotic'].proof_mode); print('central_hypotheses', rec['total_collision_central_configuration_asymptotic'].hypotheses); print('central_blocker', 'total_collision_central_configuration_asymptotic' in ft.analytic_lemma_audit_blockers); print('tier_b', ft.tier_b_unaudited_analytic_lemma_ids); print('untiered', ft.analytic_lemma_registry.untiered_unaudited_lemma_ids); print('blockers', ft.analytic_lemma_audit_blockers); print('proof_certified', ft.proof_certified)"
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "analytic_lemma_registry or finite_target_completeness_theorem"
+python3 -m pytest -q tests/test_closed_form.py -k "regularized_locally_finite_atlas or closed_form_audit_consumes_open_time"
+python3 -m pytest -q tests/test_obstructions.py -k "shape_convergence or c2_cubic_time_asymptotic or binary_degenerate"
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_closed_form.py tests/test_open_time_atlas.py
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_closed_form.py tests/test_open_time_atlas.py tests/test_obstructions.py
+```
+
+```text
+py_compile passed
+central_status internally_proven internal_mcgehee_shape_compactness_central_limit_proof
+central_hypotheses ('total_collision_requires_zero_angular_momentum', 'binary_degenerate_total_collision_exclusion')
+central_blocker False
+tier_b ('binary_degenerate_total_collision_exclusion', 'reduced_hyperbolic_total_collision_entry', 'poincare_dulac_fuchsian_log_selector_completeness', 'arbitrary_total_collision_germ_finite_generalized_fuchsian_entry_data', 'arbitrary_total_collision_germ_entry_to_stop_chart', 'total_collision_stop_chart_existence')
+untiered ()
+blockers ('binary_degenerate_total_collision_exclusion', 'reduced_hyperbolic_total_collision_entry', 'poincare_dulac_fuchsian_log_selector_completeness', 'arbitrary_total_collision_germ_finite_generalized_fuchsian_entry_data', 'arbitrary_total_collision_germ_entry_to_stop_chart', 'total_collision_stop_chart_existence')
+proof_certified False
+1 focused finite-target audit regression passed
+2 focused closed-form/open-time audit regressions passed
+8 focused total-collision shape/asymptotic/binary-degenerate regressions passed
+full affected finite-target/closed-form/open-time slice passed
+compileall passed
+collect-only reported 47 closed-form, 29 finite-target-completeness, 30 open-time, and 171 obstruction tests
+```
+
+The finite-target analytic audit now reports only the Tier B total-collision
+entry frontier as blockers.  The central-asymptotic support row is no longer an
+independent open item, but it explicitly depends on
+`binary_degenerate_total_collision_exclusion`; therefore the full proof remains
+uncertified until the binary-degenerate, reduced-hyperbolic, Poincare-Dulac,
+arbitrary generalized-Fuchsian entry, arbitrary entry-to-stop, and aggregate
+total-stop rows are genuinely audited or machine checked.
+
+Latest checks after promoting `cubic_time_total_collision_scaling` to a
+conditional internal Lagrange-Jacobi parabolic-scale proof:
+
+```bash
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py tests/test_finite_target_completeness.py tests/test_closed_form.py
+python3 -c "from three_body_symmetry.finite_target_completeness import certify_finite_target_completeness_theorem; ft=certify_finite_target_completeness_theorem(dimension=3); rec={r.lemma_id:r for r in ft.analytic_lemma_registry.records}; print('cubic_status', rec['cubic_time_total_collision_scaling'].status, rec['cubic_time_total_collision_scaling'].proof_mode); print('cubic_blocker', 'cubic_time_total_collision_scaling' in ft.analytic_lemma_audit_blockers); print('untiered', ft.analytic_lemma_registry.untiered_unaudited_lemma_ids); print('blockers', ft.analytic_lemma_audit_blockers); print('proof_certified', ft.proof_certified)"
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "analytic_lemma_registry or finite_target_completeness_theorem"
+python3 -m pytest -q tests/test_closed_form.py -k "regularized_locally_finite_atlas or closed_form_audit_consumes_open_time"
+python3 -m pytest -q tests/test_obstructions.py -k "shape_convergence or c2_cubic_time_asymptotic"
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_closed_form.py tests/test_open_time_atlas.py
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_closed_form.py tests/test_open_time_atlas.py tests/test_obstructions.py
+```
+
+```text
+py_compile passed
+cubic_status internally_proven internal_lagrange_jacobi_parabolic_scale_proof
+cubic_blocker False
+untiered ('total_collision_central_configuration_asymptotic',)
+blockers ('binary_degenerate_total_collision_exclusion', 'reduced_hyperbolic_total_collision_entry', 'poincare_dulac_fuchsian_log_selector_completeness', 'arbitrary_total_collision_germ_finite_generalized_fuchsian_entry_data', 'arbitrary_total_collision_germ_entry_to_stop_chart', 'total_collision_stop_chart_existence', 'total_collision_central_configuration_asymptotic')
+proof_certified False
+1 focused finite-target audit regression passed
+2 focused closed-form/open-time audit regressions passed
+4 focused total-collision shape/cubic-time asymptotic regressions passed
+full affected finite-target/closed-form/open-time slice passed
+compileall passed
+collect-only reported 47 closed-form, 29 finite-target-completeness, 30 open-time, and 171 obstruction tests
+```
+
+The cubic-time row is intentionally conditional.  It records the actual
+Lagrange-Jacobi/Sundman integration proof from a selected collision-free
+normalized shape limit and normalized-potential limit to
+`I(t) ~ ((9/2)Gamma)^(2/3)|T-t|^(4/3)` and hence `q=tau^2(C+o(1))` under
+`t=T+tau^3`.  It does not certify shape convergence, arbitrary total-collision
+entry, or finite generalized Fuchsian selector data; those remain visible as
+the central-asymptotic row and Tier B entry-frontier blockers.
+
+Latest checks after promoting `homothetic_total_collision_stop_chart_existence`
+to a machine-checked finite-target audit row:
+
+```bash
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py tests/test_finite_target_completeness.py tests/test_closed_form.py tests/test_open_time_atlas.py
+python3 -c "from three_body_symmetry.finite_target_completeness import certify_finite_target_completeness_theorem; ft=certify_finite_target_completeness_theorem(dimension=3); records={r.lemma_id:r.status for r in ft.analytic_lemma_registry.records}; print('homothetic_status', records['homothetic_total_collision_stop_chart_existence']); print('homothetic_blocker', 'homothetic_total_collision_stop_chart_existence' in ft.analytic_lemma_audit_blockers); print('tier_b', ft.tier_b_unaudited_analytic_lemma_ids); print('blockers', ft.analytic_lemma_audit_blockers); print('proof_certified', ft.proof_certified)"
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "analytic_lemma_registry or finite_target_completeness_theorem or homothetic"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "homothetic or independent_checker"
+python3 -m pytest -q tests/test_closed_form.py -k "homothetic or regularized_locally_finite_atlas or closed_form_audit_consumes_open_time"
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_closed_form.py tests/test_open_time_atlas.py
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_closed_form.py tests/test_open_time_atlas.py
+```
+
+```text
+py_compile passed
+homothetic_status machine_checked
+homothetic_blocker False
+tier_b ('binary_degenerate_total_collision_exclusion', 'reduced_hyperbolic_total_collision_entry', 'poincare_dulac_fuchsian_log_selector_completeness', 'arbitrary_total_collision_germ_finite_generalized_fuchsian_entry_data', 'arbitrary_total_collision_germ_entry_to_stop_chart', 'total_collision_stop_chart_existence')
+blockers ('binary_degenerate_total_collision_exclusion', 'reduced_hyperbolic_total_collision_entry', 'poincare_dulac_fuchsian_log_selector_completeness', 'arbitrary_total_collision_germ_finite_generalized_fuchsian_entry_data', 'arbitrary_total_collision_germ_entry_to_stop_chart', 'total_collision_stop_chart_existence', 'total_collision_central_configuration_asymptotic', 'cubic_time_total_collision_scaling')
+proof_certified False
+1 focused finite-target audit regression passed
+7 focused open-time homothetic/independent-checker regressions passed
+2 focused closed-form/open-time audit regressions passed
+full affected finite-target/closed-form/open-time slice passed
+compileall passed
+collect-only reported 47 closed-form, 29 finite-target-completeness, and 30 open-time tests
+```
+
+The finite-target theorem audit now consumes the existing homothetic branch
+constructor, scalar Rouche/Cauchy majorant, generalized Fuchsian stop-chart
+serialization, and independent generalized stop-chart checker.  This removes
+the homothetic subcase from the open audit blockers without changing the Tier B
+frontier: arbitrary total-collision germ entry, Poincare-Dulac/Fuchsian selector
+completeness, reduced-hyperbolic entry, binary-degenerate exclusion, and the
+aggregate total-stop theorem are still unaudited, and the full proof remains
+uncertified.
+
+Latest checks after serializing homothetic total-collision selector atlases
+through the independent generalized Fuchsian stop-chart checker:
+
+```bash
+python3 -m py_compile three_body_symmetry/open_time_atlas.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_open_time_atlas.py::test_independent_checker_serializes_homothetic_total_collision_stop_chain
+python3 -m pytest -q tests/test_open_time_atlas.py -k "homothetic_total_collision_stop_chain or nonzero_energy_homothetic"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "homothetic_stop_adapter or nonzero_energy_homothetic or homothetic_total_collision_stop_chain"
+python3 -m py_compile three_body_symmetry/open_time_atlas.py three_body_symmetry/certificate_checker.py tests/test_open_time_atlas.py tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_open_time_atlas.py -k "homothetic or independent_checker"
+python3 -m pytest -q tests/test_certificate_checker.py -k "generalized_fuchsian or chart_chain"
+python3 -m pytest -q tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_closed_form.py -k "independent_chart_verifier or regularized_locally_finite_atlas or total_collision"
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_open_time_atlas.py tests/test_certificate_checker.py
+```
+
+```text
+open-time homothetic checker bridge py_compile passed
+focused homothetic total-stop verifier regression passed
+2 focused exact/nonzero-energy homothetic verifier regressions passed
+3 focused homothetic checker-first adapter regressions passed
+open-time/certificate-checker py_compile passed
+7 focused open-time homothetic/independent-checker regressions passed
+7 focused certificate-checker generalized/chart-chain regressions passed
+all 30 open-time regressions passed
+all 55 certificate-checker regressions passed
+1 focused closed-form verifier/atlas audit regression passed
+compileall passed
+collect-only reported 30 open-time and 55 certificate-checker tests
+```
+
+Homothetic selector charts now pass through the same
+`verify_chart_certificates(...)` surface as ordinary, LC, KS, and branch-union
+checked prefixes.  The bridge rewrites `q=tau^2 u(tau^2) Q`, `t=T+tau^3` as a
+generalized Fuchsian stop chart, attaches a chart chain, and keeps sample
+probes diagnostic-only. Exact parabolic branches use a zero remainder;
+nonzero-energy branches use the scalar Rouche/Cauchy majorant as the serialized
+generalized remainder and remain checker-gated by explicit residual/angular
+tolerances.
+The finite-target stop adapter can now consume this independent verifier
+evidence directly: a deliberately sample-blocked homothetic atlas remains
+obstructed without the verifier and certifies the maximal-classical stop once
+the serialized checker result is supplied.
+
+Latest checks after demoting supplied finite Fuchsian-log stop-chart samples to
+diagnostics and doing the same for generalized supplied-entry sample probes:
+
+```bash
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "fuchsian_log_stop_chart"
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "generalized_fuchsian"
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_closed_form.py -k "finite_target or fuchsian or regularized_locally_finite_atlas"
+python3 -m pytest -q tests/test_certificate_checker.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m pytest --collect-only -q tests/test_certificate_checker.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m compileall three_body_symmetry tests
+```
+
+```text
+finite-target py_compile passed
+8 focused finite Fuchsian-log stop-chart tests passed
+9 focused generalized Fuchsian tests passed
+all 29 finite-target-completeness tests passed
+1 focused closed-form finite-target/atlas audit test passed
+combined certificate-checker/finite-target/open-time/closed-form pass completed
+collect-only reported 55 certificate-checker, 29 finite-target, 27 open-time, and 47 closed-form tests
+compileall passed
+```
+
+`certify_supplied_finite_fuchsian_log_stop_chart_for_admissible_entry_data(...)`
+now requires the structural `q=tau^2 S(tau)`, `t=tau^3` projection identity
+and the independent checker's interval zero-angular-momentum obligation.
+User-provided sample taus and sampled projection/angular values remain only
+diagnostics, so this supplied-entry implication no longer certifies or rejects
+the theorem from sampled floating-point probes.
+The generalized supplied-entry path follows the same rule: constructor
+recurrence, finite-energy scale data, isolation, and independent interval
+stop-chart obligations now carry the proof, while sample probes remain
+diagnostic.
+
+Latest checks after replacing LC/KS sampled physical-time containment with
+checker-side exact-rational interval containment over the whole serialized
+parameter slab:
+
+```bash
+python3 -m py_compile three_body_symmetry/certificate_checker.py three_body_symmetry/certificate_language.py tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_certificate_checker.py -k "physical_time_containment or planar_lc_checker_certification_is_interval_not_sample_gated or spatial_ks_checker_certification_is_interval_not_sample_gated or unsampled_physical_time_excursion"
+python3 -m pytest -q tests/test_certificate_checker.py
+python3 -m py_compile three_body_symmetry/open_time_atlas.py
+python3 -m pytest -q tests/test_open_time_atlas.py -k "spatial_ks_target_chart or spatial_ordinary_ks or competing"
+python3 -m pytest -q tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_closed_form.py -k "regularized_locally_finite_atlas or open_time or search_refinement"
+python3 -m pytest -q tests/test_certificate_checker.py tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m pytest --collect-only -q tests/test_certificate_checker.py tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m compileall three_body_symmetry tests
+```
+
+```text
+certificate checker py_compile passed
+4 focused physical-time checker regressions passed
+all 55 certificate-checker regressions passed
+open-time py_compile passed
+4 focused KS/open-time verifier regressions passed
+all 27 open-time regressions passed
+3 closed-form/open-time audit regressions passed
+combined certificate-checker/open-time/closed-form pass completed
+collect-only reported 55 certificate-checker, 27 open-time, and 47 closed-form tests
+compileall passed
+```
+
+The LC and KS chart checkers no longer certify physical-time containment from
+sample points.  They subdivide the serialized parameter interval into rational
+subintervals of the binary-float endpoints and use exact-rational interval
+Horner evaluation of the physical-time polynomial; samples remain only a
+diagnostic detail.  The new regressions add endpoint-zero hidden physical-time
+bumps that would pass endpoint sampling but are rejected by
+`interval_physical_time_containment`.  The finite-atlas serializers now widen
+LC/KS chart metadata with the constructor/checker interval enclosure before
+attaching independent verifier evidence, so open-time KS target charts and
+planar hybrid chains remain verifier-clean without weakening the checker.
+
+Latest checks after sending a real constructor-produced spatial close-pair
+branch-union prefix through the open-time theorem and closed-form audit:
+
+```bash
+python3 -m py_compile three_body_symmetry/open_time_atlas.py tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_open_time_atlas.py -k "branch_union_leaf_chains or supplied_branch_union_checked_prefix"
+python3 -m pytest -q tests/test_closed_form.py -k "supplied_branch_union_checked_prefix or supplied_spatial_ordinary_ks_checked_prefix"
+python3 -m pytest -q tests/test_open_time_atlas.py tests/test_closed_form.py -k "branch_union or checked_prefix or regularized_locally_finite_atlas"
+python3 -m pytest -q tests/test_certificate_checker.py -k "spatial_ks or branch_union or chart_chain"
+python3 -m pytest -q tests/test_certificate_checker.py tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m pytest --collect-only -q tests/test_certificate_checker.py tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m compileall three_body_symmetry tests
+```
+
+```text
+branch-union open-time/audit py_compile passed
+2 focused open-time branch-union regressions passed
+2 focused closed-form supplied-prefix regressions passed
+9 open-time/closed-form branch-union and checked-prefix regressions passed
+12 spatial-KS/branch-union/chart-chain checker regressions passed
+all certificate-checker/open-time/closed-form regressions passed
+collect-only reported 50 certificate-checker, 23 open-time, and 45 closed-form tests
+compileall passed
+```
+
+The branch-union checked-prefix path now uses a real
+`validated_atlas_from_spatial_close_pair_branch_partition(...)` result rather
+than a synthetic reused member chain.  Its interval-seeded KS leaf charts are
+serialized for the independent checker by reconstructing a point representative
+KS recurrence from midpoint lifted data and recomputing pair energy from the KS
+constraint, so the checker verifies an internally consistent chart-chain
+representative before checking the aggregate `BranchUnionCertificate`.
+`construct_open_time_locally_finite_atlas_theorem(...)` can attach that
+supplied branch-union atlas and expose
+`independent_chart_verifier_certified=True`; the closed-form audit consumes the
+evidence and removes the `independent_chart_verifier` blocker.  This remains a
+one-sided supplied-prefix result: the two-sided compact-interval theorem,
+recursive arbitrary branch/event-order construction, arbitrary incoming
+total-collision entry, and proof-grade arithmetic backend remain open.
+
+Latest checks after serializing constructor-produced finite branch-union atlases
+through independently checked leaf chart chains:
+
+```bash
+python3 -m py_compile three_body_symmetry/certificate_checker.py three_body_symmetry/open_time_atlas.py three_body_symmetry/certificate_language.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_open_time_atlas.py -k "branch_union_leaf_chains or branch_union or checked_prefix or finite_planar_atlas or spatial_ks_target_chart or supplied_spatial_ordinary_ks"
+python3 -m pytest -q tests/test_certificate_checker.py -k "branch_union or chart_chain"
+python3 -m pytest -q tests/test_open_time_atlas.py tests/test_closed_form.py -k "branch_union or checked_prefix or regularized_locally_finite_atlas"
+python3 -m pytest -q tests/test_certificate_checker.py tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m pytest --collect-only -q tests/test_certificate_checker.py tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m compileall three_body_symmetry tests
+```
+
+```text
+branch-union checked-chain py_compile passed
+6 focused open-time branch-union/checked-prefix regressions passed
+6 branch-union/chart-chain checker regressions passed
+7 open-time/closed-form branch-union and checked-prefix regressions passed
+all certificate-checker/open-time/closed-form regressions passed
+collect-only reported 50 certificate-checker, 22 open-time, and 44 closed-form tests
+compileall passed
+```
+
+`construct_independent_validated_atlas_checked_chain(...)` now consumes a
+constructor-produced `ValidatedAtlasSolution` branch-union evaluation by
+recursively checking each member atlas as a finite chart chain, flattening the
+leaf chart, transition, event, nested branch-union, and chart-chain results,
+and then checking a `BranchUnionCertificate` whose leaf response ids are the
+checked leaf chains.  `check_branch_union(...)` now accepts checked leaf chart,
+chart-chain, or nested branch-union responses instead of only raw chart ids.
+The new regression builds a certified spatial close-pair partition, consumes
+proof-certified member atlases, serializes the resulting finite branch union,
+and verifies the branch-union aggregate through the independent checker.  This
+is a finite supplied-branch-union kernel step; it does not prove recursive
+arbitrary branch/event-order construction, arbitrary incoming total-collision
+entry, or the proof-grade arithmetic backend.
+
+Latest checks after requiring supplied-entry generalized Fuchsian stop charts
+to carry a constructor-derived projected Newton residual tail:
+
+```bash
+python3 -m py_compile three_body_symmetry/certificate_checker.py three_body_symmetry/finite_target_completeness.py tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_certificate_checker.py -k "generalized_fuchsian_stop_chart or generalized_fuchsian_stop_checker_certification_is_interval or corrupted_generalized_fuchsian_majorant or generalized_fuchsian_without_projected_tail"
+python3 -m pytest -q tests/test_certificate_checker.py -k "generalized_fuchsian or fuchsian_stop or endpoint or angular or center_of_mass"
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "generalized_fuchsian or total_collision or stop_chart"
+python3 -m pytest -q tests/test_open_time_atlas.py tests/test_closed_form.py -k "generalized_fuchsian or fuchsian or supplied_spatial_ordinary_ks or regularized_locally_finite_atlas"
+python3 -m pytest -q tests/test_certificate_checker.py tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m pytest --collect-only -q tests/test_certificate_checker.py tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m compileall three_body_symmetry tests
+```
+
+```text
+generalized Fuchsian checker py_compile passed
+4 focused generalized Fuchsian checker regressions passed
+11 generalized/Fuchsian/endpoint/invariant checker regressions passed
+16 finite-target generalized/total-collision/stop-chart regressions passed
+4 open-time/closed-form generalized and checked-prefix regressions passed
+all certificate-checker/open-time/closed-form regressions passed
+collect-only reported 50 certificate-checker, 21 open-time, and 44 closed-form tests
+compileall passed
+```
+
+`check_total_collision_generalized_fuchsian_stop_chart(...)` now treats
+sampled lifted residuals, sampled zero-angular checks, and sampled
+collapse-scaling checks as diagnostics rather than certification obligations.
+The generalized stop-chart gate now depends on constructor replay, recurrence,
+finite-energy scale row, punctured isolation, Banach remainder majorant,
+remainder tail bounds, required `lifted_residual` and `physical_residual`
+Cauchy components, interval lifted residual slabs, projected Newton residual
+control through the physical-residual Cauchy tail, interval zero-angular and
+center-of-mass/linear-momentum ledgers, endpoint-collapse envelope, and tail
+admissibility. The checker now rejects a generalized stop chart that omits the
+physical projected-residual tail. This does not claim a sharp direct
+generalized projected residual slab enclosure; the naive `tau^-4` interval
+projection is retained only as a diagnostic because it still has severe
+dependency blow-up. Remaining gaps are arbitrary-germ entry, deriving Banach
+constants from arbitrary germs, sharper direct projected-residual interval
+enclosures, and proof-grade arithmetic.
+
+Latest checks after making finite Fuchsian-log total-collision stop charts
+interval-gated rather than sample-gated:
+
+```bash
+python3 -m py_compile three_body_symmetry/certificate_checker.py tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_certificate_checker.py -k "fuchsian_stop or fuchsian_stop_checker_certification_is_interval or nonpunctured_total_collision or corrupted_fuchsian_stop or nonzero_interval_fuchsian or center_of_mass_drift or scale_energy"
+python3 -m pytest -q tests/test_certificate_checker.py -k "fuchsian or endpoint or angular or center_of_mass or energy"
+python3 -m pytest -q tests/test_certificate_checker.py tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m pytest --collect-only -q tests/test_certificate_checker.py tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m compileall three_body_symmetry tests
+```
+
+```text
+Fuchsian stop checker py_compile passed
+9 focused finite Fuchsian stop checker regressions passed
+10 Fuchsian/endpoint/invariant checker regressions passed
+all certificate-checker/open-time/closed-form regressions passed
+collect-only reported 48 certificate-checker, 21 open-time, and 44 closed-form tests
+compileall passed
+```
+
+`check_total_collision_fuchsian_stop_chart(...)` now treats sampled
+lifted/projected Newton residuals, sampled zero-angular checks, and sampled
+collapse-scaling checks as diagnostics rather than certification obligations.
+The finite Fuchsian-log stop-chart gate now depends on punctured isolation,
+cubic-time binding, primitive Cauchy inputs and tails, interval lifted and
+projected residual slabs, interval zero-angular/center-of-mass/linear-momentum
+ledgers, finite-energy scale matching, endpoint-collapse envelope, and stop
+tail admissibility. Sample-only stop charts are still rejected because the
+primitive Cauchy inputs and interval obligations remain mandatory. Generalized
+Fuchsian stop charts still retain their existing sampled lifted-residual
+obligations until the generalized projected/invariant interval enclosure path
+is complete.
+
+Latest checks after making the ordinary Taylor checker interval-gated rather
+than sample-gated:
+
+```bash
+python3 -m py_compile three_body_symmetry/certificate_checker.py tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_certificate_checker.py -k "ordinary_taylor or ordinary_checker_certification_is_interval or corrupted_taylor or nonunit_physical or excessive_ordinary"
+python3 -m pytest -q tests/test_certificate_checker.py -k "ordinary or chart_chain or branch_union or transition"
+python3 -m pytest -q tests/test_open_time_atlas.py tests/test_closed_form.py -k "constructor_checked_prefix or supplied_spatial_ordinary_ks_checked_prefix or finite_planar_atlas or spatial_ks_target_chart or regularized_locally_finite_atlas"
+python3 -m pytest -q tests/test_certificate_checker.py tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m pytest --collect-only -q tests/test_certificate_checker.py tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m compileall three_body_symmetry tests
+```
+
+```text
+ordinary Taylor checker py_compile passed
+5 focused ordinary Taylor checker regressions passed
+19 ordinary/chart-chain/branch-union/transition checker regressions passed
+6 checked-prefix/open-time/closed-form regressions passed
+all certificate-checker/open-time/closed-form regressions passed
+collect-only reported 47 certificate-checker, 21 open-time, and 44 closed-form tests
+compileall passed
+```
+
+`check_ordinary_taylor_chart(...)` now treats sampled Newton residuals as
+diagnostics rather than certification obligations. The trusted ordinary chart
+gate is now the coefficient recurrence, unit physical-time parameter check,
+exact rational interval evaluation of the serialized `q'-v` and `v'-a(q)`
+residual polynomials, interval Taylor-model residual bound, and tail
+admissibility. This completes the same sample-to-interval certification shift
+for the ordinary, planar LC, and spatial KS chart families used by the
+finite-target independent verifier. Fuchsian stop-chart paths still retain
+their sampled lifted/projected obligations where interval replacements are not
+yet complete.
+
+Latest checks after making the planar Levi-Civita checker interval-gated rather
+than sample-gated:
+
+```bash
+python3 -m py_compile three_body_symmetry/certificate_checker.py tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_certificate_checker.py -k "planar_lc_binary_chart or planar_lc_checker_certification_is_interval or wide_planar_lc or corrupted_planar_lc or excessive_planar_lc"
+python3 -m pytest -q tests/test_certificate_checker.py -k "planar_lc or lc_to_ordinary_transition or ordinary_to_lc_transition or spatial_ks"
+python3 -m pytest -q tests/test_open_time_atlas.py tests/test_closed_form.py -k "finite_planar_atlas or supplied_spatial_ordinary_ks_checked_prefix or spatial_ks_target_chart or regularized_locally_finite_atlas"
+python3 -m pytest -q tests/test_certificate_checker.py tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m pytest --collect-only -q tests/test_certificate_checker.py tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m compileall three_body_symmetry tests
+```
+
+```text
+planar LC checker py_compile passed
+5 focused planar LC checker regressions passed
+14 planar LC/spatial KS/transition checker regressions passed
+5 finite-planar/spatial checked-prefix regressions passed
+all certificate-checker/open-time/closed-form regressions passed
+collect-only reported 46 certificate-checker, 21 open-time, and 44 closed-form tests
+compileall passed
+```
+
+`check_planar_levi_civita_binary_chart(...)` now matches the spatial KS
+checker policy: sampled regularized RHS and sampled projected Newton residuals
+are diagnostics, not certification gates. Proof certification depends on the
+coefficient recurrence, pair-energy constraint, exact rational interval
+evaluation of the regularized LC residual polynomials, conservative interval
+projected-Newton residual slabs away from binary collision, and tail
+admissibility. This advances the trusted checker toward interval proof
+obligations for the planar binary branch used by the finite-target hybrid
+atlas.
+
+Latest checks after making the spatial KS chart checker interval-gated rather
+than sample-gated:
+
+```bash
+python3 -m py_compile three_body_symmetry/certificate_checker.py tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_certificate_checker.py -k "spatial_ks_binary_chart or spatial_ks_checker_certification_is_interval or spatial_ks_projected_punctured_slabs or corrupted_spatial_ks or excessive_spatial_ks"
+python3 -m pytest -q tests/test_certificate_checker.py -k "spatial_ks or lc_to_ordinary_transition or ordinary_to_lc_transition"
+python3 -m pytest -q tests/test_open_time_atlas.py tests/test_closed_form.py -k "spatial_ks_checked_prefix or supplied_spatial_ordinary_ks_checked_prefix or spatial_ks_target_chart or finite_planar_atlas"
+python3 -m pytest -q tests/test_certificate_checker.py tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m pytest --collect-only -q tests/test_certificate_checker.py tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m compileall three_body_symmetry tests
+```
+
+```text
+spatial KS checker py_compile passed
+5 focused spatial KS checker regressions passed
+9 spatial KS/transition checker regressions passed
+5 spatial KS open-time/closed-form checked-prefix regressions passed
+all certificate-checker/open-time/closed-form regressions passed
+collect-only reported 45 certificate-checker, 21 open-time, and 44 closed-form tests
+compileall passed
+```
+
+`check_spatial_ks_binary_chart(...)` no longer treats sampled KS RHS residuals
+or sampled projected Newton residuals as certification obligations. They remain
+diagnostic quantities in the result details, while proof certification now
+depends on the coefficient recurrence, horizontal/energy constraints, exact
+rational interval evaluation of the regularized KS residual polynomials,
+conservative interval projected-Newton residual slabs away from binary
+collision, and tail admissibility. This is a genuine checker hardening step
+toward the Pro instruction to move trusted chart verification from sampled
+floats to interval/ball proof obligations. Planar LC, ordinary, and Fuchsian
+paths still retain their existing sampled obligations where not yet replaced.
+
+Latest checks after wiring supplied spatial ordinary/KS/ordinary checked
+prefixes into the open-time theorem and closed-form audit path:
+
+```bash
+python3 -m py_compile three_body_symmetry/open_time_atlas.py tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_open_time_atlas.py tests/test_closed_form.py -k "supplied_spatial_ordinary_ks_checked_prefix or spatial_ordinary_ks_handoff_chain"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "supplied_spatial_ordinary_ks_checked_prefix or spatial_ordinary_ks_handoff_chain or spatial_ks_target_chart or finite_planar_atlas"
+python3 -m pytest -q tests/test_closed_form.py -k "supplied_spatial_ordinary_ks_checked_prefix or spatial_ks_checked_prefix or constructor_checked_prefix or regularized_locally_finite_atlas"
+python3 -m pytest -q tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_ks_binary_series.py -k "spatial_ordinary_ks_handoff_composes or rho_exit_event"
+python3 -m compileall three_body_symmetry tests
+```
+
+```text
+open-time/closed-form checked-prefix py_compile passed
+3 supplied spatial ordinary/KS checker and audit regressions passed
+4 open-time finite-atlas checker regressions passed
+4 closed-form checked-prefix/atlas audit regressions passed
+65 open-time and closed-form regressions passed
+4 spatial KS handoff/rho-exit regressions passed
+compileall passed
+```
+
+`construct_open_time_locally_finite_atlas_theorem(...)` now accepts
+`checked_prefix_strategy="supplied_validated_atlas"` with a
+`checked_prefix_validated_atlas`. The supplied atlas is re-adapted through
+`certify_finite_target_atlas_or_stop_from_validated_atlas(...)`, then serialized
+through `construct_independent_finite_target_checked_atlas(...)`, so the
+open-time certificate can carry `independent_chart_verifier_certified=True` for
+a supplied proof-certified spatial ordinary/KS/ordinary handoff chain. The
+closed-form audit consumes that verifier evidence and removes only the
+`independent_chart_verifier` blocker; it still reports the audited open-time
+proof, analytic lemma, and set-valued branch/event completeness blockers.
+Arbitrary multi-event spatial KS branch recursion, set-valued branch/event
+completeness, and interval ordinary/KS transition serialization for full branch
+recursion remain open.
+
+The underlying chain serializer still verifies supplied proof-certified
+spatial ordinary/KS/ordinary finite-target handoff chains by serializing
+constructor-derived point representative ordinary, KS, and ordinary charts plus
+spatial KS transition certificates. It also still accepts the supported
+one-chart case where the finite target is evaluated inside a proof-certified KS
+regularized chart.
+
+The finite-row budget consumes a certified supplied generalized entry
+certificate and bounds only finite rows already present in the branch. The
+`certify_supplied_generalized_fuchsian_analytic_remainder_majorant(...)`
+constructor then checks supplied Banach constants `D`, `B`, `L`, and `R` via
+`B L < 1` and `B D + B L R <= R`, deriving primitive Cauchy tail inputs for
+the named remainder components. The certificate now records the retained weight
+cutoff, first omitted weight, closed Cauchy polydisc scope, contraction slack,
+self-map margin, and the fact that these are pointwise supplied-entry constants
+rather than uniform interval-box constants.
+`certify_supplied_generalized_fuchsian_stop_chart_for_admissible_entry_data(...)`
+now consumes the supplied entry, finite-row budget, remainder majorant,
+serialized generalized stop chart, and independent checker result to certify
+the supplied-local maximal-classical stop chart obligations. The independent
+checker now includes adaptively subdivided interval lifted-residual slabs plus
+interval zero-angular and center-of-mass/linear-momentum ledgers.
+Deriving the Banach constants from arbitrary incoming total-collision germs,
+adding generalized projected Newton interval enclosures, and moving every
+trusted path to proof-grade arithmetic remain open.
+
+Latest checks after moving planar LC and spatial KS regularized
+residual-polynomial verification onto exact rational interval arithmetic:
+
+```bash
+python3 -m py_compile three_body_symmetry/certificate_checker.py tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_certificate_checker.py -k "planar_lc or spatial_ks_binary_chart"
+python3 -m pytest -q tests/test_intervals.py tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_open_time_atlas.py tests/test_closed_form.py -k "checked_prefix or independent_checker or regularized_locally_finite_atlas"
+python3 -m pytest -q tests/test_general_solution.py -k "event_order or branch_union or ordinary or ks"
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_intervals.py tests/test_certificate_checker.py tests/test_open_time_atlas.py tests/test_closed_form.py tests/test_general_solution.py
+python3 -m pytest --collect-only -q tests/test_general_solution.py -k "event_order or branch_union or ordinary or ks"
+```
+
+```text
+targeted LC/KS checker py_compile passed
+5 focused LC/KS binary-chart checker regressions passed
+48 interval/checker regressions passed
+3 open-time/closed-form checked-prefix regressions passed
+38 general-solution event-order/branch-union/ordinary/KS regressions passed
+full compileall passed
+collect-only reported 181 tests across the affected files
+focused collect-only reported 38 selected general-solution tests
+```
+
+Latest checks after moving ordinary Taylor residual-polynomial verification
+onto exact rational interval arithmetic:
+
+```bash
+python3 -m py_compile three_body_symmetry/certificate_checker.py tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_certificate_checker.py -k "ordinary_taylor or rational_interval or event_isolation"
+python3 -m pytest -q tests/test_intervals.py tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_open_time_atlas.py tests/test_closed_form.py -k "checked_prefix or independent_checker or regularized_locally_finite_atlas"
+python3 -m pytest -q tests/test_general_solution.py -k "event_order or branch_union or ordinary"
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_intervals.py tests/test_certificate_checker.py tests/test_open_time_atlas.py tests/test_closed_form.py tests/test_general_solution.py
+```
+
+```text
+targeted ordinary/checker py_compile passed
+3 focused ordinary/event-isolation checker regressions passed
+48 interval/checker regressions passed
+3 open-time/closed-form checked-prefix regressions passed
+15 general-solution event-order/branch-union/ordinary regressions passed
+full compileall passed
+collect-only reported 181 tests across the affected files
+```
+
+Latest checks after moving polynomial event-isolation verification onto exact
+rational interval arithmetic:
+
+```bash
+python3 -m py_compile three_body_symmetry/intervals.py three_body_symmetry/certificate_checker.py tests/test_intervals.py tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_intervals.py tests/test_certificate_checker.py -k "rational_interval or event_isolation"
+python3 -m pytest -q tests/test_intervals.py tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_general_solution.py -k "event_order or event_isolation or branch_union"
+python3 -m pytest -q tests/test_open_time_atlas.py tests/test_closed_form.py -k "independent_checker or checked_prefix or regularized_locally_finite_atlas or certificate_search"
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_intervals.py tests/test_certificate_checker.py tests/test_general_solution.py tests/test_open_time_atlas.py tests/test_closed_form.py
+```
+
+```text
+targeted rational/event-isolation py_compile passed
+3 focused rational/event-isolation regressions passed
+48 interval/checker regressions passed
+13 general-solution event-order/branch-union regressions passed
+3 open-time/closed-form checked-prefix regressions passed
+full compileall passed
+collect-only reported 181 tests across the affected files
+```
+
+Latest checks after adding constructor-derived recursive stratified
+branch/event-order consumption:
+
+```bash
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py three_body_symmetry/finite_target_completeness.py tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "recursive_stratified or stratified_tree_rejects or stratified_event_order_tree"
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_open_time_atlas.py tests/test_closed_form.py -k "branch_event or certificate_search or recursive_set_valued or event_order_partition or finite_target"
+python3 -m pytest -q tests/test_general_solution.py -k "event_order or branch_union or recursive_set_valued"
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "event_order or finite_target or recursive"
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py tests/test_closed_form.py tests/test_general_solution.py tests/test_general_solution_theorem.py
+```
+
+```text
+targeted recursive-stratified py_compile passed
+5 focused recursive/stratified regressions passed
+20 finite-target completeness regressions passed
+9 open-time/closed-form search-completeness regressions passed
+13 general-solution event-order/branch-union regressions passed
+2 general-solution-theorem event-order regressions passed
+full compileall passed
+collect-only reported 221 tests across the affected files
+```
+
+Latest checks after adding supported scale-branch finite-energy matching to
+finite Fuchsian-log total-collision stop charts:
+
+```bash
+python3 -m py_compile three_body_symmetry/certificate_checker.py tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_certificate_checker.py -k "fuchsian_stop or fuchsian or endpoint or angular or center_of_mass or energy"
+python3 -m pytest -q tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "fuchsian or total_collision or stop_chart"
+python3 -m pytest -q tests/test_open_time_atlas.py tests/test_closed_form.py tests/test_certificate_checker.py tests/test_finite_target_completeness.py
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_open_time_atlas.py tests/test_closed_form.py tests/test_certificate_checker.py tests/test_finite_target_completeness.py
+```
+
+```text
+targeted Fuchsian finite-energy py_compile passed
+7 focused Fuchsian stop-chart invariant/checker regressions passed
+40 independent certificate-checker regressions passed
+8 focused finite-target total-collision/Fuchsian regressions passed
+115 open-time/closed-form/certificate-checker/finite-target regressions passed
+full compileall passed
+collect-only reported 115 tests across the affected files
+```
+
+Latest checks after adding interval center-of-mass and total-linear-momentum
+obligations to finite Fuchsian-log total-collision stop charts:
+
+```bash
+python3 -m py_compile three_body_symmetry/certificate_checker.py tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_certificate_checker.py -k "fuchsian_stop or fuchsian or endpoint or angular or center_of_mass"
+python3 -m pytest -q tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "fuchsian or total_collision or stop_chart"
+python3 -m pytest -q tests/test_open_time_atlas.py tests/test_closed_form.py tests/test_certificate_checker.py tests/test_finite_target_completeness.py
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_open_time_atlas.py tests/test_closed_form.py tests/test_certificate_checker.py tests/test_finite_target_completeness.py
+```
+
+```text
+targeted Fuchsian COM/momentum py_compile passed
+6 focused Fuchsian stop-chart invariant/checker regressions passed
+39 independent certificate-checker regressions passed
+8 focused finite-target total-collision/Fuchsian regressions passed
+114 open-time/closed-form/certificate-checker/finite-target regressions passed
+full compileall passed
+collect-only reported 114 tests across the affected files
+```
+
+Latest checks after adding an interval zero-angular-momentum obligation to
+finite Fuchsian-log total-collision stop charts:
+
+```bash
+python3 -m py_compile three_body_symmetry/certificate_checker.py tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_certificate_checker.py -k "fuchsian_stop or fuchsian or endpoint or angular"
+python3 -m pytest -q tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "fuchsian or total_collision or stop_chart"
+python3 -m pytest -q tests/test_open_time_atlas.py tests/test_closed_form.py tests/test_certificate_checker.py tests/test_finite_target_completeness.py
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_open_time_atlas.py tests/test_closed_form.py tests/test_certificate_checker.py tests/test_finite_target_completeness.py
+```
+
+```text
+targeted Fuchsian zero-angular py_compile passed
+5 focused Fuchsian stop-chart invariant/checker regressions passed
+38 independent certificate-checker regressions passed
+8 focused finite-target total-collision/Fuchsian regressions passed
+113 open-time/closed-form/certificate-checker/finite-target regressions passed
+full compileall passed
+collect-only reported 113 tests across the affected files
+```
+
+Latest checks after adding an interval endpoint-collapse envelope obligation to
+finite Fuchsian-log total-collision stop charts:
+
+```bash
+python3 -m py_compile three_body_symmetry/certificate_checker.py tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_certificate_checker.py -k "fuchsian_stop or fuchsian or endpoint"
+python3 -m pytest -q tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "fuchsian or total_collision or stop_chart"
+python3 -m pytest -q tests/test_open_time_atlas.py tests/test_closed_form.py tests/test_certificate_checker.py tests/test_finite_target_completeness.py
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_open_time_atlas.py tests/test_closed_form.py tests/test_certificate_checker.py tests/test_finite_target_completeness.py
+```
+
+```text
+targeted Fuchsian endpoint-collapse py_compile passed
+4 focused Fuchsian stop-chart endpoint/checker regressions passed
+37 independent certificate-checker regressions passed
+8 focused finite-target total-collision/Fuchsian regressions passed
+112 open-time/closed-form/certificate-checker/finite-target regressions passed
+full compileall passed
+collect-only reported 112 tests across the affected files
+```
+
+Latest checks after adding a conservative interval projected-Newton residual
+obligation to finite Fuchsian-log total-collision stop charts on resolved
+punctured slabs:
+
+```bash
+python3 -m py_compile three_body_symmetry/certificate_checker.py tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_certificate_checker.py -k "fuchsian_stop or fuchsian"
+python3 -m pytest -q tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "fuchsian or total_collision or stop_chart"
+python3 -m pytest -q tests/test_open_time_atlas.py tests/test_closed_form.py tests/test_certificate_checker.py tests/test_finite_target_completeness.py
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_open_time_atlas.py tests/test_closed_form.py tests/test_certificate_checker.py tests/test_finite_target_completeness.py
+```
+
+```text
+targeted Fuchsian projected checker py_compile passed
+3 focused Fuchsian stop-chart checker regressions passed
+36 independent certificate-checker regressions passed
+8 focused finite-target total-collision/Fuchsian regressions passed
+111 open-time/closed-form/certificate-checker/finite-target regressions passed
+full compileall passed
+collect-only reported 111 tests across the affected files
+```
+
+Latest checks after adding a conservative interval lifted-equation residual
+obligation to finite Fuchsian-log total-collision stop charts on resolved
+punctured slabs:
+
+```bash
+python3 -m py_compile three_body_symmetry/certificate_checker.py tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_certificate_checker.py -k "fuchsian_stop or fuchsian"
+python3 -m pytest -q tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "fuchsian or total_collision or stop_chart"
+python3 -m pytest -q tests/test_open_time_atlas.py tests/test_closed_form.py tests/test_certificate_checker.py tests/test_finite_target_completeness.py
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_open_time_atlas.py tests/test_closed_form.py tests/test_certificate_checker.py tests/test_finite_target_completeness.py
+```
+
+```text
+targeted Fuchsian checker py_compile passed
+3 focused Fuchsian stop-chart checker regressions passed
+36 independent certificate-checker regressions passed
+8 focused finite-target total-collision/Fuchsian regressions passed
+111 open-time/closed-form/certificate-checker/finite-target regressions passed
+full compileall passed
+collect-only reported 111 tests across the affected files
+```
+
+Latest checks after adding a conservative interval projected-Newton residual
+obligation to the spatial KS checker on away-from-binary slabs:
+
+```bash
+python3 -m py_compile three_body_symmetry/certificate_checker.py tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_certificate_checker.py -k "spatial_ks_binary_chart or spatial_ks_projected or ks_tail or ordinary_to_ks or ks_to_ordinary"
+python3 -m pytest -q tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_open_time_atlas.py tests/test_closed_form.py tests/test_certificate_checker.py
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_open_time_atlas.py tests/test_closed_form.py tests/test_certificate_checker.py
+```
+
+```text
+targeted KS checker py_compile passed
+6 focused KS projected-interval/handoff checker regressions passed
+36 independent certificate-checker regressions passed
+95 open-time/closed-form/certificate-checker regressions passed
+full compileall passed
+collect-only reported 95 tests across the affected files
+```
+
+Latest checks after adding a conservative interval projected-Newton residual
+obligation to the planar Levi-Civita checker on away-from-binary slabs:
+
+```bash
+python3 -m py_compile three_body_symmetry/certificate_checker.py tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_certificate_checker.py -k "planar_lc_binary_chart or planar_lc_projected or lc_tail"
+python3 -m pytest -q tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_open_time_atlas.py tests/test_closed_form.py tests/test_certificate_checker.py
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_open_time_atlas.py tests/test_closed_form.py tests/test_certificate_checker.py
+```
+
+```text
+targeted checker py_compile passed
+3 focused LC projected-interval checker regressions passed
+35 independent certificate-checker regressions passed
+94 open-time/closed-form/certificate-checker regressions passed
+full compileall passed
+collect-only reported 94 tests across the affected files
+```
+
+Latest checks after adding the first constructor-backed checked-prefix pipeline
+for the open-time route: `checked_prefix_strategy="ordinary_taylor"` now builds
+a serialized ordinary Taylor chart plus chart-chain certificate, runs
+`verify_chart_certificates(...)`, and attaches the resulting independent
+verifier evidence without closing the set-valued or analytic proof blockers.
+
+```bash
+python3 -m py_compile three_body_symmetry/open_time_atlas.py three_body_symmetry/__init__.py tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_open_time_atlas.py -k "checked_prefix or independent_ordinary"
+python3 -m pytest -q tests/test_closed_form.py -k "constructor_checked_prefix or closed_form_audit_consumes_constructor"
+python3 -m pytest -q tests/test_open_time_atlas.py tests/test_closed_form.py -k "checked_prefix or independent_checker or closed_form_audit_consumes_open_time or finite_target_completeness or regularized_locally_finite_atlas"
+python3 -m pytest -q tests/test_open_time_atlas.py tests/test_closed_form.py tests/test_certificate_checker.py
+python3 -m compileall three_body_symmetry tests
+```
+
+```text
+targeted checked-prefix py_compile passed
+1 open-time checked-prefix regression passed
+1 closed-form checked-prefix audit regression passed
+4 focused open-time/closed-form checker-route regressions passed
+93 open-time/closed-form/certificate-checker regressions passed
+full compileall passed
+```
+
+Latest checks after splitting the finite-target proof surface into
+`pointwise_finite_target_atlas_or_stop_completeness` and the stronger
+`set_valued_constructor_branch_event_completeness` blocker, and after tiering
+finite-target analytic lemma audit records so Tier B total-collision entry
+lemmas surface first:
+
+```bash
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py three_body_symmetry/open_time_atlas.py three_body_symmetry/closed_form.py three_body_symmetry/__init__.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py tests/test_closed_form.py -k "finite_target_completeness or open_time or regularized_locally_finite_atlas"
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_certificate_checker.py tests/test_finite_target_completeness.py
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q
+```
+
+```text
+targeted finite-target/open-time/closed-form py_compile passed
+34 focused finite-target/open-time/closed-form proof-surface regressions passed
+73 finite-target/open-time/closed-form regressions passed
+50 certificate-checker/finite-target regressions passed
+full compileall passed
+collect-only reported 692 tests across 28 test files
+full pytest was started and manually stopped in a known slow path after early progress; no failure was observed before termination
+```
+
+Latest checks after making the total-stop checker recompute branch-derived
+primitive Cauchy majorants for finite Fuchsian-log charts, binding total-stop
+residual tails to value-level primitive Cauchy residual components, requiring
+primitive Cauchy evidence for finite Fuchsian-log total-stop charts, adding
+interval Taylor-model residual bounds for the regularized planar Levi-Civita
+and spatial KS equations, adding a primitive Cauchy residual-tail gate for
+Fuchsian stop charts, serialized finite chart-chain coverage, ordinary interval
+residuals, finite branch-union checking, stratified branch/event-order trees,
+cubic-time zero-angular entry, and serialized primitive Cauchy-tail total-stop
+checker hardening:
+
+```bash
+python3 -m compileall three_body_symmetry tests
+python3 -m py_compile three_body_symmetry/certificate_language.py three_body_symmetry/certificate_checker.py three_body_symmetry/__init__.py tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_open_time_atlas.py tests/test_closed_form.py -k "independent_checker or closed_form_audit_consumes_open_time or proof_certified or finite_target_completeness"
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py three_body_symmetry/branch_event_tree.py three_body_symmetry/finite_target_completeness.py three_body_symmetry/__init__.py tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_open_time_atlas.py tests/test_closed_form.py -k "event_order or branch_tree or finite_target_completeness or proof_certified or certificate_search"
+python3 -m pytest -q tests/test_ks_binary_series.py -k event_order_partition
+python3 -m pytest -q tests/test_general_solution.py -k "event_order_partition or branch_union"
+python3 -m py_compile three_body_symmetry/zero_angular_entry.py three_body_symmetry/__init__.py tests/test_zero_angular_entry.py
+python3 -m pytest -q tests/test_zero_angular_entry.py
+python3 -m pytest -q tests/test_obstructions.py -k "any_analytic_cubic_time_total_collision_branch_forces_second_shape or analytic_cubic_time_total_collision_branch_forces_cubic_jet_kernel_condition or finite_cubic_asymptotic_forces_cubic_jet_kernel_condition"
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "zero_angular or total_collision or selector"
+python3 -m py_compile three_body_symmetry/certificate_language.py three_body_symmetry/certificate_checker.py three_body_symmetry/finite_target_completeness.py tests/test_finite_target_completeness.py
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py three_body_symmetry/__init__.py tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m py_compile three_body_symmetry/certificate_language.py three_body_symmetry/certificate_checker.py three_body_symmetry/__init__.py tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_closed_form.py -k "analytic_lemma or closed_form_audit_consumes_open_time or declared_prose or independent_checker"
+python3 -m pytest -q tests/test_certificate_checker.py tests/test_open_time_atlas.py tests/test_finite_target_completeness.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_certificate_checker.py -k "fuchsian_stop or total_collision"
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "zero_angular or total_collision or fuchsian"
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_closed_form.py -k "analytic_lemma or closed_form_audit_consumes_open_time"
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_obstructions.py -k "fuchsian_log_branch_certifies_punctured_total_collision_isolation or fuchsian_log_total_collision_isolation_projects_to_compact_time_shell or fuchsian_log_branch_supplies_total_collision_primitive_cauchy_inputs"
+python3 -m pytest -q tests/test_open_time_atlas.py tests/test_finite_target_completeness.py tests/test_closed_form.py -k "proof_certified or open_time or regularized_locally_finite_atlas or declared or finite_target_completeness"
+python3 -m pytest -q tests/test_certificate_checker.py tests/test_ks_binary_series.py tests/test_ks_binary_chart.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py tests/test_closed_form.py
+```
+
+```text
+full compileall passed
+targeted LC interval-residual / chart-chain / ordinary interval-residual / branch-union checker py_compile passed
+34 independent certificate-checker regressions passed
+2 focused open-time/closed-form independent-checker regressions passed
+targeted stratified/branch-event tree py_compile passed
+16 finite-target completeness regressions passed
+1 focused open-time/closed-form branch-event/search proof regression passed
+2 KS event-order partition regressions passed
+11 general-solution event-order/branch-union regressions passed
+targeted zero-angular entry py_compile passed
+3 zero-angular entry regressions passed
+3 cubic-time obstruction regressions passed
+40 zero-angular/total-collision/selector theorem-assembler regressions passed
+targeted primitive-Cauchy stop-chart py_compile passed
+targeted finite-target supplied-entry py_compile passed
+16 finite-target completeness regressions passed
+targeted certificate-language/checker py_compile passed
+24 independent certificate-checker regressions passed
+16 open-time atlas regressions passed
+1 focused closed-form proof-audit regression passed
+92 affected certificate-checker/finite-target/open-time/closed-form regressions passed
+5 finite Fuchsian-log total-stop checker regressions passed
+38 zero-angular/Fuchsian/total-collision theorem-assembler regressions passed
+2 analytic-lemma/open-time audit regressions passed
+51 finite-target/closed-form audit regressions passed
+3 Fuchsian-log total-collision constructor regressions passed
+24 focused proof-semantics/open-time/closed-form regressions passed
+187 affected certificate-checker/KS/binary/finite-target/open-time/closed-form regressions passed
+```
+
+`three_body_symmetry/branch_event_tree.py` now gives supplied finite
+branch/event-order partitions a theorem-facing certificate shape.  The new
+`certify_supplied_branch_event_tree(...)` constructor normalizes simultaneous
+close-pair branch partitions, KS event-order leaf partitions, and ambiguous
+first-event alternatives into `BranchEventTreeCertificate` leaves with explicit
+cover, decision, pending-leaf, and equality-stratum obligations.  Finite-target
+branch consumption now normalizes through that certificate before applying the
+finite-union gluing theorem.  Ambiguous equality/tie leaves remain visible and
+uncertified until supplied with proof-certified atlas-or-stop responses, and the
+certificate continues to record that arbitrary recursive branch/event-order
+termination is a separate theorem.
+
+`three_body_symmetry/stratified_branch_tree.py` now adds the named
+zero-margin/equality-stratum layer requested by the latest steering.  A supplied
+finite branch/event-order tree can now be refined into
+`StratifiedBranchTreeCertificate` leaves labeled as positive-margin unique
+events, no-event-before-target leaves, separated-binary entries, simultaneous
+event equality/tie strata, total-collision clusters, selector-policy leaves, or
+unsupported analytic strata.  `certify_finite_target_certificate_search_completeness(...)`
+accepts optional stratified branch and event-order trees and surfaces their
+leaf kinds, unsupported leaves, terminal-response gaps, and missing recursive
+exhaustion in the relevant theorem-obligation detail.  A supplied stratified
+tree does not close `recursive_set_valued_branch_partition_consumption` or
+`event_order_partition_consumption_theorem` unless it also carries a separate
+recursive-exhaustion certificate, so this narrows the blocker without claiming
+the missing arbitrary branch theorem.
+
+`three_body_symmetry/certificate_language.py` and
+`three_body_symmetry/certificate_checker.py` now include a serialized finite
+branch-union verifier slice.  `BranchUnionCertificate` records the branch-union
+id, union type, independently checked leaf-response certificate ids, per-leaf
+target intervals, optional leaf kinds, and the aggregate target interval.
+`check_branch_union(...)` rejects unsupported union grammar, missing or
+duplicated leaves, unchecked leaf responses, interval-count mismatches,
+nonfinite intervals, and aggregate target intervals that fail to contain every
+leaf target.  `verify_chart_certificates(...)` now aggregates branch-union
+checks with chart, transition, and event checks in `IndependentChartVerifierCertificate`.
+This moves finite branch-union containment into the independent checker kernel;
+it is still a finite supplied-union verifier, not the arbitrary recursive
+branch/event-order construction theorem.
+
+The ordinary Taylor checker now has its first domain-wide interval residual
+obligation.  `check_ordinary_taylor_chart(...)` interval-evaluates the
+serialized Taylor-model residual polynomials for `dq/dt-v` and `dv/dt-a(q)`
+across the full parameter interval, adds the serialized tail budget, and
+requires that bound to fit under the residual tolerance through the
+`interval_taylor_model_newton_residual` obligation.  This is not yet the final
+exact nonlinear interval enclosure for all chart families, but it removes the
+ordinary chart's dependence on sampled residuals alone and rejects excessive
+Taylor-model tail budgets.
+
+`ChartChainCertificate` now serializes finite chart-chain coverage for the
+independent checker.  `check_chart_chain(...)` requires a supported chain type,
+present and unique chart ids, the expected number of transitions, independently
+checked chart and transition certificates, transition adjacency matching the
+declared chart order, finite chart and target physical-time intervals, no gaps
+between consecutive chart intervals, and containment of the requested target
+interval in the covered chain span.  `verify_chart_certificates(...)` aggregates
+these checks with the existing chart, transition, event, and branch-union
+results, so finite atlas coverage can now be checked as a connected chain
+rather than as unrelated local certificates.
+
+The planar Levi-Civita binary checker now has a domain-wide Taylor-model
+residual obligation for the regularized LC equations.  `check_planar_levi_civita_binary_chart(...)`
+computes coefficient residual polynomials for `z`, `z'`, pair energy, binary
+center, third-body offset, and regularized physical time against the serialized
+regularized RHS, interval-evaluates those polynomials over the full chart
+parameter interval, adds the serialized tail budget, and requires the result to
+fit under `regularized_residual_tolerance` through
+`interval_planar_lc_regularized_rhs_residual`.  This strengthens LC chart
+verification beyond sampled regularized RHS residuals while leaving exact
+projected Newton interval enclosures for a later arithmetic-backend step.
+
+The spatial KS binary checker now has the analogous domain-wide Taylor-model
+residual obligation for the regularized KS equations.  `check_spatial_ks_binary_chart(...)`
+computes coefficient residual polynomials for `u`, `u'`, pair energy, binary
+center, third-body offset, and regularized physical time against the serialized
+KS regularized RHS, interval-evaluates them over the full chart parameter
+interval, adds the serialized tail budget, and requires the result to fit under
+`regularized_residual_tolerance` through
+`interval_spatial_ks_regularized_rhs_residual`.  This strengthens KS chart
+verification beyond sampled regularized RHS residuals while still leaving exact
+projected Newton interval enclosures for the later arithmetic-backend step.
+
+`three_body_symmetry/zero_angular_entry.py` now contains constructor-backed
+necessary entry checks for cubic-time zero-angular total-collision germs.  The
+new `certify_cubic_time_total_collision_leading_jet(...)` verifies that a
+supplied leading row `q=tau^2 C+O(tau^3)`, `t=tau^3`, has positive masses,
+centered collision-free shape, and satisfies the forced coefficient equation
+`A(C)=-(2/9)C`.  The new
+`certify_cubic_time_total_collision_cubic_jet_kernel(...)` verifies the next
+row condition for `q=tau^2 C+tau^3 D+O(tau^4)`: after the leading equation is
+certified, the cubic row must satisfy `DA(C)D=0`.  It also rejects stale leading
+certificates whose masses or leading shape do not match the supplied data.  This
+is real progress on the arbitrary-entry side of the total-collision theorem, but
+it remains a necessary finite-jet filter only; it does not derive finite
+Fuchsian-log entry data, a selector convention, or a total-collision
+continuation.
+
+`three_body_symmetry/certificate_language.py` and
+`three_body_symmetry/certificate_checker.py` now include the first independent
+total-collision stop-chart checker slice.  `TotalCollisionFuchsianStopChartCertificate`
+serializes finite Fuchsian-log branch data, local punctured-isolation fields,
+cubic physical-time data, residual tolerances, angular-momentum tolerance, and
+tail metadata.  It now requires the primitive Cauchy inputs behind that tail
+budget, including per-component majorant data, retained-order schedules,
+first-shell tail bounds, and shell ratios; sample-only Fuchsian stop charts are
+rejected.  `check_total_collision_fuchsian_stop_chart(...)` reconstructs
+the `FiniteFuchsianLogBranch`, recomputes the local isolation certificate from
+the serialized terms, checks that the punctured tau interval straddles the
+collapsed event, verifies `t=t0+tau^3`, and samples lifted/projected Newton
+residuals, zero-angular consistency, and `q=tau^2 S(tau)` collapse scaling.
+For the required primitive Cauchy inputs, the checker recomputes each
+component's first-shell tail and shell ratio from the serialized primitive
+numbers, independently recomputes the branch-derived primitive majorant and
+growth for each declared component, checks the Cauchy shell is inside the
+punctured isolation radius, requires the stop-chart tail bound to cover those
+recomputed primitive tails, requires the lifted/physical residual component
+tails to be value-level non-shrinking residual envelopes, and requires those
+tails to fit the chart residual tolerance.
+The finite-target regression also round-trips this nested stop-chart certificate
+through `to_dict()`/`from_dict()` before rechecking it.
+This is still a supplied-chart verifier slice, not the arbitrary incoming
+total-collision germ theorem.
+
+`three_body_symmetry/finite_target_completeness.py` now also exposes
+`certify_supplied_finite_fuchsian_log_stop_chart_for_admissible_entry_data(...)`.
+That constructor consumes a supplied `FiniteFuchsianLogBranch`, a recomputed
+punctured total-collision isolation certificate, primitive Cauchy inputs, an
+optional compact-time isolation wrapper, and the independent serialized
+stop-chart checker.  It verifies punctured samples, sampled projection identity
+residuals, zero-angular consistency, Cauchy-shell containment inside the
+isolation radius, primitive Cauchy first-shell tail coverage in the serialized
+checker, lifted/physical primitive residual tails below the chart residual
+tolerance, and maximal-classical stop policy metadata.  The certificate
+sets `arbitrary_total_collision_entry_not_claimed`, so the arbitrary incoming
+total-collision germ theorem remains a visible unaudited blocker.
+
+`three_body_symmetry/finite_target_completeness.py` now exposes an
+`AnalyticLemmaRegistry` made of `AnalyticLemmaAuditRecord` rows.  The registry
+keeps scaffold certification separate from proof-grade audit status: each
+finite-target analytic lemma records its hypotheses, normalization translation,
+checker inputs, and failure modes, and every `declared_prose` lemma appears in
+`unaudited_analytic_lemma_ids`.  The closed-form audit now consumes those ids as
+final proof blockers through `analytic_lemma_audit_blockers`, so total-collision
+lemmas such as `binary_degenerate_total_collision_exclusion`,
+`reduced_hyperbolic_total_collision_entry`,
+`poincare_dulac_fuchsian_log_selector_completeness`,
+`arbitrary_total_collision_germ_finite_generalized_fuchsian_entry_data`,
+`arbitrary_total_collision_germ_entry_to_stop_chart`, and
+`total_collision_stop_chart_existence` no longer disappear just because the
+finite-target scaffold is internally assembled.
+
+Proof-grade theorem semantics are now conservative at the open-time layer.
+Declared prose `AnalyticTheoremCertificate` instances remain scaffold-certified
+but no longer report `proof_certified`; `FiniteTargetAtlasOrStopCertificate`,
+`TotalCollisionStopCertificate`, compact-interval certificates, exhaustion
+certificates, open-time theorem certificates, and the pointwise open-time theorem
+now route proof-grade status only through proof-grade dependencies and no longer
+dereference nonexistent dataclass fields.  A regression directly accesses these
+properties and verifies that a scaffold-certified finite-target theorem does
+not make the pointwise open-time theorem proof-certified.
+
+`three_body_symmetry/certificate_language.py` and
+`three_body_symmetry/certificate_checker.py` now provide the first independent
+verifier slices for the regularized-atlas route.  An
+`OrdinaryTaylorChartCertificate` serializes explicit ordinary Taylor chart
+coefficients, and `check_ordinary_taylor_chart(...)` rechecks chart grammar,
+positive masses, initial noncollision, the Taylor coefficient recurrence,
+unit physical-time parameter speed, sampled projected Newton residuals on the
+chart parameter interval, and tail-bound admissibility without trusting the
+constructor object.  `PlanarLeviCivitaBinaryChartCertificate` now serializes a
+planar separated-third-body LC binary chart, and
+`check_planar_levi_civita_binary_chart(...)` rechecks its regularized
+coefficient recurrence, pair-energy constraint, sampled regularized RHS
+residual, physical-time containment, and sampled projected Newton residual away
+from the binary collision.  `SpatialKSBinaryChartCertificate` is the spatial analogue: it serializes a KS
+binary chart and `check_spatial_ks_binary_chart(...)` rechecks the KS
+coefficient recurrence, pair-energy and horizontal-gauge constraints, sampled
+regularized RHS residual, physical-time containment, and sampled projected
+spatial Newton residual away from collision.  `OrdinaryChartTransitionCertificate`
+now serializes ordinary-to-ordinary handoffs,
+`PlanarLeviCivitaTransitionCertificate` serializes ordinary-to-LC and
+LC-to-ordinary handoffs, and `SpatialKSTransitionCertificate` serializes
+ordinary-to-KS and KS-to-ordinary spatial handoffs with explicit source/target
+parameter values.  The transition checkers verify supported handoff grammar,
+physical-time matching, parameter-domain membership, and source/target
+projected position and velocity continuity within explicit tolerances.
+`TotalCollisionFuchsianStopChartCertificate` now serializes finite Fuchsian-log
+punctured total-stop chart data, and
+`check_total_collision_fuchsian_stop_chart(...)` independently rechecks local
+isolation, cubic-time matching, sampled lifted/projected Newton residuals,
+zero-angular consistency, and collapse scaling for the supplied chart.
+`EventIsolationCertificate` serializes scalar polynomial KS entry/rho-exit
+event data, and `check_event_isolation(...)` recomputes endpoint signs,
+derivative sign on the root interval, and no-earlier-root sign coverage from
+coefficient intervals rather than trusting constructor-local event booleans.
+`verify_chart_certificates(...)` aggregates those chart, transition, and event checks into an
+`IndependentChartVerifierCertificate`, and
+`attach_independent_chart_verifier(...)` lets the closed-form audit consume
+that evidence on an open-time theorem certificate.  The audit test now proves
+that certified independent verifier evidence removes the `independent_chart_verifier`
+blocker while still leaving the proof incomplete on the audited/machine-checked
+open-time proof and the remaining finite-target branch/event obligations.
+The remaining verifier surface is branch-union, full event-isolation grammar,
+arbitrary Fuchsian-log entry/recurrent row certification, and a proof-grade
+arithmetic backend; ordinary/LC, ordinary/KS mixed handoffs, KS polynomial
+entry/rho-exit event-isolation, and supplied finite Fuchsian-log total-stop
+slices now have deterministic serialized checks.
+
+`regularized_locally_finite_atlas` is now a first-class closed-form class with
+aliases such as `regularized_atlas`, `certified_atlas_closed_form`,
+`open_time_atlas_series`, and `piecewise_analytic_regularized_atlas`.  The
+closed-form audit no longer forces the open-time theorem through the
+`sundman_global_series` route: the regularized atlas route has its own
+requirement, `regularized_locally_finite_atlas`, and blocks on
+`open_time_locally_finite_atlas_proof`,
+`finite_target_atlas_or_stop_completeness`,
+`audited_or_machine_checked_open_time_atlas_proof`, and
+`independent_chart_verifier` until those are genuinely supplied.
+
+`FiniteTargetCompletenessTheoremCertificate.certified` now means scaffold-level
+statement consistency, not proof-grade closure.  The proof-grade flag is
+`proof_certified`, and it requires the analytic lemmas to be externally audited
+or machine-checkable.  The search certificate follows the same distinction:
+it can be search/scaffold-certified while still not proof-certified when the
+pointwise analytic lemmas remain declared prose.  The total-collision proof
+targets are now written down in `docs/total-collision-fuchsian-entry-data.md`
+and `docs/total-collision-stop-chart-existence.md`.
+
+`fair_adaptive_chart_search` is no longer a missing obligation for computable
+point inputs.  The search theorem now uses a dovetail argument: enumerate
+finite chart candidates by chart count, ordinary/LC/KS/total-stop family word,
+rational time-domain boxes, rational truncation orders, retained-tail budgets,
+pair labels, and stop data, then run constructor verifiers fairly over that
+enumeration.  Since the pointwise finite-target theorem proves that at least
+one finite certificate exists, the fair enumeration eventually tests it; this
+also closes `certificate_search_completeness_for_point_inputs`.  This does not
+solve interval set propagation: `recursive_set_valued_branch_partition_consumption`
+and `event_order_partition_consumption_theorem` remain the active
+constructor/search blockers.  The open-time reduction now records the exact
+point-search obligation as `point_input_finite_target_certificate_search`,
+which is certified; it no longer surfaces a generic
+`finite_target_certificate_search_completeness` blocker after the only
+remaining failures are set-valued branch/event-order consumption.
+
+The older endpoint-regime assembler is now explicitly labeled as optional
+compression evidence through `theorem_role="optional_endpoint_compression_theorem"`;
+the unrestricted path in the audit remains the finite-target/open-time route.
+
+`certify_pointwise_open_time_locally_finite_atlas_theorem(...)` now records the
+exact-input compact-exhaustion theorem: the pointwise finite-target
+atlas-or-stop theorem applied on each `K_n=[-nR,nR]` gives a countable locally
+finite atlas-or-stop family without endpoint-regime classification.  This
+does not claim plain interval-box completeness.  Separately,
+`classify_finite_time_regime(...)` now mirrors successful local branch/event
+consumption from the selected atlas proof ledger, so route-level evidence such
+as `finite_time_branch_union_consumption` and
+`finite_time_event_order_branch_union_consumption` is visible in the classifier
+when it actually occurred.
+
+`certify_finite_supplied_branch_tree_consumption(...)` now records the finite
+set-valued gluing theorem used by the local branch-union constructors: once a
+finite certified branch/event-order tree covers the parent set and each leaf has
+a proof-certified atlas-or-stop response, the finite union/hull of those leaves
+inherits the residual, invariant, projection, tail, and collision-policy
+ledgers.  This closes the supplied finite-tree step, but not the remaining
+termination theorem for arbitrary recursive branch/event-order refinement.
+
+`certify_uniform_margin_branch_refinement_termination(...)` now closes the
+recursive refinement theorem under explicit positive margin hypotheses: if the
+branch or event-order decision functions have uniform margin `eta>0` and
+Lipschitz bound `L`, bisection reaches width `eta/L` after a finite depth, so
+every leaf has a stable decision and becomes a finite supplied tree.  The search
+certificate can now certify the recursive branch and event-order obligations
+when those margin certificates are supplied.  Zero-margin boundary strata remain
+open and must still become stop/selector/equality-stratum leaves.
+
+Latest checks after eliminating finite loop budgets as a mathematical blocker:
+
+```bash
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py tests/test_closed_form.py -k "finite_target_completeness or open_time"
+```
+
+```text
+full compileall passed
+17 focused finite-target/open-time completeness regressions passed
+```
+
+`finite_time_loop_budget_elimination` is no longer a missing theorem
+obligation in the search certificate.  Once the pointwise finite-target theorem
+proves that every exact finite target has a finite ordinary/binary/total-stop
+chart chain, an engineering repeat budget is not a mathematical terminal
+obstruction: a fair recursive search can keep increasing loop depth until that
+finite certificate is found or a branch split is required.  The open-time and
+closed-form audit regressions now keep the real constructor/search blockers:
+`fair_adaptive_chart_search`, `recursive_set_valued_branch_partition_consumption`,
+`event_order_partition_consumption_theorem`, and
+`certificate_search_completeness_for_point_inputs`.
+
+Latest checks after promoting the arbitrary-germ total-collision entry theorem
+into the pointwise finite-target scaffold:
+
+```bash
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py tests/test_closed_form.py -k "finite_target_completeness or open_time"
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py tests/test_closed_form.py
+```
+
+```text
+full compileall passed
+17 focused finite-target/open-time completeness regressions passed
+56 affected finite-target/open-time/closed-form regressions passed
+```
+
+`total_collision_stop_chart_existence` is now closed at the pointwise theorem
+scaffold level.  The finite-target theorem records the full prose/math bridge:
+finite-energy total collision forces zero centered angular momentum by the
+Sundman inequality, selected limiting shapes are central configurations, cubic
+time gives the `q=tau^2(C+o(1))` entry scale, binary-degenerate normalized
+collapse is excluded by the Jacobi perturbed-Kepler contradiction, positive-mass
+three-body central targets are reduced-hyperbolic after quotienting rotations,
+and Poincare-Dulac stable normal form supplies finite Fuchsian/Fuchsian-log
+selector data.  That data feeds the punctured-isolated finite Fuchsian-log stop
+chart, so `arbitrary_total_collision_germ_entry_to_stop_chart` no longer blocks
+the pointwise theorem.  The open-time and closed-form audit regressions verify
+that the remaining blockers are implementation/search completeness obligations:
+fair adaptive chart search, recursive branch consumption, event-order partition
+consumption, finite KS-loop budget elimination, and the separate
+`set_valued_constructor_branch_event_completeness` constructor theorem.  The
+exact-input theorem itself is now named
+`pointwise_finite_target_atlas_or_stop_completeness`.
+
+Latest checks after adding the homothetic total-collision stop-chart subcase to
+the pointwise finite-target theorem scaffold:
+
+```bash
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py tests/test_closed_form.py -k "finite_target_completeness or open_time"
+```
+
+```text
+full compileall passed
+17 focused finite-target/open-time completeness regressions passed
+```
+
+`homothetic_total_collision_stop_chart_existence` is now a certified subcase of
+the total-stop theorem: for central configurations the branch
+`q=tau^2 u(tau^2)Q`, `t=T+tau^3` is controlled by the scalar
+Rouche/Cauchy majorant already used by the homothetic validated-atlas
+constructors, and the projected chart supplies Newton residual, invariant, tail,
+and stop/selector collision-policy evidence.  The arbitrary theorem still does
+not close: `total_collision_stop_chart_existence` remains blocked on
+`arbitrary_total_collision_germ_entry_to_stop_chart`, i.e. proving every first
+total-collision germ enters a finite Fuchsian/Fuchsian-log or equivalent
+regularized stop chart.
+
+Latest checks after certifying the conditional target-or-stop dichotomy inside
+the pointwise finite-target theorem scaffold:
+
+```bash
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py tests/test_closed_form.py -k "finite_target_completeness or open_time"
+```
+
+```text
+full compileall passed
+17 focused finite-target/open-time completeness regressions passed
+```
+
+`target_or_stop_dichotomy` is no longer a raw missing blocker.  The theorem
+object now proves the conditional dichotomy in prose/math form: a maximal
+binary-regularized branch that fails before a finite target has a finite
+obstruction; Painleve rules out a noncollision singularity, LC/KS regularization
+rules out separated-binary maximality, and separated-binary accumulation forces
+total collision.  Therefore the unresolved pointwise theorem blocker is now
+the general `total_collision_stop_chart_existence` theorem.  Implementation
+search completeness remains separately blocked on fair adaptive search,
+recursive branch/event-order consumption, and finite KS-loop budget elimination.
+
+Latest checks after certifying the finite chart-chain concatenation sublemma
+inside the pointwise finite-target theorem scaffold:
+
+```bash
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py tests/test_closed_form.py -k "finite_target_completeness or open_time"
+```
+
+```text
+full compileall passed
+17 focused finite-target/open-time completeness regressions passed
+```
+
+`finite_chart_chain_concatenation` is no longer a raw missing blocker.  It is
+now certified by the compactness/gluing argument in
+`FiniteTargetCompletenessTheoremCertificate`: separated-binary chart
+neighborhoods are finite away from total collision, the collision-free
+complement has a finite ordinary Taylor subcover, and adjacent chart domains
+are ordered and glued through overlap/containment transition certificates.  The
+argument is conditional on the separate total-stop chart theorem, so the
+pointwise finite-target theorem still remains blocked on
+`total_collision_stop_chart_existence` and `target_or_stop_dichotomy`; the
+implementation search theorem still remains blocked on recursive branch/event
+order consumption and finite KS-loop budget elimination.
+
+Latest checks after adding the finite-target completeness theorem scaffold and
+the default spatial-KS competing-event budget retry:
+
+```bash
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py tests/test_closed_form.py -k "finite_target_completeness or open_time"
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_general_solution.py -k "spatial_ks_competing_budget or close_pair_branch_union_uses_default_budget_retry or explicit_ordinary_ks_repeats or blocks_second_competing"
+python3 - <<'PY'
+import three_body_symmetry as tbs
+print(tbs.FiniteTargetCompletenessTheoremCertificate.__name__)
+print(tbs.certify_finite_target_completeness_theorem.__name__)
+print(tbs.certify_finite_target_certificate_search_completeness.__name__)
+PY
+python3 -m pytest --collect-only -q
+```
+
+```text
+full compileall passed
+17 focused finite-target/open-time completeness regressions passed
+56 finite-target/open-time/closed-form regressions passed
+6 spatial-KS competing-budget / handoff regressions passed
+import smoke check printed FiniteTargetCompletenessTheoremCertificate, certify_finite_target_completeness_theorem, and certify_finite_target_certificate_search_completeness
+collect-only reported 698 tests across 26 test files
+```
+
+`three_body_symmetry/finite_target_completeness.py` now states the point-input
+finite-target atlas-or-stop theorem separately from the implementation search
+theorem.  The pointwise theorem names the required ordinary/LC/KS/total-stop
+chart families and exposes the new mathematical gaps:
+`total_collision_stop_chart_existence`, `finite_chart_chain_concatenation`, and
+`target_or_stop_dichotomy`.  The search certificate separately records the
+implementation gaps: fair adaptive chart search, recursive set-valued branch
+partition consumption, event-order partition consumption, finite KS-loop budget
+elimination, and `certificate_search_completeness_for_point_inputs`.
+`open_time_atlas.py` now consumes this object through
+`FiniteTargetCompletenessReductionCertificate`, so the open-time theorem is
+blocked on the finite-target theorem/search obligations rather than endpoint
+regime exhaustion.
+
+The public finite-time selector now treats `spatial_binary_max_competing_events`
+as an explicit strict budget only when the caller supplies it.  The default
+path tries a finite constructor-derived schedule `(3, 7)` and retries only when
+the prior failure was exactly `finite_time_atlas_loop_repeat_budget`; event-order
+splits, branch-union failures, and collision-policy blockers are not retried
+away.  This removes one engineering-budget failure mode from the default
+finite-time atlas without claiming the arbitrary-input loop-termination theorem.
+
+Latest checks after renaming the certified KS event-order partition blocker to
+match the existing branch-union constructor path:
+
+```bash
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py -k "event_order or loop_progress_attachment or ordinary_entry_spatial_ks_loop"
+python3 -m pytest -q tests/test_open_time_atlas.py tests/test_closed_form.py -k "open_time or finite_target_completeness"
+python3 -m pytest -q tests/test_general_solution.py -k "finite_time_regime_classifier or branch_union or event_order or loop"
+python3 -m pytest --collect-only -q
+```
+
+```text
+full compileall passed
+7 focused KS event-order / branch-union regressions passed
+15 open-time/closed-form finite-target completeness regressions passed
+19 finite-time classifier / branch-union / event-order / loop regressions passed
+collect-only reported 692 tests across 25 test files
+```
+
+Certified KS event-order partitions now surface
+`finite_time_event_order_partition_requires_branch_union_constructor` instead
+of the stale `finite_time_event_order_partition_consumption_not_implemented`.
+This matches the current implementation: the public finite-time selector can
+already try `validated_atlas_from_spatial_ks_event_order_partition(...)` and
+compose it behind prior KS prefix steps.  The remaining theorem obligation is
+not absence of a constructor, but recursive proof-grade event-order coverage
+for arbitrary inputs.
+
+Latest checks after tightening the open-time theorem certificate flag so a
+checked compact prefix is not reported as the completed arbitrary theorem:
+
+```bash
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest -q tests/test_open_time_atlas.py tests/test_closed_form.py -k "open_time or finite_target_completeness or constructor_theorem_without_overclaiming"
+python3 -m pytest -q tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_general_solution.py -k "finite_time_regime_classifier or branch_union or event_order or loop"
+python3 -m pytest --collect-only -q
+```
+
+```text
+full compileall passed
+16 focused open-time/closed-form completeness regressions passed
+54 open-time/closed-form regressions passed
+19 finite-time classifier / branch-union / event-order / loop regressions passed
+collect-only reported 692 tests across 25 test files
+```
+
+`OpenTimeLocallyFiniteAtlasTheoremCertificate.certified` now requires
+`arbitrary_finite_target_completeness_certified`, so a pointwise compact-prefix
+construction no longer looks like the completed open-time theorem.  The prior
+state is still available as `checked_prefix_certified`; `missing_obligations`
+now includes the finite-target completeness reduction blockers.  The
+closed-form audit uses `checked_prefix_certified` only to recognize the route,
+then keeps the arbitrary theorem blocked on the decomposed finite-target
+completeness obligations.
+
+Latest checks after decomposing the open-time theorem's arbitrary finite-target
+completeness blocker into constructor-visible subobligations:
+
+```bash
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest -q tests/test_open_time_atlas.py tests/test_closed_form.py -k "open_time or finite_target_completeness or constructor_theorem_without_overclaiming"
+python3 -m pytest -q tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_general_solution.py -k "finite_time_regime_classifier or branch_union or event_order or loop"
+python3 - <<'PY'
+import three_body_symmetry as tbs
+print(tbs.FiniteTargetCompletenessReductionCertificate.__name__)
+print(tbs.certify_finite_target_completeness_reduction.__name__)
+PY
+python3 -m pytest --collect-only -q
+```
+
+```text
+full compileall passed
+16 focused open-time/closed-form completeness regressions passed
+54 open-time/closed-form regressions passed
+19 finite-time classifier / branch-union / event-order / loop regressions passed
+import smoke check printed FiniteTargetCompletenessReductionCertificate and certify_finite_target_completeness_reduction
+collect-only reported 692 tests across 25 test files
+```
+
+`OpenTimeLocallyFiniteAtlasTheoremCertificate` now carries a
+`FiniteTargetCompletenessReductionCertificate`.  That certificate records the
+actual finite-target theorem reduction: Painleve finite-singularity reduction,
+all-pair binary regularization, binary isolation/accumulation, and compact
+collision-free Taylor covers are certified from the existing analytic lemma
+constructors; the universal theorem still waits on recursive set-valued branch
+partition consumption, event-order partition consumption, finite-time loop
+budget elimination, and the final arbitrary-input finite-target completeness
+argument.  The closed-form/general-solution audit now propagates those specific
+subobligations instead of reporting a single opaque
+`set_valued_constructor_branch_event_completeness` blocker.
+
+Latest checks after teaching the top-level closed-form/general-solution audit to
+consume the open-time locally finite atlas theorem surface directly:
+
+```bash
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest -q tests/test_closed_form.py -k "open_time or constructor_theorem_without_overclaiming or raw_boolean"
+python3 -m pytest -q tests/test_closed_form.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "global_regime_exhaustion or compact_finite_atlas or total_collision"
+python3 - <<'PY'
+import three_body_symmetry as tbs
+print(tbs.construct_open_time_locally_finite_atlas_theorem.__name__)
+from three_body_symmetry.closed_form import certify_general_closed_form_solution_target
+print(certify_general_closed_form_solution_target.__name__)
+PY
+python3 -m pytest --collect-only -q
+```
+
+```text
+full compileall passed
+3 focused closed-form constructor-theorem regressions passed
+54 closed-form/open-time regressions passed
+20 adjacent global-regime / compact finite / total-collision theorem regressions passed
+import smoke check printed construct_open_time_locally_finite_atlas_theorem and certify_general_closed_form_solution_target
+collect-only reported 692 tests across 25 test files
+```
+
+`certify_general_closed_form_solution_target(...)` now distinguishes a supplied
+`OpenTimeLocallyFiniteAtlasTheoremCertificate` from the older endpoint-regime
+`GeneralSolutionTheoremCertificate`.  The audit no longer reports
+`global_regime_exhaustion` or `arbitrary_initial_data_partition_theorem` when
+the open-time theorem surface is the supplied constructor evidence.  It instead
+reports the sharper remaining blocker
+`set_valued_constructor_branch_event_completeness`, preserving the current
+pointwise finite-target status without promoting it to a completed unrestricted
+general solution.
+
+Latest checks after hardening compact-interval endpoint binding and
+total-collision stop propagation:
+
+```bash
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest -q tests/test_open_time_atlas.py
+python3 - <<'PY'
+import three_body_symmetry as tbs
+print(tbs.TotalCollisionStopCertificate.__name__)
+print(tbs.certify_finite_target_atlas_or_stop_from_validated_atlas.__name__)
+print(tbs.certify_compact_interval_atlas_or_stop_from_finite_targets.__name__)
+PY
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "compact_finite_atlas or zero_angular_compact_finite or total_collision or maximal_classical"
+python3 -m pytest -q tests/test_general_solution.py -k "finite_time_regime_classifier or selector_trace or validated_atlas"
+python3 -m pytest --collect-only -q
+python3 -m pytest -q
+```
+
+```text
+full compileall passed
+14 open-time theorem regressions passed
+import smoke check printed TotalCollisionStopCertificate, certify_finite_target_atlas_or_stop_from_validated_atlas, and certify_compact_interval_atlas_or_stop_from_finite_targets
+19 compact finite / total-collision / maximal-classical theorem regressions passed
+33 finite-time selector/validated-atlas regressions passed
+collect-only reported 691 tests across 25 test files
+clean full pytest exited 0
+```
+
+`certify_finite_target_atlas_or_stop_from_validated_atlas(...)` now lets a
+proof-certified total-collision atlas feed the finite-target theorem surface
+without silently treating selector continuation as classical uniqueness.  Under
+`maximal_classical_stop`, the same total-collision chart produces a certified
+`TotalCollisionStopCertificate` and outcome
+`unselected_total_collision_before_target`; under
+`selected_identity_selector`, it remains a certified selected continuation.
+`certify_compact_interval_atlas_or_stop_from_finite_targets(...)` now also
+requires the past/future finite-target certificates to use the requested
+collision policy, target exactly `-R` and `+R`, and bind to the same input-domain
+certificate before the compact interval can certify.  If either endpoint stops
+at an unselected total collision, the compact-interval certificate now carries
+the certified endpoint stop object instead of reporting a bare outcome string.
+
+Latest checks after replacing the single compact-interval exhaustion assertion
+with a constructor-derived nested compact-interval family:
+
+```bash
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest -q tests/test_open_time_atlas.py
+python3 - <<'PY'
+import three_body_symmetry as tbs
+print(tbs.CompactIntervalExhaustionFamilyCertificate.__name__)
+print(tbs.construct_compact_interval_exhaustion_family.__name__)
+PY
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "compact_finite_atlas or zero_angular_compact_finite or total_collision"
+python3 -m pytest --collect-only -q
+python3 -m pytest -q
+```
+
+```text
+full compileall passed
+8 open-time theorem regressions passed
+import smoke check printed CompactIntervalExhaustionFamilyCertificate and construct_compact_interval_exhaustion_family
+17 compact finite / total-collision theorem regressions passed
+collect-only reported 682 tests across 25 test files
+clean full pytest exited 0
+```
+
+`construct_compact_interval_exhaustion_family(...)` now builds checked finite
+prefixes of the countable schedule `K_n=[-nR,nR]`, verifies the linear radius
+schedule and nested intervals, and carries analytic certificates for the
+finite-target-to-compact-interval reduction plus countable local-finiteness.
+`construct_open_time_locally_finite_atlas_theorem(...)` consumes that family
+before certifying the countable compact exhaustion.
+
+Latest checks after strengthening the open-time theorem from one finite target
+to an explicit two-sided compact-interval certificate:
+
+```bash
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest -q tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "compact_finite_atlas or zero_angular_compact_finite or total_collision"
+python3 - <<'PY'
+import three_body_symmetry as tbs
+print(tbs.CompactIntervalAtlasOrStopCertificate.__name__)
+print(tbs.construct_compact_interval_atlas_or_stop.__name__)
+PY
+python3 -m pytest --collect-only -q
+python3 -m pytest -q
+```
+
+```text
+full compileall passed
+6 open-time theorem regressions passed
+17 compact finite / total-collision theorem regressions passed
+import smoke check printed CompactIntervalAtlasOrStopCertificate and construct_compact_interval_atlas_or_stop
+collect-only reported 680 tests across 25 test files
+clean full pytest exited 0
+```
+
+`construct_compact_interval_atlas_or_stop(...)` now certifies the compact
+physical-time interval `[-R, R]` by constructing both the future finite-target
+certificate at `+R` and the past finite-target certificate at `-R` under the
+same total-collision policy.  The open-time locally finite theorem now consumes
+that compact-interval certificate before asserting the countable compact
+exhaustion, so the theorem surface matches the compact-interval proof statement
+instead of relying on one target-time certificate plus prose.
+
+Latest checks after splitting the finite compact-atlas verifier out from the
+nonzero-angular theorem path:
+
+```bash
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest -q tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "compact_finite_atlas or zero_angular_compact_finite or total_collision"
+python3 -m pytest -q tests/test_general_solution.py -k "finite_time_regime_classifier or selector_trace or validated_atlas"
+python3 - <<'PY'
+import three_body_symmetry as tbs
+print(tbs.CompactOrdinaryBinaryFiniteAtlasCertificate.__name__)
+print(tbs.certify_compact_ordinary_binary_finite_atlas.__name__)
+PY
+python3 -m pytest -q tests/test_general_solution_theorem.py
+python3 -m pytest --collect-only -q
+python3 -m pytest -q
+```
+
+```text
+full compileall passed
+4 open-time theorem regressions passed
+17 compact finite / total-collision theorem regressions passed
+33 finite-time selector/validated-atlas regressions passed
+import smoke check printed CompactOrdinaryBinaryFiniteAtlasCertificate and certify_compact_ordinary_binary_finite_atlas
+68 theorem assembly regressions passed
+collect-only reported 680 tests across 25 test files
+clean full pytest exited 0
+```
+
+`certify_compact_ordinary_binary_finite_atlas(...)` now verifies finite
+ordinary, binary, and selected-total-collision atlas chains without relying on
+the nonzero-angular theorem name.  The open-time finite-target theorem consumes
+this neutral verifier directly.  A new regression uses an exact homothetic
+total-collision selector atlas to prove that `maximal_classical_stop` rejects
+total-collision continuation charts while `selected_identity_selector` accepts
+the same certified chart family.
+
+Latest checks after implementing the open-time locally finite atlas theorem
+surface from the attached Pro-model steering:
+
+```bash
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest -q tests/test_open_time_atlas.py
+python3 - <<'PY'
+import three_body_symmetry as tbs
+print(tbs.construct_open_time_locally_finite_atlas_theorem.__name__)
+PY
+python3 -m pytest -q tests/test_open_time_atlas.py tests/test_general_solution.py -k "finite_time_regime_classifier or selector_trace or validated_atlas"
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "global_regime_exhaustion or compact_finite_atlas or nonzero_angular_event_shell_invariance"
+python3 -m pytest -q tests/test_closed_form.py -k "global_regime_exhaustion or theorem"
+python3 -m pytest --collect-only -q
+python3 -m pytest -q
+```
+
+```text
+full compileall passed
+3 open-time locally finite atlas theorem regressions passed
+import smoke check printed construct_open_time_locally_finite_atlas_theorem
+33 finite-time selector/validated-atlas regressions passed
+15 theorem/regime hardening regressions passed
+11 closed-form/global-theorem audit regressions passed
+collect-only reported 680 tests across 25 test files
+clean full pytest exited 0
+```
+
+`three_body_symmetry/open_time_atlas.py` now implements the theorem shape
+recommended in the attached note.  `construct_finite_target_atlas_or_stop(...)`
+uses the finite-time validated-atlas classifier and returns a theorem-facing
+outcome: `finite_atlas_reaches_target`,
+`unselected_total_collision_before_target`,
+`selected_total_collision_continuation`, or a typed
+`proof_grade_obstruction`.  Its obligations include explicit total-collision
+policy, Painleve finite-singularity reduction, all-pair binary regularization,
+binary collision isolation, binary accumulation implying total collision, and
+compact collision-free Taylor covers.  `construct_open_time_locally_finite_atlas_theorem(...)`
+wraps that finite-target theorem in a countable compact-time/physical-time
+exhaustion and records that endpoint regimes are optional compression
+certificates, not prerequisites for the constructive general-solution target.
+
+Latest checks after binding finite-time selector traces to their atlas surface
+and hardening nonzero-angular shell invariance against mismatched LC binary
+envelopes:
+
+```bash
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py::test_validated_atlas_proof_rejects_stale_selector_trace tests/test_general_solution_theorem.py::test_nonzero_angular_event_shell_invariance_certifies_scoped_uniform_regime
+python3 -m pytest -q tests/test_general_solution.py -k "selector_trace or finite_time_regime_classifier or validated_atlas"
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "nonzero_angular_event_shell_invariance or nonzero_angular_event_tail_margin or nonzero_angular_global_atlas"
+python3 -m pytest -q tests/test_general_solution_theorem.py::test_nonzero_angular_compact_finite_atlas_rejects_stale_selector_trace tests/test_general_solution_theorem.py::test_nonzero_angular_compact_finite_atlas_rejects_selector_chart_mismatch tests/test_general_solution_theorem.py::test_spatial_event_order_branch_union_theorem_gate_rejects_selector_mismatch
+python3 -m pytest -q tests/test_general_solution.py
+python3 -m pytest -q tests/test_general_solution_theorem.py
+python3 -m pytest --collect-only -q
+python3 -m pytest -q
+```
+
+```text
+full compileall passed
+2 focused selector/binary-envelope regressions passed
+33 finite-time selector/validated-atlas regressions passed
+16 nonzero-angular global/event-shell regressions passed
+3 compact-finite selector mismatch regressions passed
+69 general-solution regressions passed
+68 theorem assembly regressions passed
+collect-only reported 677 tests across 24 test files
+clean full pytest exited 0
+```
+
+`FiniteTimeChartSelectorTrace` now carries a constructor-derived
+`atlas_binding_token` generated from the receiving atlas's masses, target time,
+initial interval, chart/transition signatures, and non-selector proof ledger.
+`ValidatedAtlasSolution.proof_certified` rejects a trace transplanted from a
+different same-route atlas instead of accepting route-family compatibility
+alone.  The nonzero-angular event-shell invariance constructor now also checks
+that every `separated_binary_levi_civita_ij` source certificate in the
+two-sided event budget matches the corresponding `binary_pair_envelopes[(i,j)]`
+entry from the handoff spec; changing one LC envelope value now fails
+`future_separated_binary_sources_match_envelope` rather than silently certifying
+the scoped shell-invariance bridge.
+
+Latest checks after adding input-domain consistency to the global-regime
+exhaustion gate:
+
+```bash
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py::test_global_regime_exhaustion_required_ids_accepts_maximal_classical_stop_candidate tests/test_general_solution_theorem.py::test_global_regime_exhaustion_rejects_mixed_candidate_input_domains tests/test_general_solution_theorem.py::test_global_regime_exhaustion_constructor_reports_partition_theorem_gap
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "global_regime_exhaustion or compact_finite_atlas or positive_energy_homothetic_escape or prescribed_two_ended_scattering"
+python3 -m pytest -q tests/test_closed_form.py -k "global_regime_exhaustion or theorem"
+python3 -m pytest -q tests/test_general_solution_theorem.py
+python3 -m pytest --collect-only -q
+python3 -m pytest -q
+```
+
+```text
+full compileall passed
+3 focused global-exhaustion input-domain regressions passed
+21 affected global-theorem/regime regressions passed
+11 closed-form/global-theorem audit regressions passed
+68 theorem assembly regressions passed
+collect-only reported 677 tests across 24 test files
+clean full pytest exited 0
+```
+
+`certify_global_regime_exhaustion(...)` now requires all concrete candidate
+regimes to carry mutually consistent embedded `input_domain_certificate`
+objects before the candidate family is mechanically coherent.  Mixed-data
+candidate families now fail the new
+`global_exhaustion_candidate_input_domains` obligation, so the top-level
+theorem gate cannot splice certified regimes from different initial data while
+leaving `arbitrary_initial_data_partition_theorem` as the correct analytic
+blocker.
+
+Latest checks after following the GPT 5.5 Pro regime-exhaustion steering and
+hardening scoped-regime input binding:
+
+```bash
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py::test_positive_energy_homothetic_escape_classifier_rejects_foreign_input_domain
+python3 -m pytest -q tests/test_general_solution.py::test_finite_time_regime_classifier_constructs_validated_atlas_route tests/test_general_solution.py::test_finite_time_regime_classifier_rejects_foreign_validated_atlas_input_domain
+python3 -m pytest -q tests/test_general_solution_theorem.py::test_compact_nonzero_finite_regime_rejects_foreign_embedded_input_domain tests/test_general_solution_theorem.py::test_zero_angular_compact_finite_atlas_requires_constructor_selector_entry
+python3 -m pytest -q tests/test_general_solution.py -k "finite_time_regime_classifier"
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "compact_finite_atlas or compact_nonzero or compact_zero or positive_energy_homothetic_escape or prescribed_two_ended_scattering"
+python3 -m pytest -q tests/test_general_solution_theorem.py
+python3 -m pytest -q tests/test_general_solution.py
+python3 -m pytest --collect-only -q
+python3 -m pytest -q
+```
+
+```text
+full compileall passed
+1 focused positive-energy foreign-endpoint classifier regression passed
+2 focused finite-time classifier route/domain regressions passed
+2 focused compact finite foreign-domain regressions passed
+8 finite-time classifier regressions passed
+19 compact/escape/scattering theorem regressions passed
+67 theorem assembly regressions passed
+69 general-solution regressions passed
+collect-only reported 676 tests across 24 test files
+clean full pytest exited 0
+```
+
+The shared GPT 5.5 Pro direction still identifies the missing theorem as
+global regime exhaustion / arbitrary initial-data partition: every
+positive-mass noncollision input must fall into a certified finite-time,
+nonzero-angular, zero-angular-selector, infinite-event, escape/scattering,
+uniformly noncollision, or maximal-collision-stop regime.  This patch keeps
+that theorem blocked, while making existing scoped regimes harder to misuse:
+`positive_energy_homothetic_escape`, compact nonzero-angular finite events,
+compact zero-angular selector events, uniformly noncollision tails, and
+maximal classical stop regimes now require their embedded input-domain
+certificates to match the classification input.  `classify_finite_time_regime`
+also now requires a returned `ValidatedAtlasSolution` to bind its masses and
+initial interval/union to the classifier input before the finite-time
+classification can certify.
+
+Latest checks after binding the nonzero-angular all-time classifier to the
+same constructor-derived finite-middle and handoff certificates:
+
+```bash
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py::test_nonzero_angular_event_shell_invariance_certifies_scoped_uniform_regime
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "nonzero_angular"
+python3 -m pytest -q tests/test_general_solution_theorem.py
+python3 -m pytest --collect-only -q
+python3 -m pytest -q
+```
+
+```text
+full compileall passed
+1 focused nonzero-angular foreign-certificate regression passed
+30 nonzero-angular theorem regressions passed
+65 theorem assembly regressions passed
+collect-only reported 672 tests across 24 test files
+clean full pytest exited 0
+```
+
+`classify_global_regime(..., regime_id="all_time_nonzero_angular")` now
+requires the finite-middle atlas and nonzero-angular event-envelope handoff to
+embed the same input-domain certificate as the classification, requires the
+handoff compact-time certificate to match the classification compact-time
+certificate, and requires the handoff to consume the exact finite-middle atlas
+object stored in the classification.  A regression reuses a fully certified
+nonzero-angular finite-middle/handoff stack with perturbed initial data and now
+correctly rejects the scoped theorem instead of allowing a foreign certificate
+to certify the new input.
+
+Latest checks after deriving non-vacuous default ordinary-handoff budgets for
+spatial KS exits:
+
+```bash
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest -q tests/test_ks_binary_series.py -k "handoff_budget or default_cauchy_budget or handoff_admissibility or target_before_ordinary_safe_exit or ordinary_after_ks"
+python3 -m pytest -q tests/test_general_solution.py -k "spatial_ks_handoff or ordinary_handoff or target_before_ordinary_safe_exit or default_spatial_ks"
+python3 -m pytest -q tests/test_ks_binary_series.py
+python3 -m pytest -q tests/test_general_solution.py
+python3 -m pytest --collect-only -q
+python3 -m pytest -q
+```
+
+```text
+full compileall passed
+7 focused spatial-KS handoff regressions passed
+3 focused finite-time spatial-KS selector regressions passed
+56 KS binary series regressions passed
+68 general-solution regressions passed
+collect-only reported 672 tests across 24 test files
+clean full pytest exited 0
+```
+
+`certify_spatial_ks_to_ordinary_handoff_admissibility(...)` now replaces
+vacuous default handoff requirements with constructor-derived local budgets:
+the default Cauchy-radius requirement is the requested post-handoff ordinary
+time span, and default acceleration, residual, and tail ceilings are finite
+when their underlying certificates derive finite bounds.  A new KS regression
+checks that a target just beyond rho-exit stays in the regularized KS chart
+when the ordinary post-handoff step is outside the derived Cauchy radius,
+instead of forcing an ordinary chart merely because rho is positive.
+
+Latest checks after hardening finite-time classifier certification and
+prescribed-scattering classifier input binding:
+
+```bash
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py -k finite_time_regime_classifier
+python3 -m pytest -q tests/test_general_solution_theorem.py -k prescribed_two_ended_scattering
+python3 -m pytest -q tests/test_general_solution.py
+python3 -m pytest -q tests/test_general_solution_theorem.py
+python3 -m pytest --collect-only -q
+python3 -m pytest -q
+```
+
+```text
+full compileall passed
+7 finite-time classifier regressions passed
+4 prescribed-scattering classifier/theorem regressions passed
+68 general-solution regressions passed
+65 theorem assembly regressions passed
+collect-only reported 671 tests across 24 test files
+clean full pytest exited 0
+```
+
+`classify_finite_time_regime(...)` now requires the evaluator result to be a
+real `ValidatedAtlasSolution` before certifying the finite-time atlas
+obligation; a fake object with `proof_certified=True` and a certified selector
+trace no longer suffices.  `classify_global_regime(...)` also now rejects a
+certified prescribed two-ended scattering envelope when its embedded
+`input_domain_certificate` does not match the classification input domain, so a
+scattering certificate cannot be reused for foreign middle data through the
+direct classifier path.
+
+Latest checks after hardening the prescribed two-ended scattering route with a
+finite-middle invariant match:
+
+```bash
+python3 -m pytest -q tests/test_general_solution_theorem.py -k prescribed_two_ended_scattering
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py
+python3 -m pytest --collect-only -q
+python3 -m pytest -q
+```
+
+```text
+3 focused prescribed-scattering regressions passed
+full compileall passed
+64 theorem assembly regressions passed
+collect-only reported 670 tests across 24 test files
+clean full pytest exited 0
+```
+
+`construct_prescribed_two_ended_scattering_global_atlas(...)` now requires the
+finite middle state to match the prescribed scattering endpoint invariant level:
+momentum, mass-center offset, planar angular momentum, and Newtonian energy are
+derived from the input state and compared against the endpoint invariant ledger.
+Endpoint-to-endpoint matching alone is no longer enough.  The positive scoped
+test uses a far-separated finite middle state preserving the endpoint momentum,
+mass-center, and angular momentum, while an unrelated rotating-triangle middle
+is rejected with `two_ended_scattering_middle_invariant_match`.
+
+Latest checks after adding a scoped maximal-classical stop-before-total-collision
+constructor:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py::test_maximal_classical_until_total_collision_stop_feeds_global_atlas_without_selector_continuation tests/test_general_solution_theorem.py::test_maximal_classical_stop_rejects_selector_continuation_policy tests/test_general_solution_theorem.py::test_global_regime_exhaustion_required_ids_accepts_maximal_classical_stop_candidate
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "maximal_classical or global_regime_exhaustion or compact_finite_atlas or finite_atlas_selector_trace"
+python3 -m pytest -q tests/test_general_solution_theorem.py
+python3 -m pytest --collect-only -q
+python3 -m pytest -q
+```
+
+```text
+full compileall passed
+3 focused maximal-classical scoped-regime regressions passed
+14 theorem-slice regressions passed
+63 theorem assembly regressions passed
+collect-only reported 669 tests across 24 test files
+clean full pytest exited 0
+```
+
+`construct_maximal_classical_until_total_collision_atlas(...)` now builds a
+scoped global-atlas certificate from a real constructor-derived
+`ValidatedAtlasSolution` whose collision policy explicitly stops before total
+collision.  The stop certificate reuses the finite-atlas ledger checks and adds
+maximal-classical obligations rejecting selector continuation policies and
+total-collision continuation charts.  A single-regime exhaustion check can now
+cover `maximal_classical_until_total_collision` without satisfying the full
+arbitrary-data partition theorem, which remains the required global blocker.
+
+Latest checks after retrying close-pair branch-union leaves through the
+initial-KS competing-event loop:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py::test_close_pair_branch_union_retries_members_through_initial_ks_competing_loop tests/test_general_solution.py::test_unrestricted_solution_rejects_close_pair_branch_union_when_members_cannot_keep_threshold tests/test_general_solution.py::test_unrestricted_solution_spatial_branch_union_blocks_ordinary_handoff_when_members_cannot_keep_threshold
+python3 -m pytest -q tests/test_general_solution.py -k "branch_union or competing_loop or close_pair or event_order_branch_union"
+python3 -m pytest -q tests/test_general_solution.py
+python3 -m pytest -q tests/test_general_solution_theorem.py
+python3 -m pytest --collect-only -q
+python3 -m pytest -q
+```
+
+```text
+full compileall passed
+3 focused close-pair branch-union regressions passed
+13 branch-union/competing-loop selector regressions passed
+68 general-solution regressions passed
+60 theorem assembly regressions passed
+collect-only reported 666 tests across 24 test files
+clean full pytest exited 0
+```
+
+The close-pair spatial branch-union constructor now accepts a
+constructor-supplied member-atlas builder.  The finite-time selector uses that
+hook to retry each certified close-pair leaf through
+`_try_evaluate_auto_initial_spatial_ks_competing_handoff(...)` before falling
+back to the one-shot initial KS handoff.  Existing failure cases still surface
+`finite_time_branch_union_consumption` and local collision-policy blockers when
+member leaves cannot certify, but certified leaves now have access to the same
+KS-to-KS competing-event continuation used by the direct initial-KS route.
+
+Latest checks after admitting constructor-certified spatial KS branch-union
+atlases into the finite-atlas theorem gate:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py::test_loop_progress_attachment_accepts_certified_event_order_branch_union tests/test_general_solution_theorem.py::test_nonzero_angular_compact_finite_atlas_accepts_spatial_event_order_branch_union tests/test_general_solution_theorem.py::test_spatial_event_order_branch_union_theorem_gate_rejects_selector_mismatch
+python3 -m pytest -q tests/test_general_solution.py -k "event_order_branch_union or loop_progress_attachment or ordinary_entry_spatial_ks_loop or finite_time_loop_surfaces_certified_event_order_partition or initial_spatial_ks_loop"
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "spatial_ks or spatial_event_order_branch_union or finite_atlas_selector_trace or compact_finite_atlas"
+python3 -m pytest -q tests/test_general_solution.py
+python3 -m pytest -q tests/test_general_solution_theorem.py
+python3 -m pytest --collect-only -q
+python3 -m pytest -q
+```
+
+```text
+full compileall passed
+3 focused event-order/theorem-gate regressions passed
+5 finite-time event-order selector regressions passed
+11 finite-atlas theorem-gate regressions passed
+67 general-solution regressions passed
+60 theorem assembly regressions passed
+collect-only reported 665 tests across 24 test files
+clean full pytest exited 0
+```
+
+Certified spatial KS event-order branch-union atlases now satisfy the same
+finite-atlas theorem integration surface as direct spatial KS binary charts.
+The theorem gate recognizes `spatial_ks_event_order_branch_union` and
+`spatial_branch_union` only when their selector route and constructor-derived
+collision policy agree.  The loop-progress ledger also certifies a previously
+blocked event-order loop only after the atlas proves `ks_event_order_partition`
+and `finite_time_event_order_branch_union_consumption`, so consumed partitions
+can feed scoped nonzero-angular finite-atlas certificates without weakening
+unsupported spatial binary claims.
+
+Latest checks after composing ordinary-entry spatial KS prefixes with certified
+event-order branch-union suffix atlases:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py::test_ordinary_entry_spatial_ks_loop_consumes_event_order_branch_union tests/test_general_solution.py::test_spatial_ks_loop_composes_later_event_order_partition_with_prefix
+python3 -m pytest -q tests/test_general_solution.py -k "event_order_branch_union or ordinary_entry_spatial_ks_loop or finite_time_loop_surfaces_certified_event_order_partition or initial_spatial_ks_loop"
+python3 -m pytest -q tests/test_general_solution.py
+python3 -m pytest --collect-only -q
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "global_exhaustion or nonzero_angular_global_atlas or finite_middle"
+python3 -m pytest -q
+```
+
+```text
+full compileall passed
+2 focused ordinary-entry/event-order selector regressions passed
+4 event-order branch-union selector regressions passed
+66 general-solution regressions passed
+14 theorem assembly regressions passed
+collect-only reported 662 tests across 24 test files
+clean full pytest exited 0
+```
+
+The finite-time spatial KS ordinary-entry path now consumes a constructor
+certified event-order branch-union suffix when ordinary handoff is not yet
+admissible.  The resulting `ValidatedAtlasSolution` explicitly prepends the
+ordinary Taylor entry chart, records the ordinary-to-KS transition, preserves
+the suffix branch-union ledger entries, and keeps the selector route scoped to
+the finite-time `spatial_ks_prefix_event_order_branch_union` proof path.
+
+Latest checks after preserving explicit spatial-KS reversal obligations and
+surfacing close-pair branch-union failure evidence:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py::test_explicit_spatial_ks_negative_time_preserves_competing_pair_distance_requirement tests/test_general_solution.py::test_unrestricted_solution_rejects_close_pair_branch_union_when_members_cannot_keep_threshold tests/test_general_solution.py::test_unrestricted_solution_spatial_branch_union_blocks_ordinary_handoff_when_members_cannot_keep_threshold tests/test_general_solution.py::test_finite_time_regime_classifier_surfaces_close_pair_branch_partition
+python3 -m pytest -q tests/test_general_solution.py
+python3 -m pytest --collect-only -q
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "global_exhaustion or nonzero_angular_global_atlas or finite_middle"
+python3 -m pytest -q
+```
+
+```text
+full compileall passed
+4 focused finite-time selector regressions passed
+65 general-solution regressions passed
+14 theorem assembly regressions passed
+collect-only reported 661 tests across 24 test files
+clean full pytest exited 0
+```
+
+The negative-time explicit spatial KS route now preserves
+`competing_pair_min_distance_required` through the time-reversed forward
+constructor, so backward finite-time certificates cannot silently weaken the
+same close-competing-pair obligation checked in forward time.  Close-pair
+branch-union consumption failures also become their own selector attempt with
+constructor-derived missing obligations instead of being swallowed behind the
+generic close-binary guard.
+
+Latest checks after adding an ordinary-safe spatial KS exit retry/refusal path:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py -k "default_spatial_ks_handoff_floor_stays_regularized or retries_spatial_ks_exit_but_refuses_inadmissible_target_handoff"
+python3 -m pytest -q tests/test_general_solution.py -k "spatial_ks and (handoff or ordinary_safe_exit or target_inside_regularized or default_spatial_ks_handoff_floor or retries_spatial_ks_exit)"
+python3 -m pytest -q tests/test_ks_binary_series.py -k "ordinary_handoff or handoff_admissibility or ordinary_safe_exit or target_inside_regularized"
+python3 -m pytest -q tests/test_general_solution.py
+python3 -m pytest --collect-only -q
+python3 -m pytest -q
+```
+
+```text
+full compileall passed
+2 focused public spatial-KS handoff-boundary regressions passed
+5 public spatial-KS finite-time selector regressions passed
+6 lower-level KS handoff regressions passed
+64 general-solution regressions passed
+collect-only reported 660 tests across 24 test files
+clean full pytest exited 0
+```
+
+The finite-time spatial KS selector now tries an ordinary-safe rho-exit retry
+when the requested ordinary handoff floor is larger than the initially supplied
+rho exit.  The selector still refuses to force a post-KS ordinary chart unless
+that chart has a constructor-produced handoff admissibility certificate for the
+requested target interval; otherwise the target remains evaluated inside the
+regularized KS chart.  This keeps `rho > 0` separate from "ordinary chart is
+analytically usable."
+
+Latest checks after hardening spatial KS ordinary-handoff admissibility:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_ks_binary_series.py -k "handoff_admissibility or target_before_ordinary_safe_exit or handoff_inflates or ordinary_after_ks or target_tail or target_inside_regularized"
+python3 -m pytest -q tests/test_general_solution.py -k "spatial_ks and (handoff or ordinary_safe_exit or target_inside_regularized or default_spatial_ks_handoff_floor)"
+python3 -m pytest --collect-only -q
+python3 -m pytest -q
+```
+
+```text
+full compileall passed
+9 focused KS handoff/target regressions passed
+4 public spatial-KS finite-time selector regressions passed
+collect-only reported 659 tests across 24 test files
+clean full pytest exited 0
+```
+
+`certify_spatial_ks_to_ordinary_handoff_admissibility(...)` now treats ordinary
+chart evidence as required by default: a rho-positive projection and Cauchy
+majorant are not enough unless an ordinary Taylor chart, residual certificate,
+and positive post-handoff time interval are present.  The internal preflight
+probe remains explicitly marked as preflight-only before the ordinary chart is
+constructed.  `ValidatedAtlasSolution.proof_certified` now also has a structural
+check: if an atlas contains `spatial_ordinary_taylor_after_ks`, a nested
+certified `OrdinaryHandoffAdmissibilityCertificate` must be reachable from the
+evaluation object, not merely represented by a proof-ledger entry.
+
+Latest checks after rejecting direct source-less event chart-family certificates:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "event_regime_assembler"
+python3 -m pytest --collect-only -q
+python3 -m pytest -q
+```
+
+```text
+full compileall passed
+6 focused event-regime assembler regressions passed
+collect-only reported 656 tests across 24 test files
+clean full pytest exited 0
+```
+
+`certify_local_chart_family_primitive_cauchy_inputs(...)` now requires every
+chart-family primitive Cauchy input to carry a constructor source certificate.
+This closes the custom-family loophole where a new event family name could
+certify from raw primitive tuples even though ordinary-gap, separated-binary,
+and total-collision families were already blocked.  Direct
+`LocalChartFamilyCauchyCertificate` objects with `source_certificate=None` are
+also no longer source-certified, and a regression now verifies that a manually
+instantiated source-less chart-family certificate cannot feed
+`derive_event_recurrence_from_chart_family_certificates(...)` into an
+all-future event budget.
+
+Latest checks after making KS target-time interval evaluation endpoint-bracketed:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py::test_unrestricted_solution_validated_atlas_default_spatial_ks_handoff_floor_stays_regularized tests/test_ks_binary_series.py::test_spatial_ks_interval_target_tail_rejects_segmented_point_fallback
+python3 -m pytest -q tests/test_ks_binary_series.py -k "target_tail or target_before_ordinary_safe_exit or target_inside_regularized or handoff_admissibility or competing_binary_handoff or event_order_partition"
+python3 -m pytest -q tests/test_general_solution.py -k "spatial_ks or finite_time_loop or competing_handoff"
+python3 -m pytest --collect-only -q
+python3 -m pytest -q
+```
+
+```text
+full compileall passed
+8 KS target/event-order/competing-handoff regressions passed
+12 public spatial-KS finite-time selector regressions passed
+2 direct post-entry/anti-fallback regressions passed
+collect-only reported 654 tests across 24 test files
+clean full pytest exited 0
+```
+
+`_certify_spatial_ks_target_tail(...)` no longer accepts a target produced only
+by solving the midpoint physical-time polynomial.  The direct target path now
+only handles point physical targets.  If the requested target time is itself an
+interval, the constructor derives a KS parameter interval, expands it until the
+left and right endpoint physical-time enclosures bracket the requested interval,
+then evaluates the interval KS series over that parameter interval, projects the
+interval state back to physical coordinates, and verifies physical-time
+containment before returning a certified target enclosure.  The padding search
+now grows far enough to certify post-entry target intervals whose entry-time
+uncertainty dominates the midpoint root width.  Segmented tail fallback is still
+available for point targets, but it can no longer certify a non-point target
+interval unless the endpoint-bracketed interval path succeeds.  Failures now
+surface typed `spatial_ks_target_time_containment` or
+`spatial_ks_target_time_endpoint_bracketing` obligations instead of silently
+passing a midpoint-only projection, an over-wide interval image, or a segmented
+point endpoint for an interval target.
+
+Latest checks after replacing midpoint-only close-cluster Jacobi metadata with interval-native Jacobi state-box primitives:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_obstructions.py -k "interval_jacobi_cluster or jacobi_cluster_coordinates or binary_degenerate_jacobi_kepler_reduction_constructor"
+python3 -m pytest -q tests/test_general_solution.py -k "simultaneous_close_pair_split_refuses_genuine_triple_close_cluster or simultaneous_close_pair_split_excludes_nonzero_angular_total_collision or finite_time_regime_classifier_surfaces_nonzero_angular_cluster_exclusion"
+python3 -m pytest -q tests/test_general_solution.py tests/test_ks_binary_series.py tests/test_obstructions.py -k "interval_jacobi_cluster or jacobi_cluster_coordinates or simultaneous_close_pair_split or finite_time_regime_classifier_surfaces_nonzero_angular_cluster_exclusion or spatial_ks or ordinary_handoff or binary_degenerate_jacobi_kepler_reduction_constructor"
+python3 -m pytest --collect-only -q
+python3 -m pytest -q
+```
+
+```text
+full compileall passed
+3 focused interval/point Jacobi constructor regressions passed
+3 focused finite-time close-cluster regressions passed
+selected finite-time / KS / obstruction slice exited 0
+collect-only reported 651 tests across 24 test files
+clean full pytest exited 0
+```
+
+`three_body_symmetry.obstructions` now includes
+`construct_interval_jacobi_cluster_coordinates(...)`, which lifts a spatial
+state interval box into pair/outer Jacobi interval coordinates.  The certificate
+keeps the input box, center and center velocity intervals, centered state
+intervals, relative pair and outer-cluster coordinates, reconstructed centered
+and absolute enclosures, and interval angular-momentum residual components.  It
+certifies containment rather than midpoint tolerance: the reconstructed
+enclosures cover the centered state box, the absolute reconstruction covers the
+original interval state, and the Jacobi angular-decomposition residual intervals
+all contain zero.
+
+Close-cluster finite-time branches now attach these interval Jacobi certificates
+beside the existing representative midpoint certificates.  Threshold-adjacent
+branches with one certified tight pair expose a single
+`interval_jacobi_cluster_coordinate_certificate`; genuine triple-close branches
+expose one interval lift per certified close pair.  This does not certify
+cluster continuation or remove the existing cluster-blowup obligations.  It
+makes the next close-cluster chart constructor consume interval state-box
+primitive data instead of a midpoint-only representative.
+
+Latest checks after attaching Jacobi cluster primitives to finite-time close-cluster leaves:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py -k "simultaneous_close_pair_split_refuses_genuine_triple_close_cluster or simultaneous_close_pair_split_excludes_nonzero_angular_total_collision or finite_time_regime_classifier_surfaces_nonzero_angular_cluster_exclusion"
+python3 -m pytest -q tests/test_obstructions.py -k "jacobi_cluster_coordinates or binary_degenerate_jacobi_kepler_reduction_constructor"
+python3 -m pytest --collect-only -q
+python3 -m pytest -q tests/test_general_solution.py tests/test_ks_binary_series.py tests/test_obstructions.py -k "simultaneous_close_pair_split or finite_time_regime_classifier or event_order_branch_union_preserves_nonzero_angular_cluster_blocker or second_competing_close_after_ks_repeat or initial_spatial_ks_loop_rejects_event_order_union_with_close_old_binary or projected_close_pair_suffix or nonzero_angular_momentum_certifies_triple_collision_exclusion_for_interval_box or zero_angular_momentum_leaves_triple_collision_exclusion_uncertified or jacobi_cluster_coordinates or binary_degenerate_jacobi_kepler_reduction_constructor or binary_degenerate_jacobi_equations_reduce_to_kepler_scale_contradiction or perturbed_kepler_collision_blow_up"
+python3 -m pytest -q
+```
+
+```text
+full compileall passed
+3 focused finite-time Jacobi close-cluster regressions passed
+2 focused Jacobi constructor regressions passed
+collect-only reported 650 tests across 24 test files
+21 selected finite-time / KS / angular-exclusion / Jacobi regressions passed
+clean full pytest exited 0
+```
+
+`SimultaneousClosePairPartitionBranch` now carries representative
+Jacobi-cluster coordinate certificates for close-cluster blockers.  A
+threshold-adjacent branch with one certified tight pair exposes a single
+`jacobi_cluster_coordinate_certificate`; a genuine triple-close branch exposes
+one certified representative Jacobi lift for each certified close pair without
+selecting any preferred pair.  The branches remain uncertified and still block
+on the cluster-blowup obligation, but the finite-time atlas boundary now carries
+constructor-verified Jacobi lift/reconstruction/angular-decomposition data for
+the next chart constructor.
+
+Latest checks after promoting the binary-degenerate Jacobi cluster reduction into executable constructors:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py -k "event_order_branch_union_preserves_nonzero_angular_cluster_blocker or finite_time_regime_classifier_surfaces_nonzero_angular_cluster_exclusion or simultaneous_close_pair_split_excludes_nonzero_angular_total_collision"
+python3 -m pytest -q tests/test_obstructions.py -k "jacobi_cluster_coordinates or binary_degenerate_jacobi_kepler_reduction_constructor or binary_degenerate_jacobi_equations_reduce_to_kepler_scale_contradiction or perturbed_kepler_collision_blow_up"
+python3 -m pytest --collect-only -q
+python3 -m pytest -q tests/test_general_solution.py tests/test_ks_binary_series.py tests/test_obstructions.py -k "simultaneous_close_pair_split or finite_time_regime_classifier or event_order_branch_union_preserves_nonzero_angular_cluster_blocker or second_competing_close_after_ks_repeat or initial_spatial_ks_loop_rejects_event_order_union_with_close_old_binary or projected_close_pair_suffix or nonzero_angular_momentum_certifies_triple_collision_exclusion_for_interval_box or zero_angular_momentum_leaves_triple_collision_exclusion_uncertified or jacobi_cluster_coordinates or binary_degenerate_jacobi_kepler_reduction_constructor or binary_degenerate_jacobi_equations_reduce_to_kepler_scale_contradiction or perturbed_kepler_collision_blow_up"
+python3 -m pytest -q
+```
+
+```text
+full compileall passed
+3 focused finite-time narrowed-blocker preservation regressions passed
+4 focused Jacobi / perturbed-Kepler obstruction regressions passed
+collect-only reported 650 tests across 24 test files
+21 selected finite-time / KS / angular-exclusion / Jacobi regressions passed
+clean full pytest exited 0
+```
+
+`three_body_symmetry.obstructions` now has constructor-backed Jacobi cluster
+certificates: `construct_jacobi_cluster_coordinates(...)` verifies the
+mass-weighted pair/outer lift, reconstruction, and angular-momentum
+decomposition, while `certify_binary_degenerate_jacobi_kepler_reduction(...)`
+verifies that a tight binary cluster reduces to the two leading Kepler equations
+with explicit pair/outer error-ratio bounds.  This promotes the
+binary-degenerate blowup arithmetic out of tests into reusable proof objects.
+
+This is not yet a finite-time spatial cluster-blowup chart, and the atlas still
+correctly blocks triple-close branches.  The useful advance is that the next
+cluster chart now has executable primitive data to consume: pair Jacobi
+coordinate, outer Jacobi coordinate, reconstruction map, angular decomposition,
+Kepler-scale ratio floor, and pair/outer force-defect bounds.  The event-order
+branch-union failure extractor also preserves the narrowed nonzero-angular
+cluster blocker instead of collapsing it back to a generic branch-union failure.
+
+Latest checks after threading nonzero-angular triple-collision exclusion through finite-time close-cluster blockers:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py -k "simultaneous_close_pair_split or finite_time_regime_classifier_surfaces_nonzero_angular_cluster_exclusion or finite_time_regime_classifier_surfaces_close_pair_branch_partition"
+python3 -m pytest --collect-only -q
+python3 -m pytest -q tests/test_general_solution.py tests/test_ks_binary_series.py tests/test_obstructions.py -k "simultaneous_close_pair_split or finite_time_regime_classifier or second_competing_close_after_ks_repeat or initial_spatial_ks_loop_rejects_event_order_union_with_close_old_binary or projected_close_pair_suffix or nonzero_angular_momentum_certifies_triple_collision_exclusion_for_interval_box or zero_angular_momentum_leaves_triple_collision_exclusion_uncertified"
+python3 -m pytest -q
+```
+
+```text
+full compileall passed
+6 focused close-pair / classifier nonzero-angular regressions passed
+collect-only reported 647 tests across 24 test files
+16 selected finite-time / KS / angular-exclusion regressions passed
+clean full pytest exited 0
+```
+
+`certify_simultaneous_close_pair_partition(...)` now accepts masses and attaches
+the existing constructor-derived nonzero-angular-momentum triple-collision
+exclusion certificate to certified or threshold-adjacent triple-close cluster
+leaves.  When that exclusion is certified, the finite-time blocker is narrowed
+from "cluster blowup or total-collision selector" to the sharper obligation
+`spatial_triple_close_cluster_requires_cluster_blowup_after_nonzero_angular_exclusion`.
+
+The public finite-time close-binary guard and the projected spatial-KS close-pair
+suffix now both pass masses into the close-pair partitioner, so the public
+classifier can surface this analytic distinction instead of losing it at the
+selector boundary.  This does not continue arbitrary triple-close clusters; it
+removes exact total collision from the blocker when angular momentum proves it,
+leaving the cluster blowup constructor as the remaining finite-time chart gap.
+
+Latest checks after stopping close-pair partitioning at certified or threshold-adjacent triple-close clusters:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py -k "simultaneous_close_pair_split"
+python3 -m pytest -q tests/test_general_solution.py -k "simultaneous_close_pair_split or spatial_ks_competing_handoff_can_consume_projected_close_pair_suffix or finite_time_regime_classifier_recovers_nested_prefix_close_pair_partition or finite_time_loop"
+python3 -m pytest --collect-only -q
+python3 -m pytest -q tests/test_general_solution.py tests/test_ks_binary_series.py
+python3 -m pytest -q
+```
+
+```text
+full compileall passed
+3 simultaneous-close-pair partition regressions passed
+7 focused finite-time close-pair / projected-KS / loop regressions passed
+collect-only reported 645 tests across 24 test files
+tests/test_general_solution.py and tests/test_ks_binary_series.py passed together
+clean full pytest exited 0
+```
+
+`certify_simultaneous_close_pair_partition(...)` now treats two cases as
+constructive blockers rather than ordinary split ambiguity: certified
+triple-close clusters and threshold-adjacent clusters where one binary is
+certified close while the other two pair distances straddle the active binary
+threshold inside a narrow quantitative band.  Those branches preserve the
+cover, record their pair-distance bounds, and stop with the existing
+`spatial_triple_close_cluster_requires_cluster_blowup_or_total_collision_selector`
+obligation instead of spending bisection depth on a state that is not a
+single-binary handoff.
+
+Latest checks after surfacing nested projected close-pair suffixes through the finite-time classifier:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py -k "nested_prefix_close_pair_partition or projected_close_pair_suffix"
+python3 -m pytest -q tests/test_general_solution.py -k "finite_time_regime_classifier or close_pair_branch_union or spatial_branch_union_blocks"
+python3 -m pytest -q tests/test_general_solution.py -k "initial_spatial_ks_loop_rejects_event_order_union_with_close_old_binary or spatial_ks_loop_composes_later_event_order_partition or finite_time_loop_surfaces_certified_event_order_partition or ordinary_ks_repeats_for_competing_binary"
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "finite_atlas or spatial_binary_regularization_scope or global_regime_exhaustion or zero_angular"
+python3 -m pytest -q tests/test_general_solution.py tests/test_ks_binary_series.py
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+python3 -m pytest -q
+python3 -m pytest --collect-only -q
+```
+
+```text
+full compileall passed
+2 focused nested-prefix/projected-suffix regressions passed
+9 finite-time classifier / close-pair branch-union regressions passed
+4 event-order / KS-prefix / ordinary-repeat regressions passed
+theorem-obligation slice passed
+tests/test_general_solution.py and tests/test_ks_binary_series.py passed together
+tests/test_general_solution_theorem.py and tests/test_closed_form.py passed together
+clean full pytest exited 0
+collect-only reported 644 tests across 24 test files
+```
+
+`classify_finite_time_regime(...)` now recovers a
+`SimultaneousClosePairSplitCertificate` even when the certified partition is
+nested under a KS-prefix branch-union suffix, not only when it is attached
+directly to a selector attempt.  This makes the theorem pipeline see the
+constructor-derived close-pair split evidence for
+`spatial_ks_prefix_close_pair_branch_union` routes.
+
+Proof-ledger coverage for prefix branch-union atlases was also corrected so the
+event-order transition and close-pair transition are not cross-wired in the KS
+target/handoff group.  The stale classifier message that said public finite-time
+atlases do not consume spatial branch unions was updated to reflect the current
+state: a failed attempt now means this attempt did not certify the branch-union
+consumption.
+
+An arithmetic search for a natural no-monkeypatch projected close-pair suffix
+witness did not find a certifying case quickly.  The closest probes certify the
+competing KS event, the next KS lift, and the physical projection, but the
+projected partition still fails with
+`simultaneous_close_pair_partitioning` and
+`spatial_triple_close_cluster_requires_cluster_blowup_or_total_collision_selector`.
+That keeps the next mathematical constructor target clear: triple-close cluster
+blowup or a stronger physical split, not another top-level witness.
+
+Latest checks after adding projected close-pair branch-union suffixes after spatial KS competing handoff:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py::test_spatial_ks_competing_handoff_can_consume_projected_close_pair_suffix
+python3 -m pytest -q tests/test_general_solution.py -k "projected_close_pair_suffix or initial_spatial_ks_loop_rejects_event_order_union_with_close_old_binary or spatial_ks_loop_composes_later_event_order_partition or finite_time_loop_surfaces_certified_event_order_partition"
+python3 -m pytest -q tests/test_general_solution.py -k "close_pair_branch_union or spatial_branch_union_blocks or ordinary_ks_repeats_for_competing_binary"
+python3 -m pytest -q tests/test_ks_binary_series.py -k "ks_event_order_partition or competing_handoff"
+python3 -m pytest -q tests/test_general_solution.py tests/test_ks_binary_series.py
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "finite_atlas or spatial_binary_regularization_scope or global_regime_exhaustion or zero_angular"
+python3 -m pytest -q
+python3 -m pytest --collect-only -q
+```
+
+```text
+full compileall passed
+new projected close-pair suffix regression passed
+4 focused projected-close/event-order prefix regressions passed
+3 close-pair branch-union/ordinary-KS-repeat regressions passed
+3 KS event-order/competing-handoff regressions passed
+tests/test_general_solution.py and tests/test_ks_binary_series.py passed together
+theorem-obligation slice passed
+clean full pytest exited 0
+collect-only reported 643 tests across 24 test files
+```
+
+`validated_atlas_from_spatial_ks_competing_binary_handoff(...)` now has a
+constructor fallback for the post-switch close-cluster gap.  When the ordinary
+or single selected-KS suffix cannot certify the active competing-pair separation
+floor, the handoff projects the derived `next_ks_state` back to physical
+coordinates, derives a `SimultaneousClosePairSplitCertificate` at the active
+threshold, and consumes it through
+`validated_atlas_from_spatial_close_pair_branch_partition(...)`.  The composed
+atlas records `spatial_ks_prefix_close_pair_branch_union_transition` and copies
+the close-pair branch-union proof obligations into the parent ledger.
+
+The fallback is deliberately narrow.  It does not replace a usable two-KS
+handoff merely because the standalone second-KS chart has local-scope
+obligations; it triggers on the specific active-threshold close-binary policy
+failure.  Existing explicit ordinary-to-KS-to-competing-KS paths therefore keep
+their certified two-KS form when the non-selected pairs satisfy the requested
+separation floor.
+
+The close-pair branch-union constructor now accepts an interval target time, so
+it can serve as a suffix after an interval-isolated competing event rather than
+only from a point-time public initial state.  Selector-trace and proof-ledger
+coverage now recognize `spatial_ks_binary -> spatial_branch_union` prefix
+atlases, including the ordinary-entry prefix case.  Genuine triple-close
+clusters remain blocked by the existing
+`spatial_triple_close_cluster_requires_cluster_blowup_or_total_collision_selector`
+obligation.
+
+Latest checks after carrying the active close-pair threshold through spatial branch-union member charts:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py -k "close_pair_branch_union or spatial_branch_union_blocks"
+python3 -m pytest -q tests/test_general_solution.py -k "initial_spatial_ks_loop_rejects_event_order_union_with_close_old_binary or spatial_ks_loop_composes_later_event_order_partition or finite_time_loop_surfaces_certified_event_order_partition"
+python3 -m pytest -q tests/test_general_solution.py -k "second_competing_close_after_ks_repeat or ordinary_ks_repeats_for_competing_binary or competing_close_binary_inside_ks or finite_time_regime_classifier or event_order_partition or spatial_ks_loop_composes_later_event_order_partition or close_old_binary or close_pair_branch_union or spatial_branch_union_blocks"
+python3 -m pytest -q tests/test_ks_binary_series.py -k "finite_time_event_set or ks_event_order_partition or competing_handoff or segmented_tail"
+python3 -m pytest -q
+python3 -m pytest --collect-only -q
+```
+
+```text
+full compileall passed
+2 focused spatial close-pair branch-union regressions passed
+3 focused event-order/close-old-binary regressions passed
+13 focused public finite-loop/competing-KS/regime/branch-union regressions passed
+8 focused KS finite-event/partition/competing/segmented regressions passed
+clean full pytest exited 0
+collect-only reported 642 tests across 24 test files
+```
+
+Public finite-time spatial close-pair branch-union consumption now carries the
+partition's active `binary_distance_threshold` into each member
+`validated_atlas_from_spatial_initial_ks_handoff(...)` construction instead of
+weakening the competing-pair admissibility requirement to zero.  The public
+`evaluate_unrestricted_solution(..., method="validated_atlas")` route therefore
+rejects branch-union members that cannot keep non-selected close pairs outside
+the active threshold, surfacing the finite-time branch-union obligation rather
+than certifying a too-eager spatial KS handoff.
+
+The low-level close-pair branch-partition constructor still permits an explicit
+`competing_pair_min_distance_required=0.0` local policy for controlled tests,
+but the public proof path now derives the stricter value from the certified
+partition.  This is another finite-time atlas-hardening step: it narrows the
+next real constructor target to post-switch close-cluster continuation or state
+splitting, not another top-level theorem witness.
+
+Latest checks after carrying the finite-time KS branch-union threshold through public proof mode:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py -k "initial_spatial_ks_loop_rejects_event_order_union_with_close_old_binary or spatial_ks_loop_composes_later_event_order_partition or finite_time_loop_surfaces_certified_event_order_partition"
+python3 -m pytest -q tests/test_general_solution.py -k "second_competing_close_after_ks_repeat or ordinary_ks_repeats_for_competing_binary or competing_close_binary_inside_ks or finite_time_regime_classifier or event_order_partition or spatial_ks_loop_composes_later_event_order_partition or close_old_binary"
+python3 -m pytest -q tests/test_ks_binary_series.py -k "finite_time_event_set or ks_event_order_partition or competing_handoff or segmented_tail"
+python3 -m pytest -q
+python3 -m pytest --collect-only -q
+```
+
+```text
+full compileall passed
+3 focused event-order/close-old-binary regressions passed
+11 focused public finite-loop/competing-KS/regime regressions passed
+8 focused KS finite-event/partition/competing/segmented regressions passed
+clean full pytest exited 0
+collect-only reported 642 tests across 24 test files
+```
+
+Public finite-time spatial-KS event-order branch-union consumption now carries
+the active `binary_distance_threshold` into member atlas construction instead
+of weakening the local collision policy to zero.  This prevents proof mode from
+certifying an event-order branch union when switching to a competing KS chart
+would leave the old binary still inside the requested close-pair threshold.
+Such cases now surface the constructive obstruction
+`ks_competing_close_binary_requires_next_regularized_chart_or_split` together
+with the collision-policy scope failure, rather than passing by hulling over a
+post-switch close cluster.
+
+`validated_atlas_from_spatial_ks_event_order_partition(...)` still supports a
+weaker local policy when called directly with
+`competing_pair_min_distance_required=0.0`; the stricter threshold propagation
+is enforced on the public `evaluate_unrestricted_solution` proof route.  The
+next constructive target is therefore sharper: produce a real arithmetic
+event-order branch-union case whose member charts also keep non-selected pairs
+outside the active close-pair threshold, or add the next regularized/split
+constructor for post-switch close clusters.
+
+Latest checks after composing certified finite-time KS event-order branch-union suffixes behind prior KS prefix steps:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py -k "spatial_ks_loop_composes_later_event_order_partition or initial_spatial_ks_loop_consumes_certified_event_order_partition"
+python3 -m pytest -q tests/test_general_solution.py -k "second_competing_close_after_ks_repeat or ordinary_ks_repeats_for_competing_binary or competing_close_binary_inside_ks or finite_time_regime_classifier or event_order_partition or spatial_ks_loop_composes_later_event_order_partition"
+python3 -m pytest -q tests/test_ks_binary_series.py -k "finite_time_event_set or ks_event_order_partition or competing_handoff or segmented_tail"
+python3 -m pytest --collect-only -q
+python3 -m pytest -q
+```
+
+```text
+full compileall passed
+2 focused public event-order branch-union regressions passed
+11 focused public finite-loop/competing-KS/regime regressions passed
+8 focused KS finite-event/partition/competing/segmented regressions passed
+collect-only reported 642 tests across 24 test files
+clean full pytest exited 0
+```
+
+`validated_atlas_from_spatial_ks_event_order_partition(...)` now consumes a
+certified `KSEventOrderSplitCertificate` into a real
+`ValidatedAtlasSolution`.  Each certified leaf is projected back to physical
+coordinates, then continued either inside the current KS chart when the target
+precedes all events or through a certified competing KS handoff when a unique
+first event is proved.  The aggregate chart is recorded as
+`spatial_ks_event_order_branch_union`, exposes the member atlases through the
+branch-union evaluation facade, carries a certified
+`ks_event_order_partition` ledger entry, and proves
+`finite_time_event_order_branch_union_consumption`.
+
+The public finite spatial-KS loop now tries this branch-union consumption when
+an ambiguous first-event stop exposes a certified event-order partition, even
+after one or more already-certified KS prefix steps.  Prefix replay derives the
+intermediate KS states from the certified unique competing-event steps, and
+`validated_atlas_from_spatial_ks_competing_binary_handoff_to_atlas(...)` wraps
+the suffix without inventing a fake ordinary endpoint projection.  Selector
+provenance is route-specific: a pure branch-union atlas certifies under
+`spatial_ks_event_order_branch_union`, while a mixed prefix/suffix atlas
+certifies under `spatial_ks_prefix_event_order_branch_union`.
+
+Several proof-surface checks were hardened while wiring this in.  Event-order
+partition leaves now require all scoped competing-event certificates, recursive
+bisection coverage is checked from the split-tree paths as well as interval
+containment, and a consumed unique-event leaf must agree with the derived event
+id and physical-time enclosure.  The branch-union chart now covers physical
+time from zero to the target so the public selector trace can certify the
+time-chain obligation.
+
+The composed prefix/suffix atlas records a
+`spatial_ks_prefix_event_order_branch_union_transition` ledger entry, preserves
+the suffix's branch-union target enclosure, and proves the same event-order
+partition and finite-time branch-union consumption obligations.  The later-step
+regression is a control-flow constructor regression; finding a natural
+arithmetic instance that certifies a later-step event-order split remains a
+useful next target.
+
+This is still a finite-time atlas hardening step, not a full general solution.
+The larger missing pieces are arbitrary split/repeat exhaustion, global regime
+classification, all-future recurrence, and zero-angular total-collision
+continuation.
+
+Latest checks after surfacing ambiguous finite-time KS event-order partition obligations:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py -k "finite_time_loop_rejects_branch_with_uncertified_event_order or second_competing_close_after_ks_repeat or ordinary_ks_repeats_for_competing_binary or competing_close_binary_inside_ks"
+python3 -m pytest -q tests/test_ks_binary_series.py -k "finite_time_event_set or competing_handoff or segmented_tail"
+python3 -m pytest -q tests/test_error_budget.py -k "set_propagation or Lohner or binary_set_propagation or sundman_target"
+python3 -m pytest -q tests/test_hybrid.py -k "validated_atlas or transition or binary"
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "finite_atlas or spatial_binary_regularization_scope or global_regime_exhaustion or zero_angular"
+python3 -m pytest -q tests/test_closed_form.py
+python3 -m pytest -q tests/test_general_solution.py tests/test_ks_binary_series.py
+python3 -m pytest --collect-only -q
+python3 -m pytest -q
+```
+
+```text
+full compileall passed
+4 focused public/loop repeat and event-order regressions passed
+6 focused KS event-set/competing/segmented regressions passed
+20 selected error-budget propagation tests passed
+25 selected hybrid transition/binary tests passed
+selected theorem-gate regressions passed
+39 closed-form audit tests passed
+100 combined general-solution/KS-binary-series tests passed
+collect-only reported 637 tests across 24 test files
+full pytest exited 0
+```
+
+The finite spatial-KS loop now preserves the concrete missing obligation from
+an ambiguous first-event split.  When `certify_next_finite_time_event_set(...)`
+constructs an `AmbiguousEventOrderSplitCertificate` whose event alternatives
+cover the possible first events but whose state-space partition is not yet
+constructed, `_certify_spatial_ks_competing_loop_progress(...)` now reports
+`state_space_event_order_partition_not_constructed` instead of collapsing the
+stop to a generic event-order split.  The new regression exercises overlapping
+competing KS entry events and verifies that the loop stops with both
+`finite_time_event_order_requires_split` and
+`state_space_event_order_partition_not_constructed`.
+
+This sharpens the split-capable finite-time atlas frontier: no branch is
+silently chosen when event ordering overlaps, and the next missing constructor
+is named directly.  It still does not construct the event-order state
+partition, consume those leaves through the atlas loop, prove arbitrary
+repeat/split exhaustion, or advance the all-time/zero-angular parts of the
+program.
+
+Latest checks after making the competing spatial-KS repeat path an explicit finite loop gate:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py -k "second_competing_close_after_ks_repeat or ordinary_ks_repeats_for_competing_binary or competing_close_binary_inside_ks or spatial_branch_union"
+python3 -m pytest -q tests/test_ks_binary_series.py -k "competing_handoff or segmented_tail or target_inside_atlas_uses_segmented_tail or ordinary_handoff_admissibility"
+python3 -m pytest -q tests/test_error_budget.py -k "set_propagation or Lohner or binary_set_propagation or sundman_target"
+python3 -m pytest -q tests/test_hybrid.py -k "validated_atlas or transition or binary"
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "finite_atlas or spatial_binary_regularization_scope or global_regime_exhaustion or zero_angular"
+python3 -m pytest -q tests/test_closed_form.py
+python3 -m pytest -q tests/test_general_solution.py tests/test_ks_binary_series.py
+python3 -m pytest --collect-only -q
+python3 -m pytest -q
+```
+
+```text
+full compileall passed
+4 focused public repeat/branch-union regressions passed
+3 focused KS competing/segmented/handoff regressions passed
+20 selected error-budget propagation tests passed
+25 selected hybrid transition/binary tests passed
+selected theorem-gate regressions passed
+39 closed-form audit tests passed
+99 combined general-solution/KS-binary-series tests passed
+collect-only reported 636 tests across 24 test files
+full pytest exited 0
+```
+
+The public spatial-KS competing path now passes through an explicit finite
+event-loop gate before the local handoff constructor receives a repeat budget.
+`FiniteTimeKSLoopProgressCertificate` derives each loop decision from
+`certify_next_finite_time_event_set(...)`: target-before-all-events, unique
+competing KS event with certified branch lift, typed event-order split, or
+repeat-budget exhaustion.  Successful competing routes attach a certified
+`finite_time_atlas_loop_progress` ledger entry and expose the loop certificate
+on the KS competing evaluation.
+
+This removes the hidden one-repeat selector constant from the public route:
+the evaluator now accepts `spatial_binary_max_competing_events`, computes the
+needed local recursive repeat budget from certified loop progress, and emits
+`finite_time_atlas_loop_repeat_budget` when the requested budget cannot cover
+the next certified competing event.  The implementation is still a finite
+loop gate around the existing local handoff constructor; it does not yet prove
+arbitrary repeat/split exhaustion, event-order state partitioning, all-future
+recurrence, or zero-angular total-collision continuation.
+
+Latest checks after promoting segmented spatial-KS tails to per-segment chart evidence:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_ks_binary_series.py -k "segmented_tail or target_inside_atlas_uses_segmented_tail or competing_handoff_uses_segmented_tail or ordinary_handoff_admissibility"
+python3 -m pytest -q tests/test_general_solution.py -k "second_competing_close_after_ks_repeat or ordinary_ks_repeats_for_competing_binary or competing_close_binary_inside_ks or spatial_branch_union"
+python3 -m pytest -q tests/test_error_budget.py -k "set_propagation or Lohner or binary_set_propagation or sundman_target"
+python3 -m pytest -q tests/test_hybrid.py -k "validated_atlas or transition or binary"
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "finite_atlas or spatial_binary_regularization_scope or global_regime_exhaustion or zero_angular"
+python3 -m pytest -q tests/test_closed_form.py
+python3 -m pytest -q tests/test_general_solution.py tests/test_ks_binary_series.py
+python3 -m pytest --collect-only -q
+python3 -m pytest -q
+```
+
+```text
+full compileall passed
+3 focused KS segmented/handoff regressions passed
+4 focused public repeat/branch-union regressions passed
+20 selected error-budget propagation tests passed
+25 selected hybrid transition/binary tests passed
+selected theorem-gate regressions passed
+39 closed-form audit tests passed
+99 combined general-solution/KS-binary-series tests passed
+collect-only reported 636 tests across 24 test files
+full pytest exited 0
+```
+
+Segmented spatial-KS propagation now carries constructor-derived chart
+evidence on every substep.  Each `SpatialKSSegmentPropagationStep` stores the
+KS interval Taylor equation residual certificate plus horizontal-gauge and
+pair-energy projection constraint certificates derived from the actual
+substep Taylor solution.  A segmented KS tail chain is certified only when
+those per-segment equation and projection certificates certify alongside the
+tail, handoff, and physical-time accumulation checks.
+
+This is a proof-pipeline hardening step for the finite-time atlas loop: a
+small-step KS tail budget is no longer accepted as a scalar shortcut detached
+from the regularized chart equations it advances.  It still does not prove
+arbitrary repeat/split exhaustion, the triple-close cluster case,
+all-future recurrence, or zero-angular total-collision continuation.
+
+Latest checks after consuming spatial branch-union leaves through certified KS-to-ordinary handoff:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py -k spatial_branch_union
+python3 -m pytest -q tests/test_ks_binary_series.py -k "local_handoff_enters_validated_atlas_surface or exact_collision_exit_event_hands_off or target_before_ordinary_safe_exit or ordinary_handoff"
+python3 -m pytest -q tests/test_general_solution.py -k "spatial_branch_union or spatial_close_pair_branch_union or branch_partition or simultaneous_close_pair_split or finite_time_regime_classifier"
+python3 -m pytest -q tests/test_ks_binary_series.py -k "competing_handoff or segmented_tail or target_inside_atlas_uses_segmented_tail or ordinary_handoff_admissibility or ordinary_handoff or finite_time_event_set"
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "finite_atlas or spatial_binary_regularization_scope or global_regime_exhaustion or zero_angular"
+python3 -m pytest -q tests/test_hybrid.py -k "validated_atlas or transition or binary"
+python3 -m pytest -q tests/test_general_solution.py tests/test_ks_binary_series.py
+python3 -m pytest --collect-only -q
+python3 -m pytest -q
+```
+
+```text
+full compileall passed
+new public spatial-branch-union handoff regression passed
+5 focused KS ordinary-handoff regressions passed
+9 focused branch-union/partition/classifier regressions passed
+8 focused KS competing/segmented/target-inside/handoff/event-set regressions passed
+selected theorem-gate regressions passed
+selected hybrid transition/binary regressions passed
+99 combined general-solution/KS-binary-series tests passed
+collect-only reported 636 tests across 24 test files
+full pytest exited 0
+```
+
+The spatial branch-union route can now consume leaves that leave the initial
+KS chart through a constructor-certified ordinary handoff.  The public
+regression uses `evaluate_unrestricted_solution(..., method="validated_atlas")`
+on an interval spatial state whose close-pair hull splits into three branch
+leaves; every member atlas now proves the sequence
+`spatial_ks_binary -> spatial_ordinary_taylor_after_ks` with a certified
+`ordinary_handoff_admissibility` certificate and a certified endpoint
+transition.
+
+Two proof-domain corrections made that meaningful.  First, a chosen
+rho-positive endpoint handoff no longer requires a nonexistent rho-exit root
+isolation certificate; true `exit_rho` routes still require that event
+certificate, while endpoint handoffs are covered by
+`ordinary_handoff_admissibility`.  Second, the post-KS ordinary chart now
+records the full forward ordinary chart domain from the KS endpoint through
+the requested target, so transition connectivity and physical-time chain
+coverage are certified by the actual chart intervals rather than a target
+instant.
+
+This advances the finite-time atlas from target-inside KS branch consumption
+to certified KS-to-ordinary branch leaves.  It still does not prove arbitrary
+repeat/split exhaustion, all-future recurrence, or zero-angular total-collision
+continuation.
+
+Latest checks after consuming a certified spatial close-pair branch union:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py -k "spatial_close_pair_branch_union or branch_partition or simultaneous_close_pair_split or finite_time_regime_classifier"
+python3 -m pytest -q tests/test_general_solution.py -k "receding_close_binary_without_ks_auto or spatial_close_pair_branch_union or branch_partition"
+python3 -m pytest -q tests/test_general_solution.py -k "second_competing_close_after_ks_repeat or ordinary_ks_repeats_for_competing_binary or competing_close_binary_inside_ks or finite_time_regime_classifier or spatial_close_pair_branch_union or branch_partition or simultaneous_close_pair_split"
+python3 -m pytest -q tests/test_ks_binary_series.py -k "competing_handoff or segmented_tail or target_inside_atlas_uses_segmented_tail or ordinary_handoff_admissibility or finite_time_event_set"
+python3 -m pytest -q tests/test_error_budget.py -k "set_propagation or Lohner or binary_set_propagation or sundman_target"
+python3 -m pytest -q tests/test_hybrid.py -k "validated_atlas or transition or binary"
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "finite_atlas or spatial_binary_regularization_scope or global_regime_exhaustion or zero_angular"
+python3 -m pytest -q tests/test_closed_form.py
+python3 -m pytest -q tests/test_general_solution.py tests/test_ks_binary_series.py
+python3 -m pytest --collect-only -q
+python3 -m pytest -q
+```
+
+```text
+full compileall passed
+8 focused branch-union/partition/classifier regressions passed
+3 focused auto-disable/branch-union regressions passed
+11 focused public finite-time classifier/refusal/partition/branch-union regressions passed
+6 focused KS competing/segmented/target-inside/event-set regressions passed
+20 selected error-budget propagation tests passed
+25 selected hybrid transition/binary tests passed
+56 selected theorem-gate tests passed
+39 closed-form audit tests passed
+98 combined general-solution/KS-binary-series tests passed
+collect-only reported 635 tests across 24 test files
+full pytest exited 0
+```
+
+`validated_atlas_from_spatial_close_pair_branch_partition(...)` now consumes a
+certified simultaneous close-pair split in a real finite-time route.  For each
+certified leaf with a unique possible close pair, it derives a KS branch atlas,
+evaluates the requested target inside that regularized chart, and returns a
+single `ValidatedAtlasSolution` with a target-state branch union.  The selected
+public route is `spatial_branch_union`, and the result carries a
+`SpatialBranchUnionValidatedEvaluation` containing the member certified KS
+atlases.
+
+The spatial KS proof coverage was also corrected so a target evaluated inside
+the KS chart does not require an unrelated rho-exit event certificate.  Rho
+exit is still required when the route leaves KS for an ordinary chart.  The
+new branch-union route still respects `spatial_binary_auto=False`; disabling
+spatial KS automation leaves the close-binary guard as a blocking selector
+failure.
+
+This proves one concrete branch-union consumption case, not arbitrary
+repeat/split exhaustion.  Remaining finite-time work is to generalize this
+from target-inside initial KS leaves to longer branch loops with KS-to-KS,
+ordinary handoff, and repeated split consumption.
+
+Latest checks after surfacing close-pair branch partitions through the public finite-time classifier:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py -k "branch_partition or simultaneous_close_pair_split or finite_time_regime_classifier"
+python3 -m pytest -q tests/test_general_solution.py -k "second_competing_close_after_ks_repeat or ordinary_ks_repeats_for_competing_binary or competing_close_binary_inside_ks or finite_time_regime_classifier or branch_partition or simultaneous_close_pair_split"
+python3 -m pytest -q tests/test_ks_binary_series.py -k "competing_handoff or segmented_tail or target_inside_atlas_uses_segmented_tail or ordinary_handoff_admissibility or finite_time_event_set"
+python3 -m pytest -q tests/test_error_budget.py -k "set_propagation or Lohner or binary_set_propagation or sundman_target"
+python3 -m pytest -q tests/test_hybrid.py -k "validated_atlas or transition or binary"
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "finite_atlas or spatial_binary_regularization_scope or global_regime_exhaustion or zero_angular"
+python3 -m pytest -q tests/test_closed_form.py
+python3 -m pytest -q tests/test_general_solution.py tests/test_ks_binary_series.py
+python3 -m pytest --collect-only
+python3 -m pytest -q
+```
+
+```text
+full compileall passed
+7 focused branch-partition/classifier regressions passed
+10 focused public finite-time classifier/refusal/partition regressions passed
+6 focused KS competing/segmented/target-inside/event-set regressions passed
+20 selected error-budget propagation tests passed
+25 selected hybrid transition/binary tests passed
+56 selected theorem-gate tests passed
+39 closed-form audit tests passed
+97 combined general-solution/KS-binary-series tests passed
+collect-only reported 634 tests across 24 test files
+full pytest exited 0
+```
+
+`FiniteTimeChartSelectorAttempt` can now carry a constructor-derived
+`branch_partition` object.  The spatial close-binary fallback guard calls
+`certify_simultaneous_close_pair_partition(...)` on the actual initial spatial
+state interval before raising a blocking selector failure.  When that split is
+certified, the missing obligation is sharpened to
+`finite_time_branch_union_consumption`, rather than leaving
+`simultaneous_close_pair_partitioning` as the active blocker.
+
+`FiniteTimeRegimeClassificationCertificate` now exposes the partition through
+`branch_partition` and `branch_partition_certified`, and records a certified
+`simultaneous_close_pair_partition` theorem-pipeline obligation when the split
+constructor succeeds.  The new regression exercises the public evaluator and
+classifier on an interval spatial state whose hull has two possible close
+binary pairs; the selector failure now carries the certified branch union with
+one possible close pair per leaf.
+
+This is still not the full finite-time branch loop.  The remaining obligation
+is explicitly `finite_time_branch_union_consumption`: the public atlas loop
+must next consume those spatial branch leaves and continue each selected KS
+route, instead of merely surfacing the partition evidence.
+
+Latest checks after adding spatial simultaneous close-pair state partitioning:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py -k "simultaneous_close_pair_split"
+python3 -m pytest -q tests/test_general_solution.py -k "second_competing_close_after_ks_repeat or ordinary_ks_repeats_for_competing_binary or competing_close_binary_inside_ks or finite_time_regime_classifier or simultaneous_close_pair_split"
+python3 -m pytest -q tests/test_ks_binary_series.py -k "competing_handoff or segmented_tail or target_inside_atlas_uses_segmented_tail or ordinary_handoff_admissibility or finite_time_event_set"
+python3 -m pytest -q tests/test_error_budget.py -k "set_propagation or Lohner or binary_set_propagation or sundman_target"
+python3 -m pytest -q tests/test_hybrid.py -k "validated_atlas or transition or binary"
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "finite_atlas or spatial_binary_regularization_scope or global_regime_exhaustion or zero_angular"
+python3 -m pytest -q tests/test_closed_form.py
+python3 -m pytest -q tests/test_general_solution.py tests/test_ks_binary_series.py
+python3 -m pytest -q
+python3 -m pytest --collect-only
+```
+
+```text
+full compileall passed
+2 simultaneous-close-pair partition regressions passed
+9 focused public finite-time classifier/refusal/partition regressions passed
+6 focused KS competing/segmented/target-inside/event-set regressions passed
+20 selected error-budget propagation tests passed
+25 selected hybrid transition/binary tests passed
+56 selected theorem-gate tests passed
+39 closed-form audit tests passed
+96 combined general-solution/KS-binary-series tests passed
+full pytest exited 0
+collect-only reported 633 tests across 24 test files
+```
+
+`SimultaneousClosePairPartitionBranch`,
+`SimultaneousClosePairSplitCertificate`, and
+`certify_simultaneous_close_pair_partition(...)` now provide a spatial
+state-box splitter for close-pair ambiguity.  The constructor repeatedly
+bisects position coordinates involved in ambiguous close pairs, computes
+interval lower/upper pair-distance bounds on every branch, and certifies a
+leaf only when at most one pair can be below the close-pair threshold.  The
+certificate records the branch interval union, bisection cover check, pair
+distance bounds, selected pair when unique, and per-leaf missing obligations.
+
+The focused positive regression starts from one spatial interval box whose hull
+can make two different pairs appear close.  The splitter produces a certified
+branch union with no leaf containing more than one possible close pair.  The
+negative regression uses a genuine triple-close cluster; it correctly refuses
+certification and reports both `simultaneous_close_pair_partitioning` and
+`spatial_triple_close_cluster_requires_cluster_blowup_or_total_collision_selector`.
+
+This is branch-union substrate for Phase A.  The public finite-time atlas loop
+still does not consume these spatial partition leaves, and arbitrary
+repeat/split exhaustion remains open.
+
+Latest checks after deriving ambiguous finite-time KS event-order split leaves:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_ks_binary_series.py -k "finite_time_event_set"
+python3 -m pytest -q tests/test_ks_binary_series.py -k "competing_handoff or segmented_tail or target_inside_atlas_uses_segmented_tail or finite_time_event_set"
+python3 -m pytest -q tests/test_general_solution.py -k "second_competing_close_after_ks_repeat or ordinary_ks_repeats_for_competing_binary or competing_close_binary_inside_ks or finite_time_regime_classifier"
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "finite_atlas or spatial_binary_regularization_scope or global_regime_exhaustion or zero_angular"
+python3 -m pytest -q tests/test_error_budget.py -k "set_propagation or Lohner or binary_set_propagation or sundman_target"
+python3 -m pytest -q tests/test_hybrid.py -k "validated_atlas or transition or binary"
+python3 -m pytest -q tests/test_closed_form.py
+python3 -m pytest -q tests/test_ks_binary_series.py tests/test_general_solution.py
+python3 -m pytest -q
+python3 -m pytest --collect-only -q
+```
+
+```text
+full compileall passed
+3 finite-time event-set regressions passed
+6 focused KS competing/segmented/target-inside regressions passed
+7 focused public finite-time classifier/refusal regressions passed
+56 selected theorem-gate tests passed
+20 selected error-budget propagation tests passed
+25 selected hybrid transition/binary tests passed
+39 closed-form audit tests passed
+94 combined KS-binary-series/general-solution tests passed
+full pytest exited 0
+collect-only reported 631 tests across 24 test files
+```
+
+`AmbiguousEventOrderPartitionLeaf`,
+`AmbiguousEventOrderSplitCertificate`, and
+`certify_ambiguous_event_order_partition(...)` now turn overlapping
+constructor-certified finite-time event roots into an explicit event-order
+branch set.  The branch leaves carry the assumed first event id, event type,
+pair, certified root/physical-time intervals, and the competing first-event
+ids whose intervals overlap.  This is derived from the same interval KS
+physical-time root enclosures used by `certify_next_finite_time_event_set(...)`.
+
+`FiniteTimeEventSetCertificate` now exposes the ambiguous-order split evidence
+when the selector cannot prove a unique first event.  The split certificate
+certifies the event-alternative cover but deliberately keeps
+`state_space_event_order_partition_not_constructed` as a missing obligation
+until a real branch-union state splitter consumes those leaves.  This moves the
+frontier from a string-only `finite_time_event_order_requires_split` blocker
+toward the finite-time loop's branch-union substrate without widening theorem
+claims.
+
+This does not yet implement simultaneous close-pair state partitioning, consume
+split leaves in the public finite-time loop, or prove arbitrary repeat/split
+exhaustion.
+
+Latest checks after adding certificate-derived finite-time KS event ordering:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_ks_binary_series.py -k "finite_time_event_set"
+python3 -m pytest -q tests/test_ks_binary_series.py -k "competing_handoff or segmented_tail or target_inside_atlas_uses_segmented_tail or finite_time_event_set"
+python3 -m pytest -q tests/test_general_solution.py -k "second_competing_close_after_ks_repeat or ordinary_ks_repeats_for_competing_binary or competing_close_binary_inside_ks or initial_spatial_ks_competing_handoff"
+python3 -m pytest -q tests/test_ks_binary_series.py
+python3 -m pytest -q tests/test_general_solution.py
+python3 -m pytest -q
+python3 -m pytest --collect-only -q
+```
+
+```text
+full compileall passed
+3 finite-time event-set regressions passed
+6 focused KS competing/segmented/target-inside regressions passed
+4 focused public finite-time competing-selector regressions passed
+46 KS-binary-series tests passed
+48 general-solution tests passed
+full pytest exited 0
+collect-only reported 631 tests across 24 test files
+```
+
+`FiniteTimeEventCandidate`, `FiniteTimeEventSetCertificate`, and
+`certify_next_finite_time_event_set(...)` now derive target/event ordering from
+constructor-certified KS root enclosures.  The selector evaluates the KS
+physical-time series over each certified root interval and only reports a
+target-first or unique-first-event decision when interval ordering proves it.
+Overlapping first-event intervals now produce the typed split obligation
+`finite_time_event_order_requires_split`.
+
+The spatial KS competing-candidate helpers in both the local atlas repeat path
+and the public finite-time selector now consume this event-set certificate
+instead of sorting candidates by midpoint estimates.  Point estimates remain
+only inside the lower-level root isolators and for non-certifying endpoint-size
+heuristics after a unique first event has already been interval-ordered.  One
+public refusal regression now stops at the earlier certified competing event,
+so its expected blocker is the sharper close-binary split obligation rather
+than a later skipped triple-close-cluster blocker.
+
+This is Phase A chart-selection hardening.  It does not yet build the full
+finite-time loop, branch-union splitting, or all-time regime classification.
+
+Latest checks after promoting segmented spatial-KS tail fallback into
+loop-usable per-segment propagation evidence:
+
+```bash
+python3 -m compileall -q three_body_symmetry/tail_bounds.py three_body_symmetry/validated_atlas.py tests/test_ks_binary_series.py
+python3 -m pytest -q tests/test_ks_binary_series.py -k "segmented_tail or target_inside_atlas_uses_segmented_tail or competing_handoff_uses_segmented_tail"
+python3 -m pytest -q tests/test_ks_binary_series.py -k "competing_handoff or segmented_tail or target_inside_atlas_uses_segmented_tail or ordinary_handoff_admissibility"
+python3 -m pytest -q tests/test_general_solution.py -k "second_competing_close_after_ks_repeat or ordinary_ks_repeats_for_competing_binary or competing_close_binary_inside_ks or finite_time_regime_classifier"
+python3 -m pytest -q tests/test_tail_bounds.py
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py
+python3 -m pytest -q tests/test_ks_binary_series.py
+python3 -m pytest -q
+python3 -m pytest --collect-only -q
+```
+
+```text
+targeted compileall passed
+3 focused segmented-KS regressions passed
+3 focused KS segmented/handoff/admissibility regressions passed
+7 focused finite-time classifier/refusal regressions passed
+25 tail-bounds tests passed
+full compileall passed
+48 general-solution tests passed
+43 KS-binary-series tests passed
+full pytest exited 0
+collect-only reported 628 tests across 24 test files
+```
+
+`SpatialKSSegmentedTailCertificate` now carries
+`SpatialKSSegmentPropagationStep` records for every certified re-expanded KS
+subchart.  Each step records the start state, local `s` interval, physical-time
+delta interval, guarded tail certificate, and propagated end state.  The
+segmented certificate now requires certified segment handoffs, final-state
+matching, physical-time accumulation, and certificate/step-size alignment
+before `is_nontrivial` can become true.
+
+The spatial KS atlas adapters now expose the selected KS tail certificate on
+their evaluation objects.  Target-inside-KS atlases expose the target tail
+certificate through `SpatialKSValidatedEvaluation.ks_tail_certificate`, and
+KS-to-KS competing handoffs expose the first-leg certificate through
+`SpatialKSCompetingHandoffEvaluation.first_ks_tail_certificate`.  The
+regressions assert that the known direct-tail-failing middle chart is certified
+by a real segmented propagation chain rather than only by an aggregate tail
+number.
+
+This is loop substrate work for the finite-time atlas builder.  It does not
+yet build the finite-time loop, consume branch-union splits, or solve arbitrary
+multi-event KS continuation.
+
+Latest checks after sharpening simultaneous KS competing-pair refusal into a
+certified triple-close-cluster blocker when the interval bounds prove it:
+
+```bash
+python3 -m compileall -q three_body_symmetry/validated_atlas.py tests/test_general_solution.py
+python3 -m pytest -q tests/test_general_solution.py -k "second_competing_close_after_ks_repeat or competing_close_binary_inside_ks or finite_time_regime_classifier"
+python3 -m pytest -q tests/test_general_solution.py
+python3 -m pytest -q tests/test_ks_binary_series.py -k "competing_binary or handoff or target_before_ordinary_safe_exit"
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q
+python3 -m pytest --collect-only -q
+```
+
+```text
+targeted compileall passed
+6 focused finite-time classifier/refusal regressions passed
+48 general-solution tests passed
+15 focused KS competing/handoff regressions passed
+full compileall passed
+full pytest exited 0
+collect-only reported 628 tests across 24 test files
+```
+
+`_certify_spatial_local_collision_policy(...)` now derives both lower and
+upper squared-distance bounds for the two nonselected body-pair distances in a
+selected spatial KS chart.  The existing obligation
+`simultaneous_close_pair_partitioning` still appears when interval lower
+bounds cannot separate more than one competing pair from the floor.  When the
+upper bounds also prove both third-body distances are below the competing-pair
+floor, the constructor now adds the sharper obligation
+`spatial_triple_close_cluster_requires_cluster_blowup_or_total_collision_selector`.
+
+The public repeated-KS refusal geometry now propagates that sharper obligation
+through both `FiniteTimeChartSelectorError` and
+`classify_finite_time_regime(...)`.  This prevents the finite-time selector
+from describing a certified near-triple cluster as merely another isolated
+binary handoff candidate.
+
+This is a stricter finite-time blocker classification.  It still does not
+implement the missing cluster blow-up chart, total-collision selector entry
+from arbitrary finite-time data, simultaneous interval-union partitioning, or
+arbitrary multi-event KS continuation.
+
+Latest checks after making finite-time atlas proof certification require
+physical-time chain progress:
+
+```bash
+python3 -m compileall -q three_body_symmetry/validated_atlas.py tests/test_general_solution.py
+python3 -m pytest -q tests/test_general_solution.py -k "single_proof_pipeline or backward_spatial_ks_by_reversal or ordinary_ks_repeats_for_competing_binary"
+python3 -m pytest -q tests/test_general_solution.py -k "validated_atlas or spatial_ks or competing_close_binary or finite_time_regime_classifier"
+python3 -m pytest -q tests/test_ks_binary_series.py -k "entry_event or competing_binary or handoff or target_before_ordinary_safe_exit"
+python3 -m pytest -q tests/test_hybrid.py -k "validated_atlas or transition or binary"
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "finite_atlas or spatial_binary_regularization_scope or nonzero_angular_compact_finite"
+python3 -m pytest -q tests/test_closed_form.py
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py::test_unrestricted_solution_validated_atlas_method_derives_single_proof_pipeline tests/test_general_solution.py::test_unrestricted_solution_validated_atlas_auto_selects_backward_spatial_ks_by_reversal
+python3 -m pytest -q tests/test_general_solution_theorem.py::test_positive_energy_homothetic_escape_feeds_global_atlas_from_initial_data tests/test_general_solution_theorem.py::test_positive_energy_homothetic_escape_rejects_manual_endpoint_majorant_in_theorem
+python3 -m pytest -q
+python3 -m pytest --collect-only -q
+```
+
+```text
+targeted compileall passed
+3 focused proof-progress/spatial-KS regressions passed
+29 filtered finite-time validated-atlas/general-solution regressions passed
+18 focused KS entry/competing/handoff regressions passed
+25 focused hybrid validated-atlas/transition/binary regressions passed
+9 focused theorem finite-atlas/spatial-scope/nonzero-angular regressions passed
+39 closed-form audit tests passed
+full compileall passed
+2 focused finite-time progress regressions passed after local-chart scoping
+2 focused homothetic escape gluing regressions passed after local-chart scoping
+full pytest exited 0
+collect-only reported 628 tests across 24 test files
+```
+
+`ValidatedAtlasSolution.proof_certified` now requires
+`physical_time_chain_progress_certified`.  For selector-backed public
+finite-time routes, the physical-time chart chain must start at time zero,
+touch or overlap at every transition, and continuously reach the requested
+target in the correct time direction.  A regression now corrupts the first
+chart's physical start time in a selector-backed atlas and verifies that
+`physical_time_chain_progress` blocks certification.
+
+The reduced Sundman/compact-Sundman adapter was also tightened.  Target-only
+reduced evaluations no longer expose their final chart as a point at the
+target time; `_target_chart_from_reduced_target(...)` now uses the constructor
+target certificate's start and bracketing global-time intervals, so a
+target-only local chart still carries the certified physical-time segment
+from the chart start to the target.
+
+One full-suite run exposed an interaction with local theorem charts:
+homothetic total-collision atlases are local charts around their event time,
+not public finite-time routes from `t=0`.  The progress rule now keeps the
+zero-start requirement for selector-backed public finite-time atlases while
+requiring local theorem charts to certify continuous local chart progress to
+their own target.  The previously failing positive-energy homothetic escape
+gluing tests pass after that scoping correction.
+
+This is proof-surface hardening for the finite-time atlas loop.  It does not
+implement arbitrary repeat/split exhaustion, simultaneous close-pair
+interval-union partitioning, arbitrary multi-event KS continuation, or the
+global initial-data partition theorem.
+
+Latest checks after adding bounded KS competing-repeat plumbing and a sharper
+simultaneous close-pair obligation:
+
+```bash
+python3 -m compileall -q three_body_symmetry/validated_atlas.py three_body_symmetry/general_solution.py tests/test_general_solution.py
+python3 -m pytest -q tests/test_general_solution.py -k "second_competing_close_after_ks_repeat or ordinary_ks_repeats_for_competing_binary or competing_close_binary_inside_ks"
+python3 -m pytest -q tests/test_ks_binary_series.py -k "competing_handoff or segmented_tail or target_inside_atlas_uses_segmented_tail"
+python3 -m pytest -q tests/test_general_solution.py
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q
+python3 -m pytest --collect-only -q
+```
+
+```text
+targeted compileall passed
+3 focused public competing-KS selector/refusal regressions passed
+3 focused KS segmented/competing-handoff regressions passed
+48 general-solution tests passed
+full compileall passed
+full pytest exited 0
+collect-only reported 628 tests across 24 test files
+```
+
+`validated_atlas_from_spatial_ks_competing_binary_handoff(...)` now accepts a
+bounded `max_competing_repeats` parameter.  If the delegated next KS chart
+cannot certify a safe endpoint/target path and there is budget for another
+repeat, it derives the next competing event directly from the certified next
+KS state and composes the same KS-to-KS handoff constructor recursively.  The
+public finite-time spatial KS selector now passes one repeat budget into both
+initial-KS and ordinary-entry-KS competing handoff attempts.
+
+The current public refusal geometry was audited rather than forced through
+the repeat path.  At the first KS-to-KS handoff, more than one nonselected
+pair is already below the competing-pair floor, so this is a simultaneous
+close-pair partition problem rather than a clean isolated next event.  The
+collision-policy constructor now reports
+`simultaneous_close_pair_partitioning` alongside
+`ks_competing_close_binary_requires_next_regularized_chart_or_split` when the
+interval lower bounds prove multiple competing pairs are inside the floor.
+
+This is progress toward the finite-time atlas loop because repeat plumbing is
+now constructor-driven and the simultaneous case is identified by the local
+collision-policy certificate.  It still does not implement the actual
+interval-union split/branch processing for simultaneous close pairs, nor an
+arbitrary repeat exhaustion proof.
+
+Latest checks after making KS-to-KS competing handoff consume segmented KS
+segment propagation:
+
+```bash
+python3 -m compileall -q three_body_symmetry/validated_atlas.py tests/test_ks_binary_series.py
+python3 -m pytest -q tests/test_ks_binary_series.py -k "segmented_tail or target_inside_atlas_uses_segmented_tail or competing_handoff_uses_segmented_tail"
+python3 -m pytest -q tests/test_general_solution.py -k "second_competing_close_after_ks_repeat or ordinary_ks_repeats_for_competing_binary or competing_close_binary_inside_ks"
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_tail_bounds.py tests/test_ks_binary_series.py
+python3 -m pytest -q
+python3 -m pytest --collect-only -q
+```
+
+```text
+targeted compileall passed
+3 focused KS segmented-tail/target/competing-handoff regressions passed
+3 focused public finite-time competing-KS selector/refusal regressions passed
+full compileall passed
+tail-bounds plus KS-binary-series files exited 0
+full pytest exited 0
+collect-only reported 628 tests across 24 test files
+```
+
+`validated_atlas_from_spatial_ks_competing_binary_handoff(...)` no longer uses
+only a direct one-shot tail certificate for its first KS leg.  It now goes
+through a reusable KS segment propagation helper that first tries the direct
+guard and then falls back to certified re-expanded KS subcharts, returning a
+finite segment tail, propagated endpoint state, and physical-time interval
+when the segmented construction succeeds.
+
+The new regression targets the concrete middle competing-KS geometry where
+the direct first-leg tail remains `inf`.  The local KS-to-KS handoff now
+certifies that leg with segmented propagation, carries a finite local tail
+budget, certifies the collision-policy scope for the two local KS charts, and
+contains the reference target in the next regularized chart.
+
+This is a constructor-level improvement needed for a repeatable finite-time
+KS atlas loop.  The public finite-time selector still correctly refuses the
+case that needs another competing regularized chart after the current
+one-repeat route; that remaining obligation is the actual loop/split
+machinery, not this middle-chart tail budget.
+
+Latest checks after wiring segmented spatial-KS target tails into the public
+local KS atlas target evaluation:
+
+```bash
+python3 -m compileall -q three_body_symmetry/validated_atlas.py three_body_symmetry/tail_bounds.py tests/test_ks_binary_series.py
+python3 -m pytest -q tests/test_ks_binary_series.py -k "segmented_tail or target_inside_atlas_uses_segmented_tail or target_before_ordinary_safe_exit"
+python3 -m pytest -q tests/test_tail_bounds.py tests/test_ks_binary_series.py
+python3 -m pytest -q tests/test_general_solution.py -k "competing_close_binary_inside_ks or second_competing_close_after_ks_repeat or ordinary_ks_repeats_for_competing_binary"
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q
+python3 -m pytest --collect-only -q
+```
+
+```text
+targeted compileall passed
+3 focused KS target-inside/segmented-tail regressions passed
+tail-bounds plus KS-binary-series files exited 0
+3 focused public finite-time competing-KS selector/refusal regressions passed
+full compileall passed
+full pytest exited 0
+collect-only reported 627 tests across 24 test files
+```
+
+`validated_atlas_from_spatial_ks_binary_chart(...)` now evaluates a requested
+target inside the regularized KS chart before constructing the ordinary
+handoff interval state.  This prevents an infinite direct KS exit tail from
+forcing ordinary-coordinate inflation when the target has not yet reached an
+ordinary-safe handoff.
+
+The KS target evaluator now tries the direct interval tail first and then uses
+`spatial_ks_binary_interval_segmented_tail_certificate(...)` with certified
+re-expanded KS subcharts when the direct guard is nonfinite.  The segmented
+certificate now also accumulates a physical-time interval, so the atlas can
+check that the segmented endpoint actually encloses the requested physical
+target time before projecting the final interval KS state.
+
+The new public regression uses the two-step competing-KS geometry whose middle
+chart has `tail_bound=inf` as one full Taylor step.  The local atlas constructor
+still returns a one-chart regularized target evaluation with a finite tail
+budget, no ordinary post-handoff chart, and a target interval containing the
+reference trajectory.  This hardens finite-time target-in-KS construction; it
+does not yet add arbitrary multi-KS atlas repetition, simultaneous close-pair
+partitioning, all-future event recurrence from arbitrary data, zero-angular
+total-collision continuation, or the global initial-data partition theorem.
+
+Latest checks after adding segmented spatial-KS interval tail certification:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_ks_binary_series.py -k "segmented_tail or competing_binary_handoff or competing_binary_entry_event"
+python3 -m pytest -q tests/test_tail_bounds.py tests/test_ks_binary_series.py
+python3 -m pytest -q tests/test_general_solution.py -k "competing_close_binary_inside_ks or second_competing_close_after_ks_repeat or ordinary_ks_repeats_for_competing_binary"
+python3 -m pytest -q
+python3 -m pytest --collect-only -q
+```
+
+```text
+compileall passed
+5 focused KS competing-entry/handoff/segmented-tail regressions passed
+tail-bounds plus KS-binary-series files passed
+3 focused public finite-time competing-KS selector/refusal regressions passed
+full pytest exited 0
+collect-only reported 626 tests across 24 test files
+```
+
+`spatial_ks_binary_interval_segmented_tail_certificate(...)` now certifies a
+KS interval tail by subdividing a requested positive `s` step, re-expanding a
+fresh interval KS Taylor chart from each inflated substep endpoint, and summing
+the constructor-derived guarded tail bounds.  This is not a cosmetic radius
+shrink: each segment builds a new interval chart after applying the previous
+segment's tail enclosure.
+
+The new regression uses the concrete two-step competing-KS geometry that
+previously blocked a bounded KS chain.  The middle chart still fails as one
+full Taylor step (`ratio_bound > 1`, `tail_bound=inf`), but two certified
+substeps produce a finite segmented tail and an endpoint interval containing
+the reference point trajectory.  This removes the specific
+`ks_tail_bound_not_finite` obstruction for that middle-chart tail budget.
+
+This is still a low-level constructor improvement.  It does not yet promote a
+public arbitrary multi-KS atlas loop, simultaneous close-pair partitioning,
+all-future event recurrence from arbitrary data, zero-angular total-collision
+continuation, or the global initial-data partition theorem.
+
+Latest checks after hardening candidate backtracking without promoting an
+uncertified bounded multi-KS chain:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py -k "initial_spatial_ks_competing_handoff_backtracks or second_competing_close_after_ks_repeat or ordinary_ks_repeats_for_competing_binary or competing_close_binary_inside_ks"
+python3 -m pytest -q tests/test_ks_binary_series.py -k "competing_binary_handoff or competing_binary_entry_event or ordinary_handoff_admissibility"
+python3 -m pytest -q tests/test_general_solution.py
+python3 -m pytest -q
+python3 -m pytest --collect-only -q
+```
+
+```text
+compileall passed
+4 focused public competing-KS selector/refusal regressions passed
+4 focused KS competing-entry/handoff/admissibility regressions passed
+48 general-solution tests passed
+full pytest exited 0
+collect-only reported 625 tests across 24 test files
+```
+
+The initial spatial KS competing-handoff selector now tries all
+constructor-derived competing-event candidates in certified event-time order
+and returns the first proof-certified one, rather than stopping after the
+first isolated candidate returns an uncertified atlas.  A focused regression
+forces the first candidate to dead-end and the second to certify.
+
+A bounded two-step KS-to-KS-to-KS chain was explored and deliberately not kept
+as a public certificate layer.  A concrete two-step geometry can certify the
+two event isolations and branch lifts, but the middle KS chart's interval tail
+certificate currently returns `inf` (`ks_tail_bound_not_finite`), which blocks
+`local_tail_budget`, `tail_budget`, `collision_policy`, and final
+`chart_certification`.  The next real mathematical/validated-numerics target
+is therefore to split or strengthen that middle-chart tail certification, not
+to add another theorem witness around it.
+
+This keeps the current result scoped to finite-time one-repeat selector
+hardening.  It still does not implement arbitrary repeat/split exhaustion,
+all-future event recurrence from arbitrary data, zero-angular total-collision
+continuation, or the global initial-data partition theorem.
+
+Latest checks after deriving spatial competing-KS selector candidates from
+certified KS interval charts:
+
+```bash
+python3 -m pytest -q tests/test_general_solution.py -k "second_competing_close_after_ks_repeat or ordinary_ks_repeats_for_competing_binary or competing_close_binary_inside_ks"
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_ks_binary_series.py -k "competing_binary_handoff or competing_binary_entry_event"
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "finite_atlas or spatial_binary_regularization_scope"
+python3 -m pytest -q tests/test_general_solution.py
+python3 -m pytest -q
+python3 -m pytest --collect-only -q
+```
+
+```text
+3 focused public second-KS selector/refusal regressions passed
+compileall passed
+4 focused KS competing-entry/handoff regressions passed
+9 finite-atlas theorem regressions passed
+47 general-solution tests passed
+full pytest exited 0
+collect-only reported 624 tests across 24 test files
+```
+
+The finite-time spatial selector no longer chooses KS-to-competing-KS repeat
+candidates from a physical-space linear closing estimate.  It first constructs
+the relevant interval KS chart, certifies the competing-pair entry event inside
+that lifted chart, lifts the certified event into the next pair's KS branch
+atlas, and only then calls the two-KS handoff constructor.  The handoff
+constructor still re-certifies the event and transition, so the selector and
+artifact agree on the same lifted event source.  The previous heuristic
+candidate function was removed.
+
+This keeps the current result scoped to one certified repeat/refusal step.  It
+does not add an arbitrary bounded KS-chain controller, simultaneous close-pair
+splitting, all-future event recurrence from arbitrary data, zero-angular
+total-collision continuation, or the global initial-data partition theorem.
+
+Latest checks after making the second KS chart enforce the competing-binary
+threshold floor:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py -k "second_competing_close_after_ks_repeat or ordinary_ks_repeats_for_competing_binary or competing_close_binary_inside_ks"
+python3 -m pytest -q tests/test_ks_binary_series.py -k "competing_binary_handoff or competing_binary_entry_event"
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "finite_atlas or spatial_binary_regularization_scope"
+python3 -m pytest -q tests/test_general_solution.py
+python3 -m pytest -q
+python3 -m pytest --collect-only -q
+```
+
+```text
+compileall passed
+3 focused public second-KS selector/refusal regressions passed
+4 focused KS competing-entry/handoff regressions passed
+9 finite-atlas theorem regressions passed
+47 general-solution tests passed
+full pytest exited 0
+collect-only reported 624 tests across 24 test files
+```
+
+The local two-KS repeat constructor now accepts a
+`competing_pair_min_distance_required` floor for the second regularized chart
+and uses it when certifying that chart's nonregularized pairs.  The public
+finite-time selector passes the binary threshold into this floor, so an
+ordinary/KS/competing-KS sequence is proof-certified only when the second KS
+chart also stays above the selector's close-binary threshold for its remaining
+pairs.  If the second KS chart would immediately require a third regularized
+chart, the selector now stops with
+`ks_competing_close_binary_requires_next_regularized_chart_or_split`, and
+`classify_finite_time_regime(...)` propagates that exact obligation instead of
+allowing fallback to Sundman/compact-Sundman.
+
+This hardens the finite-time atlas boundary.  It still does not implement a
+bounded arbitrary KS-chain controller, simultaneous close-pair splitting,
+all-future event recurrence from arbitrary data, zero-angular total-collision
+continuation, or the global initial-data partition theorem.
+
+Latest checks after adding an ordinary-to-KS-to-competing-KS finite selector
+path:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py -k "ordinary_ks_repeats_for_competing_binary or auto_repeats_ks_for_future_competing_binary or competing_close_binary_inside_ks"
+python3 -m pytest -q tests/test_general_solution.py
+python3 -m pytest -q tests/test_ks_binary_series.py tests/test_general_solution_theorem.py -k "competing_binary_entry_event or competing_binary_handoff or ordinary_ks_handoff or finite_atlas or spatial_binary_regularization_scope or nonzero_angular_compact_finite"
+python3 -m pytest -q
+python3 -m pytest --collect-only -q
+```
+
+```text
+compileall passed
+3 focused public ordinary/KS/competing-KS selector regressions passed
+47 general-solution tests passed
+17 focused KS/theorem regressions passed
+full pytest exited 0
+collect-only reported 624 tests across 24 test files
+```
+
+`evaluate_unrestricted_solution(..., method="validated_atlas")` can now certify
+a finite spatial sequence that enters an ordinary Taylor chart, isolates a
+selected ordinary-to-KS binary-entry event, lifts into that selected KS branch,
+and then repeats into a competing KS branch when a second pair reaches the
+binary threshold before an ordinary-safe exit is available.  The public
+artifact is a single `ValidatedAtlasSolution` with
+`spatial_ordinary_taylor_before_ks -> spatial_ks_binary -> spatial_ks_binary`
+charts and explicit
+`spatial_ordinary_to_ks_decreasing_distance_entry` plus
+`spatial_ks_to_ks_competing_binary_entry` transitions.
+
+This is still a finite, one-repeat chart-selection theorem.  It does not prove
+arbitrary repeat/split exhaustion, simultaneous close-pair partitioning,
+all-future event recurrence from arbitrary data, zero-angular total-collision
+continuation, or the global initial-data partition theorem.
+
+Latest checks after integrating one KS-to-competing-KS repeat step into the
+public finite-time spatial selector:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py -k "competing_close_binary_inside_ks or auto_repeats_ks_for_future_competing_binary"
+python3 -m pytest -q tests/test_general_solution.py -k "spatial_ks or close_spatial_binary or competing_close_binary_inside_ks or finite_time_regime_classifier"
+python3 -m pytest -q tests/test_ks_binary_series.py -k "competing_binary_entry_event or competing_binary_handoff or ordinary_entry_event_lifts"
+python3 -m pytest -q tests/test_general_solution.py
+python3 -m pytest -q tests/test_ks_binary_series.py tests/test_general_solution_theorem.py -k "competing_binary_entry_event or competing_binary_handoff or finite_atlas or spatial_binary_regularization_scope or nonzero_angular_compact_finite"
+python3 -m pytest -q
+python3 -m pytest --collect-only -q
+```
+
+```text
+compileall passed
+2 focused public competing-KS selector regressions passed
+14 focused finite-time spatial selector/classifier regressions passed
+5 focused KS competing-entry/handoff regressions passed
+46 general-solution tests passed
+13 focused KS/theorem regressions passed
+full pytest exited 0
+collect-only reported 623 tests across 24 test files
+```
+
+`evaluate_unrestricted_solution(..., method="validated_atlas")` now attempts a
+constructor-derived KS-to-KS handoff before stopping an initially selected
+spatial KS route for a future competing-binary threshold crossing.  When the
+selected pair is already in a certified initial KS chart and another separated
+pair is closing toward the binary threshold, the public selector can now return
+a proof-certified two-KS `ValidatedAtlasSolution` with a
+`spatial_ks_to_ks_competing_binary_entry` transition instead of reporting only
+`ks_competing_close_binary_requires_next_regularized_chart_or_split`.  The
+already-close multi-pair case still stops with that obligation, as it should:
+arbitrary repeat/split exhaustion, simultaneous close-pair partitioning, and
+the global initial-data partition theorem remain unproved.
+
+Latest checks after adding a local KS-to-competing-KS atlas transition:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_ks_binary_series.py -k "competing_binary_handoff_builds_two_ks_atlas"
+python3 -m pytest -q tests/test_ks_binary_series.py -k "competing_binary_entry_event or competing_binary_handoff or ordinary_entry_event_lifts"
+python3 -m pytest -q tests/test_general_solution.py -k "competing_close_binary_inside_ks or finite_time_regime_classifier or default_spatial_ks_handoff_floor"
+python3 -m pytest -q tests/test_ks_binary_series.py
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "finite_atlas or spatial_binary_regularization_scope or nonzero_angular_compact_finite"
+python3 -m pytest -q
+python3 -m pytest --collect-only -q
+```
+
+```text
+compileall passed
+1 focused two-KS handoff regression passed
+5 focused KS competing-entry/handoff regressions passed
+6 focused finite-time selector/regime regressions passed
+40 KS binary-series tests passed
+9 finite-atlas theorem regressions passed
+full pytest exited 0
+collect-only reported 622 tests across 24 test files
+```
+
+`validated_atlas_from_spatial_ks_competing_binary_handoff(...)` now constructs
+a local two-regularized-chart `ValidatedAtlasSolution`: the first spatial KS
+chart isolates a competing-binary entry event, lifts the certified root
+interval into the next pair's KS branch, and delegates the second local segment
+to the existing KS evaluator.  The proof ledger has explicit entries for
+`spatial_ks_competing_entry_event_isolation`,
+`spatial_ks_to_ks_branch_lift`, and `spatial_ks_to_ks_transition`.  The
+constructor now also carries an initial rho-positive KS-to-physical state box
+and certifies the local finite-target collision-policy scope when both KS chart
+domains keep all non-regularized pairs separated.  This proves one
+constructor-derived KS-to-KS competing-binary handoff; it still has not proved
+repeat/split exhaustion for arbitrary future competing events or the global
+initial-data partition theorem.
+
+Latest checks after adding KS competing-entry event isolation and next-branch lift:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_ks_binary_series.py -k "competing_binary_entry_event or ordinary_entry_event_lifts"
+python3 -m pytest -q tests/test_ks_binary_series.py
+python3 -m pytest -q tests/test_general_solution.py -k "competing_close_binary_inside_ks or finite_time_regime_classifier or default_spatial_ks_handoff_floor"
+python3 -m pytest -q
+```
+
+```text
+compileall passed
+4 focused KS entry/lift regressions passed
+39 KS binary-series tests passed
+6 focused finite-time selector/regime regressions passed
+full pytest exited 0
+```
+
+Spatial KS charts now have a constructor-derived competing-binary entry event:
+`certify_spatial_ks_competing_binary_entry_event(...)` isolates the first
+decreasing crossing where a third-body pair reaches a requested entry
+distance inside the currently selected KS chart.  The event can also be lifted
+directly into the next selected pair's KS branch atlas via
+`spatial_ks_competing_entry_event_to_ks_chart_state_atlas(...)`, using the
+certified root interval and rho-positive projection rather than a point-only
+handoff.  This is a concrete transition primitive for the future repeat/split
+selector; it does not yet certify repeatable arbitrary multi-event spatial KS
+continuation or the global initial-data partition theorem.
+
+Latest checks after making finite-time selector failures constructor-visible:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py -k "finite_time_regime_classifier or competing_close_binary_inside_ks"
+python3 -m pytest -q tests/test_general_solution.py
+python3 -m pytest -q tests/test_ks_binary_series.py -k "handoff or target_before_ordinary_safe_exit or unsafe_ordinary_exit or local_handoff"
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "finite_atlas or spatial_binary_regularization_scope or nonzero_angular_compact_finite"
+python3 -m pytest -q
+```
+
+```text
+compileall passed
+5 focused finite-time classifier/selector regressions passed
+45 general-solution tests passed
+10 focused KS handoff/local-handoff regressions passed
+9 finite-atlas theorem regressions passed
+full pytest exited 0
+```
+
+Finite-time chart selector stops now raise a typed
+`FiniteTimeChartSelectorError` carrying the blocking selector attempts and
+their concrete obligation IDs.  `classify_finite_time_regime(...)` consumes
+that constructor-visible failure state and reports the actual missing
+regularized-chart obligation, for example
+`spatial_close_binary_requires_regularized_chart_or_split` or
+`ks_competing_close_binary_requires_next_regularized_chart_or_split`, alongside
+the generic finite-atlas/selector obligations.  This improves the proof
+pipeline's failure surface for the still-missing repeat/split step; it does not
+certify a repeatable arbitrary multi-event spatial KS selector or any global
+regime partition theorem.
+
+Latest checks after adding pair-aware spatial KS exit/competing-binary guards:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py -k "default_spatial_ks_handoff_floor or competing_close_binary_inside_ks or spatial_ks or close_spatial_binary or ambiguous_close_spatial_binary"
+python3 -m pytest -q tests/test_ks_binary_series.py -k "handoff or target_before_ordinary_safe_exit or unsafe_ordinary_exit or local_handoff"
+python3 -m pytest -q tests/test_general_solution.py
+python3 -m pytest -q tests/test_ks_binary_series.py
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "finite_atlas or spatial_binary_regularization_scope or nonzero_angular_compact_finite"
+python3 -m pytest -q
+```
+
+```text
+compileall passed
+10 focused spatial selector/competing-close/KS guard regressions passed
+10 focused KS handoff/local-handoff regressions passed
+44 general-solution tests passed
+36 KS binary-series tests passed
+9 finite-atlas theorem regressions passed
+full pytest exited 0
+```
+
+The public finite-time spatial KS selector now derives a default
+ordinary-handoff distance floor from the binary threshold, so a rho-positive
+KS exit is not enough to create an ordinary post-handoff Taylor chart.  If the
+requested target lies beyond a rho-exit but ordinary handoff is still below
+the safe floor for the selected pair, the atlas remains in the KS chart and
+records the regularized target.  The local spatial collision-policy
+certificate is also pair-aware for competing binaries: if the third body forms
+a separate close pair inside the selected KS chart, the public selector now
+blocks proof certification with a
+`ks_competing_close_binary_requires_next_regularized_chart_or_split`
+obligation instead of certifying a one-shot selected-binary atlas.  This is
+finite-time chart-selection hardening only; repeatable arbitrary multi-event
+spatial KS selection and the global initial-data partition theorem remain
+open.
+
+Latest checks after routing all initially-close separated spatial binaries
+directly into KS:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py -k "closing_close_binary or receding_close_binary or future_spatial_ks_entry or backward_spatial_ks or stops_when_spatial_ks_route_fails"
+python3 -m pytest -q tests/test_general_solution.py -k "spatial_ks or close_spatial_binary or ambiguous_close_spatial_binary"
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "spatial_binary_regularization_scope or nonzero_angular_compact_finite"
+python3 -m pytest -q tests/test_ks_binary_series.py -k "initial or handoff or target_before_ordinary_safe_exit or unsafe_ordinary_exit or local_handoff"
+python3 -m pytest -q tests/test_general_solution.py
+python3 -m pytest -q tests/test_ks_binary_series.py
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "finite_atlas or spatial_binary_regularization_scope or nonzero_angular_compact_finite"
+python3 -m pytest -q
+```
+
+```text
+compileall passed
+6 focused initially-close/future spatial selector regressions passed
+8 spatial selector/close-binary regressions passed
+7 spatial finite-atlas theorem regressions passed
+11 KS handoff/initial/local regressions passed
+42 general-solution tests passed
+36 KS binary-series tests passed
+9 finite-atlas theorem regressions passed
+full pytest exited 0
+```
+
+The initial spatial KS selector now treats every separated pair already inside
+the close-binary threshold as a regularized-chart obligation, independent of
+whether the pair is closing or receding.  This removes the previous
+ordinary-before-KS sliver for initially close closing binaries, so the public
+finite-time selector starts in KS rather than certifying a near-singular
+ordinary Taylor chart before entering KS at a still smaller radius.  The
+finite-atlas theorem scope predicate now accepts both selected ordinary-to-KS
+spatial handoffs and initial-KS spatial handoffs as constructor-certified
+spatial binary regularization.  This is still local finite-time atlas hardening,
+not a repeatable arbitrary multi-event spatial KS loop or global partition
+theorem.
+
+Latest checks after adding the direct initial spatial-KS finite-time route:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py -k "receding_close_binary or future_spatial_ks_entry or future_spatial_binary_without_ks_auto"
+python3 -m pytest -q tests/test_general_solution.py -k "spatial_ks or close_spatial_binary or ambiguous_close_spatial_binary"
+python3 -m pytest -q tests/test_ks_binary_series.py -k "handoff or target_before_ordinary_safe_exit or unsafe_ordinary_exit or local_handoff"
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "spatial_binary_regularization_scope or nonzero_angular_compact_finite"
+python3 -m pytest -q tests/test_general_solution.py
+python3 -m pytest -q tests/test_ks_binary_series.py
+python3 -m pytest -q
+```
+
+```text
+compileall passed
+4 focused future/receding spatial-binary selector regressions passed
+9 spatial selector/close-binary regressions passed
+10 KS handoff/local-handoff regressions passed
+7 spatial finite-atlas theorem regressions passed
+42 general-solution tests passed
+36 KS binary-series tests passed
+full pytest exited 0
+```
+
+The finite-time spatial selector now handles an initially close but receding
+spatial binary by starting directly in a KS chart instead of trying to certify
+a near-collision ordinary chart.  The new
+`validated_atlas_from_spatial_initial_ks_handoff(...)` adapter lifts the
+ordinary interval state into a certified KS branch, reuses the KS target/exit
+projection and ordinary-handoff machinery, certifies local competing-event
+separation, and emits the same `ValidatedAtlasSolution` proof surface.  If
+automatic KS is disabled for such a close receding binary, ordinary/Sundman
+fallback is blocked with a close-binary obligation.  This advances finite-time
+spatial binary atlas selection; it still does not prove a repeatable arbitrary
+multi-event spatial KS loop or the global initial-data partition theorem.
+
+Latest checks after extending the finite-time spatial KS selector to future
+binary-entry events:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py -k "future_spatial_ks_entry or future_spatial_binary_without_ks_auto"
+python3 -m pytest -q tests/test_general_solution.py -k "spatial_ks or close_spatial_binary or ambiguous_close_spatial_binary"
+python3 -m pytest -q tests/test_ks_binary_series.py -k "handoff or target_before_ordinary_safe_exit or unsafe_ordinary_exit"
+python3 -m pytest -q tests/test_general_solution.py
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "finite_atlas or spatial_binary_regularization_scope or nonzero_angular_compact_finite"
+python3 -m pytest -q
+```
+
+```text
+compileall passed
+2 future spatial-entry selector regressions passed
+9 spatial selector/close-binary regressions passed
+10 KS handoff regressions passed
+40 general-solution tests passed
+9 finite-atlas/theorem tests passed
+full pytest exited 0
+```
+
+`evaluate_unrestricted_solution(method="validated_atlas")` now lets the
+automatic spatial KS route select a pair that is not initially below the close
+binary threshold but has a closing, third-body-separated entry event before the
+requested target time.  The selected route feeds the existing ordinary-to-KS
+entry event constructor, KS chart, target/exit projection, collision-policy
+ledger, and shared `ValidatedAtlasSolution` proof surface.  If a future close
+spatial binary is detected but automatic KS is disabled or the derived KS atlas
+is not proof-certified, fallback to ordinary/compactified Sundman is blocked
+with a precise missing obligation instead of silently certifying an unsafe
+ordinary route.  This is finite-time chart-selector hardening only; arbitrary
+global regime classification remains open.
+
+Latest checks after deriving finite Fuchsian-log identity continuation from the
+incoming branch:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_obstructions.py::test_stable_log_selector_chain_projects_to_finite_fuchsian_log_branch tests/test_obstructions.py::test_finite_fuchsian_log_branch_composes_selector_rows_and_projects
+python3 -m pytest -q tests/test_obstructions.py -k "fuchsian or Fuchsian or selector"
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+python3 -m pytest -q
+python3 -m pytest --collect-only -q
+```
+
+```text
+compileall passed
+2 focused finite Fuchsian-log selector tests passed
+28 Fuchsian/selector obstruction tests passed
+92 theorem/closed-form audit tests passed
+full pytest exited 0
+584 tests collected
+```
+
+`derive_identity_finite_fuchsian_log_continuation_from_incoming_branch(...)`
+now turns a finite incoming `FiniteFuchsianLogBranch` into the outgoing
+identity-selector branch without accepting a separately supplied outgoing copy.
+The identity predicate for `FiniteFuchsianLogContinuation` now requires finite
+branch data, matching masses, central shape, scale coefficient, selector bases,
+row powers, and row coefficients, plus finite energy gap. The tests check both
+a stable-normal-form-derived finite Fuchsian-log branch and a manually composed
+two-row branch, including rejection of a collision-degenerate incoming branch
+and rejection of a changed scale coefficient. This is a local zero-angular
+resonant/Fuchsian-log continuation bridge for supplied incoming germs; arbitrary
+entry into such germs and global regime exhaustion remain open.
+
+Latest checks after deriving the identity mixed-Fuchsian selector continuation
+from the incoming branch:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_obstructions.py::test_fuchsian_selector_constructor_builds_two_sided_identity_branch
+python3 -m pytest -q tests/test_obstructions.py -k "fuchsian or Fuchsian or selector"
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+python3 -m pytest -q
+python3 -m pytest --collect-only -q
+```
+
+```text
+compileall passed
+focused Fuchsian selector test passed
+28 Fuchsian/selector obstruction tests passed
+92 theorem/closed-form audit tests passed
+full pytest exited 0
+584 tests collected
+```
+
+`derive_identity_fuchsian_selector_continuation_from_incoming_branch(...)` now
+turns a certified incoming `FuchsianShapeBranch` into the outgoing
+identity-selector branch without accepting a separately supplied selector
+table. The constructor recovers the incoming branch's selected fractional rows,
+requires the scale row needed for finite-energy matching, reconstructs the
+outgoing branch through the same Fuchsian recurrence, and verifies the existing
+identity-selector predicate. That predicate now also rejects non-finite energy
+gaps, so a recurrence-certified branch with no tracked scale coordinate cannot
+be mistaken for an energy-preserving total-collision continuation. The
+regression checks coefficient equality for the derived outgoing branch and
+rejection of an energy-untracked selector branch. This tightens the local
+zero-angular mixed-Fuchsian continuation theorem; it still assumes the incoming
+branch is already in the finite nonresonant Fuchsian class and does not prove
+arbitrary zero-angular entry or global regime exhaustion.
+
+Latest checks after tightening interval Sundman chain certification:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_sundman.py
+python3 -m pytest -q tests/test_general_solution.py -k "sundman or validated_atlas"
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+python3 -m pytest -q
+python3 -m pytest --collect-only -q
+```
+
+```text
+compileall passed
+30 Sundman tests passed
+21 Sundman/general-solution tests passed
+92 theorem/closed-form audit tests passed
+full pytest exited 0
+584 tests collected
+```
+
+`IntervalSundmanContinuedSolution` and `IntervalSundmanTimeTargetSolution`
+now expose `chain_certified`, and their `proof_certified` predicates require
+that chain. Fixed-`s` interval continuations must bind each stored `s` value,
+physical-time interval, and state interval to the corresponding local Sundman
+chart step. Physical-time target solutions must additionally prove the target
+chart starts from the final stored prefix state and time interval. New
+regressions corrupt only the assembled `s` handoff, state handoff, or target
+start-time certificate while leaving local residual, invariant, and tail
+certificates intact; the corrupted objects now fail the proof gate. This
+tightens the finite-time Sundman theorem path without claiming all-future
+recurrence closure or arbitrary-data global regime classification.
+
+Latest checks after tightening compact-time atlas chain certification:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_compact_dynamics.py
+python3 -m pytest -q tests/test_general_solution.py -k "compact or validated_atlas"
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+python3 -m pytest -q
+python3 -m pytest --collect-only -q
+```
+
+```text
+compileall passed
+15 compact-dynamics tests passed
+15 compact/general-solution tests passed
+92 theorem/closed-form audit tests passed
+full pytest exited 0
+584 tests collected
+```
+
+`CompactifiedAtlasSolution` now exposes `chain_certified`, and
+`proof_certified` requires it. The chain gate binds the stored
+compact-parameter sequence, endpoint state matrix, atlas masses, atlas
+time-rate, and chart physical-time starts back to each local compact-time chart
+step. The regressions corrupt the stored compact-parameter handoff, endpoint
+state, and atlas time-rate while leaving all local step residual/tail
+certificates intact; each corrupted atlas now fails the proof gate. This
+tightens compact-time finite-atlas evidence without claiming a new global
+regime classifier or all-future recurrence.
+
+Latest checks after tightening compactified-Sundman atlas chain certification:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_compact_sundman.py
+python3 -m pytest -q tests/test_general_solution.py -k validated_atlas
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+python3 -m pytest -q
+python3 -m pytest --collect-only -q
+```
+
+```text
+compileall passed
+32 compactified-Sundman tests passed
+7 validated-atlas tests passed
+92 theorem/closed-form audit tests passed
+full pytest exited 0
+584 tests collected
+```
+
+`CompactifiedSundmanAtlasSolution`,
+`IntervalCompactifiedSundmanAtlasSolution`, and
+`IntervalCompactifiedSundmanTimeTargetSolution` now expose `chain_certified`,
+and their `proof_certified` predicates require that chain. Point atlases must
+match compact-parameter, state, physical-time, and Sundman-time boundaries
+against each local chart. Interval atlases additionally require stored endpoint
+boxes and physical-time intervals to match each step's certified handoff, and
+physical-time target solutions require the target chart's start state and start
+time certificate to match the preceding atlas prefix. The new regressions
+corrupt only the assembled physical-time array, interval state handoff, or
+target start-time certificate while leaving local step certificates intact; the
+corrupted objects now fail the proof gate. This tightens the compactified
+finite-time theorem path without claiming the missing arbitrary-data global
+regime classifier or all-future shell-invariance proof.
+
+Latest checks after tightening Sundman target set-enclosure chain
+certification:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_error_budget.py::test_sundman_target_set_propagation_rebuilds_multi_step_target_charts
+python3 -m pytest -q tests/test_error_budget.py
+python3 -m pytest -q tests/test_sundman.py tests/test_general_solution.py -k "sundman or validated_atlas"
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+python3 -m pytest -q
+python3 -m pytest --collect-only -q
+```
+
+```text
+compileall passed
+1 Sundman target set-propagation test passed
+26 error-budget tests passed
+51 Sundman/general-solution tests passed
+92 theorem/closed-form audit tests passed
+full pytest exited 0
+584 tests collected
+```
+
+`SundmanSetPropagationStep` now has a per-step proof predicate, and
+`SundmanSetPropagatedEnclosure.proof_certified` requires a certified chain.
+Adjacent full/target Sundman steps must match the regularized parameter
+handoff, physical-time interval handoff, and propagated state interval before
+the final target box can be used as proof-certified evidence. The regression
+corrupts the target step's starting time and starting state while keeping that
+target step locally certified; both corrupted enclosures now fail the chain
+gate. This strengthens finite-time Sundman target evidence without claiming a
+new all-future Sundman recurrence, binary/Sundman/KS Lohner map, or global
+regime classifier.
+
+Previous checks after tightening propagated set-enclosure chain certification:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_error_budget.py -k "Lohner or ordinary_set_propagation or binary_set_propagation or set_propagation_rebuilds_multi_step_binary"
+python3 -m pytest -q tests/test_error_budget.py
+python3 -m pytest -q tests/test_general_solution.py -k validated_atlas
+python3 -m pytest -q tests/test_hybrid.py -k "validated_atlas or ordinary_set_propagated or exact_collision_start"
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+python3 -m pytest -q
+python3 -m pytest --collect-only -q
+```
+
+```text
+compileall passed
+16 focused set-propagation tests passed
+26 error-budget tests passed
+7 validated-atlas tests passed
+5 hybrid set/validated-atlas tests passed
+92 theorem/closed-form audit tests passed
+full pytest exited 0
+584 tests collected
+```
+
+`OrdinarySetPropagatedEnclosure.proof_certified` now requires more than local
+per-step certificates: adjacent steps must certify the physical-time boundary,
+the propagated endpoint hull, and the interval-state-union handoff. This
+prevents a mixed ordinary/binary target enclosure from being accepted if a step
+is locally certified but spliced to the wrong incoming set. The Lohner ordinary
+chain now has the analogous `chain_certified` gate, including exact continuity
+of the shape-state object used as the next step's source. New regressions
+corrupt a step time, an interval-union handoff, and a Lohner source shape while
+leaving individual step certificates intact; each corrupted enclosure is now
+rejected as proof evidence. This tightens finite-time validated-atlas target
+evidence, but it does not add binary/Sundman/KS Lohner chart maps or close
+global regime classification.
+
+Previous checks after requiring proof-certified hybrid set target evidence for
+mixed planar binary validated atlases:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py -k validated_atlas
+python3 -m pytest -q tests/test_hybrid.py -k "validated_atlas or ordinary_set_propagated or exact_collision_start"
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+python3 -m pytest --collect-only -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+python3 -m pytest -q
+python3 -m pytest --collect-only -q
+```
+
+```text
+compileall passed
+7 validated-atlas tests passed
+5 hybrid set/validated-atlas tests passed
+92 theorem/closed-form audit tests passed
+92 theorem/closed-form tests collected
+full pytest exited 0
+583 tests collected
+```
+
+`OrdinarySetPropagationStep` and `OrdinarySetPropagatedEnclosure` now expose
+proof-certification predicates that check finite/nonempty interval hulls,
+branch containment inside hulls, finite step data, positive retained order,
+guarded tail ratios, event intervals, and binary atlas/ordinary-substep
+metadata. `validated_atlas_from_hybrid_solution(...)` now refuses to certify
+target-time evidence from the raw final hybrid step interval when a Lohner
+ordinary-chain enclosure is unavailable; for mixed ordinary/Levi-Civita planar
+atlases it instead consumes the constructor-derived hybrid ordinary/binary set
+propagation enclosure and records
+`target_interval_source="hybrid_set_propagation"`. The public planar binary
+`evaluate_unrestricted_solution(..., method="validated_atlas")` regression now
+checks that this cached set enclosure is proof-certified and contains the final
+state. This closes the finite-time planar binary target-evidence gap without
+pretending that binary, Sundman, or KS Lohner chart maps exist; those remain
+open, as do arbitrary global regime classification and global exhaustion.
+
+Previous checks after tightening finite-jet selector resonance certification:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_obstructions.py::test_zero_angular_finite_jet_entry_constructor_certifies_identity_branch
+python3 -m pytest -q tests/test_obstructions.py -k "finite_jet_identity_selector or finite_jet_entry"
+python3 -m pytest -q tests/test_general_solution_theorem.py::test_zero_angular_compact_finite_atlas_requires_constructor_selector_entry tests/test_general_solution_theorem.py::test_parabolic_homothetic_total_collision_constructor_derives_selector_pipeline tests/test_general_solution_theorem.py::test_zero_angular_compact_finite_atlas_rejects_nonselector_collision_policy
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+python3 -m pytest --collect-only -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+```
+
+```text
+compileall passed
+1 finite-jet selector test passed
+2 finite-jet obstruction tests passed
+3 zero-angular theorem hook tests passed
+92 theorem/closed-form audit tests passed
+92 theorem/closed-form tests collected
+```
+
+`FiniteJetSelectedBranchCertificate` now records selector-row operator residuals
+and per-degree selector Gram singular-value floors. The selected-branch
+constructor requires each selector basis to lie in the kernel of its regularized
+row operator and requires independent selector coordinates before accepting the
+outgoing finite branch. This makes inconsistent finite selector data fail at
+the selected-branch construction step instead of later in the identity-entry
+check. The theorem pipeline remains appropriately scoped: generic finite-jet
+branches still do not emit a new `ValidatedAtlasSolution` until an analytic
+tail/convergence majorant for omitted rows exists.
+
+Previous checks after deriving selected zero-angular finite-jet branches from
+incoming selector data:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_obstructions.py::test_zero_angular_finite_jet_entry_constructor_certifies_identity_branch tests/test_general_solution_theorem.py::test_zero_angular_compact_finite_atlas_requires_constructor_selector_entry tests/test_general_solution_theorem.py::test_parabolic_homothetic_total_collision_constructor_derives_selector_pipeline tests/test_general_solution_theorem.py::test_zero_angular_compact_finite_atlas_rejects_nonselector_collision_policy
+python3 -m pytest -q tests/test_obstructions.py -k "finite_jet_identity_selector or finite_jet_entry"
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+python3 -m pytest --collect-only -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+```
+
+```text
+compileall passed
+4 focused zero-angular/theorem tests passed
+2 finite-jet obstruction tests passed
+92 theorem/closed-form audit tests passed
+92 theorem/closed-form tests collected
+```
+
+`three_body_symmetry/zero_angular_entry.py` now contains
+`construct_finite_jet_selected_branch(...)`, which solves the selected outgoing
+regularized branch row-by-row from the cubic-time Newton recurrence and enforces
+finite selector coordinates inside the coefficient rows. The new
+`derive_finite_jet_identity_selector_entry_from_incoming(...)` constructor
+recovers selector coordinates from incoming finite jets, constructs the selected
+branch, and then reuses the identity-entry certificate to check coefficient
+recurrence residuals, finite energy preservation, punctured Newton residuals,
+and zero angular momentum. Regressions cover resonant equilateral and
+ordered-Euler finite-jet selectors and reject an inconsistent selector path.
+This advances the zero-angular continuation bridge for finite selector-jet
+subcases; it still does not prove arbitrary total-collision branches supply
+those finite incoming selector jets.
+
+Previous checks after hardening the global-regime-exhaustion theorem gate:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "global_regime_exhaustion or event_shell_invariance or nonzero_angular_global_atlas"
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+python3 -m pytest --collect-only -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+```
+
+```text
+compileall passed
+15 selected tests passed
+92 tests passed
+92 tests collected
+```
+
+`construct_general_solution_theorem_certificate(...)` now accepts full-theorem
+global exhaustion only through a typed `GlobalRegimeExhaustionCertificate`
+created by `certify_global_regime_exhaustion(...)`. Raw booleans still raise,
+and generic objects carrying `certified=True` or `proof_certified=True` no
+longer satisfy the top-level `global_regime_exhaustion` obligation. The
+exhaustion constructor audits input scope, unique candidate regime ids,
+required regime coverage, and candidate theorem certification, then deliberately
+keeps `arbitrary_initial_data_partition_theorem` uncertified. This is a
+proof-pipeline hardening change, not a new certificate layer that closes the
+unrestricted theorem.
+
+Previous checks after adding the scoped event-shell invariance constructor:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "event_shell_invariance or first_event_shell or tail_margin or event_shell or handoff or finite_middle or nonzero_angular_global_atlas"
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+python3 -m pytest --collect-only -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+```
+
+```text
+compileall passed
+22 selected tests passed
+91 tests passed
+91 tests collected
+```
+
+`certify_nonzero_angular_event_shell_invariance_from_handoff(...)` now closes
+the named `nonzero_angular_event_shell_invariance_from_handoff` blocker under
+explicit uniform event-envelope hypotheses. It requires a certified handoff, a
+certified all-future value-tail margin, a finite first-shell validated-atlas
+prefix, a two-sided event budget, matching future and time-reversed-past shell
+geometry, matching ordinary-gap source envelopes, uniform value-majorant rows,
+and a remaining value tail from shell one that fits inside the first-shell
+endpoint metric margins. The resulting scoped `all_time_nonzero_angular`
+regime can now certify for supplied uniform envelopes; the full theorem still
+requires `global_regime_exhaustion` before it becomes an unrestricted general
+solution.
+
+Previous checks after adding the first event-shell prefix constructor:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "first_event_shell or tail_margin or event_shell or handoff or finite_middle or nonzero_angular_global_atlas"
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+python3 -m pytest --collect-only -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+```
+
+```text
+compileall passed
+20 selected tests passed
+89 tests passed
+89 tests collected
+```
+
+`construct_nonzero_angular_first_event_shell_prefix(...)` now derives the next
+finite proof step after a certified finite-middle-to-envelope handoff: it maps
+the next future and time-reversed-past compact shell boundaries back to
+physical target times, builds `method="validated_atlas"` prefixes in both
+directions, verifies those prefixes contain the handoff times, and checks the
+new endpoints still lie inside the ordinary-gap envelope. The uniform
+pair-envelope global constructor can opt into this with
+`derive_first_event_shell_prefix=True`. This is only a finite first-shell base
+case; the all-time theorem still refuses certification until the actual
+`nonzero_angular_event_shell_invariance_from_handoff` induction/classifier is
+proved.
+
+Previous checks after adding the all-future event-tail margin constructor:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "tail_margin or event_shell or handoff or finite_middle or nonzero_angular_global_atlas"
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+python3 -m pytest --collect-only -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+```
+
+```text
+compileall passed
+17 passed
+86 passed
+86 tests collected
+```
+
+`certify_nonzero_angular_event_tail_margin_from_handoff(...)` now compares the
+two-sided all-future event recurrence's infinite `value` tail bound with the
+ordinary-gap metric margins left at the finite handoff. The check uses the
+coordinate-tail implications `2 sqrt(d) epsilon` for pair distance/diameter and
+`sqrt(d) epsilon` for speed. This proves the recurrence tail budget itself
+does not consume the ordinary-envelope margin when the certificate passes. It
+still does not prove the actual shell/event induction: the remaining blocker is
+`nonzero_angular_event_shell_invariance_from_handoff`.
+
+Previous checks after deriving the finite middle from the event-shell boundary:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "event_shell or handoff or finite_middle or nonzero_angular_global_atlas"
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+python3 -m pytest --collect-only -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+```
+
+```text
+compileall passed
+15 passed
+84 passed
+84 tests collected
+```
+
+`construct_nonzero_angular_finite_middle_atlas_for_event_shell(...)` now
+constructs the future and past finite `ValidatedAtlasSolution`s directly from
+the first event-shell compact-time boundaries, then wraps them with
+`certify_nonzero_angular_finite_middle_atlas(...)`. The uniform pair-envelope
+global constructor can opt into this with `derive_finite_middle_atlas=True`,
+so the finite middle and handoff can be produced from raw initial data plus
+the event-envelope specifications rather than being supplied as a prebuilt
+certificate. This still does not prove all-time nonzero-angular solutions from
+arbitrary data; after the derived finite middle and handoff certify, the
+remaining named blocker is
+`nonzero_angular_event_shell_invariance_from_handoff`.
+
+Previous checks after hardening the finite-middle-to-event-envelope handoff
+with compact-time first-shell alignment:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "handoff or finite_middle or nonzero_angular_global_atlas"
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+python3 -m pytest --collect-only -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+```
+
+```text
+compileall passed
+13 passed
+82 passed
+82 tests collected
+```
+
+`certify_nonzero_angular_event_regime_handoff(...)` now derives a real
+classifier component from the finite middle: it extracts the future and past
+finite target-state intervals, computes interval lower bounds for all pair
+distances plus interval upper bounds for pair diameter and body speed, and
+checks those intervals against the ordinary-gap envelopes for the future and
+time-reversed-past event tails. It now also requires the finite future and
+past target times to map under the certified compact-time map to the first
+event-shell boundaries `u = 1 - delta_initial` and
+`u = -1 + delta_initial`; an unaligned tiny middle interval no longer counts as
+a tail handoff. Tight-envelope and wrong-time regressions now fail the handoff
+instead of letting the all-future recurrence arithmetic stand in for a global
+classifier. The theorem still does not certify all-time nonzero-angular
+solutions from arbitrary data; after a successful handoff the remaining named
+blocker is `nonzero_angular_event_shell_invariance_from_handoff`.
+
+Previous checks after adding the finite-middle atlas gate to the all-time
+nonzero-angular route:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "finite_middle or nonzero_angular_global_atlas"
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+python3 -m pytest --collect-only -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+```
+
+```text
+compileall passed
+11 passed
+80 passed
+80 tests collected
+```
+
+`certify_nonzero_angular_finite_middle_atlas(...)` requires proof-certified
+future and past finite `ValidatedAtlasSolution` objects from the same initial
+data before an all-real nonzero-angular route can satisfy the finite-middle
+obligation. At that stage the theorem still could not derive a handoff into
+future and past event-regime shell hypotheses.
+
+Previous checks after adding time-direction provenance to two-sided
+nonzero-angular event budgets:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "nonzero_angular_global_atlas or two_sided_uniform_pair"
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+python3 -m pytest --collect-only -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+```
+
+```text
+compileall passed
+11 passed
+78 passed
+78 tests collected
+```
+
+`EventRegimeAssemblyCertificate` now records a `time_direction` and provenance
+string. `TwoSidedNonzeroAngularEventBudgetCertificate.certified` requires the
+future half to be future-facing or time-reversal invariant, and the past half
+to be produced for the time-reversed flow or by a time-reversal-invariant
+envelope. The theorem pipeline now reports
+`two_sided_event_time_direction_provenance` separately from event-family scope,
+all-pair binary coverage, mass consistency, and the still-open
+`nonzero_angular_event_regime_membership_from_initial_data` classifier.
+
+Previous checks after hardening the finite-atlas transition ledger:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py::test_unrestricted_solution_validated_atlas_exposes_lohner_ordinary_chain tests/test_general_solution.py::test_unrestricted_solution_validated_atlas_method_derives_single_proof_pipeline tests/test_general_solution_theorem.py::test_nonzero_angular_compact_finite_atlas_requires_explicit_validated_ledgers
+python3 -m pytest -q tests/test_general_solution.py tests/test_hybrid.py::test_validated_atlas_from_hybrid_solution_closes_binary_handoff_ledgers tests/test_hybrid.py::test_time_reversal_preserves_proof_certified_binary_hybrid_atlas tests/test_general_solution_theorem.py::test_nonzero_angular_compact_finite_atlas_consumes_validated_solution tests/test_general_solution_theorem.py::test_nonzero_angular_compact_finite_atlas_requires_explicit_validated_ledgers tests/test_general_solution_theorem.py::test_nonzero_angular_compact_finite_atlas_accepts_proof_certified_spatial_ks_solution
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+python3 -m pytest --collect-only -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+```
+
+```text
+compileall passed
+3 passed
+30 passed
+78 passed
+78 tests collected
+```
+
+`ValidatedAtlasSolution.proof_certified` now requires the transition ledger to
+connect the emitted chart sequence exactly: transition `i` must run from chart
+`i` to chart `i+1`, and the transition count must be exactly `chart_count - 1`.
+The compact finite theorem constructor enforces the same condition through
+`finite_atlas_transition_ledger`. Regressions now mutate an otherwise certified
+transition to point at a non-next chart and verify that both the atlas object
+and the nonzero-angular finite theorem path refuse certification.
+
+Previous checks after deriving the scoped all-real positive-energy homothetic
+atlas gluing constructor:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+python3 -m pytest --collect-only -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+```
+
+```text
+compileall passed
+78 passed
+78 tests collected
+```
+
+`certify_positive_energy_homothetic_all_real_gluing(...)` now composes the
+future escape endpoint, exact time-reversed past endpoint, nonzero-energy
+homothetic total-collision `ValidatedAtlasSolution`, finite identity-selector
+entry, and a constructor-derived ordinary Taylor recurrence for the two compact
+middle intervals. The middle collision-free domain is derived from the
+homothetic scalar lower bound at the total-collision chart boundary and the
+positive pair distances of the scaled central shape. The gluing certificate now
+also exposes the finite middle chart-count bounds, handoff/internal transition
+count bound, endpoint plus total-collision plus middle tail budget, and the
+combined all-real tail budget. The scoped positive-energy homothetic route now
+certifies its regime theorem; the top theorem still reports
+`global_regime_exhaustion`.
+
+Previous checks after deriving the time-reversed positive-energy homothetic
+past escape endpoint from the certified future recurrence:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+python3 -m pytest --collect-only -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+```
+
+```text
+compileall passed
+78 passed
+78 tests collected
+```
+
+`derive_time_reversed_homothetic_escape_recurrence(...)` turns the
+constructor-certified future dyadic endpoint recurrence into an incoming
+endpoint recurrence by the exact identity-selector symmetry around the finite
+collision time `T`: the same shell constants that cover `t >= S` also cover
+`t <= 2T-S`.
+
+Previous checks after promoting the nonzero-energy homothetic total-collision
+branch into the shared `ValidatedAtlasSolution` proof surface:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+python3 -m pytest --collect-only -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+```
+
+```text
+compileall passed
+77 passed
+77 tests collected
+```
+
+`validated_atlas_from_homothetic_total_collision_branch(...)` now consumes the
+constructor-derived scalar Rouche/Cauchy majorant for
+`q=tau^2 u(tau^2)Q`, carries both value and derivative omitted-tail bounds into
+state interval inflation, and emits a finite-jet identity-selector
+total-collision chart with Newton residual, invariant, tail, target-time, and
+selector-policy ledgers. A regression feeds that atlas into
+`construct_zero_angular_compact_finite_atlas_with_selector(...)`, so the
+nonzero-energy homothetic collision subcase now reaches the theorem assembler
+through the same compact finite selector pipeline as the exact parabolic
+subcase.
+
+The positive-energy homothetic all-real blocker is now narrower: the local
+finite total-collision atlas exists, but the project still needs a constructor
+that glues it to the expanding future endpoint, a finite middle chart family,
+and the time-reversed past escape endpoint with explicit selector semantics.
+The later time-reversal constructor above removes the past endpoint from this
+list, and the later all-real gluing constructor above removes the finite
+middle gluing problem for this scoped homothetic regime.
+The full multi-file suite was not rerun for this change.
+
+Previous checks after scoping the positive-energy homothetic escape theorem to
+the certified future endpoint:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py::test_positive_energy_homothetic_escape_feeds_global_atlas_from_initial_data tests/test_general_solution_theorem.py::test_positive_energy_homothetic_escape_rejects_manual_endpoint_majorant_in_theorem tests/test_general_solution_theorem.py::test_positive_energy_homothetic_escape_rejects_nonhomothetic_initial_data
+python3 -m pytest -q tests/test_general_solution_theorem.py
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+```
+
+```text
+compileall passed
+3 passed
+36 passed
+75 passed
+```
+
+`derive_homothetic_escape_implicit_cauchy_majorant(...)` now makes the scalar
+implicit-function proof executable. For the endpoint equation it verifies a
+Rouche inequality on `|x-c|=R_x`, keeps the square-root/log arguments inside a
+right-half-plane polydisc, and derives the Cauchy majorant
+`M=c+R_x+(beta/2)R_rho`. The positive-energy homothetic escape theorem path now
+requires this constructor-derived majorant through
+`positive_energy_homothetic_implicit_cauchy_majorant`. It also requires
+`positive_energy_homothetic_projection_newton_invariants`, derived from
+`A(RQ)=R^-2 A(Q)` and `R''=-mu/R^2`, and checks centered momentum, angular
+momentum, and normalized energy. A manually supplied majorant can still form a
+low-level recurrence, but it no longer certifies the theorem bridge. The route
+now also reports
+`positive_energy_homothetic_past_total_collision_or_middle_atlas`, because the
+expanding branch's backward continuation reaches a finite total collision. At
+that stage the collision endpoint was not yet covered by a constructor-backed
+selector or finite middle/past atlas; the later total-collision adapter above
+narrows that blocker to the remaining gluing problem. The full multi-file
+suite was not rerun for this change.
+The closed-form audit slice was rerun because it consumes theorem certificates
+and now reports the event-regime membership blocker instead of treating a
+conditional recurrence as a certified Sundman global series.
+
+Previous checks after blocking event-tail recurrence budgets from certifying
+global branch membership by themselves:
+
+```bash
+python3 -m pytest -q tests/test_general_solution_theorem.py
+python3 -m compileall -q three_body_symmetry tests
+```
+
+```text
+35 passed
+compileall passed
+```
+
+`classify_global_regime(...)` now treats the event-tail regimes as conditional
+unless a future classifier derives their shell hypotheses from the supplied
+initial data. The generic `geometric_infinite_event_tail` path reports
+`geometric_event_regime_membership_from_initial_data`, and the
+`all_time_nonzero_angular` path reports
+`nonzero_angular_event_regime_membership_from_initial_data`. The event
+recurrence objects can still close and expose their tail budgets, but
+`GlobalAtlasCertificate.certified` remains false until branch membership in
+those event regimes is proved rather than assumed from uniform envelope tables.
+The full multi-file suite was not rerun for this change.
+
+Previous checks after adding direction-specific all-pair endpoint envelopes for
+the all-time nonzero-angular theorem path:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py::test_nonzero_angular_global_atlas_accepts_direction_specific_pair_envelopes tests/test_general_solution_theorem.py::test_two_sided_uniform_pair_event_envelopes_require_past_all_pair_rows tests/test_general_solution_theorem.py::test_two_sided_uniform_pair_event_envelopes_reject_wrong_past_direction
+python3 -m pytest -q tests/test_general_solution_theorem.py
+```
+
+```text
+compileall passed
+3 passed
+35 passed
+```
+
+`NonzeroAngularUniformPairEventEnvelopeSpec` now packages the uniform all-pair
+event-envelope hypotheses for one compact-time endpoint, and
+`construct_nonzero_angular_global_atlas_from_two_sided_uniform_pair_event_envelopes(...)`
+derives separate future and time-reversed-past event recurrences before feeding
+`construct_nonzero_angular_global_atlas(...)`. A regression uses weaker past
+event-isolation constants and verifies the past chart-count budget is larger
+than the future one. Under the current stricter theorem semantics, that closes
+the two endpoint recurrences but does not certify branch membership in the
+event regime. Another regression checks that an incomplete past pair-envelope
+table is rejected by the constructor rather than becoming a missing global
+boolean, and a third rejects a past endpoint envelope marked with the future
+time direction. The full multi-file suite was not rerun for this change.
+
+Latest checks after requiring all three planar binary pair families in the
+all-time nonzero-angular theorem path:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py::test_nonzero_angular_global_atlas_derives_binary_only_event_tail tests/test_general_solution_theorem.py::test_nonzero_angular_global_atlas_derives_event_recurrence_from_uniform_envelopes tests/test_general_solution_theorem.py::test_nonzero_angular_global_atlas_derives_pairwise_binary_event_recurrence
+python3 -m pytest -q tests/test_general_solution_theorem.py
+```
+
+```text
+compileall passed
+3 passed
+32 passed
+```
+
+`construct_nonzero_angular_global_atlas(...)` now requires
+`nonzero_angular_all_pair_binary_coverage`: each time direction of the two-sided
+event recurrence must cover binary pairs `01`, `02`, and `12`, unless a future
+classifier supplies a narrower pair scope. A generic
+`separated_binary_levi_civita` family is interpreted as covering only the pair
+recorded by its constructor source certificate. The single-pair uniform
+recurrence still derives valid tail arithmetic, but it no longer certifies the
+arbitrary all-time nonzero-angular theorem by itself. The all-pair uniform
+constructor remains the certified path in this scoped regime. The full
+multi-file suite was not rerun for this change.
+
+Latest checks after requiring two-sided event recurrences for the all-time
+nonzero-angular theorem path:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py::test_nonzero_angular_global_atlas_derives_binary_only_event_tail tests/test_general_solution_theorem.py::test_nonzero_angular_global_atlas_requires_past_time_reversed_event_tail tests/test_general_solution_theorem.py::test_nonzero_angular_global_atlas_derives_event_recurrence_from_uniform_envelopes tests/test_general_solution_theorem.py::test_nonzero_angular_global_atlas_derives_pairwise_binary_event_recurrence
+python3 -m pytest -q tests/test_general_solution_theorem.py
+```
+
+```text
+compileall passed
+4 passed
+32 passed
+```
+
+`construct_nonzero_angular_global_atlas(...)` no longer treats one all-future
+event recurrence as an all-real certificate. It now wraps event recurrence
+evidence in `TwoSidedNonzeroAngularEventBudgetCertificate`, requiring a future
+recurrence for the supplied flow and a future recurrence for the time-reversed
+flow, which certifies the original past endpoint. Missing past evidence is
+reported as `past_all_future_event_budget` and
+`two_sided_primitive_cauchy_all_time_budget`. The uniform-envelope constructors
+feed their absolute-bound recurrence into both halves, while direct theorem
+assembly remains incomplete when only a single recurrence is supplied. The full
+multi-file suite was not rerun for this change.
+
+Latest checks after adding time-reversed finite-time validated atlases:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py::test_unrestricted_solution_validated_atlas_routes_negative_planar_time_by_reversal tests/test_hybrid.py::test_time_reversal_preserves_proof_certified_binary_hybrid_atlas
+python3 -m pytest -q tests/test_general_solution.py tests/test_hybrid.py
+python3 -m pytest --collect-only -q tests/test_general_solution.py tests/test_hybrid.py
+```
+
+```text
+compileall passed
+2 passed
+finite-time general-solution and hybrid files passed
+71 tests collected
+```
+
+`time_reverse_validated_atlas_solution(...)` now derives a negative-time
+`ValidatedAtlasSolution` from a proof-certified positive-time atlas by the
+exact symmetry `(t,q,v)->(-t,q,-v)`. It negates physical-time intervals and
+velocity enclosures while preserving chart residual, projection, invariant,
+transition, collision-policy, and tail ledgers. The public planar
+`method="validated_atlas"` finite-time route now uses this constructor for
+negative target times by constructing the positive-time hybrid atlas for
+reversed velocities and mapping it back. Focused tests cover both a public
+negative-time ordinary planar call and a proof-certified hybrid atlas containing
+a Levi-Civita binary chart. The full suite was not rerun for this change; the
+latest full run remains the 553-test run recorded below.
+
+Latest checks after deriving the parabolic homothetic selector theorem path
+end to end:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py::test_parabolic_homothetic_total_collision_constructor_derives_selector_pipeline tests/test_general_solution_theorem.py::test_zero_angular_compact_finite_atlas_requires_constructor_selector_entry tests/test_general_solution_theorem.py::test_parabolic_homothetic_total_collision_adapter_rejects_nonzero_energy_tail
+python3 -m pytest -q tests/test_general_solution_theorem.py
+```
+
+```text
+compileall passed
+3 passed
+31 passed
+```
+
+`certify_homothetic_finite_jet_identity_selector_entry(...)` now derives the
+finite homothetic selector coordinate from a constructed total-collision branch,
+and `construct_zero_angular_parabolic_homothetic_total_collision_atlas(...)`
+uses it with the native parabolic total-collision `ValidatedAtlasSolution` to
+return a `GlobalAtlasCertificate` for the exact zero-energy homothetic selector
+subcase. This removes the remaining hand-passed selector envelope from that
+subcase. This older note predates the current nonzero-energy homothetic
+independent-checker bridge recorded at the top of this file; it still does not
+prove arbitrary zero-angular total-collision entry or global regime
+exhaustion. The full suite was not rerun for this older change; the latest full
+run at that time remained the 553-test run recorded below.
+
+Latest checks after adding the exact parabolic homothetic total-collision
+`ValidatedAtlasSolution` adapter:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py::test_zero_angular_compact_finite_atlas_requires_constructor_selector_entry tests/test_general_solution_theorem.py::test_zero_angular_compact_finite_atlas_rejects_nonselector_collision_policy tests/test_general_solution_theorem.py::test_parabolic_homothetic_total_collision_adapter_rejects_nonzero_energy_tail
+python3 -m pytest -q tests/test_general_solution_theorem.py
+```
+
+```text
+compileall passed
+3 passed
+30 passed
+```
+
+`validated_atlas_from_parabolic_homothetic_total_collision_branch(...)` now
+turns the exact zero-energy homothetic total-collision branch into a native
+finite-jet identity-selector total-collision `ValidatedChart`. The chart uses
+`q=tau^2 Q`, `t=T+tau^3`, the scaled central-configuration identity
+`A(Q)=-(2/9)Q`, zero omitted tail, punctured Newton residual checks,
+center-of-mass, linear-momentum, angular-momentum, and energy ledgers, target
+containment, and an explicit selector total-collision policy. The zero-angular
+compact finite selector theorem test now consumes this real chart instead of
+mutating an ordinary chart type. The adapter deliberately rejects nonzero
+homothetic energy, since that broader branch needs a separate analytic Cauchy
+tail before it can be a proof-certified finite chart. The full suite was not
+rerun for this change; the latest full run remains the 553-test run recorded
+below.
+
+Latest checks after connecting finite-jet selectors to the compact
+zero-angular theorem path:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py::test_zero_angular_compact_finite_atlas_requires_constructor_selector_entry tests/test_general_solution_theorem.py::test_zero_angular_compact_finite_atlas_rejects_nonselector_collision_policy
+python3 -m pytest -q tests/test_obstructions.py::test_zero_angular_finite_jet_entry_constructor_certifies_identity_branch tests/test_obstructions.py::test_finite_one_sided_jets_select_local_zero_angular_branch_parameters tests/test_obstructions.py::test_finite_jet_identity_selector_total_collisions_compose_compact_atlas
+python3 -m pytest -q tests/test_general_solution_theorem.py
+```
+
+```text
+compileall passed
+2 passed
+3 passed
+29 passed
+```
+
+`construct_zero_angular_compact_finite_atlas_with_selector(...)` now feeds
+constructor-derived finite-jet selector entries into the
+`compact_zero_angular_finite_events_with_selector` regime. It requires a
+proof-certified finite `ValidatedAtlasSolution`, explicit selector
+total-collision policy, and selector coverage for each total-collision chart.
+The theorem object still reports `global_regime_exhaustion`, and this path does
+not prove arbitrary zero-angular incoming finite selector limits or all-time
+global classification. The full suite was not rerun for this change; the
+latest full run remains the 553-test run recorded below.
+
+Latest checks after extracting finite-jet zero-angular selector entry:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_obstructions.py::test_zero_angular_finite_jet_entry_constructor_certifies_identity_branch tests/test_obstructions.py::test_finite_one_sided_jets_select_local_zero_angular_branch_parameters tests/test_obstructions.py::test_finite_jet_identity_selector_total_collisions_compose_compact_atlas tests/test_obstructions.py::test_local_normal_form_branch_parameters_project_to_two_sided_zero_angular_continuation
+python3 -m pytest -q tests/test_general_solution_theorem.py::test_nonzero_angular_global_atlas_derives_pairwise_binary_event_recurrence tests/test_general_solution_theorem.py::test_nonzero_angular_global_atlas_derives_binary_only_event_tail
+```
+
+```text
+compileall passed
+4 passed
+2 passed
+```
+
+`three_body_symmetry/zero_angular_entry.py` now contains the finite-jet
+identity-selector entry bridge that had been living as arithmetic inside the
+obstruction tests. It recovers selector coordinates from one-sided
+regularized coefficients by mass-inner projection against constructor-supplied
+reference rows, checks that the selected outgoing branch uses the same finite
+selector list, verifies finite energy-limit matching, and samples the
+punctured selected branch for Newton residual and zero angular momentum. This
+is a scoped local continuation constructor for supplied finite selector jets;
+it still does not prove arbitrary zero-angular total-collision branches have
+those finite incoming limits. The full suite was not rerun for this change;
+the latest full run remains the 553-test run recorded below.
+
+Latest checks after adding all-pair nonzero-angular binary recurrence rows:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py::test_nonzero_angular_global_atlas_derives_pairwise_binary_event_recurrence tests/test_general_solution_theorem.py::test_nonzero_angular_global_atlas_derives_event_recurrence_from_uniform_envelopes tests/test_general_solution_theorem.py::test_nonzero_angular_global_atlas_derives_binary_only_event_tail
+python3 -m pytest -q tests/test_obstructions.py::test_uniform_separated_binary_envelope_supplies_levi_civita_cauchy_inputs tests/test_obstructions.py::test_uniform_noncollision_state_envelope_supplies_ordinary_cauchy_inputs
+python3 -m pytest -q tests/test_general_solution_theorem.py
+```
+
+```text
+compileall passed
+3 passed
+2 passed
+27 passed
+```
+
+`derive_nonzero_angular_event_recurrence_from_uniform_pair_envelopes(...)` now
+derives the nonzero-angular all-future event recurrence with separate
+constructor-backed Levi-Civita rows for binary pairs `01`, `02`, and `12`.
+The shell-packing count still bounds the total number of binary events per
+compact-time shell, and each pair family receives that same safe bound as a
+subfamily. `construct_nonzero_angular_global_atlas_from_uniform_pair_event_envelopes(...)`
+feeds this all-pair assembly into the `all_time_nonzero_angular` theorem path.
+The theorem scope and mass-consistency obligations now accept one or more
+constructor-certified separated-binary families, still reject total-collision
+families in the nonzero-angular route, and still report
+`global_regime_exhaustion` as the remaining unrestricted-theorem obligation.
+The full suite was not rerun for this change; the latest full run remains the
+553-test run recorded below.
+
+Latest checks after adding the binary-only nonzero-angular recurrence proof note:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py::test_nonzero_angular_global_atlas_derives_event_recurrence_from_uniform_envelopes tests/test_general_solution_theorem.py::test_nonzero_angular_global_atlas_derives_binary_only_event_tail
+```
+
+```text
+compileall passed
+2 passed
+```
+
+`docs/geometric-infinite-event-atlas-recurrence.md` now states the
+binary-only nonzero-angular all-future recurrence in prose/math form. The proof
+uses the nonzero-angular triple-collision exclusion to remove the
+total-collision chart family, derives the shell counts from geometric
+isolation, derives ordinary-gap and separated-binary Levi-Civita primitive
+Cauchy inputs from uniform envelopes, and sums the resulting family-wise
+geometric tail. This documents exactly what
+`derive_nonzero_angular_event_recurrence_from_uniform_envelopes(...)` and
+`construct_nonzero_angular_global_atlas_from_uniform_event_envelopes(...)`
+currently prove. The full suite was not rerun for this docs-only update; the
+latest full run remains the 553-test run recorded below.
+
+Latest checks after deriving the nonzero-angular event recurrence from uniform envelopes:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py::test_nonzero_angular_global_atlas_derives_event_recurrence_from_uniform_envelopes tests/test_general_solution_theorem.py::test_nonzero_angular_global_atlas_derives_binary_only_event_tail
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py tests/test_obstructions.py
+python3 -m pytest -q
+python3 -c 'import re, subprocess; out = subprocess.check_output(["python3", "-m", "pytest", "--collect-only", "-q"], text=True); print(sum(int(m.group(1)) for line in out.splitlines() if (m := re.search(r": (\d+)$", line))))'
+```
+
+```text
+compileall passed
+2 passed
+232 passed
+full pytest exited 0
+553 tests collected
+```
+
+`derive_nonzero_angular_event_recurrence_from_uniform_envelopes(...)` now
+derives the first global theorem target's binary-only event recurrence from one
+set of explicit quantitative hypotheses: geometric compact-time shell
+isolation, a uniform ordinary-gap noncollision envelope, and a uniform
+separated-binary Levi-Civita envelope. It constructs the ordinary and binary
+primitive Cauchy inputs internally, omits total-collision chart families, and
+returns the same `EventRegimeAssemblyCertificate` consumed by
+`construct_nonzero_angular_global_atlas(...)`.
+`construct_nonzero_angular_global_atlas_from_uniform_event_envelopes(...)` wraps
+that path and returns a `GlobalAtlasCertificate`. This is a scoped all-future
+recurrence theorem under explicit envelope hypotheses, not arbitrary-data
+regime classification.
+
+Latest checks after binding nonzero-angular event families to theorem masses:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py::test_nonzero_angular_global_atlas_derives_binary_only_event_tail tests/test_general_solution_theorem.py::test_nonzero_angular_global_atlas_rejects_total_collision_event_family tests/test_general_solution_theorem.py::test_nonzero_angular_global_atlas_rejects_stripped_event_family_provenance tests/test_general_solution_theorem.py::test_nonzero_angular_global_atlas_rejects_mismatched_event_family_masses
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py tests/test_obstructions.py
+python3 -m pytest -q
+python3 -c 'import re, subprocess; out = subprocess.check_output(["python3", "-m", "pytest", "--collect-only", "-q"], text=True); print(sum(int(m.group(1)) for line in out.splitlines() if (m := re.search(r": (\d+)$", line))))'
+```
+
+```text
+compileall passed
+4 passed
+231 passed
+full pytest exited 0
+552 tests collected
+```
+
+`construct_nonzero_angular_global_atlas(...)` now requires the ordinary-gap and
+separated-binary event-family source certificates to use the same positive mass
+triple as the theorem input. The new
+`nonzero_angular_event_family_mass_consistency` obligation is separate from the
+existing family-scope/provenance check: an event assembly can remain recurrence
+certified and source certified, but if one local Cauchy family was derived for a
+different mass triple, the all-time nonzero-angular theorem rejects it. This
+keeps the first global theorem path from importing all-future local chart
+bounds for a different Newtonian system. Full arbitrary-data regime
+classification remains open.
+
+Latest checks after binding finite atlases to the theorem initial state:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py::test_nonzero_angular_compact_finite_atlas_requires_explicit_validated_ledgers tests/test_general_solution_theorem.py::test_nonzero_angular_compact_finite_atlas_consumes_validated_solution tests/test_general_solution_theorem.py::test_nonzero_angular_compact_finite_atlas_accepts_proof_certified_spatial_ks_solution tests/test_ks_binary_series.py::test_spatial_ks_local_handoff_enters_validated_atlas_surface_without_global_claim
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_general_solution.py tests/test_hybrid.py tests/test_ks_binary_series.py tests/test_closed_form.py
+python3 -m pytest -q
+python3 -c 'import re, subprocess; out = subprocess.check_output(["python3", "-m", "pytest", "--collect-only", "-q"], text=True); print(sum(int(m.group(1)) for line in out.splitlines() if (m := re.search(r": (\d+)$", line))))'
+```
+
+```text
+compileall passed
+4 passed
+164 passed
+full pytest exited 0
+551 tests collected
+```
+
+`ValidatedAtlasSolution` now carries a constructor-derived physical
+`initial_state_interval`, and `proof_certified` requires that interval to be
+finite and nonempty. The finite-atlas adapters derive it from the inertial
+initial interval: hybrid atlases use the first hybrid state interval, spatial
+ordinary-to-KS handoffs use the supplied physical state box, and reduced
+Sundman/compact-Sundman wrappers reconstruct the inertial interval from the
+center-of-mass reduction certificate. The compact nonzero-angular finite-atlas
+theorem now adds `finite_atlas_initial_state_consistency`, checking that the
+raw theorem input positions and velocities lie in the atlas initial interval.
+The regression shifts that interval away from the input while preserving the
+other local ledgers and verifies the theorem rejects the atlas. This closes the
+finite-time reuse gap where a proof-certified atlas could be paired with the
+wrong initial state. The remaining major gap is global arbitrary-data regime
+classification and long-chain set propagation across all chart families.
+
+Latest checks after adding finite-atlas mass-domain consistency:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py::test_nonzero_angular_compact_finite_atlas_requires_explicit_validated_ledgers tests/test_general_solution_theorem.py::test_nonzero_angular_compact_finite_atlas_consumes_validated_solution tests/test_hybrid.py::test_validated_atlas_from_hybrid_solution_closes_binary_handoff_ledgers tests/test_general_solution.py::test_unrestricted_solution_validated_atlas_method_derives_single_proof_pipeline tests/test_general_solution.py::test_unrestricted_solution_validated_atlas_routes_explicit_spatial_ks_handoff
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_general_solution.py tests/test_hybrid.py tests/test_closed_form.py
+python3 -m pytest -q
+python3 -c 'import re, subprocess; out = subprocess.check_output(["python3", "-m", "pytest", "--collect-only", "-q"], text=True); print(sum(int(m.group(1)) for line in out.splitlines() if (m := re.search(r": (\d+)$", line))))'
+```
+
+```text
+compileall passed
+5 passed
+60 passed
+full pytest exited 0
+551 tests collected
+```
+
+`ValidatedAtlasSolution.proof_certified` now requires a positive finite mass
+domain, and each finite-atlas adapter records a `mass_domain` proof-ledger
+entry. The compact nonzero-angular finite-atlas theorem now has a separate
+`finite_atlas_mass_consistency` obligation comparing the raw theorem input
+masses with the atlas masses. The regression mutates the masses on an otherwise
+proof-certified finite atlas and verifies that the theorem rejects it. This
+closes another finite-time proof-pipeline gap: a certified atlas can no longer
+be reused under a different mass triple while keeping its old local ledgers.
+The remaining theorem-level gaps are still broader cross-regime state
+propagation and arbitrary-data global regime classification.
+
+Latest checks after making finite-time target-time domain membership dynamic:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_hybrid.py::test_validated_atlas_from_hybrid_solution_closes_binary_handoff_ledgers tests/test_general_solution_theorem.py::test_nonzero_angular_compact_finite_atlas_requires_explicit_validated_ledgers tests/test_general_solution.py::test_unrestricted_solution_validated_atlas_method_derives_single_proof_pipeline tests/test_general_solution.py::test_unrestricted_solution_validated_atlas_routes_planar_binary_through_hybrid tests/test_general_solution.py::test_unrestricted_solution_validated_atlas_routes_explicit_spatial_ks_handoff
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_general_solution.py tests/test_hybrid.py tests/test_closed_form.py
+python3 -m pytest -q
+python3 -c 'import re, subprocess; out = subprocess.check_output(["python3", "-m", "pytest", "--collect-only", "-q"], text=True); print(sum(int(m.group(1)) for line in out.splitlines() if (m := re.search(r": (\\d+)$", line))))'
+```
+
+```text
+compileall passed
+5 passed
+60 passed
+full pytest exited 0
+551 tests collected
+```
+
+`ValidatedAtlasSolution.proof_certified` now dynamically checks that the
+requested `target_time` lies in the final validated chart's physical-time
+interval. The hybrid, compact/Sundman, and spatial KS adapters now record a
+`target_time_domain` proof-ledger entry, and the compact nonzero-angular
+finite-atlas theorem has a separate `finite_atlas_target_time_domain`
+obligation. A regression builds a proof-certified planar Levi-Civita hybrid
+atlas, rewraps it with an incorrect target time while preserving the final
+state interval, and verifies that the atlas is no longer proof-certified. The
+finite-atlas theorem regression also rejects a `ValidatedAtlasSolution` whose
+stored target time was mutated after construction. This closes a finite-time
+proof-ledger gap: target containment alone is no longer enough unless the
+target time is also certified against the chart domain.
+
+Latest checks after hardening the nonzero-angular global event-family scope:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py::test_nonzero_angular_global_atlas_derives_binary_only_event_tail tests/test_general_solution_theorem.py::test_nonzero_angular_global_atlas_rejects_total_collision_event_family tests/test_general_solution_theorem.py::test_nonzero_angular_global_atlas_rejects_stripped_event_family_provenance tests/test_general_solution_theorem.py::test_geometric_event_tail_feeds_theorem_pipeline_without_global_overclaim
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+python3 -m pytest -q
+python3 -c 'import re, subprocess; out = subprocess.check_output(["python3", "-m", "pytest", "--collect-only", "-q"], text=True); print(sum(int(m.group(1)) for line in out.splitlines() if (m := re.search(r": (\\d+)$", line))))'
+```
+
+```text
+compileall passed
+4 passed
+63 passed
+full pytest exited 0
+551 tests collected
+```
+
+`general_solution_theorem.py` now adds a
+`nonzero_angular_event_family_scope` obligation to the
+`all_time_nonzero_angular` classification. The constructor still derives the
+nonzero-angular triple-collision exclusion from the initial data, but it now
+also requires the all-future event recurrence to contain exactly
+`ordinary_gap_taylor` and `separated_binary_levi_civita` families, no
+total-collision family, and constructor-certified source certificates attached
+to both local family Cauchy inputs. A new regression strips the separated-binary
+family's source certificate from an otherwise recurrence-certified assembly and
+verifies that the nonzero-angular global theorem rejects it. This tightens the
+first all-time theorem target without claiming arbitrary global regime
+exhaustion.
+
+Latest checks after deriving the separated-binary event-family Cauchy inputs
+from a uniform lifted Levi-Civita envelope:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py::test_geometric_event_tail_feeds_theorem_pipeline_without_global_overclaim tests/test_general_solution_theorem.py::test_nonzero_angular_global_atlas_derives_binary_only_event_tail tests/test_general_solution_theorem.py::test_event_regime_assembler_rejects_manual_separated_binary_cauchy_tuples tests/test_obstructions.py::test_uniform_separated_binary_envelope_supplies_levi_civita_cauchy_inputs
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+python3 -m pytest -q
+python3 -m pytest --collect-only -q
+```
+
+```text
+compileall passed
+4 passed
+62 passed
+full pytest exited 0
+550 tests collected
+```
+
+`event_regime_assembler.py` now has
+`certify_uniform_separated_binary_levi_civita_chart_family(...)`, which derives
+the separated-binary chart family's primitive Cauchy inputs from a uniform
+lifted Levi-Civita envelope with a preserved separated-third-body distance
+floor. The constructor computes the third-body perturbation bound, the
+regularized RHS bounds, the Levi-Civita self-map radius floor, component
+majorants, and `PrimitiveCauchyTailInput` records with `Lambda=1`. The theorem
+regression now verifies that `separated_binary_levi_civita` comes from a
+`UniformSeparatedBinaryLeviCivitaCauchyInputs` source certificate, and a new
+negative regression rejects source-free manual separated-binary Cauchy tuples.
+Together with the existing ordinary-gap and Fuchsian-log total-collision
+bridges, every chart family currently accepted by the event-regime assembler
+has a constructor-backed primitive Cauchy input path. This still leaves the
+global regime-classification problem: proving that arbitrary future shells
+actually satisfy one of the supplied local envelopes.
+
+Latest checks after deriving the ordinary-gap event-family Cauchy inputs from
+a uniform noncollision envelope:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py::test_geometric_event_tail_feeds_theorem_pipeline_without_global_overclaim tests/test_general_solution_theorem.py::test_nonzero_angular_global_atlas_derives_binary_only_event_tail tests/test_general_solution_theorem.py::test_event_regime_assembler_rejects_manual_ordinary_gap_cauchy_tuples tests/test_general_solution_theorem.py::test_event_regime_assembler_rejects_manual_total_collision_cauchy_tuples tests/test_general_solution_theorem.py::test_event_regime_assembler_reports_missing_chart_family_obligations
+python3 -m pytest -q tests/test_obstructions.py::test_uniform_noncollision_state_envelope_supplies_ordinary_cauchy_inputs
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+python3 -m pytest -q
+python3 -m pytest --collect-only -q
+```
+
+```text
+compileall passed
+5 passed
+1 passed
+61 passed
+full pytest exited 0
+549 tests collected
+```
+
+`event_regime_assembler.py` now has
+`certify_uniform_noncollision_ordinary_gap_chart_family(...)`, which derives
+the ordinary-gap chart family's primitive Cauchy inputs from a uniform
+noncollision state envelope. The constructor computes the Sundman Cauchy-radius
+floor, value/first-jet/lifted-residual/physical-residual majorants, and
+`PrimitiveCauchyTailInput` records with `Lambda=1`, then feeds the same
+`LocalChartFamilyCauchyCertificate` shape consumed by the all-future
+event-regime assembler. The theorem regression now verifies that
+`ordinary_gap_taylor` comes from a
+`UniformNoncollisionOrdinaryGapCauchyInputs` source certificate, and a new
+negative regression rejects source-free manual ordinary-gap Cauchy tuples.
+Together with the Fuchsian-log total-collision bridge, this leaves the
+separated-binary primitive Cauchy derivation as the remaining manual
+event-family input, alongside the larger global regime-classification problem.
+
+Latest checks after deriving the total-collision event-family Cauchy inputs
+from finite Fuchsian-log branches:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py::test_geometric_event_tail_feeds_theorem_pipeline_without_global_overclaim tests/test_general_solution_theorem.py::test_nonzero_angular_global_atlas_rejects_total_collision_event_family tests/test_general_solution_theorem.py::test_event_regime_assembler_rejects_manual_total_collision_cauchy_tuples tests/test_general_solution_theorem.py::test_event_regime_assembler_reports_missing_chart_family_obligations
+python3 -m pytest -q tests/test_obstructions.py::test_fuchsian_log_branch_supplies_total_collision_primitive_cauchy_inputs
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+python3 -m pytest -q
+python3 -m pytest --collect-only -q
+```
+
+```text
+compileall passed
+4 passed
+1 passed
+60 passed
+full pytest exited 0
+548 tests collected
+```
+
+`event_regime_assembler.py` now has
+`certify_fuchsian_log_total_collision_chart_family(...)`, which derives the
+automatic identity-selector total-collision chart family's primitive Cauchy
+inputs from a supplied finite `FiniteFuchsianLogBranch` via the existing
+Fuchsian-log envelope constructor. The geometric event-tail theorem regression
+now verifies that the total-collision family in the `EventRegimeAssembly`
+comes from a `FiniteFuchsianLogPrimitiveCauchyInputs` source certificate, and a
+new negative regression rejects source-free manual Cauchy tuples for
+total-collision families. This removes one hand-supplied numeric witness from
+the global recurrence path. The remaining open recurrence inputs are the
+ordinary and separated-binary primitive Cauchy derivations from actual local
+chart envelopes, plus the global regime-classification/exhaustion theorem.
+
+Latest checks after hardening the compact nonzero-angular finite-atlas theorem
+against opaque proof flags:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py::test_nonzero_angular_compact_finite_atlas_consumes_validated_solution tests/test_general_solution_theorem.py::test_nonzero_angular_compact_finite_atlas_requires_explicit_validated_ledgers tests/test_general_solution_theorem.py::test_nonzero_angular_compact_finite_atlas_accepts_proof_certified_spatial_ks_solution tests/test_general_solution_theorem.py::test_nonzero_angular_compact_finite_atlas_rejects_uncertified_spatial_ks_policy tests/test_general_solution_theorem.py::test_nonzero_angular_compact_finite_atlas_rejects_total_collision_chart
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_general_solution.py -k validated_atlas
+python3 -m pytest -q tests/test_error_budget.py
+```
+
+```text
+compileall passed
+5 passed
+59 passed
+6 passed
+25 passed
+```
+
+`construct_nonzero_angular_compact_finite_atlas(...)` now requires the finite
+`ValidatedAtlasSolution` to expose constructor-derived theorem evidence beyond
+an aggregate `proof_certified` flag. The compact finite-atlas certificate now
+checks the residual ledger, projection/domain intervals, invariant ledger, tail
+budget, transition ledger, collision policy, finite target interval,
+target-time or target-containment proof-ledger evidence, chart families, and
+spatial binary scope before certifying the ordinary/separated-binary compact
+regime. The new regression corrupts residual, invariant, tail, target interval,
+and target-containment evidence one at a time and verifies that the theorem
+reports the corresponding finite-atlas obligation instead of accepting the
+scoped regime. This is still a compact-regime hardening step, not arbitrary
+global regime classification.
+
+Latest checks after using certified Lohner target intervals in ordinary validated atlases:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py::test_unrestricted_solution_validated_atlas_exposes_lohner_ordinary_chain tests/test_general_solution.py::test_unrestricted_solution_validated_atlas_routes_planar_binary_through_hybrid
+python3 -m pytest -q tests/test_error_budget.py
+python3 -m pytest -q tests/test_general_solution.py -k validated_atlas
+python3 -m pytest -q tests/test_hybrid.py::test_validated_atlas_from_hybrid_solution_closes_binary_handoff_ledgers
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_reduction.py
+python3 -m pytest -q
+python3 -m pytest --collect-only -q
+```
+
+```text
+compileall passed
+2 passed
+25 passed
+6 passed
+1 passed
+58 passed
+6 passed
+full pytest exited 0
+546 tests collected
+```
+
+`HybridContinuedSolution` now exposes
+`lohner_ordinary_set_propagated_interval_enclosure(...)`, and
+ordinary-only `HybridValidatedEvaluation`s use the constructor-derived Lohner
+final enclosure as the returned finite-time target interval when it is
+proof-certified. The new validated-atlas regression checks that an
+ordinary-only planar `evaluate_unrestricted_solution(...,
+method="validated_atlas")` result reports
+`target_interval_source="lohner_ordinary_set_propagation"`, caches the same
+Lohner enclosure on the evaluation wrapper, and returns target intervals
+identical to the Lohner final-state intervals containing both the hybrid
+endpoint and a reference integration endpoint. A companion binary-atlas
+regression at that point checked that a `planar_levi_civita_binary` atlas did
+not silently reuse the ordinary-only Lohner path. That fallback has since been
+replaced by the latest `target_interval_source="hybrid_set_propagation"` path
+above, while binary, Sundman, KS, and mixed-atlas Lohner handoffs remain open.
+
+Latest checks after strengthening the uniformly collision-free all-future
+Taylor recurrence with ordinary chart ledgers:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py::test_uniform_collision_free_taylor_recurrence_derives_fixed_step_tail_bound tests/test_general_solution_theorem.py::test_uniform_collision_free_initial_chart_ledgers_are_constructor_derived tests/test_general_solution_theorem.py::test_uniformly_noncollision_bounded_tail_global_atlas_enters_theorem_pipeline tests/test_general_solution_theorem.py::test_uniformly_noncollision_bounded_tail_rejects_bounds_missing_initial_state
+python3 -m pytest -q tests/test_general_solution_theorem.py
+python3 -m pytest -q tests/test_continuation.py
+python3 -m pytest -q tests/test_closed_form.py
+python3 -m pytest -q tests/test_general_solution.py -k validated_atlas
+```
+
+```text
+compileall passed
+4 passed
+19 passed
+7 passed
+39 passed
+5 passed
+```
+
+`three_body_symmetry/continuation.py` now has
+`certify_uniformly_collision_free_taylor_recurrence(...)`, which turns explicit
+uniform centered branch bounds into the fixed-step ordinary Taylor recurrence:
+one collision-free tube, one acceleration majorant, one Cauchy radius, one
+step ratio below one, and a uniform omitted-tail bound
+`M (h/rho)^(N+1)/(1-h/rho)`. It also has
+`certify_uniform_collision_free_ordinary_chart_ledgers(...)`, which derives the
+initial centered ordinary chart's Newton residual, physical projection,
+center-of-mass, linear-momentum, centered-angular-momentum, total-energy,
+transition, and tail ledgers from existing constructors. `construct_uniformly_noncollision_bounded_tail_global_atlas(...)`
+requires those ledgers before feeding the recurrence into a
+`GlobalAtlasCertificate` for the `uniformly_noncollision_bounded_tail` regime.
+The rejection regressions check both a broken ordinary projection ledger and
+uniform bounds that fail to contain the initial centered state. This is a real
+all-future ordinary recurrence under explicit uniform bounds; it does not prove
+arbitrary-data regime classification or that an arbitrary bounded/recurrent
+branch satisfies those bounds.
+
+Latest checks after allowing a proof-certified local spatial KS finite atlas
+inside the compact nonzero-angular finite-atlas theorem:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py
+python3 -m pytest -q tests/test_general_solution.py -k validated_atlas
+python3 -m pytest -q tests/test_hybrid.py::test_validated_atlas_from_hybrid_solution_closes_binary_handoff_ledgers tests/test_closed_form.py
+python3 -m pytest -q tests/test_ks_binary_chart.py tests/test_ks_binary_series.py tests/test_general_solution.py -k validated_atlas
+```
+
+```text
+compileall passed
+15 passed
+5 passed
+40 passed
+6 passed
+```
+
+`construct_nonzero_angular_compact_finite_atlas(...)` now admits a
+`spatial_ks_binary` chart only under a scoped theorem rule: the input must be
+three-dimensional, the `ValidatedAtlasSolution` must be proof-certified, and
+its collision policy must be the constructor-derived
+`spatial_ks_selected_binary_entry_and_local_regularization` policy with the
+local ordinary/KS/ordinary collision scope certified. A matching regression
+shows that the proof-certified local exact-binary KS handoff becomes a
+certified compact nonzero-angular finite atlas, while the same atlas with an
+uncertified collision policy fails the theorem-level
+`spatial_binary_regularization_scope` obligation. This is a finite local KS
+admission rule, not arbitrary spatial binary event classification, long-chain
+set propagation, or global spatial collision continuation.
+
+Latest checks after adding an automatic local spatial KS selector for clear
+close-pair validated-atlas cases:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py::test_unrestricted_solution_validated_atlas_auto_selects_clear_spatial_ks_handoff
+python3 -m pytest -q tests/test_general_solution.py -k validated_atlas
+python3 -m pytest -q tests/test_ks_binary_chart.py tests/test_ks_binary_series.py tests/test_general_solution.py -k validated_atlas
+python3 -m pytest -q tests/test_hybrid.py::test_validated_atlas_from_hybrid_solution_closes_binary_handoff_ledgers tests/test_general_solution_theorem.py tests/test_closed_form.py
+```
+
+```text
+compileall passed
+1 passed
+5 passed
+6 passed
+53 passed
+```
+
+`evaluate_unrestricted_solution(..., method="validated_atlas")` now tries a
+derived spatial KS selector before falling back to compactified Sundman for 3D
+data. The selector is deliberately local: it only proposes a KS handoff when
+the initial state has a nearest pair within the binary threshold, that pair is
+strictly closing, and the third body is already well separated. It then chooses
+a conservative entry threshold and delegates all proof obligations to the
+existing ordinary-entry, KS branch-lift, rho-exit, local-domain, residual,
+invariant, transition, target-time, and tail constructors. The regression
+checks that the exact-binary case no longer needs caller-supplied KS thresholds
+and still returns a proof-certified `ValidatedAtlasSolution`. This is an
+automatic local selected-pair handoff, not global spatial binary event
+classification.
+
+Latest checks after exposing the proof-certified local spatial KS handoff
+through the public finite-time validated-atlas entrypoint:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution.py::test_unrestricted_solution_validated_atlas_routes_explicit_spatial_ks_handoff tests/test_general_solution.py::test_unrestricted_solution_validated_atlas_rejects_incomplete_spatial_ks_options
+python3 -m pytest -q tests/test_general_solution.py -k validated_atlas
+python3 -m pytest -q tests/test_ks_binary_chart.py tests/test_ks_binary_series.py tests/test_general_solution.py -k validated_atlas
+python3 -m pytest -q tests/test_hybrid.py::test_validated_atlas_from_hybrid_solution_closes_binary_handoff_ledgers tests/test_general_solution_theorem.py tests/test_closed_form.py
+```
+
+```text
+compileall passed
+2 passed
+4 passed
+5 passed
+53 passed
+```
+
+`evaluate_unrestricted_solution(..., method="validated_atlas")` now has an
+explicit opt-in spatial KS path. Supplying `spatial_binary_pair`,
+`spatial_binary_enter_distance`, `spatial_binary_entry_time_upper`,
+`spatial_binary_exit_rho`, and `spatial_binary_s_upper` routes 3D data through
+`evaluate_spatial_ks_validated_atlas_solution(...)`, which delegates to the
+constructor-derived ordinary/KS/ordinary handoff and returns a
+`ValidatedAtlasSolution`. Incomplete spatial KS selector options raise instead
+of silently falling back to compactified Sundman. The exact-binary public-route
+regression returns a proof-certified three-chart spatial atlas with entry
+isolation, branch lift, rho-exit isolation, local collision scope, requested
+target-time containment, residuals, invariants, transitions, and tails all
+closed. This is still explicit selected-pair finite-time integration, not an
+automatic spatial binary classifier or all-time spatial continuation theorem.
+
+Latest checks after closing the local spatial ordinary/KS collision-policy
+scope for the tested exact-binary handoff:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_ks_binary_series.py
+python3 -m pytest -q tests/test_ks_binary_chart.py tests/test_ks_binary_series.py tests/test_general_solution.py -k validated_atlas
+python3 -m pytest -q tests/test_hybrid.py::test_validated_atlas_from_hybrid_solution_closes_binary_handoff_ledgers tests/test_general_solution_theorem.py tests/test_closed_form.py
+```
+
+```text
+compileall passed
+32 passed
+3 passed
+53 passed
+```
+
+`validated_atlas_from_spatial_ordinary_ks_handoff(...)` now derives a local
+`SpatialLocalCollisionPolicyCertificate` instead of leaving
+`spatial_collision_policy_scope` as a placeholder. The certificate checks the
+ordinary pre-entry chart over the whole interval from the initial state to the
+entry root enclosure, checks that the KS chart keeps both third-body
+separations strictly positive while the selected binary is regularized, and
+checks the ordinary post-exit chart over the full forward domain needed to
+reach the requested target. In the exact-binary target-time regression, the
+three-chart local atlas is now proof-certified: entry isolation, branch lift,
+rho-exit isolation, target-time containment, local collision scope, residuals,
+invariants, transitions, and tails all close. This is still a local selected
+binary handoff, not a theorem-level spatial finite-time continuation or global
+regime classifier.
+
+Previous checks after adding requested-target-time evaluation to the composed
+spatial ordinary/KS handoff:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_ks_binary_series.py::test_spatial_ordinary_ks_handoff_evaluates_requested_target_time_interval
+python3 -m pytest -q tests/test_ks_binary_series.py
+python3 -m pytest -q tests/test_ks_binary_chart.py tests/test_ks_binary_series.py tests/test_general_solution.py -k validated_atlas
+```
+
+```text
+compileall passed
+1 passed
+32 passed
+3 passed
+```
+
+`validated_atlas_from_spatial_ordinary_ks_handoff(...)` can now accept a
+requested physical `target_time`. The constructor subtracts the certified
+ordinary-entry interval and KS endpoint-time interval, evaluates the
+post-exit ordinary Taylor chart over the remaining time interval, and records
+`finite_time_physical_targeting` as closed when the requested time is covered.
+At that point, the tested exact-binary continuation case local spatial atlas
+closes entry isolation, KS branch lift, rho-exit isolation, post-exit target
+containment, residuals, invariants, and tails; the only remaining proof-ledger
+blocker is whole spatial collision-policy classification.
+
+Latest checks after strengthening spatial KS event isolation so the composed
+ordinary-to-KS handoff can close a certified rho-exit:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_ks_binary_series.py::test_spatial_ordinary_ks_handoff_can_close_certified_rho_exit_event
+python3 -m pytest -q tests/test_ks_binary_series.py
+python3 -m pytest -q tests/test_ks_binary_chart.py tests/test_ks_binary_series.py tests/test_general_solution.py -k validated_atlas
+python3 -m pytest -q tests/test_hybrid.py::test_validated_atlas_from_hybrid_solution_closes_binary_handoff_ledgers tests/test_general_solution_theorem.py tests/test_closed_form.py
+```
+
+```text
+compileall passed
+1 passed
+31 passed
+3 passed
+53 passed
+```
+
+The spatial KS entry/exit certificates now prove the no-earlier-root condition
+over a signed subdivision of the pre-event range instead of one pessimistic
+interval evaluation over the whole range. This keeps the evidence
+constructor-derived while allowing `validated_atlas_from_spatial_ordinary_ks_handoff(...)`
+to certify an ordinary entry event, KS branch lift, KS rho-exit event, and
+ordinary post-handoff projection in one local atlas for an exact-binary
+continuation scenario. The remaining missing obligations for that local
+rho-exit case are now only physical target-time selection and whole spatial
+collision-policy classification.
+
+Latest checks after composing ordinary-to-KS entry into the spatial local
+validated-atlas handoff:
+
+```bash
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_ks_binary_series.py -q
+python3 -m pytest -q tests/test_ks_binary_chart.py tests/test_ks_binary_series.py tests/test_general_solution.py -k validated_atlas
+python3 -m pytest -q tests/test_hybrid.py::test_validated_atlas_from_hybrid_solution_closes_binary_handoff_ledgers tests/test_general_solution_theorem.py tests/test_closed_form.py
+```
+
+```text
+compileall passed
+30 passed
+3 passed
+53 passed
+```
+
+`validated_atlas_from_spatial_ordinary_ks_handoff(...)` now constructs a
+local three-chart spatial atlas from an ordinary interval state: ordinary
+Taylor until a certified decreasing pair-distance entry root, certified KS
+branch lift over that root interval, spatial KS binary propagation, and
+rho-positive projection into an ordinary post-handoff Taylor chart. This
+removes the prior missing KS-entry obligation for that local handoff. It still
+does not claim theorem-level spatial binary continuation: rho-exit isolation
+is required unless supplied and certified, and arbitrary physical-time
+targeting plus whole spatial collision-policy classification remain missing.
+
+Latest checks after proving ordinary-gap primitive Cauchy inputs from a
+uniform noncollision state envelope:
+
+```bash
+pytest tests/test_obstructions.py::test_uniform_noncollision_state_envelope_supplies_ordinary_cauchy_inputs
+pytest tests/test_obstructions.py::test_uniform_noncollision_state_envelope_supplies_ordinary_cauchy_inputs tests/test_obstructions.py::test_uniform_event_isolation_supplies_chart_counts_for_primitive_budget tests/test_obstructions.py::test_primitive_cauchy_inputs_close_all_future_event_budget tests/test_obstructions.py::test_uniform_cauchy_tail_schedule_gives_local_geometric_chart_envelopes tests/test_obstructions.py::test_local_chart_envelopes_imply_geometric_shell_budget_hypothesis tests/test_obstructions.py::test_geometric_infinite_event_tail_uses_automatic_total_collision_selectors tests/test_obstructions.py::test_geometric_infinite_event_atlas_recurrence_sums_mixed_collision_tail tests/test_obstructions.py::test_uniform_event_isolation_gives_geometric_shell_count_bound
+python3 -m compileall three_body_symmetry tests
+pytest
+```
+
+```text
+1 passed in 1.07s
+8 passed in 0.50s
+compileall passed
+444 passed in 562.52s (0:09:22)
+```
+
+`docs/geometric-infinite-event-atlas-recurrence.md` now proves the ordinary
+gap primitive Cauchy input under a uniform noncollision state envelope. If
+future ordinary gap charts have pair separation `d_*>0`, pair diameter `D_*`,
+and speed `V_*`, the Sundman Cauchy state-envelope formulas give a positive
+uniform radius floor `R_*` and finite component majorants. Fixed steps
+`h<=sigma R_*` then give `Lambda=1`, fixed Cauchy fraction `sigma<1`, and
+ordinary local ratio `r_O=sigma^d`. The regression checks the explicit
+`R_*` formula and the induced all-future ordinary gap tail bound.
+
+Latest checks after deriving chart-family counts from uniform event isolation:
+
+```bash
+pytest tests/test_obstructions.py::test_uniform_event_isolation_supplies_chart_counts_for_primitive_budget
+pytest tests/test_obstructions.py::test_uniform_event_isolation_supplies_chart_counts_for_primitive_budget tests/test_obstructions.py::test_primitive_cauchy_inputs_close_all_future_event_budget tests/test_obstructions.py::test_uniform_cauchy_tail_schedule_gives_local_geometric_chart_envelopes tests/test_obstructions.py::test_local_chart_envelopes_imply_geometric_shell_budget_hypothesis tests/test_obstructions.py::test_geometric_infinite_event_tail_uses_automatic_total_collision_selectors tests/test_obstructions.py::test_geometric_infinite_event_atlas_recurrence_sums_mixed_collision_tail tests/test_obstructions.py::test_uniform_event_isolation_gives_geometric_shell_count_bound
+python3 -m compileall three_body_symmetry tests
+pytest
+```
+
+```text
+1 passed in 1.04s
+7 passed in 0.49s
+compileall passed
+443 passed in 558.82s (0:09:18)
+```
+
+`docs/geometric-infinite-event-atlas-recurrence.md` now derives the primitive
+chart-family count constants from the same uniform shell isolation estimate.
+If `M_*=floor(1/alpha)+2`, then each shell has at most `M_*` separated-binary
+charts, at most `M_*` automatic total-collision charts, and at most `M_*+1`
+ordinary gap atlases, since the complement of `E_n` disjoint event
+neighborhoods has at most `E_n+1` connected gaps. The regression checks that
+these derived counts feed the primitive Cauchy all-future budget formula.
+
+Latest checks after composing primitive Cauchy inputs into the all-future
+event-budget bound:
+
+```bash
+pytest tests/test_obstructions.py::test_primitive_cauchy_inputs_close_all_future_event_budget
+pytest tests/test_obstructions.py::test_primitive_cauchy_inputs_close_all_future_event_budget tests/test_obstructions.py::test_uniform_cauchy_tail_schedule_gives_local_geometric_chart_envelopes tests/test_obstructions.py::test_local_chart_envelopes_imply_geometric_shell_budget_hypothesis tests/test_obstructions.py::test_geometric_infinite_event_tail_uses_automatic_total_collision_selectors tests/test_obstructions.py::test_geometric_infinite_event_atlas_recurrence_sums_mixed_collision_tail tests/test_obstructions.py::test_uniform_event_isolation_gives_geometric_shell_count_bound
+python3 -m compileall three_body_symmetry tests
+pytest
+```
+
+```text
+1 passed in 1.72s
+6 passed in 1.82s
+compileall passed
+442 passed in 672.27s (0:11:12)
+```
+
+`docs/geometric-infinite-event-atlas-recurrence.md` now gives the direct
+all-future formula from primitive recurrence inputs. For each chart family
+`K`, component `X`, count bound `M_K`, majorant growth
+`C^X_{K,n} <= C^X_{K,0}(Lambda^X_K)^n`, fixed Cauchy fraction `sigma^X_K`,
+and retained order growth `p^X_{K,n} >= p^X_{K,0}+d^X_K n`, the local ratio is
+`r^X_K=Lambda^X_K(sigma^X_K)^d`. If every `r^X_K<1`, then the future tail is
+bounded by `sum_K M_K A^X_K(r^X_K)^N/(1-r^X_K)`, and also by the scalar shell
+bound `B^X_0 r_X^N/(1-r_X)`. The regression checks the direct composition from
+primitive Cauchy data to the sharper family-wise bound and the coarser scalar
+recurrence.
+
+Latest checks after deriving local geometric chart envelopes from Cauchy-tail
+schedules:
+
+```bash
+pytest tests/test_obstructions.py::test_uniform_cauchy_tail_schedule_gives_local_geometric_chart_envelopes
+pytest tests/test_obstructions.py::test_uniform_cauchy_tail_schedule_gives_local_geometric_chart_envelopes tests/test_obstructions.py::test_local_chart_envelopes_imply_geometric_shell_budget_hypothesis tests/test_obstructions.py::test_geometric_infinite_event_tail_uses_automatic_total_collision_selectors tests/test_obstructions.py::test_geometric_infinite_event_atlas_recurrence_sums_mixed_collision_tail tests/test_obstructions.py::test_uniform_event_isolation_gives_geometric_shell_count_bound
+python3 -m compileall three_body_symmetry tests
+pytest
+```
+
+```text
+1 passed in 0.93s
+5 passed in 0.46s
+compileall passed
+441 passed in 553.26s (0:09:13)
+```
+
+`docs/geometric-infinite-event-atlas-recurrence.md` now proves the local
+Cauchy-to-geometric-envelope implication. For each ordinary, separated-binary,
+or automatic identity-selector total-collision chart family, if a budget
+component has step-to-radius ratio bounded by `sigma<1`, Cauchy majorant growth
+`C_n <= C_0 Lambda^n`, and retained order `p_n >= p_0+dn`, then the local tail
+has envelope `C_0 sigma^(p_0+1)/(1-sigma) (Lambda sigma^d)^n`. The regression
+checks this arithmetic for value, first-jet, lifted-residual, and
+projected-residual budgets, then aggregates those local envelopes into the
+existing shell-budget bound.
+
+Latest checks after reducing geometric shell budgets to local chart envelopes:
+
+```bash
+pytest tests/test_obstructions.py::test_local_chart_envelopes_imply_geometric_shell_budget_hypothesis
+pytest tests/test_obstructions.py::test_local_chart_envelopes_imply_geometric_shell_budget_hypothesis tests/test_obstructions.py::test_geometric_infinite_event_tail_uses_automatic_total_collision_selectors tests/test_obstructions.py::test_geometric_infinite_event_atlas_recurrence_sums_mixed_collision_tail tests/test_obstructions.py::test_uniform_event_isolation_gives_geometric_shell_count_bound
+python3 -m compileall three_body_symmetry tests
+pytest
+```
+
+```text
+1 passed in 1.00s
+4 passed in 0.37s
+compileall passed
+440 passed in 553.19s (0:09:13)
+```
+
+`docs/geometric-infinite-event-atlas-recurrence.md` now proves the local-to-
+shell budget implication explicitly. If each shell has bounded counts of
+ordinary gap atlases, separated-binary Levi-Civita charts, and automatic
+identity-selector total-collision charts, and if each chart family has a
+geometric local budget envelope, then the whole shell budget has the same
+geometric form with ratio equal to the maximum local ratio and first-shell
+constant equal to the count-weighted local constants. The regression checks
+the inequality and the resulting infinite-tail remainder for value, first-jet,
+lifted-residual, and projected-residual budgets.
+
+Latest checks after adding automatic total-collision selectors to the
+geometric infinite-event recurrence:
+
+```bash
+pytest tests/test_obstructions.py::test_geometric_infinite_event_tail_uses_automatic_total_collision_selectors
+pytest tests/test_obstructions.py::test_geometric_infinite_event_tail_uses_automatic_total_collision_selectors tests/test_obstructions.py::test_geometric_infinite_event_atlas_recurrence_sums_mixed_collision_tail tests/test_obstructions.py::test_uniform_event_isolation_gives_geometric_shell_count_bound tests/test_obstructions.py::test_automatic_three_body_selector_compact_atlas_needs_no_extra_local_limits
+python3 -m compileall three_body_symmetry tests
+pytest
+```
+
+```text
+1 passed in 1.02s
+4 passed in 0.51s
+compileall passed
+439 passed in 559.47s (0:09:19)
+```
+
+`docs/geometric-infinite-event-atlas-recurrence.md` now has the positive-mass
+three-body zero-angular variant of the infinite-event recurrence. Total
+collisions in a geometric event tail can use automatic identity-selector
+Fuchsian-log charts: the local entry theorem supplies the incoming finite
+selector list, the identity rule constructs the outgoing chart, and the shell
+budget recurrence is unchanged. The regression replaces preselected
+total-collision charts with automatic ones, checks that no external
+selector-limit input is required, verifies shell-width packing, and confirms
+the same closed-form geometric remainders `B_0 r^N/(1-r)`.
+
+Latest checks after composing two-ended scattering with an automatic
+zero-angular finite-event middle:
+
+```bash
+pytest tests/test_obstructions.py::test_two_ended_scattering_uses_automatic_zero_angular_finite_event_middle
+pytest tests/test_obstructions.py::test_two_ended_scattering_uses_automatic_zero_angular_finite_event_middle tests/test_obstructions.py::test_automatic_three_body_selector_compact_atlas_needs_no_extra_local_limits tests/test_obstructions.py::test_two_ended_scattering_allows_finite_mixed_collision_middle_budget tests/test_obstructions.py::test_two_ended_scattering_uses_nonzero_angular_compact_middle_budget tests/test_obstructions.py::test_two_ended_scattering_projected_newton_residual_has_stronger_shell_decay
+python3 -m compileall three_body_symmetry tests
+pytest
+```
+
+```text
+1 passed in 1.07s
+5 passed in 0.47s
+compileall passed
+438 passed in 558.05s (0:09:18)
+```
+
+`docs/hyperbolic-scattering-fixed-point-convergence-lemma.md` now composes the
+two-ended prescribed-scattering endpoint recurrence with a zero-angular
+positive-mass three-body finite-event compact middle. Under the compact-middle
+hypotheses of finite energy, zero centered angular momentum, finitely many
+collision events, separated binary events, and positive-mass total collisions,
+the middle atlas is constructed rather than assumed: ordinary Taylor charts on
+collision-free gaps, Levi-Civita charts at separated binaries, and automatic
+identity-selector Fuchsian-log charts at total collisions. The endpoint dyadic
+sums are unchanged, and the finite middle contributes only summed ordinary,
+binary, and automatic-total-collision budgets. The regression checks
+zero-angular scattering endpoint invariants, absence of any external selector
+limit requirement, event ordering, endpoint geometric sums, and finite
+all-real budget arithmetic.
+
+Latest checks after making selector limits automatic for finite three-body
+zero-angular event sets:
+
+```bash
+pytest tests/test_obstructions.py::test_automatic_three_body_selector_compact_atlas_needs_no_extra_local_limits
+pytest tests/test_obstructions.py::test_automatic_three_body_selector_compact_atlas_needs_no_extra_local_limits tests/test_obstructions.py::test_three_body_collision_free_central_targets_are_reduced_hyperbolic tests/test_obstructions.py::test_poincare_dulac_stable_normal_form_has_complete_log_selectors tests/test_obstructions.py::test_fuchsian_log_selector_continuation_preserves_energy_limit tests/test_obstructions.py::test_binary_degenerate_jacobi_equations_reduce_to_kepler_scale_contradiction tests/test_obstructions.py::test_perturbed_kepler_collision_blow_up_lemma_tracks_parabolic_rate tests/test_obstructions.py::test_finite_jet_identity_selector_total_collisions_compose_compact_atlas
+python3 -m compileall three_body_symmetry tests
+pytest
+```
+
+```text
+1 passed in 0.98s
+7 passed in 0.60s
+compileall passed
+437 passed in 551.49s (0:09:11)
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now composes the zero-angular
+entry theorem with the compact identity-selector atlas. For positive-mass
+three-body motion, a finite-energy zero-angular total collision automatically
+supplies incoming Fuchsian-log selector data: binary-degenerate approach is
+excluded, quotient shape converges to a collision-free Lagrange or Euler
+target, every such reduced target is hyperbolic, and Poincare-Dulac stable
+normal form gives the finite selector expansion. Therefore a compact interval
+with finitely many such total collisions, separated binary events, and
+collision-free gaps has a finite automatically selected atlas without a
+separate local selector-limit hypothesis. The regression checks the automatic
+selector source, reduced-center spectrum, projected Newton residual, zero
+angular momentum, center of mass, linear momentum, energy matching, and finite
+ordinary/binary/total-collision atlas budgets.
+
+Latest checks after adding the finite-jet identity-selector compact atlas:
+
+```bash
+pytest tests/test_obstructions.py::test_finite_jet_identity_selector_total_collisions_compose_compact_atlas
+pytest tests/test_obstructions.py::test_finite_one_sided_jets_select_local_zero_angular_branch_parameters tests/test_obstructions.py::test_finite_jet_identity_selector_total_collisions_compose_compact_atlas tests/test_obstructions.py::test_local_normal_form_branch_parameters_project_to_two_sided_zero_angular_continuation tests/test_obstructions.py::test_identity_selector_total_collision_glues_to_ordinary_taylor_pieces tests/test_obstructions.py::test_local_normal_form_energy_limit_is_fixed_by_branch_jets
+python3 -m compileall three_body_symmetry tests
+pytest
+```
+
+```text
+1 passed in 0.96s
+5 passed in 0.67s
+compileall passed
+436 passed in 551.83s (0:09:11)
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now composes the finite
+one-sided jet selector with the compact zero-angular identity-selector atlas.
+At each finite zero-angular total collision, the theorem only requires the
+central limiting shape, incoming finite energy, and any finite resonant jet
+projection needed for the equilateral `beta=8/27` or ordered-Euler resonance
+surfaces. The energy-matching scale coefficient is then fixed by the scalar
+formula, the identity rule keeps those finite selector coordinates on the
+outgoing side, and the local normal-form recurrence constructs the outgoing
+analytic branch. The regression places an equilateral cubic-resonant total
+collision and an ordered-Euler fifth-order resonant total collision into one
+finite compact atlas with ordinary and separated-binary charts, then checks
+finite budgets, projected Newton residuals, zero angular momentum, center of
+mass, linear momentum, and energy matching. This narrows the zero-angular
+continuation gap without claiming arbitrary total-collision approaches supply
+the required finite selector limits.
+
+Latest checks after composing two-ended scattering with a nonzero-angular
+compact middle:
+
+```bash
+pytest tests/test_obstructions.py::test_two_ended_scattering_uses_nonzero_angular_compact_middle_budget
+pytest tests/test_obstructions.py::test_two_ended_scattering_allows_finite_mixed_collision_middle_budget tests/test_obstructions.py::test_two_ended_scattering_uses_nonzero_angular_compact_middle_budget tests/test_obstructions.py::test_nonzero_angular_compact_interval_has_finite_mixed_atlas_budget tests/test_obstructions.py::test_nonzero_angular_momentum_makes_compact_binary_event_set_finite tests/test_obstructions.py::test_two_ended_scattering_projected_newton_residual_has_stronger_shell_decay
+python3 -m compileall three_body_symmetry tests
+pytest
+```
+
+```text
+1 passed in 0.97s
+5 passed in 0.52s
+compileall passed
+435 passed in 549.93s (0:09:09)
+```
+
+`docs/hyperbolic-scattering-fixed-point-convergence-lemma.md` now states the
+all-real prescribed-scattering composition where the compact middle has
+conserved nonzero centered angular momentum. The proof uses the compact
+nonzero-angular finite-atlas theorem to remove the middle atlas as an
+independent hypothesis: total collision is excluded, finite-time binary
+accumulation would force total collision, so only finitely many separated
+binary Levi-Civita charts remain, with ordinary Taylor charts on the
+collision-free gaps. The endpoint dyadic scattering sums are unchanged, and the
+finite middle contributes only the ordinary-plus-binary value, first-jet,
+lifted-residual, and projected-residual budgets. The regression checks the
+budget arithmetic, the nonzero-angular exclusion, and the absence of an
+identity-selector total-collision chart in this subcase.
+
+Latest checks after adding the compact nonzero-angular finite-atlas theorem:
+
+```bash
+pytest tests/test_obstructions.py::test_nonzero_angular_compact_interval_has_finite_mixed_atlas_budget tests/test_obstructions.py::test_nonzero_angular_momentum_makes_compact_binary_event_set_finite tests/test_obstructions.py::test_finite_time_binary_accumulation_forces_total_collision_limit tests/test_obstructions.py::test_nonzero_angular_momentum_certifies_triple_collision_exclusion_for_interval_box
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+pytest
+```
+
+```text
+4 passed in 1.03s
+144 passed in 1.99s
+compileall passed
+181 passed in 2.10s
+270 passed in 10.71s
+434 passed in 551.11s (0:09:11)
+```
+
+`docs/nonzero-angular-triple-collision-exclusion-lemma.md` now states the full
+compact nonzero-angular finite-atlas theorem. If a compact branch has conserved
+nonzero centered angular momentum and every binary event is a separated-third-
+body Levi-Civita event, total collision is excluded, binary events are finite,
+and the complement is a finite union of collision-free compact intervals.
+Ordinary Taylor covers on the complement plus the finite binary chart list give
+a finite lift/construct/project/verify atlas with finite value, first-jet,
+lifted-residual, and projected-residual budgets. The regression checks the
+ordinary-plus-binary budget formula under a certified nonzero-angular
+triple-collision exclusion.
+
+Latest checks after proving compact nonzero-angular branches have finite
+binary event sets:
+
+```bash
+pytest tests/test_obstructions.py::test_nonzero_angular_momentum_makes_compact_binary_event_set_finite tests/test_obstructions.py::test_finite_time_binary_accumulation_forces_total_collision_limit tests/test_obstructions.py::test_regularized_total_collision_germ_forces_zero_angular_momentum_limit tests/test_obstructions.py::test_nonzero_angular_momentum_certifies_triple_collision_exclusion_for_interval_box
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+pytest
+```
+
+```text
+4 passed in 0.56s
+143 passed in 2.11s
+compileall passed
+180 passed in 2.14s
+269 passed in 11.03s
+433 passed in 551.46s (0:09:11)
+```
+
+`docs/nonzero-angular-triple-collision-exclusion-lemma.md` now combines the
+full three-body nonzero-angular total-collision exclusion with the binary
+accumulation theorem. If a compact interval had infinitely many binary
+collisions, compactness would give an accumulation point; binary accumulation
+forces total collision; nonzero centered angular momentum excludes total
+collision. Therefore every compact nonzero-angular branch has only finitely
+many binary events, so its compact singular atlas is a finite separated-binary
+Levi-Civita list plus ordinary Taylor charts. The regression composes the
+interval angular-momentum exclusion certificate with an explicit accumulating
+binary-event sequence and verifies that the proposed infinite compact binary
+event set is incompatible with the nonzero-angular branch.
+
+Latest checks after proving finite-time binary accumulation forces total
+collision:
+
+```bash
+pytest tests/test_obstructions.py::test_finite_time_binary_accumulation_forces_total_collision_limit tests/test_obstructions.py::test_compact_event_accumulation_forces_isolation_degeneracy tests/test_obstructions.py::test_uniform_event_isolation_gives_geometric_shell_count_bound tests/test_obstructions.py::test_geometric_infinite_event_atlas_recurrence_sums_mixed_collision_tail
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+pytest
+```
+
+```text
+4 passed in 0.54s
+142 passed in 1.98s
+compileall passed
+179 passed in 2.06s
+268 passed in 10.79s
+432 passed in 552.64s (0:09:12)
+```
+
+`docs/separated-binary-levi-civita-continuation-lemma.md` now proves that
+finite-time accumulation of binary collision events forces total collision. If
+`c_n -> T`, one binary pair repeats on an infinite subsequence; continuity gives
+that same pair collision at `T`. If the third body is separated at `T`, the
+local Levi-Civita chart gives an analytic simple zero
+`z(s)=zeta(0)s+O(s^2)` with `zeta(0)!=0`, hence a punctured neighborhood free of
+other collisions of that pair, contradicting the accumulating subsequence.
+Therefore finite-time binary accumulation is not a new separated-binary regime;
+it must be routed to the total-collision classification/continuation branch.
+The regression checks both the same-pair separated-binary contradiction and the
+alternating-pair case where continuity forces all pair distances to vanish at
+the limit.
+
+Latest checks after adding the compact event-accumulation dichotomy:
+
+```bash
+pytest tests/test_obstructions.py::test_compact_event_accumulation_forces_isolation_degeneracy tests/test_obstructions.py::test_uniform_event_isolation_gives_geometric_shell_count_bound tests/test_obstructions.py::test_geometric_infinite_event_atlas_recurrence_sums_mixed_collision_tail
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+pytest
+```
+
+```text
+3 passed in 0.52s
+141 passed in 1.99s
+compileall passed
+178 passed in 2.03s
+267 passed in 10.76s
+431 passed in 550.19s (0:09:10)
+```
+
+`docs/geometric-infinite-event-atlas-recurrence.md` now includes the compact
+event-accumulation dichotomy. On any compact prefix away from the endpoint,
+infinitely many verified event centers force the certified local isolation
+radii to have infimum zero. In separated-binary Levi-Civita charts the simple
+zero itself cannot degenerate for positive masses because `|zeta(0)|^2=M/2`;
+therefore accumulation must come from shrinking third-body/noncolliding-pair
+separation, loss of a uniform branch split, or a collapsing analytic chart
+radius. In identity-selector total-collision charts, accumulation forces the
+collision-free limiting shape separation, Fuchsian-log radius, or finite-energy
+central-target hypotheses to degenerate. The regression checks an explicit
+compact accumulation sequence and verifies that it exceeds any uniform packing
+bound only by driving the isolation radii and local chart constants to zero.
+
+Latest checks after adding uniform event-isolation shell-count control:
+
+```bash
+pytest tests/test_obstructions.py::test_geometric_infinite_event_atlas_recurrence_sums_mixed_collision_tail tests/test_obstructions.py::test_uniform_event_isolation_gives_geometric_shell_count_bound
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+pytest
+```
+
+```text
+2 passed in 0.51s
+140 passed in 1.97s
+compileall passed
+177 passed in 2.20s
+266 passed in 10.72s
+430 passed in 555.51s (0:09:15)
+```
+
+`docs/geometric-infinite-event-atlas-recurrence.md` now includes the local
+event-isolation argument needed by the infinite mixed-event recurrence. A
+separated binary Levi-Civita event has `z(s)=zeta(0)s+O(s^2)` with
+`zeta(0)!=0`, and an identity-selector total-collision event has
+`q_i=tau^2S_i(tau)` with collision-free limiting shape, so each verified local
+event is isolated in its lifted chart. If the induced compact-time isolation
+radius in shell `S_n` is at least `alpha Delta_n`, a packing argument gives the
+per-shell count bound `E_n <= floor(1/alpha)+2`; any compact prefix with a
+positive minimum isolation radius has finitely many events. The new regression
+checks that isolated event centers satisfy the packing inequalities and that
+the resulting count envelope feeds the same closed-form geometric budget
+remainder. The remaining global task is deriving those uniform isolation and
+budget envelopes from arbitrary-data dynamics, or classifying the exceptional
+nongeometric/finite-accumulation cases.
+
+Latest checks after adding the geometric infinite-event mixed collision
+recurrence:
+
+```bash
+pytest tests/test_obstructions.py::test_geometric_infinite_event_atlas_recurrence_sums_mixed_collision_tail
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+pytest
+```
+
+```text
+1 passed in 0.89s
+139 passed in 2.07s
+compileall passed
+176 passed in 2.00s
+265 passed in 11.02s
+429 passed in 551.66s (0:09:11)
+```
+
+`docs/geometric-infinite-event-atlas-recurrence.md` now proves a conditional
+all-future recurrence for infinitely many mixed event charts. If compact
+physical-time shells exhaust an endpoint, every compact prefix meets only
+finitely many events, the ordinary/binary/identity-selector total-collision
+event neighborhoods fit inside geometric shells, and the shell verification
+budgets have geometric envelopes, then the infinite event tail has explicit
+value, first-jet, lifted-residual, and projected-residual remainders
+`B_0 r^N/(1-r)` after any checked prefix. The regression checks that mixed
+ordinary, separated-binary, and identity-selector total-collision shell budgets
+sum to the closed-form infinite remainder while preserving geometric shell
+width and boundary-clearance constraints. This narrows the previous "infinitely
+many collision events" gap to proving those geometric hypotheses from the
+dynamics and handling nongeometric or finite-accumulation scenarios.
+
+Latest checks after allowing a finite mixed collision middle in the two-ended
+scattering atlas:
+
+```bash
+pytest tests/test_obstructions.py::test_two_ended_scattering_allows_finite_mixed_collision_middle_budget
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+pytest
+```
+
+```text
+1 passed in 0.86s
+138 passed in 2.28s
+compileall passed
+175 passed in 2.03s
+264 passed in 10.98s
+428 passed in 551.59s (0:09:11)
+```
+
+`docs/hyperbolic-scattering-fixed-point-convergence-lemma.md` now replaces the
+collision-free middle requirement in the two-ended scattering theorem with any
+finite verified middle atlas made of ordinary Taylor, separated-binary
+Levi-Civita, and identity-selector total-collision charts. The endpoint
+geometric sums are unchanged; the finite mixed middle contributes finite
+budgets. The new regression checks that the endpoint value, first-jet, lifted
+residual, and projected physical residual sums compose with a finite mixed
+middle containing all three chart types.
+
+Latest checks after adding finite compact-atlas composition with
+identity-selector total-collision charts:
+
+```bash
+pytest tests/test_obstructions.py::test_identity_selector_total_collision_glues_to_ordinary_taylor_pieces
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+pytest
+```
+
+```text
+1 passed in 1.01s
+137 passed in 2.11s
+compileall passed
+174 passed in 2.14s
+263 passed in 11.00s
+427 passed in 552.67s (0:09:12)
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now composes the canonical
+identity-selector total-collision chart with ordinary and binary charts on a
+compact interval with finitely many isolated collision events. The new
+regression checks the exact equilateral homothetic branch: ordinary Taylor
+pieces on both punctured sides agree with the same triple-collision chart,
+positions glue, velocities reverse under cubic time, and zero angular
+momentum/zero energy are preserved.
+
+Latest checks after adding the finite separated-binary compact atlas theorem:
+
+```bash
+pytest tests/test_binary_series.py::test_separated_binary_chart_glues_to_ordinary_taylor_pieces_on_compact_interval
+pytest tests/test_binary_series.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+pytest
+```
+
+```text
+1 passed in 0.81s
+13 passed in 1.04s
+compileall passed
+262 passed in 11.01s
+426 passed in 552.05s (0:09:12)
+```
+
+`docs/separated-binary-levi-civita-continuation-lemma.md` now proves that a
+compact physical-time interval with finitely many separated binary collisions
+and no total collision has a finite analytic atlas: each collision is covered
+by one Levi-Civita chart, the complement is covered by ordinary Taylor charts,
+and uniqueness glues the projected pieces at noncollision handoffs. The new
+regression uses an exact separated-binary collision and verifies that ordinary
+Taylor pieces started from projected handoff states agree with the same
+regularized binary branch on both sides of the collision.
+
+Latest checks after adding the homothetic escape endpoint shell recurrence:
+
+```bash
+pytest tests/test_obstructions.py::test_homothetic_escape_log_subtracted_endpoint_has_convergent_implicit_series tests/test_obstructions.py::test_homothetic_escape_log_subtracted_endpoint_shell_tail_is_geometric
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+pytest
+```
+
+```text
+2 passed in 0.84s
+136 passed in 1.96s
+compileall passed
+173 passed in 1.84s
+261 passed in 10.23s
+425 passed in 548.75s (0:09:08)
+```
+
+`docs/homothetic-escape-log-subtracted-convergence-lemma.md` now upgrades the
+positive-energy homothetic escape endpoint from pointwise log-subtracted
+convergence to a dyadic all-future recurrence. The proof uses the analytic
+implicit function `x=Phi(tau,rho)`, `rho=tau log(tau)`, a Cauchy majorant on a
+polydisc, and the shell inequality
+`theta_(n+1) <= (1/2)(1+log(2)/log(T)) theta_n` to get a summable endpoint
+tail over all later physical times. The regression samples the exact
+homothetic implicit branch, checks the implicit endpoint equation, and verifies
+that the log-subtracted endpoint error obeys the geometric shell bound.
+
+Latest checks after adding the canonical identity-selector continuation rule:
+
+```bash
+pytest tests/test_obstructions.py::test_identity_selector_continuation_matches_lifted_branch_data tests/test_obstructions.py::test_fuchsian_log_selector_continuation_preserves_energy_limit
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+```
+
+```text
+2 passed in 0.97s
+135 passed in 2.02s
+compileall passed
+172 passed in 1.93s
+260 passed in 10.41s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now makes the zero-angular
+triple-collision branch rule explicit in the lifted Fuchsian-log coordinates.
+After binary-degenerate exclusion, quotient convergence, reduced
+hyperbolicity, and Poincare-Dulac selector completeness, the incoming branch
+supplies `C`, the energy scale coefficient `alpha`, and finitely many ordinary
+or log-subtracted selector constants. The canonical convention sets the
+outgoing selector list equal to the incoming list, constructs the outgoing
+lifted branch by the triangular recurrence, projects by `q=tau^2S(tau)`,
+`t=T+tau^3`, and verifies Newton's equation, zero angular momentum, and
+finite-energy matching. The new regression checks the identity rule on a
+two-row Fuchsian-log model: positions glue, velocities reverse under cubic
+time, selector quotients match on both sides, and energy/angular momentum are
+preserved. This gives an explicit local zero-angular triple-collision
+continuation convention in the lifted space. The remaining theorem work is
+global all-time construction/recurrence, not local zero-angular branch
+semantics.
+
+Latest checks after proving Poincare-Dulac selector asymptotic completeness
+for hyperbolic zero-angular entry:
+
+```bash
+pytest tests/test_obstructions.py::test_poincare_dulac_stable_normal_form_has_complete_log_selectors tests/test_obstructions.py::test_finite_resonant_stable_chain_recovers_log_polynomial_selector tests/test_obstructions.py::test_fuchsian_log_shape_row_solves_resonant_forcing_triangularly tests/test_obstructions.py::test_fuchsian_log_row_has_no_hidden_nonselector_coefficients tests/test_obstructions.py::test_fuchsian_log_selector_continuation_preserves_energy_limit tests/test_obstructions.py::test_three_body_collision_free_central_targets_are_reduced_hyperbolic
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+```
+
+```text
+6 passed in 0.59s
+134 passed in 1.90s
+compileall passed
+171 passed in 2.02s
+259 passed in 10.97s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now adds the local
+asymptotic-completeness step for hyperbolic zero-angular entry. Once the
+three-body branch has reached a reduced-hyperbolic collision-free central
+target, the stable rates are in the Poincare domain. The analytic
+Poincare-Dulac theorem gives finite triangular resonant normal-form
+coordinates, so every incoming branch has
+`y_j(s)=e^(-alpha_j s)P_j(s)` with finite polynomials `P_j`. Since
+`s=-(2/beta)log(tau)+O(1)`, these are exactly convergent Fuchsian-log selector
+expansions in cubic collision time. The new regression checks a finite
+positive-rate resonant normal form with lower-rate triangular forcing, a
+second-order log chain, and log-subtracted selector recovery. This closes the
+local incoming-asymptotic gap for zero-angular total-collision entry into the
+lifted selector class; the remaining zero-angular choice is the branch rule
+for outgoing selector constants, plus the separate all-time global recurrence.
+
+Latest checks after proving three-body collision-free central targets are
+reduced-hyperbolic:
+
+```bash
+pytest tests/test_obstructions.py::test_three_body_collision_free_central_targets_are_reduced_hyperbolic tests/test_obstructions.py::test_three_body_zero_angular_local_normal_form_case_split_is_exhaustive tests/test_obstructions.py::test_finite_reduced_shape_length_upgrades_to_oriented_shape_limit tests/test_obstructions.py::test_collision_free_shape_convergence_supplies_c2_cubic_time_entry
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+```
+
+```text
+4 passed in 1.09s
+133 passed in 1.79s
+compileall passed
+170 passed in 1.88s
+258 passed in 10.21s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now proves that every
+positive-mass three-body collision-free central target is hyperbolic after
+translation, scale, and rotation reduction. The indicial relation
+`(k+2)(k-1)=9mu` shows that a reduced center direction would require
+`mu=-2/9`; in the Lagrange spectrum and ordered-Euler spectrum this eigenvalue
+is exactly the infinitesimal rotation direction, and the genuine shape modes
+avoid it. Combined with the binary-degenerate exclusion and quotient-shape
+convergence, this closes the finite-reduced-length/oriented-shape-convergence
+part of zero-angular total-collision entry for the three-body problem. The new
+regression checks representative equilateral, beta-resonant, ordered-Euler,
+and ordered-Euler-resonant targets and verifies that the only zero indicial
+root is the quotiented rotation root. The remaining zero-angular entry gap is
+now asymptotic completeness of the Fuchsian/Fuchsian-log selector expansions,
+not binary-stratum exclusion or orientation convergence.
+
+Latest checks after closing the binary-degenerate Jacobi branch with the
+perturbed-Kepler collision blow-up lemma:
+
+```bash
+pytest tests/test_obstructions.py::test_perturbed_kepler_collision_blow_up_lemma_tracks_parabolic_rate tests/test_obstructions.py::test_binary_degenerate_jacobi_equations_reduce_to_kepler_scale_contradiction
+pytest tests/test_obstructions.py::test_perturbed_kepler_collision_blow_up_lemma_tracks_parabolic_rate tests/test_obstructions.py::test_binary_degenerate_jacobi_equations_reduce_to_kepler_scale_contradiction tests/test_obstructions.py::test_binary_degenerate_total_collapse_forces_tight_pair_angular_bound_to_zero tests/test_obstructions.py::test_binary_degenerate_outer_angular_barrier_excludes_nonzero_total_collapse tests/test_obstructions.py::test_collision_free_shape_limit_supplies_normalized_potential_limit tests/test_obstructions.py::test_collision_free_shape_convergence_supplies_c2_cubic_time_entry
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+```
+
+```text
+2 passed in 0.79s
+6 passed in 0.48s
+132 passed in 1.79s
+compileall passed
+169 passed in 1.86s
+257 passed in 10.40s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now states and proves the
+perturbed-Kepler collision blow-up lemma needed by the binary-degenerate
+zero-angular entry reduction. For `x''=-mu x/|x|^3+F`, if `|x| -> 0` and
+`|x|^2|F| -> 0`, McGehee variables force the incoming collision limit
+`nu -> -sqrt(2mu)` and `w -> 0`. Hence the coordinate energy and angular
+defects are conclusions:
+`|x|(1/2|x'|^2-mu/|x|) -> 0` and `|x wedge x'|^2/|x| -> 0`. The
+one-coordinate moment then gives `|x|~(9mu/2)^(1/3)(T-t)^(2/3)`. Combined with
+the exact Jacobi force reduction, both coordinates in a binary-degenerate
+total collapse would have this parabolic scale, forcing
+`|r|/|rho| -> (m_12/M)^(1/3)>0` and contradicting binary degeneration. The new
+regression checks a transversely perturbed Kepler collision model: scaled
+force defect, scaled energy defect, scaled angular defect, moment-equation
+error, and scale error all decay to the parabolic rate. This removes the
+previous Jacobi coordinate energy-defect gap; the remaining zero-angular entry
+work is the collision-free central-limit-to-selector/regularized-jet step.
+
+Latest checks after reducing binary-degenerate total collapse to Jacobi
+perturbed-Kepler asymptotics:
+
+```bash
+pytest tests/test_obstructions.py::test_binary_degenerate_jacobi_equations_reduce_to_kepler_scale_contradiction
+pytest tests/test_obstructions.py::test_binary_degenerate_jacobi_equations_reduce_to_kepler_scale_contradiction tests/test_obstructions.py::test_binary_degenerate_total_collapse_forces_tight_pair_angular_bound_to_zero tests/test_obstructions.py::test_binary_degenerate_outer_angular_barrier_excludes_nonzero_total_collapse tests/test_obstructions.py::test_collision_free_shape_limit_supplies_normalized_potential_limit tests/test_obstructions.py::test_collision_free_shape_convergence_supplies_c2_cubic_time_entry
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+```
+
+```text
+1 passed in 0.88s
+5 passed in 0.32s
+131 passed in 1.91s
+compileall passed
+168 passed in 1.90s
+256 passed in 10.46s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now narrows the
+binary-degenerate zero-angular total-collapse entry gap. In Jacobi coordinates
+with tight pair `r=q_2-q_1` and outer coordinate
+`rho=q_3-(m_1q_1+m_2q_2)/(m_1+m_2)`, binary degeneration means
+`|r|/|rho| -> 0`. The exact equations reduce to two Kepler equations plus
+lower-order perturbations: the pair perturbation is smaller than
+`m_12/|r|^2` by `O((|r|/|rho|)^3)`, and the outer perturbation is smaller than
+`M/|rho|^2` by `O(|r|/|rho|)`. If the standard finite-collision perturbed
+Kepler asymptotic is proved for those two coordinates, then both scales are
+`(T-t)^(2/3)` and their ratio tends to `(m_12/M)^(1/3)>0`, contradicting
+binary degeneration. The new regression checks the Jacobi leading-force
+reductions and the positive scale-ratio floor. This is not the full
+zero-angular entry theorem; it turns the binary-stratum exception into a
+specific perturbed-Kepler asymptotic lemma that remains to be proved.
+
+Latest checks after adding spatial embedding for selected zero-angular
+triple-collision branches:
+
+```bash
+pytest tests/test_obstructions.py::test_spatial_embedding_preserves_zero_angular_total_collision_branch
+pytest tests/test_obstructions.py::test_spatial_embedding_preserves_zero_angular_total_collision_branch tests/test_obstructions.py::test_local_normal_form_branch_parameters_project_to_two_sided_zero_angular_continuation tests/test_obstructions.py::test_incoming_regularized_germ_selects_same_outgoing_branch_parameters tests/test_obstructions.py::test_two_sided_mixed_fuchsian_energy_matching_uses_scale_coordinate tests/test_dynamics.py::test_spatial_angular_momentum_components_match_cross_product_convention
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+```
+
+```text
+1 passed in 0.93s
+5 passed in 0.69s
+130 passed in 1.82s
+compileall passed
+167 passed in 1.80s
+255 passed in 10.12s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now proves that the selected
+local zero-angular total-collision branches are not tied to the coordinate
+plane used for the normal-form calculation. Any fixed isometric embedding
+`E:R^2 -> R^d` preserves pair distances, so the Newtonian acceleration satisfies
+`A_d(Eq)=E A_2(q)`; therefore an embedded selected branch still solves Newton's
+equation on both punctured collision sides. Energy, center-of-mass, and linear
+momentum are preserved by the isometry, and the full spatial angular-momentum
+bivector is `(E wedge E)` applied to the planar angular momentum, hence zero
+for the selected zero-angular branches. The new regression embeds a resonant
+equilateral branch into a genuinely three-dimensional plane and checks distance
+preservation, projected residual, mass center, linear momentum, all centered
+angular-momentum bivector components, and energy. This closes the
+spatial-orientation projection step for selected local triple-collision
+branches; it still does not prove arbitrary spatial approaches enter the
+selected normal form.
+
+Latest checks after adding effective two-ended scattering tail starts:
+
+```bash
+pytest tests/test_obstructions.py::test_two_ended_scattering_effective_tail_starts_feed_all_real_recurrence
+pytest tests/test_obstructions.py::test_two_ended_scattering_effective_tail_starts_feed_all_real_recurrence tests/test_obstructions.py::test_hyperbolic_scattering_effective_tail_start_closes_future_recurrence tests/test_obstructions.py::test_past_infinity_scattering_endpoint_uses_time_reversal_signs tests/test_obstructions.py::test_two_ended_scattering_atlas_has_summable_endpoint_shell_recurrences tests/test_obstructions.py::test_two_ended_scattering_projected_newton_residual_has_stronger_shell_decay
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+```
+
+```text
+1 passed in 0.80s
+5 passed in 0.47s
+129 passed in 1.93s
+compileall passed
+166 passed in 1.91s
+254 passed in 10.34s
+```
+
+`docs/hyperbolic-scattering-fixed-point-convergence-lemma.md` now makes the
+two-ended prescribed-scattering recurrence start effective. The future endpoint
+uses the effective tail-start search for `(v_+,c_+)`; the past endpoint uses
+the same search on the time-reversed data `(-v_-,c_-)`. Both searches include
+the dyadic shell-ratio condition, separation loss, Picard contraction, and
+tube-containment inequalities, and the same limiting estimates prove that
+doubling both start times terminates. Once a collision-free finite middle atlas
+matches the two endpoint states, the all-real verification envelope is
+computable as one finite middle budget plus two geometric endpoint sums. The
+new regression computes both starts, checks the endpoint inequalities, verifies
+past/future compact-time handoff ordering, and checks the two endpoint
+geometric sums fit under an explicit finite middle budget.
+
+`docs/hyperbolic-scattering-fixed-point-convergence-lemma.md` now makes the
+future scattering tail start effective. The proof adds explicit inequalities
+for the model separation, Picard contraction, self-map radius, and tube
+containment, then shows a simple doubling search in `T` must terminate because
+the pair-error, contraction, and radius-loss terms all tend to zero. With that
+finite `T`, the existing all-future no-collision, Picard tail, compact
+endpoint shell, and projected-residual recurrences become computable from the
+prescribed distinct-asymptotic-velocity data. The new regression constructs
+such a finite start time, checks the three start inequalities, and verifies
+the resulting dyadic endpoint tail recurrence and geometric sum bound.
+
+`docs/triple-collision-regularized-jet-lemma.md` now turns the Fuchsian-log
+row machinery into a local zero-angular continuation rule for the convergent
+hyperbolic/Fuchsian-log subcase. An incoming branch supplies the central shape,
+the scale/energy coefficient, and finite log-row selectors; an explicit branch
+rule assigns outgoing selectors; the finite triangular recurrence constructs
+the outgoing shape branch; projection by `q=tau^2S`, `t=tau^3` verifies
+Newton's equation on both punctured sides. Keeping the same scale coefficient
+matches the finite energy, while changing Fuchsian-log selector constants
+changes the outgoing regularized curve without changing the limiting energy.
+The new regression checks selector recovery, two-sided energy convergence to
+`(10/9)alpha<C,C>_m`, decreasing incoming/outgoing energy mismatch, and zero
+angular momentum on the equal-mass equilateral resonant log row.
+
+`docs/triple-collision-regularized-jet-lemma.md` now proves that a resonant
+Fuchsian-log row has no hidden nonselector coefficients. After the positive
+log coefficients forced by lower rows and the constant kernel selector are
+fixed, subtracting two rows gives a homogeneous triangular log-degree system:
+range parts vanish by invertibility of `M_omega` on the chosen complement, and
+the remaining kernel component is exactly the already-fixed selector. The new
+regression checks this on the actual equal-mass equilateral resonant row
+operator: forced-log and range perturbations create residuals, while changing
+the selector kernel constant stays residual-free and changes precisely the
+recovered selector.
+
+`docs/triple-collision-regularized-jet-lemma.md` now makes the projection
+step explicit for convergent Fuchsian-log collision branches. If
+`S(tau)` solves `tau^2S''+2tau S'-2S=9A(S)` on a punctured side, then
+`q=tau^2S`, `t=tau^3` satisfies
+`q''-A(q)=[tau^2S''+2tau S'-2S-9A(S)]/(9tau^4)`. The angular momentum is
+`(tau^2/3)sum m_i S_i wedge S_i'`, which tends to zero for positive-weight
+Fuchsian-log corrections; conservation then forces zero angular momentum on
+the whole punctured side. The new regression checks the exact scaled
+projection identity and the angular-momentum formula on a log branch.
+
+`docs/triple-collision-regularized-jet-lemma.md` now proves that the
+Fuchsian-log selectors produced by resonant stable normal forms are compatible
+with the regularized shape equation. At weight `omega`, the coefficient row is
+`M_omega H_ell+(ell+1)(2omega+1)H_(ell+1)+(ell+2)(ell+1)H_(ell+2)=F_ell`.
+When `M_omega` has a resonant kernel, the kernel forcing at log degree `ell`
+is solved by the kernel part of `H_(ell+1)` because `2omega+1 != 0`; the range
+part is solved by `M_omega` as usual. The new regression checks this triangular
+solve against the actual equal-mass equilateral linearized operator at its
+noninteger resonant shape exponent, including recovery of the finite constant
+selector.
+
+`docs/triple-collision-regularized-jet-lemma.md` now extends the resonant
+stable-log bridge from one forcing row to any finite triangular
+Poincare-Dulac stable block with the same stable weight. If the forcing rows
+are `e^(-omega s)` times finite polynomials in McGehee time, then every solved
+row has the form `e^(-omega s)P_j(s)`. Since
+`s=-(2/beta)log(tau)+O(1)`, these become
+`tau^k Q_j(log tau)`, and descending log-degree subtraction leaves a finite
+constant selector in each row. The new regression uses a two-step resonant
+chain that produces a quadratic log polynomial, verifies the forced `log^2`
+and `log` growth, and recovers both constant selectors.
+
+`docs/triple-collision-regularized-jet-lemma.md` now handles the first stable
+resonance left open by analytic linearization. For
+`rho_s=-beta rho`, `u_s=-alpha u`, and
+`v_s=-p alpha v + c u^p`, the solution is
+`u=a tau^k` and
+`v=tau^(pk)(b-(2c/beta)a^p log tau)`, where `k=2alpha/beta`.
+The raw quotient `v/tau^(pk)` can diverge logarithmically, but the
+log-subtracted quotient has finite selector `b`. This identifies the concrete
+Fuchsian-log monomials `tau^omega(log tau)^ell` needed for resonant
+hyperbolic stable normal forms. The new regression solves that normal form,
+checks exponential-to-power conversion, shows the raw quotient grows, and
+recovers the log-subtracted selector exactly.
+
+`docs/triple-collision-regularized-jet-lemma.md` now connects the hyperbolic
+McGehee stable-manifold picture to the Fuchsian lifted selector. In
+nonresonant analytic stable coordinates with `rho_s=-beta rho` and
+`(u_j)_s=-alpha_j u_j`, the parabolic scale `rho ~ tau^2` converts each stable
+eigenrate into a collision power `k_j=2 alpha_j/beta`. Analytic dependence of
+the reduced shape on `(rho,u)` then gives a generalized power series in
+`zeta=tau^2` and `x_j=tau^k_j`, and the finite selector amplitudes are the
+limits of `(z-z_*)/tau^k_j` after lower-weight terms are removed. The new
+regression checks this conversion directly, recovers the selector amplitudes,
+and shows that an ordinary quartic regularized quotient can diverge while the
+Fuchsian quotient remains finite.
+
+`docs/triple-collision-regularized-jet-lemma.md` now adds a second route from
+quotient-shape convergence to finite reduced length. If the symmetry-reduced
+McGehee first-order equilibrium `X=(z-z_*,z_s,r)` at the selected central
+target is hyperbolic, then any incoming shape-compact branch converging to that
+target lies in its local stable manifold. The stable-manifold theorem gives
+`|X(s)| <= C exp(-alpha s)` on the tail, hence
+`int_S^infinity |z_s| ds <= (C/alpha) exp(-alpha S)`. This bypasses the
+pointwise Lojasiewicz-angle condition in the hyperbolic/Morse subcase and
+feeds the existing zero-angular rotation-gauge estimate. The new regression
+uses an underdamped stable two-mode shape equation to verify energy decay and
+the explicit exponential tail-length bound even when the path oscillates.
+
+`docs/triple-collision-regularized-jet-lemma.md` now replaces the previous
+"standard McGehee-Lojasiewicz argument" citation with an explicit finite-length
+estimate. In a local collision-free reduced-shape slice near an isolated
+central target, assume the analytic Lojasiewicz inequality
+`|grad V| >= kappa Phi^theta`, `theta in [1/2,1)`, and the incoming damped
+angle inequality `-Phi_s >= a |grad V| |z_s|`. Then
+`-d(Phi^(1-theta))/ds >= (1-theta)a kappa |z_s|`, so the reduced tail length is
+bounded by `Phi(S)^(1-theta)/((1-theta)a kappa)`. Combining this with the
+zero-angular rotation gauge gives oriented normalized-shape convergence from
+quotient convergence in this Lojasiewicz-angle subcase. The new regression
+checks the inequality mechanism on a slow analytic model tail with
+Lojasiewicz exponent `3/4` and verifies that the explicit bound controls the
+whole reduced-shape tail length.
+
+`docs/hyperbolic-scattering-fixed-point-convergence-lemma.md` now turns the
+shared-review instruction to use compact physical time plus scaled escape
+variables into a concrete all-future endpoint theorem. For
+`u=tanh(lambda t)` and `tau=lambda/atanh(u)=1/t`, the unscaled scattering
+branch still diverges, but the scaled coordinate
+`X=tau q(1/tau)` has only the forced logarithmic singular term
+`B tau log(tau)` with `B=A(v)`. The log-subtracted variable
+`Y=X-B tau log(tau)` satisfies `Y=v+c tau+tau w(1/tau)`, so the existing
+fixed-point ball gives the compact endpoint bound
+`|Y-v-c tau|_* <= R tau^2 log(1/tau)^2`, and the finite Picard tail becomes
+`|Y-Y_N|_* <= tau^2 log(1/tau)^2 kappa^N eta/(1-kappa)` on the whole compact
+tail interval. Since that scalar factor decreases toward `u=1`, a single
+left-endpoint value controls every future compact-time tail. The same endpoint
+section now proves the first-jet bound in the endpoint
+coordinate `tau`: `Y_tau=c+w(1/tau)-tau^-1w'(1/tau)`, hence
+`|Y_tau-c|_* <= (R+W_v) tau log(1/tau)^2`, and the finite Picard derivative
+tail is bounded by `tau log(1/tau)^2[kappa^N eta/(1-kappa)+L K_2^v eta
+kappa^(N-1)/(1-kappa)]`. Thus the asymptotic offsets are recovered as the
+first log-subtracted scaled endpoint jet. Finally, the exact projection
+identity converts the physical Newton residual into the lifted endpoint
+residual `E_N=tau Y_N''-(A(Y_N+B tau log(tau))-B)` by
+`q_N''-A(q_N)=tau^2E_N`, giving
+`|E_N|_* <= L eta kappa^(N-1) tau^2 log(1/tau)^2`. The regression checks
+compact-time recovery of `tau`, exact logarithmic cancellation in both value
+and derivative, physical-to-lifted residual scaling, dominance of the forced
+log terms over the corrected endpoint envelopes, and monotone decay of full
+fixed-point and finite Picard endpoint value/first-jet/residual tails on the
+same unequal-mass nonhomothetic scattering data.
+
+The endpoint tail now has an explicit all-future dyadic shell recurrence. With
+`tau_n=2^(-n)/T`, every shell maximum of `tau^a log(1/tau)^2` satisfies
+`F_a(tau_{n+1})/F_a(tau_n)=2^(-a)((log(T)+(n+1)log2)/(log(T)+nlog2))^2`.
+For `log(T)>log(2)/(sqrt(2)-1)`, the first-jet case gives the common ratio
+`r_T=(1/2)(1+log(2)/log(T))^2<1`; value tails and lifted residual tails have
+the smaller `a=2` ratio. Hence the compact endpoint value, first-jet, and
+lifted-residual envelopes are geometrically summable over all future endpoint
+shells. The new regression checks the ratio, compact shell ordering, and
+infinite-tail geometric sum bound for the unequal-mass scattering branch. This
+is a genuine all-future recurrence proof for the prescribed scattering endpoint
+class, not an arbitrary-data recurrence theorem.
+
+The two-ended scattering atlas now has the corresponding all-real compact shell
+recurrence. The past endpoint uses `tau^-=1/(-t)`, the future endpoint uses
+`tau^+=1/t`, and each side has its own geometric ratio `r_-`, `r_+ < 1`. The
+full compact real-line verification budget is a finite middle list plus the two
+endpoint geometric sums for value, first-jet, and lifted residual tails. The
+new regression checks both endpoint recurrences, compact ordering toward `u=-1`
+and `u=1`, finite geometric sum bounds, and endpoint sums under explicit
+finite-middle budgets. This is still a prescribed-scattering-ends theorem, but
+the recurrence now covers the whole two-ended compact atlas rather than one
+future endpoint.
+
+The final projection step is now explicit for the same two-ended atlas. The
+lifted endpoint residual satisfies `q_N''-A(q_N)=tau^2E_N` on both the past and
+future endpoint charts, so the physical Newton residual has shell factor
+`tau^4 log(1/tau)^2` and the stronger dyadic ratio
+`2^-4(1+log(2)/log(T_\pm))^2`. The finite middle contributes its finite
+coefficient-residual budget. The new regression checks the exact `tau^2`
+lifted-to-physical scaling, the stronger endpoint recurrence, and that the
+endpoint physical residual sums fit inside a finite whole-interval residual
+budget. This closes the project-back-and-verify step for the prescribed
+two-ended scattering atlas.
+
+The same lemma now includes the past endpoint by time reversal. For a physical
+past asymptotic velocity `v`, the reversed curve `Q(s)=q(-s)` has future
+velocity `-v`, and `A(-v)=-A(v)`. Therefore the past branch has
+`q(t)=v t+A(v)log(-t)+c+w_-(-t)`, so the logarithmic sign is opposite the
+future sign for the same physical velocity. In compact physical time near
+`u=-1`, `tau=-lambda/atanh(u)=1/(-t)` and
+`Y_-=tau q(-1/tau)-A(-v)tau log(tau)=-v+c tau+tau w_-(1/tau)`. The new
+regression checks that sign rule, compact recovery of positive `tau` from
+negative compact time, value/derivative log cancellation, and monotone past
+endpoint/residual tails. This supplies both infinity ends for prescribed
+distinct scattering data, still without proving that every solution is
+asymptotically complete.
+
+The scattering lemma now also glues those two endpoint charts to a finite
+collision-free middle atlas. If the past scattering chart, finite ordinary
+Taylor atlas on `[-T_-,T_+]`, and future scattering chart have matching endpoint
+states, ODE uniqueness gives one Newtonian solution on all real time. The
+verification envelope is piecewise: past endpoint Picard tails and lifted
+residuals with `s=-t`, finite Taylor Cauchy tails and coefficient residuals on
+the compact middle, and future endpoint Picard tails and residuals with `t`.
+In compact physical time this is the three-region atlas `[-1,u_-]`,
+`[u_-,u_+]`, `[u_+,1]`, using log-subtracted scaled variables at the two
+endpoints. The new regression checks contraction constants, handoff pair floors,
+compact-time handoff ordering, and monotone past/future position, velocity, and
+lifted-residual envelopes against a finite middle tail budget. This is an
+all-real-time theorem for branches already known to have the finite middle
+handoff; it still does not prove arbitrary-data scattering or asymptotic
+completeness.
+
+The same section now adds the necessary invariant-matching obstruction for
+two-ended scattering data. A single all-real-time branch has one center-of-mass
+affine line, one angular momentum, and one energy, so the past and future
+endpoint data must match `sum m v`, `sum m c`, `sum m c wedge v`, and
+`1/2 sum m |v|^2`. The proof checks that the endpoint logarithmic terms do not
+change those limits: `sum m A(v)=0` by internal-force cancellation and
+`sum m v wedge A(v)=0` by pairwise centrality. The new regression verifies
+those cancellations and catches independent velocity/offset perturbations as
+obstructions to a two-ended atlas. This is a necessary condition, not a
+scattering-map construction.
+
+Latest checks after proving analytic-germ exclusion of noninteger Fuchsian modes:
+
+```bash
+pytest tests/test_obstructions.py::test_two_sided_mixed_fuchsian_energy_matching_uses_scale_coordinate
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+```
+
+```text
+1 passed in 0.94s
+111 passed in 1.84s
+compileall passed
+148 passed in 1.73s
+236 passed in 10.30s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now implements the shared
+review's triple-collision warning as a concrete local theorem, without adding
+another certificate layer. In the mixed Fuchsian chart, take independent
+incoming and outgoing lifted branches with the same central configuration:
+`Phi_\pm=C+alpha_\pm z C+sum_j x_jD_{j,\pm}+...`, where `z=tau^2` and
+`x_j=|tau|^(k_j)` with `k_j>1`. Projecting by `q=tau^2S_\pm(|tau|)`,
+`t=tau^3`, gives zero-angular Newtonian branches on both punctured sides.
+The signed velocity changes by an overall sign between sides, so the energy
+expansion has the same bracket as the one-sided theorem. Fractional linear
+terms vanish by mass-orthogonality to the scale direction and fractional
+quadratic or scale-fractional terms occur above exponent two. Therefore
+`H_\pm=(10/9)alpha_\pm<C,C>_m`: finite energy matches across total collision
+if and only if `alpha_-=alpha_+`, while the noninteger Fuchsian amplitudes
+remain independent branch data. The new regression constructs unequal-mass
+equilateral incoming/outgoing mixed branches with different fractional
+amplitudes, checks signed residuals on both sides, verifies energy matching
+for the shared scale coordinate, and verifies the predicted energy jump when
+the outgoing scale coordinate is changed.
+
+The same mixed Fuchsian section now proves why ordinary finite collision jets
+cannot select those branch amplitudes. A fractional shape term
+`D_j |tau|^(k_j)` contributes `D_j |tau|^(k_j+2)` to the regularized position.
+For every selected non-scale exponent `k_j>1`, this leaves the finite
+regularized jet through order three fixed at `q(0)=0`, `q_tau(0)=0`,
+`q_tautau(0)=2C`, and `q_tautautau(0)=0`, independently of `D_j`. If
+`1<k_j<2`, the ordinary fourth derivative is not finite, so the missing branch
+datum is not recovered by the next finite jet. The amplitude is recovered only
+by fractional asymptotic quotients, such as
+`lim u^(-k_j)P_j[S(u)-C-alpha C u^2-...]`. The strengthened regression now
+checks that unequal-mass mixed Fuchsian incoming and outgoing branches with
+different fractional amplitudes have collapsing finite jets through order
+three, while the fractional quotients recover the inserted amplitudes on each
+side.
+
+Those same quotient limits now become a local continuation theorem. If the
+incoming branch has mixed Fuchsian data `C`, `alpha`, and fractional quotient
+amplitudes `D_{j,-}`, any explicit branch rule `R` assigning
+`D_{j,+}=R(D_- )` feeds the multivariable Fuchsian recurrence and constructs
+a convergent outgoing branch. Keeping the same `alpha` gives the same finite
+energy, projection by `q=tau^2S(tau)`, `t=tau^3` solves Newton's equation on
+the outgoing punctured side, and angular momentum is zero by conservation and
+the collision limit. The identity selector `R(D_-)=D_-` is now verified by
+reconstructing the outgoing branch independently, checking coefficient
+agreement with the incoming quotient data, checking projected residual and
+energy preservation, and recovering the same fractional amplitudes by the
+asymptotic quotient formula.
+
+The selected mixed Fuchsian data are now proved complete inside the
+nonresonant lifted class. If two lifted germs have the same central shape
+`C`, scale coefficient `alpha`, and selected fractional amplitudes `D_j`,
+then at the first multi-index where the coefficients could differ the
+nonlinear forcing terms are identical and the difference satisfies
+`(((|beta|_k+2)(|beta|_k-1)/9)I-DA(C))Delta_beta=0`. Semigroup nonresonance
+makes that operator invertible, so `Delta_beta=0`, a contradiction. The
+regression now perturbs a generated higher mixed coefficient and verifies
+that the same invertible recurrence operator produces a nonzero residual,
+while the unperturbed identity-selector branch satisfies the recurrence.
+
+The mixed Fuchsian section now also has a genuine smoothness selector. A
+nonzero mode `D |tau|^(k+2)` with `1<k<2` contributes
+`(k+2)(k+1)k(k-1)D |tau|^(k-2)` to the fourth regularized-time derivative, so
+the branch cannot be `C^4` at total collision unless that low-mode amplitude
+vanishes. More generally, a finite `m`-th regularized derivative kills every
+selected noninteger mode with `k_j+2<m`. The regression checks this on the
+unequal-mass equilateral mixed chart: the low-mode fourth-derivative
+projection grows with the predicted blow-up, while the same scale branch with
+zero fractional amplitudes has bounded fourth derivative tending to
+`24 alpha C`.
+
+When every selected noninteger shape exponent in the mixed chart lies in
+`(1,2)`, that `C^4` selector collapses the local branch all the way to the
+homothetic energy family. After the fractional seeds vanish, the first
+coefficient carrying any `x_j` index would satisfy an invertible homogeneous
+recurrence equation, so all x-dependent coefficients vanish. The remaining
+`z`-only solution is `Phi(z)=u(z)C` and obeys the scalar homothetic recurrence
+`(u+z u')^2=1/u+(9/2)epsilon z` with `epsilon=(10/9)alpha`. The regression
+checks this collapse in the unequal-mass equilateral mixed chart by verifying
+that all computed x-dependent coefficients are zero and the z-only
+coefficients match `_homothetic_energy_series_coefficients((10/9)alpha)`.
+
+The smoothness selector is now stated for arbitrary noninteger Fuchsian
+exponents. If the first nonzero selected mode contributes
+`D_j |tau|^(k_j+2)` with noninteger `k_j`, then the derivative order
+`m_j=floor(k_j+2)+1` contains a nonzero multiple of
+`D_j |tau|^(k_j+2-m_j)` with negative exponent. Thus ordinary integer-power
+analyticity, or merely those finite derivatives, forces every selected
+noninteger Fuchsian amplitude to vanish. The regression now applies this
+threshold-derivative blow-up check to every selected noninteger exponent in
+the unequal-mass equilateral mixed chart.
+
+The earlier Fuchsian construction still goes beyond recording the
+regular-singular obstruction to finite integer selector jets. For the
+general nonresonant case, let `C` be any mass-centered noncollision central
+configuration scaled by `A(C)=-(2/9)C`, let `DA(C)[D]=mu D`, and let
+`k=(-1+sqrt(9+36mu))/2` be a positive indicial root. If the later multipliers
+`((nk+2)(nk-1)/9)` avoid `spec(DA(C))` for `n>=2`, the lifted Fuchsian equation
+`k^2 x^2 Phi''+k(k+1)x Phi'-2Phi=9A(Phi)` has a convergent branch
+`Phi=C+xD+sum Phi_n x^n` by the recurrence
+`(((nk+2)(nk-1)/9)I-DA(C))Phi_n=[A(Phi)]_n`. Independent incoming/outgoing
+amplitudes in the same eigenspace project by `q=tau^2S(tau)`, `t=tau^3`, solve
+Newton's equation on both punctured sides, and have zero angular momentum by
+the collision-limit conservation argument.
+
+The equal-mass equilateral section remains as a concrete two-dimensional
+example with `span{conjugate(C),i conjugate(C)}` and signed `x=|tau|^k`
+projection. The new regression adds an unequal-mass equilateral example:
+masses `(1,0.7,1.4)` have two positive noninteger shape exponents, both pass
+the nonresonance gap check, and both produce order-five Fuchsian recurrences
+with projected residuals below tolerance. This moves the enlarged function
+class from a single special mode to a reusable local theorem.
+
+The same proof is now upgraded to simultaneous fractional modes. With variables
+`x_j=tau^(k_j)` and Euler operator `E=sum_j k_j x_j partial_{x_j}`, the lifted
+shape equation becomes `(E^2+E-2)Phi=9A(Phi)`. Under the semigroup
+nonresonance condition, each multi-index coefficient satisfies an invertible
+linear equation with multiplier `((|alpha|_k+2)(|alpha|_k-1)/9)`, giving a
+convergent multivariable Fuchsian series by the same majorant argument. The
+new regression activates both unequal-mass equilateral fractional shape modes
+at once, computes the generated mixed `(1,1)` coefficient, and verifies the
+projected residual. This is the local lifted function class needed when a
+collision branch carries several noninteger indicial amplitudes simultaneously.
+
+The multivariable lift now carries the homothetic energy coordinate in the same
+chart. Since `DA(C)[C]=(4/9)C`, the scale direction has indicial exponent
+`2`; adding `z=tau^2` changes the Euler operator to
+`E=2z partial_z+sum_j k_j x_j partial_{x_j}` and leaves the same coefficient
+recurrence in force. The new regression turns on the scale coordinate and both
+unequal-mass equilateral fractional coordinates, verifies the scale
+eigen-equation, solves mixed `z x_j` and `x_i x_j` coefficients, and checks the
+projected residual. Local zero-angular branch data can now be represented as
+central shape plus energy plus simultaneous noninteger amplitudes in one
+lifted construction.
+
+The same chart now has its finite-energy selector proved. For
+`q=tau^2S(tau)`, the energy is
+`tau^-2[(1/18)<2S+tau S_tau,2S+tau S_tau>_m-U(S)]`. The leading bracket
+cancels by the central-configuration identity; fractional linear terms vanish
+because the selected fractional eigenspaces are mass-orthogonal to the scale
+direction; and fractional quadratic or mixed scale-fractional terms have
+exponent above the finite-energy order when `k_j>1`. Hence the collision
+energy is still `(10/9)alpha<C,C>_m`, determined by the `z alpha C`
+coefficient. The focused regression now checks that value numerically with the
+scale coordinate and both unequal-mass fractional amplitudes active.
+
+Latest checks after adding the finite-reduced-shape-length bridge from
+quotient shape to oriented normalized-shape convergence:
+
+```bash
+pytest tests/test_obstructions.py::test_finite_reduced_shape_length_upgrades_to_oriented_shape_limit tests/test_obstructions.py::test_shape_compact_total_collapse_has_finite_separated_central_quotient_targets tests/test_obstructions.py::test_collision_free_shape_limit_supplies_normalized_potential_limit tests/test_obstructions.py::test_collision_free_shape_convergence_forces_central_limit_without_c2_remainder tests/test_obstructions.py::test_collision_free_shape_convergence_supplies_c1_cubic_time_entry tests/test_obstructions.py::test_collision_free_shape_convergence_supplies_c2_cubic_time_entry
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+```
+
+```text
+6 passed in 0.94s
+104 passed in 1.44s
+compileall passed
+141 passed in 1.53s
+229 passed in 9.92s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now proves the rotation-gauge
+upgrade needed after quotient-shape convergence. In a local normalized shape
+slice write `y=R(theta)z`, `<z,z>_m=1`. If the reduced shape path has finite
+length and angular momentum is zero, then the normalized angular momentum
+identity gives `theta_s=-<Jz,z_s>_m`, so `|theta_s|<=|z_s|_m`. Finite reduced
+length makes `theta` Cauchy and gives an oriented normalized-shape limit. The
+note also records the standard McGehee-Lojasiewicz route that supplies finite
+length near an isolated analytic central target. The new regression builds a
+finite-length reduced shape path, chooses the rotation rate forced by zero
+angular momentum, verifies the angular momentum cancellation, and checks that
+the oriented normalized shape converges.
+
+This upgrades the prior quotient-shape bridge in the finite-length isolated
+central-target subcase. The remaining zero-angular entry gap is no longer
+quotient shape or rotation gauge there; it is proving the finite regularized
+selector jets for arbitrary total-collision approaches, or proving a direct
+replacement that selects those same branch parameters.
+
+Latest checks after adding the shape-compact quotient-shape convergence bridge
+for total collision:
+
+```bash
+pytest tests/test_obstructions.py::test_shape_compact_total_collapse_has_finite_separated_central_quotient_targets tests/test_obstructions.py::test_normalized_potential_limit_forces_parabolic_inertia_scale tests/test_obstructions.py::test_collision_free_shape_limit_supplies_normalized_potential_limit tests/test_obstructions.py::test_collision_free_shape_convergence_forces_central_limit_without_c2_remainder tests/test_obstructions.py::test_collision_free_shape_convergence_supplies_c1_cubic_time_entry tests/test_obstructions.py::test_collision_free_shape_convergence_supplies_c2_cubic_time_entry
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+```
+
+```text
+7 passed in 0.49s
+103 passed in 0.85s
+compileall passed
+140 passed in 0.85s
+228 passed in 9.25s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now proves a McGehee-style
+entry bridge for the zero-angular total-collision route. If finite-energy total
+collapse stays in a compact collision-free part of normalized shape space, then
+in McGehee time `ds/dt=r^(-3/2)` the identities
+`rH=(1/2)nu^2+(1/2)|w|^2-V(y)` and
+`dnu/ds=(1/2)|w|^2+rH` force the reduced omega-limit set into the critical
+points of the normalized potential. For three bodies those central
+configuration classes are finite in normalized mutual-distance space, so the
+quotient shape converges to one Lagrange or Euler target and `U sqrt(I)` has a
+limit. The new regression verifies the finite separated central quotient
+targets for a generic unequal-mass triple: one equilateral mutual-distance
+target plus three Euler targets.
+
+This is real progress on the previous “prove shape convergence” gap, but it is
+not the full zero-angular continuation theorem. It proves quotient-shape
+convergence under a collision-free shape-compact hypothesis. The remaining
+entry data are oriented normalized-shape convergence, or a direct proof that
+the finite regularized jets required by the selector exist.
+
+Latest checks after adding the finite one-sided jet selector for local
+zero-angular total-collision continuation:
+
+```bash
+pytest tests/test_obstructions.py::test_finite_one_sided_jets_select_local_zero_angular_branch_parameters tests/test_obstructions.py::test_finite_cubic_asymptotic_forces_cubic_jet_kernel_condition tests/test_obstructions.py::test_local_normal_form_branch_parameters_project_to_two_sided_zero_angular_continuation tests/test_obstructions.py::test_incoming_regularized_germ_selects_same_outgoing_branch_parameters tests/test_obstructions.py::test_local_normal_form_energy_parameter_matches_arbitrary_incoming_energy tests/test_obstructions.py::test_resonant_branch_amplitude_is_recovered_from_finite_regularized_jet
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+```
+
+```text
+6 passed in 0.67s
+102 passed in 0.79s
+compileall passed
+139 passed in 0.89s
+227 passed in 9.18s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now separates two local
+zero-angular continuation statements. An incoming analytic regularized germ
+still continues by the identity theorem. But a continuation convention does
+not need the full germ: if a one-sided approach supplies the finite
+normal-form asymptotic jets through the first resonant order, those finite
+limits select the central configuration, incoming energy, homothetic energy
+parameter, and any equilateral or ordered-Euler resonant amplitude. The
+normal-form recurrence then constructs the unique analytic outgoing branch
+matching those finite data, and its projection solves Newton's equation with
+zero angular momentum on both punctured sides. The new regression adds
+fractional-power one-sided remainders to both an equilateral beta-resonant
+branch and an ordered-Euler resonant branch, verifies that the finite jet
+projections still converge to the selected parameters, and checks that the
+selected analytic branch projects back with zero angular momentum and vanishing
+Newton residual.
+
+This is a real weakening of the selector hypothesis from "full analytic
+incoming germ" to "finite one-sided normal-form jets." It still does not prove
+the arbitrary zero-angular triple-collision theorem: the missing global input
+is that every relevant total-collision approach has collision-free central
+shape convergence and the required finite regularized jet limits.
+
+Latest checks after weakening the cubic-jet obstruction from an analytic germ to
+a finite cubic asymptotic:
+
+```bash
+pytest tests/test_obstructions.py::test_finite_cubic_asymptotic_forces_cubic_jet_kernel_condition tests/test_obstructions.py::test_analytic_cubic_time_total_collision_branch_forces_cubic_jet_kernel_condition tests/test_obstructions.py::test_collision_free_shape_convergence_supplies_c2_cubic_time_entry tests/test_obstructions.py::test_collision_free_shape_convergence_supplies_c1_cubic_time_entry tests/test_obstructions.py::test_collision_free_shape_convergence_forces_central_limit_without_c2_remainder tests/test_obstructions.py::test_collision_free_shape_limit_supplies_normalized_potential_limit tests/test_obstructions.py::test_normalized_potential_limit_forces_parabolic_inertia_scale tests/test_obstructions.py::test_c2_cubic_time_asymptotic_forces_central_limiting_shape
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+```
+
+```text
+9 passed in 0.90s
+101 passed in 1.25s
+compileall passed
+138 passed in 1.38s
+226 passed in 12.33s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now proves that the
+cubic-jet condition does not require a full analytic local branch. If, on one
+punctured side of total collision,
+`q(tau)=tau^2C+tau^3D+R(tau)`, `R=o(tau^3)`, `R'=o(tau^2)`,
+`R''=o(tau)`, and `A(C)=-(2/9)C`, then the `D` contribution cancels from the
+physical acceleration in cubic time while Newtonian acceleration contributes
+`tau^-3 DA(C)[D]`. Since the residual is zero, multiplying by `tau^3` and
+letting `tau -> 0` forces `DA(C)[D]=0`. This is a genuine weakening of the
+existing cubic-jet proof hypothesis, not a new certificate layer. It still does
+not supply the missing arbitrary zero-angular total-collision continuation:
+the open piece is higher-than-second branch existence/selection for arbitrary
+incoming data once such finite jets are known to exist.
+
+Latest checks after proving collision-free shape convergence supplies the full
+`C^2` cubic-time entry:
+
+```bash
+pytest tests/test_obstructions.py::test_collision_free_shape_convergence_supplies_c2_cubic_time_entry tests/test_obstructions.py::test_collision_free_shape_convergence_supplies_c1_cubic_time_entry tests/test_obstructions.py::test_collision_free_shape_convergence_forces_central_limit_without_c2_remainder tests/test_obstructions.py::test_collision_free_shape_limit_supplies_normalized_potential_limit tests/test_obstructions.py::test_normalized_potential_limit_forces_parabolic_inertia_scale tests/test_obstructions.py::test_c2_cubic_time_asymptotic_forces_central_limiting_shape
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+```
+
+```text
+7 passed in 0.49s
+100 passed in 0.80s
+compileall passed
+137 passed in 0.83s
+225 passed in 9.15s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now upgrades the
+collision-free shape-limit entry from `C^1` to `C^2` in cubic collision time.
+The chain rule gives `q_tautau=2q_tau/tau+9tau^4A(q)`. The previous entry
+proof gives `q_tau/tau->2C`, while shape convergence gives
+`tau^4A(q)->A(C)=-(2/9)C`, hence `q_tautau->2C`. Therefore
+`q=tau^2C+R` has `R=o(tau^2)`, `R'=o(tau)`, and `R''=o(1)` without assuming a
+separate regularized `C^2` remainder. The remaining zero-angular entry gap is
+now higher-than-second regularized branch/jet matching and branch-parameter
+selection, not the `C^2` collision-time entry itself.
+
+Latest checks after proving collision-free shape convergence supplies the
+forced `C^1` cubic-time entry:
+
+```bash
+pytest tests/test_obstructions.py::test_collision_free_shape_convergence_supplies_c1_cubic_time_entry tests/test_obstructions.py::test_collision_free_shape_convergence_forces_central_limit_without_c2_remainder tests/test_obstructions.py::test_collision_free_shape_limit_supplies_normalized_potential_limit tests/test_obstructions.py::test_normalized_potential_limit_forces_parabolic_inertia_scale tests/test_obstructions.py::test_c2_cubic_time_asymptotic_forces_central_limiting_shape
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+```
+
+```text
+6 passed in 0.52s
+99 passed in 0.91s
+compileall passed
+136 passed in 0.94s
+224 passed in 9.22s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now makes the once-integrated
+part of the collision-free shape-convergence proof explicit. With `u=T-t`,
+`p(u)=q(T-u)`, and `C=a y^*`, the acceleration asymptotic gives
+`p''=D u^(-4/3)+o(u^(-4/3))` with `D=-(2/9)C`. Finite energy gives the
+right growth class for `p'`, so integration yields
+`p'=(2/3)C u^(-1/3)+o(u^(-1/3))`. In incoming cubic time
+`tau=-u^(1/3)`, this becomes `dq/dtau=2tau C+o(tau)`. Thus collision-free
+shape convergence supplies `q(0)=0`, `q_tau(0)=0`, `q/tau^2->C`, and
+`q_tau/tau->2C`; the first regularized jet carries no branch freedom. The
+remaining zero-angular entry gap is higher regularized branch/jet matching,
+not the value of the first collision-time derivative.
+
+Latest checks after proving collision-free shape convergence already forces a
+central limiting second shape:
+
+```bash
+pytest tests/test_obstructions.py::test_collision_free_shape_convergence_forces_central_limit_without_c2_remainder tests/test_obstructions.py::test_collision_free_shape_limit_supplies_normalized_potential_limit tests/test_obstructions.py::test_normalized_potential_limit_forces_parabolic_inertia_scale tests/test_obstructions.py::test_c2_cubic_time_asymptotic_forces_central_limiting_shape
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+```
+
+```text
+5 passed in 0.48s
+98 passed in 0.94s
+compileall passed
+135 passed in 0.81s
+223 passed in 9.27s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now removes the separate
+`C^2` requirement for identifying the central limiting shape in the
+collision-free shape-convergence subcase. Once `y=q/sqrt(I)` converges to a
+collision-free `y^*`, the normalized-potential limit gives
+`r=sqrt(I)~a(T-t)^(2/3)`. Newton's equation then gives
+`q''=a^(-2)(T-t)^(-4/3)A(y^*)+o((T-t)^(-4/3))`; finite energy controls the
+first derivative, and double integration from the collision point forces
+`A(y^*)=-Gamma y^*`, equivalently `A(C)=-(2/9)C` for
+`C=a y^*`. The remaining zero-angular entry gap is now collision-free shape
+convergence plus enough regularized branch/jet matching to select the local
+normal-form parameters, not centrality from a `C^2` remainder.
+
+Latest checks after implementing the shared review's finite-time/all-future
+split for the distinct-asymptotic-velocity hyperbolic scattering subcase:
+
+```bash
+pytest tests/test_obstructions.py::test_scattering_chart_glues_to_finite_taylor_handoff_with_future_tail
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+```
+
+```text
+1 passed in 0.47s
+97 passed in 1.02s
+compileall passed
+134 passed in 0.79s
+222 passed in 9.26s
+```
+
+`docs/hyperbolic-scattering-fixed-point-convergence-lemma.md` now proves a
+finite Taylor handoff theorem: if an ordinary collision-free Taylor atlas
+covers `[a,T]` and its endpoint is the state of the log-subtracted scattering
+branch, then ODE uniqueness glues it to the all-future hyperbolic chart. The
+same constants that prove the fixed-point contraction give the endpoint
+position and velocity enclosures, the pair-distance floor
+`sigma_T >= (d/4)T`, and the future envelopes for Picard position tail,
+velocity tail, and Newton residual. This is a real all-future recurrence bound
+for that scattering class, not a new certificate layer. It still assumes entry
+into the scattering tube and a collision-free finite pre-`T` cover; it does not
+prove asymptotic completeness or the arbitrary-data theorem.
+
+Latest checks after proving a collision-free normalized-shape limit supplies the
+normalized-potential limit:
+
+```bash
+pytest tests/test_obstructions.py::test_collision_free_shape_limit_supplies_normalized_potential_limit tests/test_obstructions.py::test_normalized_potential_limit_forces_parabolic_inertia_scale tests/test_obstructions.py::test_c2_cubic_time_asymptotic_forces_central_limiting_shape
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+```
+
+```text
+4 passed in 0.42s
+96 passed in 0.93s
+compileall passed
+133 passed in 0.99s
+221 passed in 9.56s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now removes a separate
+assumption from the zero-angular entry bridge. If the normalized shape
+`y_i=q_i/sqrt(I)` converges to a collision-free limit `y_i^*`, then
+`U sqrt(I)=sum m_i m_j/|y_i-y_j|` converges to the finite positive
+`Gamma=sum m_i m_j/|y_i^*-y_j^*|`. The Lagrange-Jacobi scale theorem then
+applies with this explicit `Gamma`, giving the cubic-time second shape
+`C=((9/2)Gamma)^(1/3)y^*`. The new regression perturbs an arbitrary-mass
+collision-free normalized shape while preserving mass centering and inertia
+normalization, and checks convergence of `U sqrt(I)`, the pair-distance floor,
+and the recovered second-shape coefficient. The normalized-potential limit is
+no longer separate in the collision-free shape-limit subcase.
+
+Latest checks after adding the `C^2` cubic-time central-shape bridge:
+
+```bash
+pytest tests/test_obstructions.py::test_c2_cubic_time_asymptotic_forces_central_limiting_shape tests/test_obstructions.py::test_normalized_potential_limit_forces_parabolic_inertia_scale tests/test_obstructions.py::test_any_analytic_cubic_time_total_collision_branch_forces_second_shape
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+```
+
+```text
+4 passed in 0.43s
+95 passed in 0.91s
+compileall passed
+132 passed in 1.04s
+220 passed in 9.47s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now weakens the zero-angular
+entry hypothesis from a full analytic cubic-time germ to a `C^2` asymptotic for
+the central-shape conclusion. If `q=tau^2C+R`, `C` is collision-free,
+`R=o(tau^2)`, `R'=o(tau)`, and `R''=o(1)`, then
+`tau^4 q_tt -> -(2/9)C`, while homogeneity gives
+`tau^4 A(q)->A(C)`. Newton's equation therefore forces
+`A(C)=-(2/9)C`. The new regression uses a fractional-power nonanalytic
+remainder to check that the scaled residual tends to zero exactly for a
+central limiting shape and tends to the predicted obstruction for a noncentral
+one. The remaining zero-angular gap is now sharper: prove arbitrary total
+collapse has collision-free shape convergence and enough regularized
+branch/jet matching to select the finite branch parameters.
+
+Latest checks after adding the Lagrange-Jacobi parabolic scale bridge for
+zero-angular total collapse:
+
+```bash
+pytest tests/test_obstructions.py::test_normalized_potential_limit_forces_parabolic_inertia_scale tests/test_obstructions.py::test_zero_angular_total_collision_branch_is_regularized_second_jet_data tests/test_obstructions.py::test_any_analytic_cubic_time_total_collision_branch_forces_second_shape
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+```
+
+```text
+4 passed in 0.47s
+94 passed in 0.98s
+compileall passed
+131 passed in 0.93s
+219 passed in 9.39s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now proves a physical scale
+bridge into the zero-angular cubic-time chart. If a finite-energy total
+collapse has normalized-potential limit `U sqrt(I)->Gamma` with
+`0<Gamma<infinity`, then Lagrange-Jacobi gives
+`I''=2 Gamma I^(-1/2)+o(I^(-1/2))`, Sundman's inequality gives `I'->0`, and
+integrating the terminal inward branch yields
+`I(t)~((9/2)Gamma)^(2/3)(T-t)^(4/3)`. If the normalized shape also has a
+collision-free limit, then `q=tau^2C+o(tau^2)` in signed cubic collision time.
+The new regression checks the exact scale constant, normalized-potential
+invariance, Lagrange-Jacobi identity, inward `I'`, and the recovered
+regularized second-position coefficient on the equilateral and Euler
+homothetic total-collision branches. This is a bridge to the local normal form;
+it still does not prove arbitrary zero-angular shape convergence or branch
+selection.
+
+Latest checks after closing the binary-degenerate outer-angular barrier in the
+nonzero-angular total-collision exclusion proof:
+
+```bash
+pytest tests/test_obstructions.py::test_binary_degenerate_outer_angular_barrier_excludes_nonzero_total_collapse tests/test_obstructions.py::test_binary_degenerate_total_collapse_forces_tight_pair_angular_bound_to_zero tests/test_obstructions.py::test_shape_compact_total_collapse_supplies_normalized_potential_bound tests/test_obstructions.py::test_sundman_normalized_potential_bound_excludes_nonzero_angular_total_collapse tests/test_obstructions.py::test_regularized_total_collision_germ_forces_zero_angular_momentum_limit
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+```
+
+```text
+5 passed in 0.40s
+92 passed in 0.90s
+compileall passed
+129 passed in 0.89s
+217 passed in 9.28s
+```
+
+`docs/nonzero-angular-triple-collision-exclusion-lemma.md` now closes the
+classical three-body nonzero-angular total-collision obstruction. The
+shape-compact case gives `U sqrt(I)` bounded and hence `|L|^2<=2IK->0`. In the
+only remaining binary-degenerate case, the tight-pair finite-energy estimate
+forces `L_12->0`. If total angular momentum were still nonzero, then the outer
+Jacobi angular momentum `L_rho` would stay bounded away from zero. With
+`s=|rho|`, the radial identity and outer force bound give
+`s''>=c/s^3`; the barrier quantity `(s')^2+c/s^2` would have to be
+nonincreasing while diverging as `s->0`, a contradiction. The new regression
+checks the Jacobi force bound, finite-energy state construction, angular
+decomposition, and dominating `1/s^3` barrier term. This is a real analytic
+closure for nonzero-angular total collision, not a zero-angular continuation
+theorem.
+
+Latest checks after adding the binary-degenerate tight-pair angular-momentum
+estimate:
+
+```bash
+pytest tests/test_obstructions.py::test_binary_degenerate_total_collapse_forces_tight_pair_angular_bound_to_zero tests/test_obstructions.py::test_shape_compact_total_collapse_supplies_normalized_potential_bound tests/test_obstructions.py::test_sundman_normalized_potential_bound_excludes_nonzero_angular_total_collapse tests/test_obstructions.py::test_regularized_total_collision_germ_forces_zero_angular_momentum_limit
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+```
+
+```text
+4 passed in 0.61s
+91 passed in 0.81s
+compileall passed
+128 passed in 0.92s
+216 passed in 9.45s
+```
+
+`docs/nonzero-angular-triple-collision-exclusion-lemma.md` now narrows the
+remaining binary-degenerate total-collapse gap. If bodies `1` and `2` form a
+tight pair with `r=q_2-q_1`, the third-body cluster coordinate is `rho`, and
+`|r|/|rho| -> 0`, the tight-pair angular momentum satisfies
+`|L_12|^2 <= 2 mu |r|^2 K`. Finite energy gives `K=H_0+U`, while
+`U=m_1m_2/|r|+O(1/|rho|)`, so the upper bound is
+`O(|r|)+O(|r|^2/|rho|)+O(|r|^2)` and tends to zero. The new regression checks a
+hierarchical collapse where the normalized potential diverges but the
+tight-pair angular bound still decays. At that intermediate stage, the
+remaining nonzero-angular subproblem was specifically the cluster-versus-third
+angular component and its coupling, not hidden spin inside the much tighter
+binary.
+
+Latest checks after adding the shape-compact normalized-potential bound for
+nonzero-angular total-collapse exclusion:
+
+```bash
+pytest tests/test_obstructions.py::test_shape_compact_total_collapse_supplies_normalized_potential_bound tests/test_obstructions.py::test_sundman_normalized_potential_bound_excludes_nonzero_angular_total_collapse tests/test_obstructions.py::test_regularized_total_collision_germ_forces_zero_angular_momentum_limit
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+```
+
+```text
+3 passed in 0.86s
+90 passed in 1.41s
+compileall passed
+127 passed in 1.45s
+215 passed in 10.07s
+```
+
+`docs/nonzero-angular-triple-collision-exclusion-lemma.md` now proves that the
+Sundman normalized-potential bound follows from a compact normalized shape:
+with `R=sqrt(I)` and `y_i=x_i/R`, a pair-distance floor
+`|y_i-y_j|>=d_*` gives
+`U sqrt(I)=sum_i<j m_i m_j/|y_i-y_j| <= sum_i<j m_i m_j/d_*`. Combined with
+`|L|^2 <= 2IK`, this excludes nonzero centered angular momentum for
+shape-compact total collapse. The new regression checks that normalized pair
+separation and `U sqrt(I)` remain scale-invariant while the collapse scale
+tends to zero. The remaining nonzero-angular gap is now the binary-degenerate
+normalized-shape approach to total collapse.
+
+Latest checks after adding the Sundman-inequality nonzero-angular exclusion
+for nondegenerate total collapse:
+
+```bash
+pytest tests/test_obstructions.py::test_sundman_normalized_potential_bound_excludes_nonzero_angular_total_collapse tests/test_obstructions.py::test_regularized_total_collision_germ_forces_zero_angular_momentum_limit tests/test_obstructions.py::test_nonzero_angular_momentum_certifies_triple_collision_exclusion_for_interval_box
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+```
+
+```text
+3 passed in 0.64s
+89 passed in 1.11s
+compileall passed
+126 passed in 1.15s
+214 passed in 9.69s
+```
+
+`docs/nonzero-angular-triple-collision-exclusion-lemma.md` now includes a
+Sundman-inequality proof that does not require a convergent regularized germ.
+For centered coordinates, `|L|^2 <= 2IK`. If total collapse has
+`I -> 0`, finite energy `H=K-U`, and bounded normalized potential
+`U sqrt(I) <= C`, then `2IK = 2HI+2IU <= 2HI+2C sqrt(I) -> 0`; hence the
+conserved centered angular momentum is zero. The new regression keeps
+`U sqrt(I)` constant along a scaled nondegenerate shape while the `2IK` upper
+bound collapses below the interval-certified nonzero angular lower bound.
+This removes the analytic-germ assumption for nondegenerate total collapse; it
+still does not prove the normalized-potential bound for every possible total
+collision approach.
+
+Latest checks after adding the local analytic nonzero-angular
+triple-collision exclusion lemma:
+
+```bash
+pytest tests/test_obstructions.py::test_regularized_total_collision_germ_forces_zero_angular_momentum_limit tests/test_obstructions.py::test_nonzero_angular_momentum_certifies_triple_collision_exclusion_for_interval_box tests/test_obstructions.py::test_zero_angular_momentum_leaves_triple_collision_exclusion_uncertified
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+```
+
+```text
+3 passed in 0.61s
+88 passed in 0.99s
+compileall passed
+125 passed in 0.99s
+213 passed in 9.42s
+```
+
+`docs/nonzero-angular-triple-collision-exclusion-lemma.md` now states the
+analytic reason the nonzero-angular branch cannot enter a regularized
+total-collision chart. If `q=tau^2S(tau)` and `t=tau^3`, then
+`dq/dt=(2/(3tau))S+(1/3)S'`, so centered angular momentum is
+`(tau^2/3)sum_i m_i S_i wedge S_i'` and tends to zero. Conservation on any
+punctured Newtonian side forces it to be identically zero, contradicting a
+strictly positive centered-angular-momentum lower bound. The new regression
+checks the `tau^2` angular-momentum collapse and the Sundman inequality
+`|L|^2 <= 2IK`, then ties that zero limit to the existing interval exclusion
+witness. This is a local analytic exclusion theorem, not a zero-angular
+continuation theorem.
+
+Latest checks after adding the finite cyclic Taylor-atlas theorem for
+collision-free periodic solutions:
+
+```bash
+pytest tests/test_continuation.py
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+```
+
+```text
+7 passed in 1.19s
+87 passed in 0.98s
+compileall passed
+124 passed in 0.99s
+212 passed in 9.53s
+```
+
+`docs/compact-collision-free-taylor-cover-lemma.md` now proves that a
+collision-free periodic orbit has a finite cyclic ordinary Taylor atlas. The
+compact cover on one period `[0,P]` gives finitely many charts; periodicity
+returns the same state at every translated center `t_k+mP`, so the same chart
+coefficients and local Cauchy tail bounds repeat on every cycle. The new
+regression uses the exact Lagrange relative equilibrium, verifies one-period
+closure, then evaluates future times by reducing modulo the period and reusing
+the stored chart list. This is an all-time finite-atlas theorem for the
+periodic collision-free subcase, not a classification theorem for arbitrary
+initial data.
+
+Latest checks after adding the all-future uniformly collision-free Taylor
+recurrence theorem:
+
+```bash
+pytest tests/test_continuation.py
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+```
+
+```text
+6 passed in 0.78s
+87 passed in 0.95s
+compileall passed
+124 passed in 0.99s
+211 passed in 9.21s
+```
+
+`docs/compact-collision-free-taylor-cover-lemma.md` now upgrades the compact
+collision-free Taylor-cover proof to an all-future recurrence under uniform
+pair-separation and speed bounds. The proof uses one translated analytic tube
+at every center time, so the analytic ODE/Cauchy-majorant constants are
+independent of the chart index. Choosing `h<rho_*` gives fixed chart centers
+`t_k=kh` and a uniform finite-truncation tail
+`M_*(h/rho_*)^(N+1)/(1-h/rho_*)` on every future chart. The new regression uses
+the exact Lagrange equilateral relative equilibrium, where pair distance and
+speed are constant, and verifies fixed-step recurrence over three periods,
+uniform separation/speed/radius bounds, tiny truncation indicators, and
+agreement with the exact circular solution. This is a real all-future
+recurrence proof for uniformly collision-free bounded-speed trajectories, not
+the arbitrary-data global recurrence theorem.
+
+Latest checks after adding analytic parameter dependence for the nonhomothetic
+scattering chart:
+
+```bash
+pytest tests/test_obstructions.py::test_nonhomothetic_scattering_chart_has_uniform_parameter_neighborhood tests/test_obstructions.py::test_nonhomothetic_scattering_branch_matches_angular_momentum_and_energy_limits tests/test_obstructions.py::test_nonhomothetic_scattering_picard_series_has_velocity_tail_bound
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+```
+
+```text
+3 passed in 0.48s
+87 passed in 0.95s
+compileall passed
+124 passed in 0.92s
+210 passed in 8.97s
+```
+
+`docs/hyperbolic-scattering-fixed-point-convergence-lemma.md` now proves that
+the prescribed nonhomothetic scattering construction is locally analytic in the
+asymptotic velocities and offsets. On a small neighborhood with a uniform
+velocity gap, the same large `T`, collision-free tube, self-map radius, and
+contraction factor work for every nearby `(v,c)`. The fixed-point operator is
+analytic in `(v,c,w)`, and `I-D_wPhi` is invertible by the Neumann series, so
+the Banach analytic implicit-function theorem gives an analytic scattering
+chart `(v,c)->w(v,c)`. The new regression checks uniform neighborhood
+constants and finite-difference sensitivity of both the forced log vector and
+the projected log-subtracted model.
+
+Latest checks after adding the separated binary Levi-Civita continuation
+theorem:
+
+```bash
+pytest tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py tests/test_binary_series.py tests/test_binary_chart.py tests/test_levi_civita.py
+```
+
+```text
+29 passed in 0.67s
+86 passed in 0.99s
+compileall passed
+123 passed in 0.84s
+209 passed in 8.79s
+```
+
+`docs/separated-binary-levi-civita-continuation-lemma.md` now proves the local
+planar binary-collision continuation theorem when the third body is separated.
+The Levi-Civita lift `r=z^2`, `dt/ds=|z|^2` makes the regularized RHS analytic
+at `z=0`; the pair-energy constraint gives nonzero `zeta(0)`, so physical time
+has a cubic crossing and projection gives Newtonian branches on both punctured
+sides. The new regression starts from exact binary collision and checks
+two-sided physical time, separated third body, pair-distance projection,
+pair-energy preservation, and projected Newtonian acceleration agreement.
+
+Latest checks after adding the compact collision-free Taylor-cover theorem:
+
+```bash
+pytest tests/test_continuation.py
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py tests/test_continuation.py
+```
+
+```text
+5 passed in 0.81s
+86 passed in 0.80s
+compileall passed
+123 passed in 0.79s
+180 passed in 8.49s
+```
+
+`docs/compact-collision-free-taylor-cover-lemma.md` now proves that every
+compact collision-free classical segment has a finite ordinary Taylor-chart
+atlas. Positive pair-distance on the compact segment gives a uniform analytic
+tube for the Newtonian vector field, the analytic ODE/Cauchy-majorant theorem
+gives a uniform chart radius, and a finite partition glues the charts by
+uniqueness. The new continuation regression checks the harness realization on
+unequal-mass spatial data: finite contiguous chart coverage, positive
+separation margins through chart midpoints/endpoints, tiny truncation
+indicators, and agreement with reference integration.
+
+Latest checks after adding incoming analytic-germ continuation for the local
+zero-angular total-collision theorem:
+
+```bash
+pytest tests/test_obstructions.py::test_incoming_regularized_germ_selects_same_outgoing_branch_parameters tests/test_obstructions.py::test_local_normal_form_branch_parameters_project_to_two_sided_zero_angular_continuation tests/test_obstructions.py::test_resonant_branch_amplitude_is_recovered_from_finite_regularized_jet
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+3 passed in 0.75s
+86 passed in 0.98s
+compileall passed
+123 passed in 0.83s
+175 passed in 8.32s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now proves a local incoming
+version of zero-angular total-collision continuation. If an incoming branch has
+a convergent cubic-time regularized germ `q=tau^2S(tau)` with noncollision
+limiting shape, the regularized shape equation holds for `tau<0`; both sides
+are analytic at the collision, so the identity theorem extends the same germ to
+`tau>0`. Angular momentum tends to zero in the regularized formula and is
+conserved on each punctured side, so the continuation is zero-angular. The new
+regression recovers the finite normal-form coordinates from incoming
+regularized jets and rebuilds the same outgoing branch for the resonant
+equilateral and ordered-Euler cases.
+
+Latest checks after adding scattering angular-momentum and energy matching from
+the shared-review invariant route:
+
+```bash
+pytest tests/test_obstructions.py::test_nonhomothetic_scattering_branch_matches_angular_momentum_and_energy_limits tests/test_obstructions.py::test_nonhomothetic_scattering_picard_operator_preserves_center_of_mass tests/test_obstructions.py::test_nonhomothetic_scattering_picard_series_has_velocity_tail_bound
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+3 passed in 0.45s
+85 passed in 0.72s
+compileall passed
+122 passed in 0.76s
+174 passed in 8.19s
+```
+
+`docs/hyperbolic-scattering-fixed-point-convergence-lemma.md` now proves the
+remaining classical invariant matching for the constructed nonhomothetic
+scattering branch. Pairwise centrality gives
+`sum_i m_i v_i wedge A_i(v)=0`, so the logarithmic correction has no angular
+momentum drift. Conservation plus the position/velocity tail bounds then give
+the exact angular-momentum formula `L=sum_i m_i c_i wedge v_i`. The same
+all-future separation and velocity estimates imply the potential energy tends
+to zero and the kinetic energy tends to `1/2 sum_i m_i |v_i|^2`, so the
+branch energy is exactly the asymptotic kinetic value. The new regression
+checks the angular log cancellation, the finite model angular tail, and
+decreasing angular/energy limit envelopes on unequal-mass, noncollinear
+scattering data.
+
+Latest checks after adding scattering center-of-mass and momentum matching:
+
+```bash
+pytest tests/test_obstructions.py::test_nonhomothetic_scattering_picard_operator_preserves_center_of_mass tests/test_obstructions.py::test_nonhomothetic_scattering_branch_has_all_future_separation_bound tests/test_obstructions.py::test_nonhomothetic_scattering_picard_series_has_velocity_tail_bound
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+3 passed in 0.52s
+84 passed in 0.73s
+compileall passed
+121 passed in 0.74s
+173 passed in 8.19s
+```
+
+`docs/hyperbolic-scattering-fixed-point-convergence-lemma.md` now proves exact inertial center-of-mass matching for the constructed scattering branch. Since internal Newtonian forces have zero mass-weighted sum, `sum_i m_iB_i=0` and the Picard integrand is mass-centered. Starting from `w_0=0`, every Picard approximant and the limiting correction have zero mass-weighted correction, giving `sum_i m_i q_i=t sum_i m_i v_i+sum_i m_i c_i` and `sum_i m_i q_i'=sum_i m_i v_i`. The new regression checks the mass-weighted log vector, affine model center of mass, model momentum, and mass-weighted Picard integrand cancellation.
+
+Latest checks after adding the all-future scattering separation bound:
+
+```bash
+pytest tests/test_obstructions.py::test_nonhomothetic_scattering_branch_has_all_future_separation_bound tests/test_obstructions.py::test_nonhomothetic_scattering_fixed_point_has_quantitative_contraction_bounds tests/test_obstructions.py::test_nonhomothetic_scattering_picard_series_has_all_future_tail_bound
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+3 passed in 0.31s
+83 passed in 0.70s
+compileall passed
+120 passed in 0.75s
+172 passed in 8.29s
+```
+
+`docs/hyperbolic-scattering-fixed-point-convergence-lemma.md` now makes the collision-free tube explicit. The fixed-point ball gives `|q_j(t)-q_i(t)| >= d t - E_pair(T)log(t) - 2Rlog(t)^2/t`, hence uniformly `|q_j(t)-q_i(t)| >= [d-E_pair(T)log(T)/T-2Rlog(T)^2/T^2]t >= (d/4)t` for every `t>=T`. The new regression checks the separation envelope on the same prescribed nonhomothetic scattering data. This upgrades the constructed scattering branch and its Picard approximants from convergent/residual-controlled to convergent inside one all-future collision-free tube.
+
+Latest checks after making the resonant branch amplitude a finite-jet coordinate:
+
+```bash
+pytest tests/test_obstructions.py::test_resonant_branch_amplitude_is_recovered_from_finite_regularized_jet tests/test_obstructions.py::test_local_normal_form_energy_parameter_matches_arbitrary_incoming_energy tests/test_obstructions.py::test_local_normal_form_energy_limit_is_fixed_by_branch_jets
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+3 passed in 0.55s
+82 passed in 0.73s
+compileall passed
+119 passed in 0.78s
+171 passed in 8.32s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now identifies the resonant branch amplitude as a finite regularized-jet coordinate. On the equilateral `beta=8/27` surface, a mass-normalized centered cubic kernel `D` gives `a=<q'''(0),D>_m/6`. On the ordered-Euler resonance surfaces, with mass-normalized horizontal eigenvector `H`, the amplitude is `b=<q^(n)(0)/n!-E_{n-2},H>_m` for `n=5,6,7`. The new regression recovers the inserted amplitudes from the constructed equilateral and ordered-Euler branches. This makes the remaining local branch selector explicit; the global proof still has to show how arbitrary incoming zero-angular data supplies or selects that jet coordinate.
+
+Latest checks after proving zero-angular target-energy matching:
+
+```bash
+pytest tests/test_obstructions.py::test_local_normal_form_energy_parameter_matches_arbitrary_incoming_energy tests/test_obstructions.py::test_local_normal_form_energy_limit_is_fixed_by_branch_jets tests/test_obstructions.py::test_local_normal_form_branch_parameters_project_to_two_sided_zero_angular_continuation
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+3 passed in 0.44s
+81 passed in 0.67s
+compileall passed
+118 passed in 0.70s
+170 passed in 8.19s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now proves that the homothetic energy parameter can be solved uniquely once a local zero-angular branch choice has been made. Since the quartic shape coefficient is `E=E_base+alpha C`, the energy formula becomes `H(alpha)=H_base+(10/9)alpha<C,C>_m`, and `<C,C>_m>0`; therefore `alpha=9(H_in-H_base)/(10<C,C>_m)` matches any finite incoming energy. The new regression builds resonant equilateral and ordered-Euler branches at two target energies by this formula and checks that the physical energy on both sides of total collision agrees with the target. Energy matching is now an explicit local solve; the resonant amplitude itself still remains independent branch-selection data.
+
+Latest checks after adding the zero-angular branch energy-matching formula:
+
+```bash
+pytest tests/test_obstructions.py::test_local_normal_form_energy_limit_is_fixed_by_branch_jets tests/test_obstructions.py::test_local_normal_form_branch_parameters_project_to_two_sided_zero_angular_continuation tests/test_obstructions.py::test_three_body_zero_angular_local_normal_form_case_split_is_exhaustive
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+3 passed in 0.49s
+80 passed in 0.60s
+compileall passed
+117 passed in 0.63s
+169 passed in 8.18s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now gives the physical energy selected by a local zero-angular branch. For `S=C+D tau+E tau^2+...`, `q=tau^2S`, and `t=tau^3`, the central-configuration identity and `<C,D>_m=0` cancel the `tau^-2` and `tau^-1` energy singularities, leaving `H=(1/2)<D,D>_m-(1/2)<D,DA(C)[D]>_m+(10/9)<C,E>_m`. The new regression checks this formula on the resonant equilateral branch and all three ordered-Euler resonance branches, comparing the jet-level energy to the physical energy on both sides of total collision. This ties the branch parameters back to the incoming energy invariant; it still does not prove that arbitrary incoming zero-angular data globally selects one of these branches.
+
+Latest checks after adding branch-parameter continuation through zero-angular total collision:
+
+```bash
+pytest tests/test_obstructions.py::test_local_normal_form_branch_parameters_project_to_two_sided_zero_angular_continuation tests/test_obstructions.py::test_three_body_zero_angular_local_normal_form_case_split_is_exhaustive tests/test_obstructions.py::test_nonresonant_ordered_euler_branches_have_only_homothetic_resonance
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+3 passed in 0.35s
+79 passed in 0.56s
+compileall passed
+116 passed in 0.59s
+168 passed in 8.14s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now turns the local zero-angular normal form into an explicit branch-parameter continuation theorem. Once the central second jet, homothetic energy parameter, and any listed resonant amplitude are selected, the convergent shape series `S(tau)` defines `q=tau^2S(tau)`, `t=tau^3`; the shape equation `tau^2S''+2tau S'-2S=9A(S)` projects to Newton's equation for every `tau != 0`, and angular momentum is conserved with zero limit at total collision. The new regression checks resonant equilateral and ordered-Euler branches on both sides of `tau=0`, verifies no secondary shape collision, verifies the projected Newton residual, and checks zero angular momentum and matching two-sided energy. This closes the local selected-branch continuation step; it still does not prove that arbitrary incoming zero-angular data globally reaches the selected chart.
+
+Latest checks after adding the velocity-tail and asymptotic-velocity bound for nonhomothetic scattering:
+
+```bash
+pytest tests/test_obstructions.py::test_nonhomothetic_scattering_picard_series_has_velocity_tail_bound tests/test_obstructions.py::test_nonhomothetic_scattering_picard_series_has_all_future_tail_bound tests/test_obstructions.py::test_nonhomothetic_scattering_picard_truncations_have_newton_residual_bound
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+3 passed in 0.43s
+78 passed in 0.53s
+compileall passed
+115 passed in 0.61s
+167 passed in 8.09s
+```
+
+`docs/hyperbolic-scattering-fixed-point-convergence-lemma.md` now differentiates the fixed-point operator and proves a weighted velocity-tail estimate alongside the earlier position-tail and Newton-residual bounds. The key seminorm is `||f'||_v=sup_{t>=T} t^2|f'(t)|/log(t)^2`; the same Picard increments satisfy `||w'-w_N'||_v <= L K_2^v(T) eta kappa^(N-1)/(1-kappa)`, and the projected branch obeys `|q'(t)-v|_* <= |B|_*/t + O(log(t)^2/t^2)` uniformly on `[T,infinity)`. The new regression checks the geometric velocity-tail recurrence and the decreasing asymptotic-velocity envelope for the same unequal-mass, noncollinear scattering data. This is an all-future bound for the prescribed hyperbolic scattering subcase, not a general compact-Sundman recurrence proof.
+
+Latest checks after assembling the three-body zero-angular local normal form:
+
+```bash
+pytest tests/test_obstructions.py::test_three_body_zero_angular_local_normal_form_case_split_is_exhaustive tests/test_obstructions.py::test_nonresonant_ordered_euler_branches_have_only_homothetic_resonance tests/test_obstructions.py::test_equilateral_beta_resonance_surface_builds_local_cubic_branches
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+4 passed in 0.64s
+77 passed in 0.54s
+compileall passed
+114 passed in 0.56s
+166 passed in 8.06s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now states the combined
+three-body zero-angular local normal-form theorem for analytic cubic-time
+branches with noncollision second shape. The second jet is either equilateral
+or ordered Euler. Equilateral branches are homothetic-rigid except on the
+positive `beta=8/27` surface, where one centered cubic amplitude appears.
+Ordered Euler branches are homothetic-rigid off the three explicit `n=5,6,7`
+resonance surfaces, and have one horizontal resonant amplitude on those
+surfaces. The focused regression checks representative cases for every branch
+of this finite split and verifies that the only extra local resonance powers
+are `tau^3`, `tau^5`, `tau^6`, and `tau^7` on the stated loci.
+
+Latest checks after proving nonresonant ordered Euler homothetic rigidity:
+
+```bash
+pytest tests/test_obstructions.py::test_nonresonant_ordered_euler_branches_have_only_homothetic_resonance tests/test_obstructions.py::test_ordered_euler_resonance_surfaces_build_local_collinear_branches tests/test_obstructions.py::test_ordered_euler_resonance_surfaces_match_shape_eigenvalue_condition
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+5 passed in 0.74s
+76 passed in 0.54s
+compileall passed
+113 passed in 0.63s
+165 passed in 8.08s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now closes the ordered-Euler
+local normal form. The earlier sections showed that higher shape resonances can
+only occur on the three explicit `n=5,6,7` mass-ratio surfaces and constructed
+the nonhomothetic local branches there. The new section proves the complement
+is homothetic-rigid: after center-of-mass reduction, the only remaining
+resonance is the universal quartic scale/energy direction, and homogeneity
+forces all odd coefficients to vanish while all even coefficients follow the
+scalar homothetic energy recurrence. The new regression checks non-symmetric
+nonresonant ordered-Euler mass triples, verifies that no higher multiplier hits
+the spectrum, checks coefficient equations through shape order 12, and confirms
+retained-order Newton residual decay.
+
+Latest checks after extending the equilateral cubic branch to the full `beta=8/27` surface:
+
+```bash
+pytest tests/test_obstructions.py::test_equilateral_beta_resonance_surface_builds_local_cubic_branches tests/test_obstructions.py::test_resonant_arbitrary_mass_equilateral_series_recurrence_builds_higher_order_branch tests/test_obstructions.py::test_arbitrary_mass_equilateral_linearized_spectrum_matches_beta_formula
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+7 passed in 0.61s
+75 passed in 0.50s
+compileall passed
+112 passed in 0.53s
+164 passed in 8.01s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now generalizes the resonant
+equilateral cubic branch from the example `(1,1,5/2)` to every positive mass
+triple with `beta=8/27`. The quartic solvability condition is no longer a
+direct substitution: because the acceleration is the mass-gradient of a
+homogeneous Newtonian potential, the third derivative tensor is symmetric and
+homogeneity gives `<C,D^2A(C)[D,D]>_m=<D,D^2A(C)[C,D]>_m=0` whenever
+`DA(C)[D]=0`. Thus the quartic forcing is automatically orthogonal to the
+scale kernel on the whole resonant surface, and all later coefficients are
+nonresonant. The new regression constructs the recurrence through shape order
+8 for both the symmetric example and a non-symmetric `beta=8/27` mass triple,
+checks quartic orthogonality and every coefficient equation, and confirms that
+retained-order Newton residuals shrink.
+
+Latest checks after constructing local branches on the ordered Euler resonance surfaces:
+
+```bash
+pytest tests/test_obstructions.py::test_ordered_euler_resonance_surfaces_match_shape_eigenvalue_condition tests/test_obstructions.py::test_ordered_euler_resonance_surfaces_build_local_collinear_branches tests/test_obstructions.py::test_symmetric_euler_resonances_build_higher_order_collinear_branches
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+7 passed in 0.38s
+73 passed in 0.50s
+compileall passed
+110 passed in 0.49s
+162 passed in 8.07s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now proves that every positive
+point on the ordered-Euler resonance surfaces carries a local analytic
+nonhomothetic zero-angular total-collision branch. For a surface point with
+`sigma=lambda_n`, `n in {5,6,7}`, the resonant horizontal coefficient enters
+at `S_{n-2}` in `q(tau)=tau^2 S(tau)`, contributes a free scalar multiple of
+the horizontal eigenvector, and all later coefficients are determined because
+the ordered-Euler order bound leaves no later resonances. The new regression
+checks non-symmetric points on all three surfaces, verifies the resonant
+eigenvector equation, solves the coefficient recurrence through order 10, and
+confirms that retained-order Newton residuals shrink.
+
+Latest checks after deriving explicit ordered Euler higher-resonance mass surfaces:
+
+```bash
+pytest tests/test_obstructions.py::test_ordered_euler_resonance_surfaces_match_shape_eigenvalue_condition tests/test_obstructions.py::test_ordered_euler_shape_eigenvalue_bounds_limit_higher_resonance_orders
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+2 passed in 0.55s
+70 passed in 0.52s
+compileall passed
+107 passed in 0.48s
+159 passed in 8.04s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now turns the ordered-Euler
+higher-resonance search into three explicit rational mass-ratio surfaces. After
+the previous bound proves only orders `n=5,6,7` can occur, solving Euler's
+quintic together with `sigma=n(n-3)/9` gives formulas for
+`(m_1/m_2,m_3/m_2)=(q_n(r),p_n(r))`; the positive portions of these three
+curves are the only ordered-Euler nonhomothetic higher-resonance mass triples.
+At `r=1` they recover the symmetric middle masses `11/12`, `1/4`, and `1/24`.
+The new regression substitutes sampled positive points from each surface back
+into Euler's quintic and the linearized shape-eigenvalue condition.
+
+Latest checks after bounding ordered Euler higher resonances to orders 5, 6, and 7:
+
+```bash
+pytest tests/test_obstructions.py::test_ordered_euler_linearized_spectrum_has_single_horizontal_shape_parameter tests/test_obstructions.py::test_ordered_euler_shape_eigenvalue_bounds_limit_higher_resonance_orders tests/test_obstructions.py::test_symmetric_unequal_mass_euler_has_three_higher_order_resonance_masses
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+3 passed in 0.39s
+69 passed in 0.46s
+compileall passed
+106 passed in 0.47s
+158 passed in 7.96s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now proves the uniform ordered-Euler shape-eigenvalue range `4/9 < sigma < 32/9`. After eliminating one mass with Euler's quintic, both gaps are explicit rational expressions with positive numerator under the positive-mass condition. Since `lambda_5=10/9`, `lambda_6=2`, `lambda_7=28/9`, and `lambda_8=40/9`, all ordered-Euler higher resonances are confined to orders 5, 6, and 7. The new regression checks this finite resonance-order bound on representative and extreme mass cases.
+
+Latest checks after reducing ordered Euler resonances to one horizontal shape eigenvalue:
+
+```bash
+pytest tests/test_obstructions.py::test_ordered_collinear_euler_second_jet_has_unique_positive_ratio tests/test_obstructions.py::test_ordered_euler_linearized_spectrum_has_single_horizontal_shape_parameter tests/test_obstructions.py::test_symmetric_unequal_mass_euler_linearized_spectrum_matches_formula tests/test_obstructions.py::test_symmetric_unequal_mass_euler_has_three_higher_order_resonance_masses
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+8 passed in 0.31s
+68 passed in 0.49s
+compileall passed
+105 passed in 0.49s
+157 passed in 8.04s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now reduces the arbitrary ordered-Euler resonance problem to one scalar eigenvalue. For any normalized ordered Euler second jet on the horizontal axis, the pair-force derivative gives `L_parallel=-2L_perp`, so the spectrum is `{0,0,4/9,-2/9,sigma,-sigma/2}` with `sigma>0`. The transverse shape eigenvalue is therefore negative and cannot resonate with `lambda_n=n(n-3)/9 >= 0`; after center-of-mass reduction and the universal quartic scale mode, any higher Euler resonance must satisfy the single horizontal condition `lambda_n=sigma`. The new regression verifies this paired spectrum for all six orderings of an unequal mass triple.
+
+Latest checks after adding the ordered Euler quintic second-jet classification:
+
+```bash
+pytest tests/test_obstructions.py::test_noncollinear_three_body_central_second_jet_is_equilateral tests/test_obstructions.py::test_ordered_collinear_euler_second_jet_has_unique_positive_ratio tests/test_obstructions.py::test_analytic_cubic_time_total_collision_branch_forces_cubic_jet_kernel_condition
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+3 passed in 0.30s
+67 passed in 0.45s
+compileall passed
+104 passed in 0.49s
+156 passed in 7.92s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now classifies the collinear side of the zero-angular second jet. For an ordered line `x_1=0`, `x_2=1`, `x_3=1+r`, eliminating the central multiplier gives Euler's quintic. Its coefficient signs have exactly one sign change, it is negative at `r=0`, and it tends to positive infinity, so each ordered positive-mass triple has exactly one positive Euler ratio. The new regression constructs the normalized collinear central jet for all six orderings of an unequal mass triple. Combined with the noncollinear/equilateral dichotomy, this reduces the zero-angular second-jet choices to Lagrange/equilateral plus the ordered Euler roots.
+
+Latest checks after proving the three-body central second-jet dichotomy:
+
+```bash
+pytest tests/test_obstructions.py::test_any_analytic_cubic_time_total_collision_branch_forces_second_shape tests/test_obstructions.py::test_noncollinear_three_body_central_second_jet_is_equilateral tests/test_obstructions.py::test_analytic_cubic_time_total_collision_branch_forces_cubic_jet_kernel_condition
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+3 passed in 0.45s
+66 passed in 0.43s
+compileall passed
+103 passed in 0.50s
+155 passed in 7.95s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now proves that a noncollinear three-body central second jet is necessarily equilateral. The proof compares the central acceleration equation and the mass-centering identity in the two edge-vector coordinates at a vertex, forcing the adjacent side lengths to match; repeating at another vertex gives all three side lengths equal. Thus zero-angular total-collision second jets split into Lagrange/equilateral or collinear/Euler families, ruling out scalene noncollinear second-jet branches. The new regression checks an arbitrary-mass equilateral central jet and confirms that a mass-centered scalene noncollinear shape cannot satisfy the best-fit central equation.
+
+Latest checks after adding finite-truncation Newton residual bounds for nonhomothetic scattering:
+
+```bash
+pytest tests/test_obstructions.py::test_nonhomothetic_scattering_fixed_point_has_quantitative_contraction_bounds tests/test_obstructions.py::test_nonhomothetic_scattering_picard_series_has_all_future_tail_bound tests/test_obstructions.py::test_nonhomothetic_scattering_picard_truncations_have_newton_residual_bound
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+3 passed in 0.29s
+65 passed in 0.43s
+compileall passed
+102 passed in 0.48s
+154 passed in 8.03s
+```
+
+`docs/hyperbolic-scattering-fixed-point-convergence-lemma.md` now adds the verification estimate for finite Picard approximants. If `q_N=q_0+w_N` and `w_N=Phi(w_{N-1})`, then `q_N''=A(q_{N-1})`, so the Newton residual is exactly `A(q_{N-1})-A(q_N)`. The same Lipschitz and Picard-increment constants give `|Res_N(t)| <= L eta kappa^(N-1) log(t)^2/t^4` for every `t>=T`. The new regression checks the uniform residual envelope and its geometric decay. This strengthens the prescribed hyperbolic scattering subcase from existence plus tail convergence to construct/project/verify with explicit residual bounds for every finite truncation.
+
+Latest checks after adding the all-future Picard tail bound for nonhomothetic scattering:
+
+```bash
+pytest tests/test_obstructions.py::test_nonhomothetic_scattering_fixed_point_has_quantitative_contraction_bounds tests/test_obstructions.py::test_nonhomothetic_scattering_picard_series_has_all_future_tail_bound
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+2 passed in 0.26s
+64 passed in 0.44s
+compileall passed
+101 passed in 0.48s
+153 passed in 7.99s
+```
+
+`docs/hyperbolic-scattering-fixed-point-convergence-lemma.md` now upgrades the fixed-point existence proof into a constructive all-future Picard series on `[T,infinity)`. With `w_0=0`, `w_{n+1}=Phi(w_n)`, `kappa=L K_2(T)`, and `eta=L E_body(T)K_1(T)`, the correction is `w=sum Delta_n` with `||Delta_n|| <= kappa^n eta` and `||w-w_N|| <= kappa^N eta/(1-kappa)` in the weighted norm `sup t|w(t)|/log(t)^2`. The new regression checks the geometric tail recurrence and pointwise future remainder bounds for the same unequal-mass, noncollinear scattering data. This gives a real all-future recurrence bound for the prescribed hyperbolic scattering tail; it is not the still-missing arbitrary-data compact-Sundman recurrence.
+
+Latest checks after proving a nonhomothetic hyperbolic scattering convergence subcase:
+
+```bash
+pytest tests/test_obstructions.py::test_nonhomothetic_scattering_fixed_point_has_quantitative_contraction_bounds
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+1 passed in 0.53s
+63 passed in 0.63s
+compileall passed
+100 passed in 0.47s
+152 passed in 8.04s
+```
+
+`docs/hyperbolic-scattering-fixed-point-convergence-lemma.md` now gives explicit Banach fixed-point constants for prescribed distinct asymptotic velocities. With `B=A(v)` and `q_0(t)=vt-B log(t)+c`, the proof works in the weighted norm `sup t|w(t)|/log(t)^2`, uses a pair-separation tube to get an `L/t^3` acceleration Lipschitz bound, and chooses `T` so the exact integral factors make the correction map a contraction. The new regression checks those inequalities on an unequal-mass, noncollinear velocity triangle and samples the log-subtracted residual bound. This is a real nonhomothetic escape convergence theorem for prescribed scattering data, not a new certificate layer; asymptotic classification and all-future recurrence remain open.
+
+Latest checks after extending resonant sign nonselection to the equilateral branch:
+
+```bash
+pytest tests/test_obstructions.py::test_resonant_equilateral_sign_branches_share_second_jet_and_energy tests/test_obstructions.py::test_symmetric_euler_resonant_sign_branches_share_second_jet_and_energy
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+4 passed in 0.76s
+62 passed in 0.65s
+compileall passed
+99 passed in 0.46s
+151 passed in 7.92s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` and `docs/zero-angular-total-collision-nonuniqueness.md` now cover the sign ambiguity for both resonant families. The new equilateral regression compares `+b` and `-b` branches for the `(1,1,5/2)` equilateral resonance, verifies the expected odd/even coefficient symmetry, checks that the signs share second jet and energy with zero angular momentum, and confirms that the outgoing curves differ. Together with the symmetric Euler sign regression, this proves central configuration plus energy still does not determine the zero-angular continuation on resonant branches.
+
+Latest checks after proving symmetric Euler resonant branch sign is not selected by energy:
+
+```bash
+pytest tests/test_obstructions.py::test_symmetric_euler_resonant_sign_branches_share_second_jet_and_energy
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+3 passed in 0.48s
+61 passed in 0.54s
+compileall passed
+98 passed in 0.47s
+150 passed in 7.94s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now records the continuation-data consequence of the symmetric Euler resonant branches. Because their resonant coefficient enters at `S_r` with `r>=3`, the finite energy limit depends only on `S_0=C`, `S_1=0`, and `S_2=alpha C`, so `E=(10/9)alpha I_m(C)` and is independent of the resonant amplitude. The new regression compares `+b` and `-b` branches for all three symmetric Euler resonance masses, verifies that they share masses, second regularized-time jet, quartic energy parameter, total energy, and zero angular momentum, and checks that their outgoing curves differ at the resonant coefficient. This proves energy plus central second jet still does not select the zero-angular continuation.
+
+Latest checks after constructing all three symmetric Euler resonant branches:
+
+```bash
+pytest tests/test_obstructions.py::test_symmetric_euler_resonances_build_higher_order_collinear_branches
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+3 passed in 0.57s
+58 passed in 0.46s
+compileall passed
+95 passed in 0.44s
+147 passed in 8.25s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now extends the first Euler resonant branch construction to all three symmetric Euler resonances. For `mu=11/12`, `1/4`, and `1/24`, the horizontal mass-centered shape mode enters at `tau^5`, `tau^6`, and `tau^7`, respectively. The recurrence writes the resonant coefficient as `S_r=E_r+bH`, where `E_r` is the lower-forcing particular solution and `H=(1,-2/mu,1)`. The regression constructs all three collinear branches through shape order 10, checks coefficient equations and mass-centering, and confirms a meaningful residual drop after the resonant terms are included. These are three explicit local analytic nonhomothetic zero-angular total-collision families in the symmetric Euler family.
+
+Latest checks after constructing the first symmetric Euler resonant branch:
+
+```bash
+pytest tests/test_obstructions.py::test_first_symmetric_euler_resonance_builds_higher_order_collinear_branch
+pytest tests/test_obstructions.py::test_first_symmetric_euler_resonance_builds_higher_order_collinear_branch tests/test_obstructions.py::test_symmetric_unequal_mass_euler_linearized_spectrum_matches_formula tests/test_obstructions.py::test_symmetric_unequal_mass_euler_has_three_higher_order_resonance_masses
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+1 passed in 0.54s
+7 passed in 0.31s
+56 passed in 0.36s
+compileall passed
+93 passed in 0.35s
+145 passed in 7.83s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now promotes the first symmetric Euler resonance from a spectral warning to a local branch construction. For masses `(1,11/12,1)`, the horizontal shape eigenvalue is `10/9=lambda_5`, so the branch can take `S_3=bH` in `q=tau^2S(tau)` after the homothetic quartic scale term. The recurrence then solves all later coefficients because no later resonance remains. The new regression constructs the collinear branch through shape order 9, checks mass-centering, verifies every coefficient equation, and confirms residual decrease as terms are retained. Since the branch remains collinear, angular momentum is identically zero.
+
+Latest checks after classifying symmetric unequal-mass Euler resonances:
+
+```bash
+pytest tests/test_obstructions.py::test_symmetric_unequal_mass_euler_linearized_spectrum_matches_formula tests/test_obstructions.py::test_symmetric_unequal_mass_euler_has_three_higher_order_resonance_masses
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+6 passed in 0.60s
+55 passed in 0.53s
+compileall passed
+92 passed in 0.41s
+144 passed in 7.89s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now shows that the equal-mass Euler rigidity theorem is a nonresonant special case. In the symmetric Euler family with masses `(1,mu,1)` and collinear shape `(-1,0,1)`, the scaled spectrum is `{0,0,4/9,-2/9,16(mu+2)/(9(4mu+1)),-8(mu+2)/(9(4mu+1))}`. The positive horizontal shape eigenvalue resonates with `lambda_n=n(n-3)/9` exactly at `mu=11/12` for `n=5`, `mu=1/4` for `n=6`, and `mu=1/24` for `n=7`; no `n>=8` resonance is possible, and the transverse shape eigenvalue is negative. The regression checks the spectrum formula, the mass-centered horizontal shape eigenmode, the three resonance masses, and a nonresonant control case. This adds three explicit Euler normal-form problems to the zero-angular triple-collision continuation target.
+
+Latest checks after constructing the resonant arbitrary-mass equilateral branch through higher-order recurrence:
+
+```bash
+pytest tests/test_obstructions.py::test_resonant_arbitrary_mass_equilateral_series_recurrence_builds_higher_order_branch
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+1 passed in 0.61s
+49 passed in 0.48s
+compileall passed
+86 passed in 0.35s
+138 passed in 7.83s
+```
+
+`tests/test_obstructions.py` now contains an executable shape-series recurrence for the resonant `(1,1,5/2)` equilateral branch. It expands `A(S(tau))` by ordinary power-series arithmetic for each pair force `r/|r|^3`, solves `(((k+2)(k-1))/9 I-DA(C))S_k=known` after fixing the cubic resonance and quartic scale parameter, and constructs coefficients through shape order 8. The regression checks mass-centering for every coefficient, verifies every coefficient equation through order 8, and confirms that the projected Newton residual decreases as more regularized terms are retained. This backs the prose majorant/convergence argument with an actual recursive construction, not only the quartic solvability check.
+
+Latest checks after proving the resonant arbitrary-mass equilateral cubic branch survives quartic order:
+
+```bash
+pytest tests/test_obstructions.py::test_resonant_arbitrary_mass_equilateral_cubic_kernel_survives_quartic_solvability tests/test_obstructions.py::test_arbitrary_mass_equilateral_linearized_spectrum_matches_beta_formula tests/test_obstructions.py::test_arbitrary_mass_equilateral_beta_resonance_adds_centered_cubic_kernel
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+6 passed in 0.52s
+48 passed in 0.33s
+compileall passed
+85 passed in 0.33s
+137 passed in 7.83s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now proves more than the existence of the `beta=8/27` cubic resonance. For masses `(1,1,5/2)`, it displays a centered nontranslation cubic kernel vector `D`, writes the second force coefficient `B_C(D,D)`, and checks the quartic solvability condition for `(4/9 I-DA(C))E=B_C(D,D)`: the forcing is mass-orthogonal to the scale left eigenvector `m_i C_i`. Thus `E=a^2E_0+alpha C` exists, so the resonant cubic parameter survives quartic order while `alpha` remains the homothetic energy parameter. Since there are no further resonances for `n>=5`, the later coefficients are recursively determined, and the regular-singular equation `tau^2S''+2tau S'-2S=9A(S)` gives convergence by a Cauchy-majorant argument. This yields a genuine local analytic nonhomothetic zero-angular total-collision branch on the resonant mass surface, so the general zero-angular continuation convention must include or select this cubic branch parameter.
+
+Latest checks after classifying arbitrary-mass equilateral triple-collision resonances:
+
+```bash
+pytest tests/test_obstructions.py::test_arbitrary_mass_equilateral_linearized_spectrum_matches_beta_formula tests/test_obstructions.py::test_arbitrary_mass_equilateral_beta_resonance_adds_centered_cubic_kernel
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+5 passed in 0.40s
+47 passed in 0.34s
+compileall passed
+84 passed in 0.49s
+136 passed in 7.83s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now classifies the arbitrary-mass equilateral linearized spectrum. With `M=sum m_i` and `beta=(m_1m_2+m_1m_3+m_2m_3)/M^2`, the scaled mass-centered equilateral branch has spectrum `{0,0,4/9,-2/9,1/9+(1/3)sqrt(1-3 beta),1/9-(1/3)sqrt(1-3 beta)}`. Thus nonresonant arbitrary-mass equilateral branches with `beta != 8/27` have the same all-order homothetic rigidity as the equal-mass branch: after center-of-mass reduction, only the quartic scale/energy parameter remains. At `beta=8/27`, however, the lower shape eigenvalue is zero, so a centered nontranslation cubic jet lies in `ker DA(C)`. The regression verifies the spectrum formula for equal, unequal nonresonant, strongly unequal, and resonant masses, and explicitly constructs the centered cubic kernel for masses proportional to `(1,1,5/2)`. This identifies a real local normal-form problem for arbitrary-mass zero-angular triple-collision continuation rather than hiding it behind the equal-mass proof.
+
+Latest checks after proving all-order formal rigidity of the centered equal-mass Euler collision branch:
+
+```bash
+pytest tests/test_obstructions.py::test_equal_mass_euler_all_order_formal_rigidity_has_only_homothetic_resonance
+pytest tests/test_obstructions.py
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_general_solution.py tests/test_dynamics.py tests/test_series.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+pytest
+```
+
+```text
+1 passed in 0.34s
+42 passed in 0.30s
+compileall passed
+79 passed in 0.31s
+31 passed in 7.07s
+131 passed in 7.82s
+327 passed in 545.33s (0:09:05)
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now extends the all-order formal rigidity proof from the centered equal-mass equilateral branch to the centered equal-mass Euler branch. For the unscaled collinear shape `X=(-1,0,1)`, the horizontal derivative block has eigenvalues `0`, `5/2`, and `6`, while the transverse block has eigenvalues `0`, `-5/4`, and `-3`. Scaling to `A(C)=-(2/9)C` gives spectrum `{0,0,4/9,-2/9,16/15,-8/15}`. The coefficient multiplier `lambda_n=n(n-3)/9` resonates only at `n=3` for translations and `n=4` for scale; for every `n>=5`, the equation is invertible. Center-of-mass reduction removes translations, the quartic scale coefficient is the homothetic energy parameter, and the homogeneity induction forces all odd coefficients to vanish and all even coefficients to match the scalar homothetic recurrence. This closes the two classical equal-mass central-configuration branches locally; unequal masses and arbitrary zero-angular triple-collision data remain open.
+
+Latest checks after proving all-order formal rigidity of the centered equilateral collision branch:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_obstructions.py::test_equal_mass_equilateral_all_order_formal_rigidity_has_only_homothetic_resonance
+pytest tests/test_obstructions.py
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_general_solution.py tests/test_dynamics.py tests/test_series.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+compileall passed
+1 passed in 0.59s
+41 passed in 0.40s
+78 passed in 0.34s
+31 passed in 7.11s
+130 passed in 7.88s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now promotes the finite equilateral jet computations to an all-order formal rigidity theorem. For a coefficient `Q_n tau^n`, the linearized equation is `(lambda_n I-DA(C))Q_n=known`, where `lambda_n=n(n-3)/9`. The equilateral spectrum `{0,0,4/9,-2/9,1/9,1/9}` resonates only at `n=3` for translations and `n=4` for the scale mode. Center-of-mass reduction removes the translation resonance; the quartic scale coefficient remains as the homothetic energy parameter. For every `n>=5`, the solve is nonresonant. If lower coefficients are the scale-only even homothetic series, homogeneity keeps the forcing scale-only and even, forcing all odd coefficients to vanish and all even coefficients to match the scalar homothetic recurrence. Since the homothetic energy branch is analytic, any analytic centered equal-mass equilateral branch with that second jet agrees locally with it. The new regression checks the resonance set and verifies truncation residual improvement for the homothetic recurrence. This proves local analytic uniqueness for the centered equal-mass equilateral total-collision branch; other central configurations and arbitrary zero-angular collision data remain open.
+
+Latest checks after forcing the equilateral quintic and sextic jets to the homothetic recurrence:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_obstructions.py::test_equal_mass_equilateral_quintic_and_sextic_jets_match_homothetic_energy_series
+pytest tests/test_obstructions.py
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_general_solution.py tests/test_dynamics.py tests/test_series.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+compileall passed
+1 passed in 0.48s
+40 passed in 0.30s
+77 passed in 0.35s
+31 passed in 7.14s
+129 passed in 7.81s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now pushes the equal-mass equilateral total-collision expansion through sextic regularized time. After `q(tau)=C tau^2+alpha C tau^4+F tau^5+G tau^6+O(tau^7)`, the `tau^-1` coefficient gives `(10/9)F=DA(C)[F]`; since `10/9` is not in the equilateral linearized spectrum, `F=0`. The constant coefficient then gives `(2I-DA(C))G=-(2/3)alpha^2 C`; invertibility and the scale eigenvalue force `G=-(3/7)alpha^2 C`. This matches the homothetic energy-series coefficient `u(z)=1+alpha z-(3/7)alpha^2 z^2+...`. The new regression checks the quintic obstruction, the sextic operator equation, and actual Newton residuals for the allowed homothetic sextic coefficient versus a forbidden shape coefficient. The equilateral branch is now proved to agree with the homothetic energy family through sextic order; arbitrary zero-angular continuation remains open.
+
+Latest checks after proving the equilateral quartic jet is the homothetic energy direction:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_obstructions.py::test_equal_mass_equilateral_quartic_jet_is_homothetic_scale_direction
+pytest tests/test_obstructions.py
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_general_solution.py tests/test_dynamics.py tests/test_series.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+compileall passed
+1 passed in 0.52s
+39 passed in 0.31s
+76 passed in 0.32s
+31 passed in 7.11s
+128 passed in 7.81s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now carries the equal-mass equilateral expansion one term further. Once the cubic jet has been forced to a uniform translation, the `tau^-2` coefficient in Newton's equation forces the quartic coefficient `E` to satisfy `DA(C)[E]=(4/9)E`. The equilateral spectrum shows that the `4/9` eigenspace is exactly the scale direction `C`; translations, rotation, and the two shape modes are excluded. Therefore a centered analytic cubic-time branch with equilateral second jet has `q(tau)=C tau^2+alpha C tau^4+O(tau^5)`, so the quartic freedom is precisely the homothetic energy direction already constructed in the energy-parametrized branch. The new regression checks the eigenvalue obstruction and the actual scaled Newton residual for allowed scale and forbidden shape quartic jets. This further narrows the zero-angular branch without claiming arbitrary total-collision continuation.
+
+Latest checks after proving equilateral cubic-jet rigidity at total collision:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_obstructions.py::test_equal_mass_equilateral_cubic_jet_kernel_is_only_translation
+pytest tests/test_obstructions.py
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_general_solution.py tests/test_dynamics.py tests/test_series.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+compileall passed
+1 passed in 0.54s
+38 passed in 0.31s
+75 passed in 0.33s
+31 passed in 7.09s
+127 passed in 7.83s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now proves a rigidity refinement for the equal-mass equilateral branch. In complex notation the centered perturbation space splits into `C`, `iC`, `conjugate(C)`, and `i conjugate(C)`. Direct substitution into the linearized force gives eigenvalues `4/9`, `-2/9`, `1/9`, and `1/9` at the scaled equilateral central configuration; the only zero modes of `DA(C)` are the two uniform translations. Therefore the cubic-jet condition `DA(C)[D]=0` forces a centered cubic regularized-time jet to vanish. The new regression checks those eigenmodes and translation kernel directions explicitly. This does not prove arbitrary zero-angular total-collision continuation, but it closes a real local freedom around the equilateral branch: nonhomothetic centered data cannot enter at order `tau^3`.
+
+Latest checks after proving convergence of the homothetic log-subtracted escape endpoint:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_obstructions.py::test_homothetic_escape_log_subtracted_endpoint_has_convergent_implicit_series
+pytest tests/test_obstructions.py
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_general_solution.py tests/test_dynamics.py tests/test_series.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+compileall passed
+1 passed in 0.50s
+37 passed in 0.30s
+74 passed in 0.35s
+31 passed in 7.08s
+126 passed in 7.99s
+```
+
+`docs/homothetic-escape-log-subtracted-convergence-lemma.md` now proves an actual convergence result for the escape endpoint route in the positive-energy homothetic subcase. Using the exact radial integral `F(R)`, inverse time `tau=1/t`, scaled radius `x=tau R`, and `rho=tau log(tau)`, the escape branch satisfies an analytic implicit equation `H(x,tau,rho)=0` with `H(c,0,0)=0` and `H_x(c,0,0)=1/c != 0`. The analytic implicit function theorem gives a convergent two-variable expansion `x=Phi(tau,rho)`, and differentiating the endpoint equation forces `Phi_rho(0,0)=-mu/c^2`, matching the general vector log coefficient `B=A(cQ)`. The regression checks the implicit equation on large exact radial escape states, verifies the forced coefficient, and confirms the log-subtracted endpoint remainder is `O(tau)`. This closes a real convergence subcase for the all-future escape repair; general nonhomothetic scattering convergence and asymptotic-data classification remain open.
+
+Latest checks after turning the shared review's triple-collision policy advice into a cubic-jet obstruction:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_obstructions.py::test_analytic_cubic_time_total_collision_branch_forces_cubic_jet_kernel_condition
+pytest tests/test_obstructions.py
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_general_solution.py tests/test_dynamics.py tests/test_series.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+compileall passed
+1 passed in 0.44s
+36 passed in 0.43s
+73 passed in 0.32s
+31 passed in 7.06s
+125 passed in 7.83s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now pushes the analytic cubic-time total-collision expansion one order beyond the central-configuration condition. For `q(tau)=C tau^2+D tau^3+E tau^4+O(tau^5)` with `A(C)=-(2/9)C`, the physical acceleration has no `tau^-3` term, while Newtonian acceleration contributes `tau^-3 DA(C)[D]`. Therefore every exact branch must satisfy the necessary cubic-jet kernel condition `DA(C)[D]=0`, equivalently `DA(C)[q_tautautau(0)]=0`. The new regression checks that a uniform translation cubic jet lies in the kernel, while a cubic scaling direction leaves the predicted scaled residual `-DA(C)[D]`. This implements the share review's triple-collision policy guidance as prose/math and a focused obstruction test, without adding another certificate layer. Arbitrary zero-angular total-collision continuation remains open.
+
+Latest checks after generalizing the triple-collision second-jet condition beyond homothetic branches:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_obstructions.py::test_any_analytic_cubic_time_total_collision_branch_forces_second_shape
+pytest tests/test_obstructions.py
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_general_solution.py tests/test_dynamics.py tests/test_series.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+compileall passed
+1 passed in 0.54s
+35 passed in 0.58s
+72 passed in 0.67s
+31 passed in 8.23s
+124 passed in 8.48s
+```
+
+`docs/triple-collision-regularized-jet-lemma.md` now proves that the second regularized-time jet condition is not merely homothetic. For any analytic cubic-time total-collision branch `q(tau)=C tau^2+O(tau^3)` with noncollision leading shape `C`, Newton's equation forces `A(C)=-(2/9)C`, equivalently `A(J)=-(1/36)J` for `J=q_tautau(0)=2C`. Higher regularized-time jets can impose more equations, but cannot change this leading central-configuration condition. The new regression adds cubic and quartic perturbation jets, checks that a central `C` cancels the leading scaled residual, and that a noncentral `C` leaves exactly the forced leading obstruction. This is a real expansion of the zero-angular total-collision proof surface, while arbitrary continuation through such collisions remains open.
+
+Latest checks after proving the all-order formal log-polynomial escape recurrence is triangular:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_obstructions.py::test_log_subtracted_escape_formal_recurrence_is_triangular
+pytest tests/test_obstructions.py
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_general_solution.py tests/test_dynamics.py tests/test_series.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+compileall passed
+1 passed in 0.60s
+34 passed in 0.51s
+71 passed in 0.54s
+31 passed in 7.34s
+123 passed in 7.79s
+```
+
+`docs/general-hyperbolic-scattering-log-vector-lemma.md` now proves the all-order formal recurrence shape for the log-subtracted escape endpoint. In the log-polynomial algebra generated by `tau^n log(tau)^k`, the operator `tau d^2/dtau^2` sends `tau^n L^k` to `tau^(n-1)(n(n-1)L^k + k(2n-1)L^(k-1) + k(k-1)L^(k-2))`. Since `n(n-1)` is nonzero for every new coefficient order `n>=2`, the equations can be solved by descending log power once earlier orders determine the forcing coefficient from `A(Y+B tau log(tau))-B`. The new regression checks the operator formula and reconstructs an arbitrary forcing row from the triangular solve. This proves formal transseries closure for escape endpoints; convergence and asymptotic completeness remain open.
+
+Latest checks after deriving the first log-subtracted escape transseries coefficients:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_obstructions.py::test_log_subtracted_escape_first_transseries_coefficients_cancel_first_order
+pytest tests/test_obstructions.py
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_general_solution.py tests/test_dynamics.py tests/test_series.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+compileall passed
+1 passed in 0.35s
+33 passed in 0.49s
+70 passed in 0.48s
+31 passed in 7.19s
+122 passed in 7.76s
+```
+
+`docs/general-hyperbolic-scattering-log-vector-lemma.md` now starts the actual coefficient algebra for the escape-scaled/log-subtracted endpoint equation. For `Y=v+C tau+tau^2(P log(tau)+Q)+...`, `B=A(v)`, and distinct asymptotic velocities, the first forced coefficients are `P=(1/2)DA(v)[B]` and `Q=(1/2)(DA(v)[C]-3P)`. The new regression computes the Frechet derivative of the Newtonian acceleration exactly, checks those two coefficient equations, and verifies that the transformed equation residual drops to `O(tau^2 log(tau)^2)`. This is not a convergence theorem, but it shows the lifted escape equation has a real recursive transseries algebra instead of only a projection identity.
+
+Latest checks after proving the log-subtracted escape equation projects exactly to Newtonian motion:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_obstructions.py::test_log_subtracted_escape_equation_projects_exactly_to_newton
+pytest tests/test_obstructions.py
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_general_solution.py tests/test_dynamics.py tests/test_series.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+compileall passed
+1 passed in 0.54s
+32 passed in 0.49s
+69 passed in 0.52s
+31 passed in 7.26s
+121 passed in 7.91s
+```
+
+`docs/general-hyperbolic-scattering-log-vector-lemma.md` now includes the exact projection identity for the escape-scaled/log-subtracted variable. With `tau=1/t`, `X=Y+B tau log(tau)`, and `q=X/tau`, Newton's equation is equivalent away from `tau=0` to `tau Y_tautau = A(Y+B tau log(tau))-B`. The new regression constructs a non-endpoint `Y` state satisfying this transformed equation and checks that the projected acceleration `tau^3 X_tautau` equals the Newtonian acceleration of `q`. This is the constructive half of the previous escape obstruction: unscaled compact-Sundman recurrence is impossible on arbitrary escape data, but a richer lifted escape variable has an exact construct/project/verify equation.
+
+Latest checks after proving unscaled Sundman Cauchy radii decay on hyperbolic escape:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_obstructions.py::test_unscaled_sundman_cauchy_radius_decays_on_hyperbolic_escape
+pytest tests/test_obstructions.py
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_sundman.py::test_compact_atanh_eventual_shell_lower_step_condition_has_uniform_bound
+pytest tests/test_general_solution.py tests/test_dynamics.py tests/test_series.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+compileall passed
+1 passed in 0.53s
+31 passed in 0.46s
+68 passed in 0.43s
+1 passed in 0.44s
+31 passed in 7.19s
+120 passed in 7.81s
+```
+
+`docs/unscaled-sundman-escape-radius-decay.md` now proves that the uniform Sundman-radius floor required by the eventual-shell compact `atanh` lower-step corollary cannot hold over arbitrary unscaled escape data. On a positive-energy homothetic escape branch with scale `R`, the current Sundman Cauchy majorant has `R_s <= C R^-2`, because the position ball grows like `R`, the Sundman factor grows like `R^3`, and the velocity stays bounded below. The new obstruction regression checks the actual `sundman_cauchy_majorant_tail_certificate(...)` radii at increasing escape scales and verifies the `R^-2` bound. This prevents the project from chasing an impossible unscaled compact-Sundman all-future recurrence; the global route needs escape classification or scaled/log-subtracted variables before an all-data recurrence can be true.
+
+Latest checks after reducing the compact `atanh` lower-step condition to an eventual-shell uniform Sundman-radius bound:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_compact_sundman.py::test_compact_atanh_eventual_shell_lower_step_condition_has_uniform_bound
+pytest tests/test_compact_sundman.py::test_compactified_sundman_geometric_exhaustion_extension_chain_certifies_iterated_extensions
+pytest tests/test_compact_sundman.py
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_general_solution.py tests/test_dynamics.py tests/test_series.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+compileall passed
+1 passed in 0.63s
+1 passed in 0.71s
+29 passed in 54.32s
+67 passed in 0.48s
+31 passed in 7.25s
+119 passed in 7.94s
+```
+
+`docs/compact-atanh-cauchy-radius-lower-bound.md` now adds the eventual geometric-shell corollary requested by the lower-step route. Once a future shell is late enough that `alpha * delta_{n+1} <= H`, and once `eta` is chosen with `2 * alpha <= eta < 1`, the compact Cauchy-radius requirement `R(w) >= 2 * alpha * delta_{n+1}` follows from the margin-independent Sundman-radius floor `R_s(a) >= 2 * alpha / (lambda * (1 - eta))` for every nonterminal chart center in that shell. The new regression computes the first schedule index where the tested constants enter this regime and checks the worst-case margin algebra over later shells. This is not another certificate layer; it is a prose/math reduction of the lower-step hypothesis to a concrete uniform Sundman-radius theorem still needing a dynamical state-envelope proof.
+
+Latest checks after turning the geometric shell segment-count bound into an explicit recurrence envelope:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_compact_sundman.py::test_compactified_sundman_geometric_exhaustion_extension_chain_certifies_iterated_extensions
+pytest tests/test_compact_sundman.py
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_general_solution.py tests/test_dynamics.py tests/test_series.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+compileall passed
+1 passed in 0.77s
+28 passed in 55.00s
+67 passed in 0.44s
+31 passed in 7.15s
+119 passed in 7.93s
+```
+
+`docs/geometric-shell-segment-count-lemma.md` now names the uniform shell-count envelope `M_*` and proves the recurrence form `M_n <= M_*` with envelope growth ratio `1`. This closes the segment-count contribution to the all-future structural recurrence once the lower-step hypothesis is supplied. The compact-Sundman extension-chain regression now checks the observed geometric shell counts against that exact envelope for the current schedule (`M_* = 6`), keeping the proof formula tied to executable data. The remaining recurrence work is the lower-step/Cauchy-radius hypothesis plus state and transfer bounds for every future shell.
+
+Latest checks after adding an explicit uniform-radius all-future tail recurrence bound:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_compact_sundman.py::test_compactified_sundman_adaptive_order_chain_can_certify_finite_tail_decay_candidate
+pytest tests/test_compact_sundman.py
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_general_solution.py tests/test_dynamics.py tests/test_series.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+compileall passed
+1 passed in 6.74s
+28 passed in 54.23s
+67 passed in 0.42s
+31 passed in 7.18s
+119 passed in 7.98s
+```
+
+`docs/uniform-radius-cauchy-envelope-lemma.md` now states the all-future summability theorem for uniform Cauchy step ratio `sigma`: if every future shell satisfies structural growth `B`, retained-order increments `d+nq`, and any transfer growth is similarly bounded, then the shell tails obey `E_{N+k} <= E_N R0^k G^(k(k-1)/2)` and have explicit remainder `E_N R0/(1-R0)` when `R0 < 1` and `G <= 1` (or with transfer, `Gamma sigma^q < 1`). The compact-Sundman regression now checks that the existing conditional constants implement exactly this formula: `B sigma^d` equals the conditional tail decay factor and the geometric remainder equals the recorded conditional future-tail bound. This is a real all-future recurrence implication under explicit recurrence hypotheses; the remaining missing proof is to prove those hypotheses for every later shell.
+
+Latest checks after making the homothetic energy-branch recurrence explicit:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_obstructions.py
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_general_solution.py tests/test_dynamics.py tests/test_series.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+compileall passed
+30 passed in 0.54s
+67 passed in 0.45s
+31 passed in 7.19s
+119 passed in 7.79s
+```
+
+The energy-parametrized homothetic total-collision lemma now includes the explicit lifted coefficient recurrence for `u(z)=sum c_n z^n` in `(u+z u')^2 = 1/u + (9/2) epsilon z`. The recurrence has divisor `2n+3`, so each coefficient is determined constructively from earlier coefficients. The obstruction tests now generate coefficients by that recurrence through order 10, verify the first closed-form coefficients, and check the regularized energy identity to that order before using the same series in the equal-mass and arbitrary-mass branch tests. This strengthens the analytic construction for the homothetic zero-angular branch without changing the remaining arbitrary total-collision or all-future recurrence gaps.
+
+Latest checks after generalizing the homothetic total-collision continuation lemma to arbitrary positive masses:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_obstructions.py
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_general_solution.py tests/test_dynamics.py tests/test_series.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+compileall passed
+30 passed in 0.53s
+67 passed in 0.42s
+31 passed in 7.14s
+119 passed in 7.80s
+```
+
+`docs/zero-angular-homothetic-continuation-lemma.md` is now stated for arbitrary positive masses and mass-centered central configurations, with mass-weighted inertia `I_m` and potential `U_m`. The proof uses the identity `U_m(C) = (2/9) I_m(C)` after scaling `A(C)=-(2/9)C`, so the same cubic-time continuation and energy-parametrized Briot-Bouquet branch apply beyond the equal-mass examples. New obstruction tests cover a non-equal-mass equilateral central configuration, verify the mass-weighted central-configuration equation, the scaled second-jet equation, Newton projection through both sides of collision, and mass-weighted energy normalization for positive and negative branch energy. This improves the arbitrary-mass part of the zero-angular homothetic subcase; arbitrary zero-angular total-collision continuation remains open.
+
+Latest checks after extending the zero-angular homothetic continuation lemma to nonzero energy:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_obstructions.py
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_general_solution.py tests/test_dynamics.py tests/test_series.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+compileall passed
+27 passed in 0.56s
+64 passed in 0.40s
+31 passed in 7.15s
+116 passed in 7.96s
+```
+
+`docs/zero-angular-homothetic-continuation-lemma.md` now covers the local energy-parametrized homothetic total-collision family, not just the zero-energy parabolic member. With `q_i=C_i tau^2 u(tau^2)`, the proof reduces the branch to the Briot-Bouquet equation `(u+z u')^2 = 1/u + (9/2) epsilon z`, proves local analyticity, and shows the fourth regularized-time jet carries the homothetic energy. New tests check the recurrence coefficients through cubic order in `z` and verify near-collision states for positive and negative energy-per-inertia values on both equilateral and Euler branches. This strengthens the zero-angular continuation evidence for homothetic branches while leaving arbitrary zero-angular total-collision continuation open.
+
+Latest checks after adding the zero-angular homothetic total-collision continuation lemma:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_obstructions.py
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_general_solution.py tests/test_dynamics.py tests/test_series.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+compileall passed
+21 passed in 0.33s
+58 passed in 0.41s
+31 passed in 7.21s
+110 passed in 7.91s
+```
+
+`docs/zero-angular-homothetic-continuation-lemma.md` now proves a genuine zero-angular total-collision continuation subcase: if the regularized second jet is a scaled central configuration satisfying `A(C)=-(2/9)C`, then `t=tau^3`, `q_i=C_i tau^2` is analytic through total collision in `tau`, projects to a Newtonian solution for every `tau != 0`, and has zero angular momentum and zero energy. The new obstruction regression checks both equilateral and Euler branches across negative and positive regularized time, including the sign-flipped physical velocity through the same collapsed event. This narrows the missing triple-collision continuation theorem but does not prove arbitrary zero-angular total-collision continuation.
+
+Latest checks after adding full spatial angular-momentum component support to the shared dynamics verifier:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_dynamics.py
+pytest tests/test_general_solution.py tests/test_dynamics.py tests/test_series.py
+pytest tests/test_figure_eight.py tests/test_shooting.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+compileall passed
+7 passed in 0.48s
+31 passed in 7.27s
+5 passed in 1.88s
+108 passed in 7.87s
+```
+
+The shared Newtonian dynamics layer now exposes dimension-generic angular-momentum bivector components in coordinate-pair order. The 3D convention is tested against the usual cross-product vector as `(xy, xz, yz) = (L_z, -L_y, L_x)`, and the integrated spatial reference path now checks conservation of the full component vector, not only the planar `z` component. This implements a Phase A review item around fuller 3D ordinary-chart invariant coverage; it is not a new global-series or collision-continuation certificate.
+
+Latest checks after making `evaluate_unrestricted_solution(...)` auto-select a certified finite-time method:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_general_solution.py::test_unrestricted_solution_entrypoint_auto_falls_back_for_tighter_close_approach tests/test_general_solution.py::test_unrestricted_solution_entrypoint_rejects_unknown_method
+pytest tests/test_general_solution.py tests/test_dynamics.py tests/test_series.py
+pytest tests/test_figure_eight.py tests/test_shooting.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+compileall passed
+2 passed in 2.12s
+29 passed in 7.04s
+5 passed in 1.78s
+106 passed in 7.88s
+```
+
+The public finite-time solver now defaults to `method="auto"`. It first tries the compactified-Sundman path and falls back to ordinary Sundman with Cauchy tails only for known compactified-Sundman certification failures. The tighter 3D close-approach case with minimum pair distance `0.05` is now certified through the public entrypoint without requiring the caller to know the internal method choice. Unknown methods are rejected explicitly.
+
+Latest checks after exposing the Sundman/Cauchy finite-time method for tighter close approaches:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_general_solution.py::test_unrestricted_solution_entrypoint_certifies_tighter_close_approach_with_sundman_method
+pytest tests/test_general_solution.py tests/test_dynamics.py tests/test_series.py
+pytest tests/test_figure_eight.py tests/test_shooting.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+compileall passed
+1 passed in 0.93s
+27 passed in 5.52s
+5 passed in 1.76s
+104 passed in 6.26s
+```
+
+The public `evaluate_unrestricted_solution(...)` entrypoint now has a selectable finite-time method: the default compactified-Sundman path remains available, and `method="sundman"` uses the ordinary Sundman target solver with Cauchy tails. This certifies a tighter 3D close-approach noncollision case with minimum pair distance `0.05`, which the guarded compactified-Sundman default could not certify. The compactified-Sundman path still needs stronger tail bounds or binary-chart switching for this tighter case.
+
+Latest checks after adding close-approach noncollision coverage for the public finite-time evaluator:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_general_solution.py::test_unrestricted_solution_entrypoint_certifies_close_approach_noncollision
+pytest tests/test_general_solution.py tests/test_dynamics.py tests/test_series.py
+pytest tests/test_figure_eight.py tests/test_shooting.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+compileall passed
+1 passed in 0.84s
+26 passed in 5.23s
+5 passed in 1.77s
+103 passed in 5.85s
+```
+
+The public `evaluate_unrestricted_solution(...)` entrypoint now has a close-approach noncollision regression: a 3D arbitrary-mass state with minimum pair distance `0.07` is certified at a small positive target time and contains the dimension-generic reference trajectory. While probing this, the compactified-Sundman target loop was also hardened so a nonfinite guarded-tail bound triggers adaptive step shortening instead of being used to inflate an interval. Tighter close approaches around pair distance `0.05` remain beyond the current guarded-tail settings and still need stronger tail machinery or a chart switch.
+
+Latest checks after adding the finite-time unrestricted evaluator entrypoint:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_general_solution.py::test_unrestricted_solution_entrypoint_contains_spatial_reference_for_finite_times
+pytest tests/test_general_solution.py tests/test_dynamics.py tests/test_series.py
+pytest tests/test_figure_eight.py tests/test_shooting.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+compileall passed
+1 passed in 1.41s
+25 passed in 4.70s
+5 passed in 1.77s
+102 passed in 5.48s
+```
+
+The Phase A finite-time solver now has a direct public entrypoint: `evaluate_unrestricted_solution(masses, positions, velocities, target_time, ...)`. It composes the existing center-of-mass reduction, compactified-Sundman construction, inertial projection, and interval verification for one finite physical target time. The new regression checks 3D arbitrary-mass data at positive, negative, and zero target times against the dimension-generic reference trajectory or exact initial state. This is still a certified finite-time enclosure, not the global closed-form theorem.
+
+Latest checks after extending the shared dynamics integrator to all finite target times:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_dynamics.py
+pytest tests/test_dynamics.py tests/test_series.py tests/test_general_solution.py
+pytest tests/test_figure_eight.py tests/test_shooting.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+compileall passed
+5 passed in 0.52s
+24 passed in 3.66s
+5 passed in 1.79s
+101 passed in 4.60s
+```
+
+The shared Newtonian verifier now supports every finite target time: `dynamics.integrate` accepts positive, negative, and zero `t_final` values. Negative-time integration is checked against the dimension-generic reference integrator, and zero-time integration returns the exact initial state. This removes another finite-time Phase A mismatch between the common verifier and the general evaluator, while preserving the existing planar figure-eight path.
+
+Latest checks after making the shared Newtonian dynamics API dimension-generic:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_dynamics.py tests/test_series.py
+pytest tests/test_dynamics.py tests/test_series.py tests/test_general_solution.py tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_figure_eight.py tests/test_shooting.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py tests/test_dynamics.py tests/test_series.py
+```
+
+```text
+compileall passed
+9 passed in 0.32s
+78 passed in 3.68s
+5 passed in 1.75s
+99 passed in 4.55s
+```
+
+The Phase A finite-time evaluator path now has a wider verification base: `three_body_symmetry/dynamics.py` no longer hard-codes planar `(3, 2)` states for packing, splitting, acceleration, integration, center of mass, momentum, or energy. Planar figure-eight callers remain compatible, while 3D states can use the same dynamics verification primitives. The new `tests/test_dynamics.py` checks 3D packing/splitting, invariants, accelerations, energy conservation, and agreement with the dimension-generic reference integrator used by the Taylor-series layer.
+
+Latest checks after wiring the external review's triple-collision policy suggestion into the existing convention witness:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py::test_regularized_second_jet_triple_convention_requires_branch_rule
+pytest tests/test_closed_form.py tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py
+```
+
+```text
+compileall passed
+1 passed in 0.48s
+56 passed in 0.27s
+90 passed in 4.45s
+```
+
+The share review's implementable Phase C item was to make triple-collision semantics explicit. The existing witness layer already had a zero-angular convention object, so this change does not add a new certificate layer. It adds the proof-backed `regularized_second_jet_branch` convention id, tied to `docs/triple-collision-regularized-jet-lemma.md`, and verifies that the convention is allowed only when the branch-selection rule is actually certified.
+
+Latest checks after adding the triple-collision regularized jet lemma:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_obstructions.py::test_zero_angular_total_collision_branch_is_regularized_second_jet_data
+pytest tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py
+```
+
+```text
+compileall passed
+1 passed in 0.30s
+19 passed in 0.25s
+89 passed in 4.44s
+```
+
+The new analytic artifact is `docs/triple-collision-regularized-jet-lemma.md`. It proves that in cubic collision time `t=tau^3`, a parabolic homothetic total-collision branch has `q(0)=0` and `q_tau(0)=0`, while the branch-selecting datum is the second regularized jet `J=q_tautau(0)`. Newton's equation forces `A(J)=-(1/36)J`, so the zero-angular total-collision convention must supply or choose a scaled central-configuration second jet. The regression checks the equilateral and Euler branches: both share the collapsed value and first regularized derivative, both satisfy the forced second-jet equation, and their second jets differ.
+
+Latest checks after adding the general hyperbolic scattering log-vector lemma:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_obstructions.py::test_general_hyperbolic_scattering_log_subtraction_cancels_leading_force
+pytest tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py
+```
+
+```text
+compileall passed
+1 passed in 0.42s
+18 passed in 0.27s
+88 passed in 4.37s
+```
+
+The new analytic artifact is `docs/general-hyperbolic-scattering-log-vector-lemma.md`. It proves that for distinct asymptotic velocities `v_i`, a hyperbolic scattering expansion has the forced logarithmic coefficient `-B_i(v)`, where `B_i(v)=A_i(v)`. In inverse time this becomes `X_i(tau)=v_i+B_i(v)tau log(tau)+O(tau)`, and the transformed endpoint equation for `Y_i=X_i-B_i(v)tau log(tau)` has leading force `A_i(v)-B_i(v)=0`. The regression checks this cancellation for a noncentral asymptotic velocity configuration.
+
+Latest checks after adding the log-subtracted escape endpoint lemma:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_obstructions.py::test_log_subtracted_escape_endpoint_cancels_leading_inverse_time_force
+pytest tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py
+```
+
+```text
+compileall passed
+1 passed in 0.51s
+17 passed in 0.25s
+87 passed in 4.46s
+```
+
+The new analytic artifact is `docs/log-subtracted-escape-endpoint-lemma.md`. It shows how to absorb the forced hyperbolic escape logarithm by writing `X=Y-(mu/c^2)tau log(tau)Q`; the transformed endpoint equation becomes `tau Y_tautau=A(Y-(mu/c^2)tau log(tau)Q)+(mu/c^2)Q`, whose leading endpoint force cancels. The regression checks that this subtraction cancels the leading inverse-time force on the homothetic escape branch. This turns the escape log obstruction into a constructive endpoint-variable target.
+
+Latest checks after adding the hyperbolic escape log-term lemma:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_obstructions.py::test_hyperbolic_escape_inverse_time_endpoint_requires_log_term
+pytest tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py
+```
+
+```text
+compileall passed
+1 passed in 0.49s
+16 passed in 0.27s
+86 passed in 4.39s
+```
+
+The new analytic artifact is `docs/hyperbolic-escape-log-term-lemma.md`. It proves that hyperbolic homothetic escape forces a `tau log tau` endpoint correction in inverse time after scaling: `X(tau)=cQ-(mu/c^2)tau log(tau)Q+O(tau)`. The regression checks the leading inverse-time endpoint equation `tau X_tautau=A(X)`: a plain analytic endpoint expansion gives zero leading left side, while the log term exactly balances `A(cQ)`. This means the eventual closed-form function class must include logarithmic escape endpoint terms, or an equivalent transformation that absorbs them.
+
+Latest checks after adding the all-real positive-scale projection lemma:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_obstructions.py::test_all_real_positive_scale_compact_equation_projects_to_newtonian_acceleration
+pytest tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py
+```
+
+```text
+compileall passed
+1 passed in 0.45s
+15 passed in 0.26s
+85 passed in 4.49s
+```
+
+The new analytic artifact is `docs/all-real-positive-scale-projection-lemma.md`. It proves the exact lifted equation for any positive scale `q=a(t)X`, including the compact-time form `aX_uu + (2a_u-aT_u/T)X_u + (a_uu-a_uT_u/T)X = T^2 a^-2 A(X)`. The regression checks the formula with the all-real scale `a(t)=sqrt(1+t^2)` on the hyperbolic homothetic escape branch. This removes the artificial finite-time singularity of the earlier `1+t` scale while preserving an escape-bounded lifted coordinate target.
+
+Latest checks after deriving and testing the compact-time scaled Newton equation:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_obstructions.py::test_compact_time_scaled_escape_equation_projects_to_newtonian_acceleration
+pytest tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py
+```
+
+```text
+compileall passed
+1 passed in 0.45s
+14 passed in 0.23s
+84 passed in 4.42s
+```
+
+The compact physical-time form in `docs/scaled-newton-projection-lemma.md` now includes the chain-rule derivation of `a X_uu + (2T - a T_u/T)X_u = T^2 a^(-2)A(X)`. The new regression checks that this compact-time scaled equation projects back to the Newtonian acceleration on the hyperbolic homothetic escape branch. This is the equation a bounded-domain escape-compatible construction must satisfy before projecting back to unscaled positions.
+
+Latest checks after adding the scaled Newton projection lemma:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_obstructions.py::test_scaled_escape_variable_equation_projects_to_newtonian_acceleration
+pytest tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py
+```
+
+```text
+compileall passed
+1 passed in 0.46s
+13 passed in 0.27s
+83 passed in 4.36s
+```
+
+The new analytic artifact is `docs/scaled-newton-projection-lemma.md`. It proves the exact lifted equation for `q_i(t) = (1+t)X_i(t)`: `(1+t)X_i'' + 2X_i' = (1+t)^(-2) A_i(X)`, using the `-2` homogeneity of the Newtonian acceleration field. The regression checks this projection identity on the hyperbolic homothetic escape branch. This makes the escape-scaled representation constructive rather than only asymptotic: a future global proof can construct in `X`, project by `q=(1+t)X`, and verify Newton's equations algebraically on finite target intervals.
+
+Latest checks after adding the hyperbolic escape scaled-variable lemma:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_obstructions.py::test_hyperbolic_escape_scaled_position_has_finite_compact_time_endpoint_bound
+pytest tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py
+```
+
+```text
+compileall passed
+1 passed in 0.48s
+12 passed in 0.25s
+82 passed in 4.42s
+```
+
+The new analytic artifact is `docs/hyperbolic-escape-scaled-variable-lemma.md`. It proves that for exact positive-energy homothetic escape, `q_i(t)/(1+t)` remains bounded and tends to `sqrt(2E) Q_i`, even though unscaled `q_i(t)` diverges as compact physical time approaches `u=1`. The regression contrasts the two behaviors near the compact endpoint. This gives a constructive representation target for the global route: include escape-scaled variables, or equivalent endpoint singular terms, in the lifted space before projecting back to unscaled positions at finite target times.
+
+Latest checks after adding the physical-time compactification escape-growth obstruction:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_obstructions.py::test_physical_time_compactification_keeps_hyperbolic_escape_unbounded_at_endpoint
+pytest tests/test_obstructions.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py
+```
+
+```text
+compileall passed
+1 passed in 0.29s
+11 passed in 0.26s
+81 passed in 4.41s
+```
+
+The new analytic artifact is `docs/physical-time-compactification-escape-growth.md`. It proves that `u = tanh(lambda_t t)` covers every finite physical target time, but exact positive-energy homothetic escape still makes unscaled positions grow like a logarithm as `u -> 1`. The regression checks that the equal-mass escape branch exceeds a finite scale bound at a compact-time parameter still strictly inside `(-1, 1)`. This rules out a global finite state-supremum recurrence for unscaled positions on the closed physical-time compact domain; the final proof route must allow open-interval convergence with endpoint divergence, lift into scaled escape variables, or include explicit endpoint singular terms.
+
+Latest checks after strengthening the compact-Sundman escape obstruction into a domain-exhaustion obstruction:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_obstructions.py::test_compact_sundman_time_has_finite_endpoint_on_hyperbolic_homothetic_escape
+pytest tests/test_obstructions.py
+pytest tests/test_compact_sundman.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py
+```
+
+```text
+compileall passed
+1 passed in 0.46s
+10 passed in 0.24s
+87 passed in 57.47s
+```
+
+The escape obstruction now proves that centered compact-Sundman shell exhaustion toward `w = 1` would cross an interior escape endpoint for exact positive-energy homothetic data. In unscaled coordinates the positions diverge as `w` approaches that finite endpoint, so there can be no global finite state-supremum recurrence on the whole endpoint-exhausting compact-Sundman domain for arbitrary data. The regression now checks that the current geometric shell schedule parameters would extend beyond the certified escape endpoint bound after four shells. The viable global route must therefore stop and classify interior escape endpoints, use physical-time compactification, or lift into scaled variables before attempting an all-future recurrence.
+
+Latest checks after adding the compact-Sundman escape endpoint obstruction:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_obstructions.py::test_compact_sundman_time_has_finite_endpoint_on_hyperbolic_homothetic_escape
+pytest tests/test_obstructions.py
+pytest tests/test_compact_sundman.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py
+```
+
+```text
+compileall passed
+1 passed in 0.42s
+10 passed in 0.25s
+87 passed in 57.55s
+```
+
+The new analytic artifact is `docs/compact-sundman-escape-endpoint-obstruction.md`. It proves that an exact positive-energy homothetic escape solution has finite future Sundman time when `dt/ds` is the product of pair distances, so `w = tanh(lambda_s s)` approaches an interior value `w_* < 1` as physical time tends to `+infinity`. The regression checks this on the equilateral equal-mass central-configuration branch. This means endpoint exhaustion in compact-Sundman time alone cannot prove all-real-physical-time coverage for general data; the final route must use separate physical-time compactification, a different global parameter, or explicit treatment of finite interior escape endpoints.
+
+Latest checks after adding the Sundman Cauchy-radius state-envelope lemma:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_tail_bounds.py::test_sundman_cauchy_radius_obeys_state_envelope_lower_bound
+pytest tests/test_tail_bounds.py
+pytest tests/test_compact_sundman.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py
+```
+
+```text
+compileall passed
+1 passed in 0.55s
+25 passed in 41.14s
+86 passed in 57.48s
+```
+
+The new analytic artifact is `docs/sundman-cauchy-radius-state-envelope-lemma.md`. It proves a lower bound for the Sundman-time Cauchy radius from ordinary state-envelope quantities: minimum pair distance `d`, maximum pair distance `D`, maximum speed `V`, and total mass `M`. Combined with the compact `atanh` lemma, this gives a concrete inequality that is sufficient for the future compact-Sundman Cauchy cap to preserve the lower-step scale needed by the geometric shell segment-count recurrence. The new regression checks the implementation's Sundman radius against that derived envelope on the standing general initial data. This still leaves the global dynamical state-envelope theorem, state-supremum recurrence, and tail-transfer recurrence open.
+
+Latest checks after adding the compact `atanh` Cauchy-radius lower-bound lemma:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_compact_sundman.py::test_compactified_sundman_accelerated_order_chain_reduces_structural_transition_factors
+pytest tests/test_compact_sundman.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py
+```
+
+```text
+compileall passed
+1 passed in 24.95s
+86 passed in 57.54s
+```
+
+The new analytic artifact is `docs/compact-atanh-cauchy-radius-lower-bound.md`. It proves the exact compact-radius lower-bound condition induced by `s = atanh(w) / lambda`: if the desired Cauchy-cap radius `r_* = 2 * min(H, alpha * delta_{n+1})` fits in the compact endpoint margin and its `atanh` image radius lies inside the underlying Sundman-time Cauchy disk, then the implemented selector must return radius at least `r_*`. The accelerated-order regression now checks that the current finite prefix is deep inside that compact-margin regime and that the required Sundman image radius is below `0.0051`. This turns the all-future segment-count condition into a specific Sundman-time Cauchy-radius lower-bound problem; it still does not prove the full future tail recurrence.
+
+Latest checks after adding the Cauchy-capped lower-step lemma:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_compact_sundman.py::test_compactified_sundman_accelerated_order_chain_reduces_structural_transition_factors
+pytest tests/test_compact_sundman.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py
+```
+
+```text
+compileall passed
+1 passed in 24.74s
+86 passed in 57.84s
+```
+
+The new analytic artifact is `docs/cauchy-capped-lower-step-lemma.md`. It proves that Cauchy capping preserves the lower-step scale needed by the geometric segment-count lemma when every future chart has compact Cauchy radius `R(w) >= 2 * min(H, alpha * delta_{n+1})`. The accelerated-order regression now checks the current finite prefix against this threshold: with `H=0.003`, `alpha=0.2`, and current shell margins, the required threshold is `0.006`, and every added-shell Cauchy radius exceeds it. This reduces the all-future segment-count recurrence to proving a compact-Sundman Cauchy-radius lower bound on future shells.
+
+Latest checks after adding the geometric shell segment-count lemma:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_compact_sundman.py::test_compactified_sundman_accelerated_order_chain_reduces_structural_transition_factors
+pytest tests/test_compact_sundman.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py
+```
+
+```text
+compileall passed
+1 passed in 25.05s
+86 passed in 57.50s
+```
+
+The new analytic artifact is `docs/geometric-shell-segment-count-lemma.md`. It proves that a centered geometric endpoint-exhaustion shell has a uniform two-sided segment-count bound `2 * (ceil(max((1-c)delta0/H, (1-c)/(alpha c))) + 1)` when accepted steps are bounded below by `min(H, alpha * delta_{n+1})`. The accelerated-order regression checks the current schedule parameters `delta0=0.994`, `c=0.98`, `H=0.003`, `alpha=0.2`, yielding bound `16`, which covers the checked segment counts. This proves the arithmetic shape of the segment-count recurrence; the remaining analytic condition is to prove the accepted compact-Sundman Cauchy steps keep that lower-step bound for every future shell.
+
+Latest checks after adding the uniform-radius Cauchy envelope lemma:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_compact_sundman.py::test_compactified_sundman_accelerated_order_chain_reduces_structural_transition_factors
+pytest tests/test_compact_sundman.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py
+```
+
+```text
+compileall passed
+1 passed in 24.85s
+86 passed in 57.35s
+```
+
+The new analytic artifact is `docs/uniform-radius-cauchy-envelope-lemma.md`. It gives a constructive route around the radius-drift term: if every future shell cover is built with a common step-to-Cauchy-radius bound `rho <= sigma < 1`, then shell tails satisfy the uniform envelope `E_n <= M_n S_n sigma^(p_n+1)/(1-sigma)`, and adjacent envelope ratios are bounded by `B_M B_S sigma^d` without a drift factor. The accelerated-order regression now checks that the current finite prefix is dominated by this common-`sigma` envelope. The remaining recurrence proof must show this uniform-radius cover rule plus segment-count and state-supremum recurrence bounds for every future shell.
+
+Latest checks after adding the shell Cauchy-transition lemma:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_compact_sundman.py::test_compactified_sundman_accelerated_order_chain_reduces_structural_transition_factors
+pytest tests/test_compact_sundman.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py
+```
+
+```text
+compileall passed
+1 passed in 24.89s
+86 passed in 57.85s
+```
+
+The new analytic artifact is `docs/shell-cauchy-transition-lemma.md`. It derives the exact adjacent-shell Cauchy tail transition and shows that, when the step-to-Cauchy-radius ratio changes, the transition includes a radius-drift factor `(rho_{n+1}/rho_n)^(p_n+1)`. The accelerated-order regression now computes this factor for the current checked prefix; it is greater than two in every adjacent transition, so the future recurrence theorem must either prove a nonincreasing radius schedule, bound this factor directly, or show that the tail-transfer recurrence absorbs it. This sharpens the remaining all-future recurrence gap instead of hiding it behind the simplified `rho^d` transition.
+
+Latest checks after adding the accelerated future-tail summability proof note:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_compact_sundman.py::test_compactified_sundman_accelerated_order_chain_reduces_structural_transition_factors
+pytest tests/test_compact_sundman.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py
+```
+
+```text
+compileall passed
+1 passed in 25.02s
+86 passed in 57.69s
+```
+
+The new analytic artifact is `docs/accelerated-tail-summability-lemma.md`. It proves the summability algebra for the accelerated compact-Sundman future-shell route: if future shell tails satisfy transition ratios bounded by `R_n <= R0 * G^n`, with `R0 = A * sigma^d0 * tau0 < 1` and `G = gamma * sigma^q < 1`, then the infinite future tail is bounded by `E_N * R0 / (1 - R0)`. The existing accelerated-order regression now checks this closed-form geometric majorant against the current finite-prefix-derived accelerated envelope. This closes the abstract tail-summability step once future recurrence envelopes are available; it does not prove that the structural and transfer recurrence envelopes hold for every later shell.
+
+Latest checks after strengthening the zero-angular total-collision nonuniqueness theorem:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_obstructions.py
+pytest tests/test_compact_sundman.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py
+```
+
+```text
+compileall passed
+9 passed in 0.45s
+86 passed in 57.37s
+```
+
+The zero-angular proof note now states the exact shortcut it rules out: Newton's equations plus collapsed position, masses, total energy, center-of-mass data, linear momentum, and angular momentum do not determine a branch-independent outgoing total-collision solution. The new regression checks that the equilateral and Euler parabolic ejection branches share the collision-relevant invariant data while giving different outgoing shapes. This is not a continuation convention; it is a proof that the convention or branch data is mathematically necessary.
+
+Latest checks after adding the zero-angular total-collision nonuniqueness proof note and regression:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_obstructions.py
+pytest tests/test_compact_sundman.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py
+pytest
+```
+
+```text
+compileall passed
+8 passed in 0.45s
+85 passed in 57.51s
+278 passed in 541.85s (0:09:01)
+```
+
+The new analytic artifact is `docs/zero-angular-total-collision-nonuniqueness.md`. It proves that equal-mass zero-angular total collision is not branch-independent: equilateral and Euler central configurations both generate parabolic homothetic total-collision/ejection branches with zero angular momentum and zero energy, but they produce different outgoing curves from the same collapsed collision event. The regression in `tests/test_obstructions.py` checks these explicit branches against Newton's equations away from collision and verifies center of mass, linear momentum, angular momentum, and energy. This does not prove a zero-angular continuation convention; it proves that such a convention is mathematically necessary.
+
+Latest focused checks after adding the typed Sundman time-targeting witness:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py
+pytest tests/test_compact_sundman.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py
+pytest
+```
+
+```text
+compileall passed
+34 passed in 0.50s
+80 passed in 57.25s
+273 passed in 542.74s (0:09:02)
+```
+
+The top-level theorem-scope audit now treats Sundman physical-time targeting as typed evidence when a Sundman targeting witness is supplied. The witness checks the compactified Sundman parameter domain, positive physical-time derivative, finite target-time bracketing, interval target evaluation, and global physical-time range; an incomplete typed witness blocks the all-real-target-time requirement even if the older aggregate Sundman-targeting boolean is true.
+
+Latest focused checks after adding the typed compact-time real-line bijection witness:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py
+pytest tests/test_compact_sundman.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py
+pytest
+```
+
+```text
+compileall passed
+32 passed in 0.47s
+78 passed in 57.66s
+271 passed in 543.45s (0:09:03)
+```
+
+The top-level theorem-scope audit now treats compact physical-time coverage of all real target times as typed evidence when a compact-time witness is supplied. The witness checks the positive rate parameter, forward map on all real physical times, inverse map on the open compact interval, strict monotonicity, and endpoint limits; an incomplete typed witness blocks the all-real-target-time requirement even if the older aggregate compact-time boolean is true.
+
+Latest focused checks after adding the typed closed-form function-class witness:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py
+pytest tests/test_compact_sundman.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py
+pytest
+```
+
+```text
+compileall passed
+30 passed in 0.45s
+76 passed in 57.28s
+269 passed in 549.41s (0:09:09)
+```
+
+The closed-form theorem audit now treats the meaning of "closed form" as typed evidence when the request is otherwise ambiguous. The function-class witness checks the class id plus representation, evaluation, convergence, and Newton-equation verification semantics; a complete Sundman-global-series witness resolves bare "closed form" into the infinite-series route, while an incomplete witness blocks the top-level allowed-class requirement before global-series or collision evidence can certify the theorem.
+
+Latest focused checks after adding the typed nonzero-angular triple-exclusion witness:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py
+pytest tests/test_compact_sundman.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py
+pytest
+```
+
+```text
+compileall passed
+25 passed in 0.47s
+71 passed in 57.43s
+264 passed in 541.47s (0:09:01)
+```
+
+The closed-form theorem audit now treats nonzero-angular-momentum triple-collision exclusion as typed evidence when a nonzero-angular witness is supplied. The witness checks quantification over the nonzero-angular branch, centered-angular-momentum conservation, the lemma that total collision has zero translation-reduced angular momentum, and the soundness of the interval lower-bound predicate; an incomplete typed witness blocks triple-collision continuation even if the older aggregate exclusion boolean is true.
+
+Latest focused checks after adding the typed binary-collision continuation witness:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py
+pytest tests/test_compact_sundman.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py
+pytest
+```
+
+```text
+compileall passed
+23 passed in 0.47s
+69 passed in 57.17s
+262 passed in 542.83s (0:09:02)
+```
+
+The closed-form theorem audit now treats binary-collision continuation as typed evidence when a binary witness is supplied. The binary witness checks exact coverage of the three required pairs, pair regularization charts, branch atlas, Newtonian projection away from collision, and regularized time-parameter continuation; an incomplete typed witness blocks binary continuation even if the older aggregate booleans are true.
+
+Latest focused checks after adding the typed zero-angular triple-collision convention:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py
+pytest tests/test_compact_sundman.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py
+pytest
+```
+
+```text
+compileall passed
+21 passed in 0.46s
+67 passed in 59.10s
+260 passed in 542.08s (0:09:02)
+```
+
+The closed-form theorem audit now treats the zero-angular-momentum total-collision convention as typed evidence, not just a string plus boolean. The convention witness checks the allowed convention id, regularized time parameter, terminal collision value, and continuation branch-selection rule; an unvetted convention id now blocks triple-collision continuation even when the older aggregate convention flag is true.
+
+Latest focused checks after adding the recurrence-template certificate:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_compact_sundman.py::test_compactified_sundman_accelerated_order_chain_reduces_structural_transition_factors
+pytest tests/test_compact_sundman.py
+pytest tests/test_compact_sundman.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py
+pytest
+```
+
+```text
+compileall passed
+1 passed in 24.64s
+28 passed in 54.08s
+65 passed in 57.55s
+258 passed in 549.19s (0:09:09)
+```
+
+The compact-Sundman recurrence endpoint now receives its structural-envelope, tail-transfer, and retained-order schedule template flags from a typed recurrence-template certificate. That certificate checks the accelerated summability target plus the structural form, structural transition, tail-transfer form, tail-transfer growth, arithmetic retained-order schedule, and retained-order growth template obligations before projecting into the future-shell closure and scalar recurrence certificate. Missing tail-transfer or retained-order template evidence now fails first at the template layer, then blocks the matching recurrence and scalar-recurrence obligation ids.
+
+Latest focused checks after adding the geometric schedule-recurrence certificate:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_compact_sundman.py::test_compactified_sundman_accelerated_order_chain_reduces_structural_transition_factors
+pytest tests/test_compact_sundman.py
+pytest tests/test_compact_sundman.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py
+pytest
+```
+
+```text
+compileall passed
+1 passed in 20.82s
+28 passed in 49.91s
+65 passed in 53.34s
+258 passed in 541.60s (0:09:01)
+```
+
+The compact-Sundman recurrence endpoint now receives its domain-exhaustion and scheduled-extension flags from a typed geometric schedule-recurrence certificate. That certificate checks the finite geometric prefix, endpoint-exhausting margin law, supplied margin/contraction/start-index witness, and one-step extension template before projecting into the future-shell closure and scalar recurrence certificate. A witness whose induction starts beyond the checked prefix, or whose one-step template is missing, now fails with concrete schedule-recurrence obligation ids.
+
+Latest focused checks after adding scalar recurrence-induction inequalities:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_compact_sundman.py::test_compactified_sundman_accelerated_order_chain_reduces_structural_transition_factors
+pytest tests/test_compact_sundman.py
+pytest tests/test_compact_sundman.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py
+pytest
+```
+
+```text
+compileall passed
+1 passed in 19.87s
+28 passed in 49.12s
+65 passed in 52.29s
+258 passed in 536.65s (0:08:56)
+```
+
+Latest focused checks after adding the granular theorem-scope witness:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py
+pytest tests/test_compact_sundman.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py
+pytest
+```
+
+```text
+compileall passed
+19 passed in 0.26s
+65 passed in 52.05s
+258 passed in 545.39s (0:09:05)
+```
+
+Latest focused checks after adding the typed collision-continuation witness:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py
+pytest tests/test_compact_sundman.py tests/test_closed_form.py tests/test_general_solution.py tests/test_obstructions.py
+pytest
+```
+
+```text
+compileall passed
+17 passed in 0.48s
+63 passed in 51.73s
+256 passed in 537.16s (0:08:57)
+```
+
+Latest focused checks after adding the typed Sundman theorem witness:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py
+pytest tests/test_compact_sundman.py tests/test_closed_form.py tests/test_general_solution.py
+pytest
+```
+
+```text
+compileall passed
+15 passed in 0.46s
+56 passed in 51.99s
+254 passed in 538.69s (0:08:58)
+```
+
+Latest focused checks after adding the compact-Sundman future-shell recurrence closure:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_compact_sundman.py::test_compactified_sundman_accelerated_order_chain_reduces_structural_transition_factors
+pytest tests/test_compact_sundman.py
+pytest tests/test_compact_sundman.py tests/test_closed_form.py tests/test_general_solution.py
+pytest
+```
+
+```text
+compileall passed
+1 passed in 19.54s
+28 passed in 49.13s
+54 passed in 52.03s
+252 passed in 548.51s (0:09:08)
+```
+
+Latest focused checks after adding typed general-solution scope witnesses:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py
+pytest tests/test_obstructions.py tests/test_closed_form.py tests/test_general_solution.py
+pytest
+```
+
+```text
+compileall passed
+13 passed in 0.47s
+31 passed in 3.64s
+252 passed in 536.68s (0:08:56)
+```
+
+Latest focused checks after adding internal classical-integral obstruction evidence:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_obstructions.py tests/test_closed_form.py
+pytest tests/test_obstructions.py tests/test_closed_form.py tests/test_general_solution.py
+pytest
+```
+
+```text
+compileall passed
+15 passed in 0.43s
+28 passed in 3.68s
+249 passed in 545.10s (0:09:05)
+```
+
+Latest focused checks after adding structured theorem-scope evidence:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py
+pytest tests/test_closed_form.py tests/test_obstructions.py tests/test_general_solution.py
+pytest
+```
+
+```text
+compileall passed
+10 passed in 0.46s
+27 passed in 3.67s
+248 passed in 534.15s (0:08:54)
+```
+
+Latest focused checks after adding the top-level closed-form theorem-scope certificate:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py
+pytest tests/test_closed_form.py tests/test_obstructions.py tests/test_general_solution.py
+pytest
+```
+
+```text
+compileall passed
+10 passed in 0.42s
+27 passed in 3.74s
+248 passed in 536.76s (0:08:56)
+```
+
+Latest focused checks after adding the closed-form target classifier:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_closed_form.py
+pytest tests/test_closed_form.py tests/test_obstructions.py tests/test_general_solution.py
+pytest
+```
+
+```text
+compileall passed
+6 passed in 0.46s
+23 passed in 3.60s
+244 passed in 533.37s (0:08:53)
+```
+
+Latest checks after adding actionable global proof-obligation details:
+
+```bash
+python -m compileall three_body_symmetry tests
+pytest tests/test_compact_sundman.py::test_compactified_sundman_accelerated_order_chain_reduces_structural_transition_factors
+pytest tests/test_compact_sundman.py
+pytest
+```
+
+```text
+compileall passed
+1 passed in 17.50s
+28 passed in 47.53s
+238 passed in 536.65s (0:08:56)
+```
+
+Latest focused checks after adding the global proof-obligation ledger:
+
+```bash
+python3 -m compileall -q three_body_symmetry
+pytest tests/test_compact_sundman.py::test_compactified_sundman_accelerated_order_chain_reduces_structural_transition_factors
+python3 -m compileall -q three_body_symmetry
+pytest tests/test_compact_sundman.py
+python3 -m compileall -q three_body_symmetry
+pytest tests/test_compact_sundman.py tests/test_general_solution.py tests/test_compact_time.py tests/test_sundman.py tests/test_tail_bounds.py
+```
+
+```text
+compileall passed
+1 passed in 16.89s
+compileall passed
+28 passed in 48.76s
+compileall passed
+101 passed in 99.62s (0:01:39)
+```
+
+Latest focused checks after adding a deeper retained-order adaptive-prefix regression:
+
+```bash
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py::test_compactified_sundman_deeper_adaptive_prefix_preserves_finite_envelope_margin
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py tests/test_general_solution.py tests/test_compact_time.py tests/test_sundman.py tests/test_tail_bounds.py
+pytest
+```
+
+```text
+1 passed in 12.81s
+27 passed in 26.19s
+100 passed in 79.55s (0:01:19)
+237 passed in 517.91s (0:08:37)
+```
+
+Latest focused checks after adding retained-order requirement metrics to the conditional compact-Sundman summability certificate:
+
+```bash
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py::test_compactified_sundman_adaptive_order_chain_can_certify_finite_tail_decay_candidate
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py tests/test_general_solution.py tests/test_compact_time.py tests/test_sundman.py tests/test_tail_bounds.py
+pytest
+```
+
+```text
+1 passed in 7.09s
+26 passed in 14.08s
+99 passed in 66.93s (0:01:06)
+236 passed in 502.13s (0:08:22)
+```
+
+Recent focused checks; the compact lines were rerun after adding the compactified Sundman-time atlas and then the compactified Sundman physical-time target path:
+
+```bash
+pytest tests/test_compact_dynamics.py
+pytest tests/test_compact_sundman.py
+pytest tests/test_compact_sundman.py tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_general_solution.py tests/test_sundman.py tests/test_error_budget.py
+pytest tests/test_compact_dynamics.py tests/test_compact_time.py tests/test_general_solution.py tests/test_reduction.py tests/test_sundman.py tests/test_obstructions.py tests/test_tail_bounds.py tests/test_error_budget.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py
+pytest tests/test_compact_sundman.py tests/test_sundman.py tests/test_general_solution.py tests/test_compact_time.py tests/test_error_budget.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_general_solution.py tests/test_compact_sundman.py
+pytest tests/test_general_solution.py tests/test_compact_sundman.py tests/test_sundman.py tests/test_reduction.py tests/test_compact_time.py tests/test_error_budget.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py tests/test_general_solution.py
+pytest tests/test_compact_sundman.py tests/test_general_solution.py tests/test_sundman.py tests/test_reduction.py tests/test_compact_time.py tests/test_error_budget.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_obstructions.py tests/test_compact_sundman.py tests/test_general_solution.py
+pytest tests/test_obstructions.py tests/test_compact_sundman.py tests/test_general_solution.py tests/test_sundman.py tests/test_reduction.py tests/test_compact_time.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_sundman.py::test_interval_sundman_records_triple_collision_exclusion_certificate tests/test_sundman.py::test_interval_sundman_time_target_marks_zero_angular_momentum_branch_undecided tests/test_general_solution.py::test_reduced_sundman_evaluator_marks_zero_angular_momentum_branch_undecided
+python3 -m compileall -q three_body_symmetry && pytest tests/test_sundman.py tests/test_general_solution.py tests/test_obstructions.py
+pytest tests/test_obstructions.py tests/test_compact_sundman.py tests/test_general_solution.py tests/test_sundman.py tests/test_reduction.py tests/test_compact_time.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py::test_compactified_sundman_cauchy_majorant_tail_certificate_bounds_observed_local_tail tests/test_compact_sundman.py::test_interval_compactified_sundman_cauchy_majorant_bounds_sampled_box_tails tests/test_compact_sundman.py::test_compactified_sundman_atlases_can_carry_cauchy_tail_certificates tests/test_compact_sundman.py::test_interval_compactified_sundman_time_target_can_use_cauchy_tail_certificates
+pytest tests/test_compact_sundman.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py tests/test_general_solution.py tests/test_compact_time.py tests/test_sundman.py tests/test_tail_bounds.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py::test_compactified_sundman_cauchy_mode_caps_oversized_atlas_steps tests/test_compact_sundman.py::test_interval_compactified_sundman_time_target_cauchy_mode_caps_oversized_steps tests/test_compact_sundman.py::test_compactified_sundman_atlases_can_carry_cauchy_tail_certificates tests/test_compact_sundman.py::test_interval_compactified_sundman_time_target_can_use_cauchy_tail_certificates
+pytest tests/test_compact_sundman.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py tests/test_general_solution.py tests/test_compact_time.py tests/test_sundman.py tests/test_tail_bounds.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py::test_compactified_sundman_atlases_can_carry_cauchy_tail_certificates tests/test_compact_sundman.py::test_compactified_sundman_cauchy_mode_caps_oversized_atlas_steps tests/test_compact_sundman.py::test_compactified_sundman_cauchy_cover_rejects_guarded_tail_atlases tests/test_compact_sundman.py::test_interval_compactified_sundman_time_target_cauchy_mode_caps_oversized_steps tests/test_compact_sundman.py::test_interval_compactified_sundman_time_target_can_use_cauchy_tail_certificates
+pytest tests/test_compact_sundman.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py tests/test_general_solution.py tests/test_compact_time.py tests/test_sundman.py tests/test_tail_bounds.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py::test_compactified_sundman_cauchy_covers_certify_compact_domain_exhaustion tests/test_compact_sundman.py::test_compactified_sundman_cauchy_cover_rejects_guarded_tail_atlases tests/test_compact_sundman.py::test_compactified_sundman_cauchy_mode_caps_oversized_atlas_steps
+pytest tests/test_compact_sundman.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py tests/test_general_solution.py tests/test_compact_time.py tests/test_sundman.py tests/test_tail_bounds.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py::test_compactified_sundman_exhaustion_prefix_certifies_nested_compact_domains tests/test_compact_sundman.py::test_compactified_sundman_cauchy_covers_certify_compact_domain_exhaustion
+pytest tests/test_compact_sundman.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py tests/test_general_solution.py tests/test_compact_time.py tests/test_sundman.py tests/test_tail_bounds.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py::test_compactified_sundman_geometric_exhaustion_schedule_certifies_prefix_only tests/test_compact_sundman.py::test_compactified_sundman_exhaustion_prefix_certifies_nested_compact_domains
+pytest tests/test_compact_sundman.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py tests/test_general_solution.py tests/test_compact_time.py tests/test_sundman.py tests/test_tail_bounds.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py::test_compactified_sundman_geometric_exhaustion_extension_certifies_next_domain tests/test_compact_sundman.py::test_compactified_sundman_geometric_exhaustion_schedule_certifies_prefix_only
+pytest tests/test_compact_sundman.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py tests/test_general_solution.py tests/test_compact_time.py tests/test_sundman.py tests/test_tail_bounds.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py::test_compactified_sundman_geometric_exhaustion_extension_chain_certifies_iterated_extensions tests/test_compact_sundman.py::test_compactified_sundman_geometric_exhaustion_extension_certifies_next_domain
+pytest tests/test_compact_sundman.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py tests/test_general_solution.py tests/test_compact_time.py tests/test_sundman.py tests/test_tail_bounds.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py::test_compactified_sundman_atlases_can_carry_cauchy_tail_certificates tests/test_compact_sundman.py::test_compactified_sundman_cauchy_cover_rejects_guarded_tail_atlases tests/test_compact_sundman.py::test_compactified_sundman_geometric_exhaustion_extension_chain_certifies_iterated_extensions
+pytest tests/test_compact_sundman.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py tests/test_general_solution.py tests/test_compact_time.py tests/test_sundman.py tests/test_tail_bounds.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py::test_compactified_sundman_adaptive_order_chain_can_certify_finite_tail_decay_candidate tests/test_compact_sundman.py::test_compactified_sundman_geometric_exhaustion_extension_chain_certifies_iterated_extensions tests/test_compact_sundman.py::test_compactified_sundman_atlases_can_carry_cauchy_tail_certificates
+pytest tests/test_compact_sundman.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py tests/test_general_solution.py tests/test_compact_time.py tests/test_sundman.py tests/test_tail_bounds.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py::test_compactified_sundman_geometric_exhaustion_extension_chain_certifies_iterated_extensions tests/test_compact_sundman.py::test_compactified_sundman_adaptive_order_chain_can_certify_finite_tail_decay_candidate
+pytest tests/test_compact_sundman.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py tests/test_general_solution.py tests/test_compact_time.py tests/test_sundman.py tests/test_tail_bounds.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py::test_compactified_sundman_adaptive_order_chain_can_certify_finite_tail_decay_candidate
+pytest tests/test_compact_sundman.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py tests/test_general_solution.py tests/test_compact_time.py tests/test_sundman.py tests/test_tail_bounds.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py tests/test_general_solution.py tests/test_compact_time.py tests/test_sundman.py tests/test_tail_bounds.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py::test_compactified_sundman_adaptive_order_chain_can_certify_finite_tail_decay_candidate
+pytest tests/test_compact_sundman.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py tests/test_general_solution.py tests/test_compact_time.py tests/test_sundman.py tests/test_tail_bounds.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py::test_compactified_sundman_geometric_exhaustion_extension_chain_certifies_iterated_extensions tests/test_compact_sundman.py::test_compactified_sundman_adaptive_order_chain_can_certify_finite_tail_decay_candidate
+pytest tests/test_compact_sundman.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py tests/test_general_solution.py tests/test_compact_time.py tests/test_sundman.py tests/test_tail_bounds.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py::test_compactified_sundman_geometric_exhaustion_extension_chain_certifies_iterated_extensions tests/test_compact_sundman.py::test_compactified_sundman_adaptive_order_chain_can_certify_finite_tail_decay_candidate
+pytest tests/test_compact_sundman.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py tests/test_general_solution.py tests/test_compact_time.py tests/test_sundman.py tests/test_tail_bounds.py
+python3 -m compileall -q three_body_symmetry && pytest tests/test_compact_sundman.py::test_compactified_sundman_geometric_exhaustion_extension_chain_certifies_iterated_extensions tests/test_compact_sundman.py::test_compactified_sundman_adaptive_order_chain_can_certify_finite_tail_decay_candidate
+pytest tests/test_compact_sundman.py
+```
+
+Result:
+
+```text
+15 passed in 1.25s
+10 passed in 2.46s
+84 passed in 251.45s (0:04:11)
+108 passed in 291.83s (0:04:51)
+13 passed in 5.96s
+72 passed in 258.28s (0:04:18)
+24 passed in 8.53s
+83 passed in 258.73s (0:04:18)
+24 passed in 8.58s
+83 passed in 255.44s (0:04:15)
+29 passed in 9.15s
+70 passed in 17.98s
+3 passed in 1.64s
+47 passed in 12.83s
+72 passed in 18.63s
+4 passed in 1.39s
+17 passed in 7.00s
+90 passed in 60.35s (0:01:00)
+4 passed in 1.50s
+19 passed in 7.30s
+92 passed in 60.92s (0:01:00)
+5 passed in 1.76s
+20 passed in 7.36s
+93 passed in 60.79s (0:01:00)
+3 passed in 0.81s
+21 passed in 7.42s
+94 passed in 60.80s (0:01:00)
+2 passed in 0.58s
+22 passed in 7.51s
+95 passed in 60.80s (0:01:00)
+2 passed in 0.71s
+23 passed in 7.46s
+96 passed in 61.03s (0:01:01)
+2 passed in 0.70s
+24 passed in 7.71s
+97 passed in 61.62s (0:01:01)
+2 passed in 0.74s
+25 passed in 7.59s
+98 passed in 61.03s (0:01:01)
+3 passed in 1.05s
+25 passed in 7.70s
+98 passed in 60.81s (0:01:00)
+3 passed in 2.67s
+26 passed in 9.35s
+99 passed in 63.03s (0:01:03)
+2 passed in 5.66s
+26 passed in 12.78s
+99 passed in 66.32s (0:01:06)
+2 passed in 5.68s
+26 passed in 12.75s
+99 passed in 65.78s (0:01:05)
+2 passed in 5.80s
+26 passed in 12.86s
+99 passed in 66.33s (0:01:06)
+2 passed in 6.53s
+26 passed in 13.68s
+99 passed in 66.84s (0:01:06)
+1 passed in 6.90s
+26 passed in 14.17s
+99 passed in 67.12s (0:01:07)
+1 passed in 7.01s
+26 passed in 13.97s
+99 passed in 67.25s (0:01:07)
+```
+
+Standalone shooting run:
+
+```bash
+python3 -m three_body_symmetry.shooting
+```
+
+Result:
+
+```text
+success: True
+parameters: [ 0.96976212 -0.24407988  0.4666435   0.43188784]
+period: 6.325978325544539
+residual infinity norm: 7.012784797311156e-10
+verification error: 6.439592692419893e-09
+```
+
+## Conclusion
+
+The implemented symmetry-first approach gives a meaningful, verified application to the three-body problem: it uses cyclic choreography constraints to reduce the equal-mass planar system, then numerically recovers and verifies a nontrivial periodic orbit in the original Newtonian equations.
+
+This is not a closed-form solution to the general three-body problem. It is evidence for a narrower research program: use lifted symmetry/character spaces to construct candidate periodic orbits, then project and verify them with direct dynamics.
+
+## General-Solution Progress
+
+The current harness now includes a local analytic Taylor-series constructor for arbitrary positive masses and arbitrary non-collision initial data. It lifts the Newtonian equations into truncated power-series algebra, computes the inverse-cube force law there, and projects the coefficients back to positions and velocities.
+
+Additional tests verify that:
+
+- The local series matches direct high-accuracy integration for general 3D initial data.
+- The generated coefficients satisfy Newton's equations by recurrence.
+- Ordinary local Taylor coefficients now have outward-rounded interval enclosures.
+- Interval acceleration coefficients enclose the point acceleration recurrence coefficients.
+- Ordinary interval Taylor charts can be constructed from interval initial states.
+- The center-of-mass and linear-momentum invariants are preserved in series space.
+- The inertial center-of-mass-frame reduction certifies zero mass moment and zero total momentum, round-trips initial data, supports interval initial-data boxes that contain the matching point reduction, and reconstructs ordinary and Sundman Taylor charts back to the original frame with interval containment checks.
+- The scalar physical-time line can now be compactified by `u = tanh(rate * t)`, with interval certificates for round-trip containment, monotonic inverse derivative, Taylor-coefficient recurrence for `dt/du = 1 / (rate * (1 - u^2))`, Taylor-tail containment of the exact inverse time, and rejection of the singular boundary `u = +/-1`.
+- A compactified Sundman-time chart now applies the bounded variable `w = tanh(rate * s)` after Sundman regularization, constructs point and interval `q(w)`, `v(w)`, physical `t(w)`, and Sundman `s(w)` coefficients, certifies point and interval residuals for `dq/dw = g(q)v ds/dw`, `dv/dw = g(q)a(q) ds/dw`, `dt/dw = g(q) ds/dw`, and `ds/dw = 1 / (rate * (1 - w^2))`, proves interval compact-Sundman coefficients enclose the matching point coefficients and evaluated states in tested boxes, certifies positive `dt/dw` over compact step intervals, matches ordinary Sundman charts under scalar substitution, matches Newtonian reference integration at tested compact-Sundman targets, transports Sundman Cauchy disks through `s = atanh(w) / rate` to produce point and interval compact-Sundman Cauchy majorant tail certificates, caps oversized Cauchy-mode compact steps at half the certified compact Cauchy radius, exposes finite Cauchy-cover certificates for accepted atlas and physical-time target segments, propagates finite and incremental shell Cauchy tail budgets through compact-domain exhaustion objects, assembles covers into compact-subdomain exhaustion certificates with explicit uncovered-gap checks, certifies nested exhaustion prefixes with expanding domains and nonincreasing boundary margins, validates finite prefixes against geometric endpoint-exhaustion schedules, certifies one-step and finite-chain geometric schedule extensions while keeping the missing global induction explicit, shows the fixed-order finite chain failing the geometric tail-decay candidate, certifies an adaptive-order finite geometric tail-decay candidate when retained Taylor order increases along an arithmetic rule on the schedule, checks finite shell segment-growth, step-to-Cauchy-radius geometry, state-supremum growth, and Cauchy denominator growth to show the order increment dominates observed Cauchy-majorant growth, turns explicit or finite-prefix-derived future-shell envelopes into a conditional infinite-tail remainder bound when they dominate the finite prefix and yield ratio below one, reports the minimum retained-order increment, retained-order surplus, tail-decay slack, and finite-prefix safety-factor capacity for those envelopes, validates prefix-derived envelopes against held-out finite shells so structural-diagnostic prediction and actual tail-growth prediction are checked separately, factors observed tail growth into structural Cauchy-majorant factors and tail-transfer multipliers, checks tail-transfer-adjusted holdout prediction, exposes a standalone tail-transfer-adjusted conditional summability certificate with adjusted decay factor, transfer slack, and infinite-tail remainder, chains multiple proof-certified compact-Sundman point charts forward and backward across a bounded parameter interval, and propagates interval state boxes through a multi-step compact-Sundman atlas with guarded or Cauchy tail certificates and tail-inflated endpoints while containing retained and higher-order point atlas endpoints plus accumulated physical time.
+- A local compact-time Newtonian Taylor chart now constructs `q(u)`, `v(u)`, and `t(u)` directly in the bounded parameter around arbitrary compact-time centers, certifies coefficient residuals for `dq/du = v dt/du`, `dv/du = a(q) dt/du`, and `dt/du = 1 / (rate * (1 - u^2))`, matches ordinary Taylor coefficients under zero-centered time substitution, matches scalar compact-time derivative coefficients at nonzero centers, matches reference integration on tested compact-time targets, rejects target evaluations outside the local compact-time convergence disk, chains multiple certified local compact-time charts into a finite forward/backward atlas whose endpoints match reference integration, maps requested positive and negative physical target times through `u = tanh(rate * t)` into that atlas, attaches guarded local tail certificates to atlas steps so `proof_certified` requires both lifted-equation residuals and nontrivial tail bounds, propagates those local compact-tail bounds through a Gronwall-style endpoint error budget, and materializes coordinate-wise endpoint interval enclosures that contain tested low-order, higher-order, and reference endpoints.
+- Composed reduced evaluators now reduce point and interval initial data into the center-of-mass frame, accept physical time or compactified physical time, carry the compact-time Taylor certificate when applicable, certify either an interval Sundman physical-time target with Cauchy tails or a bounded compact-Sundman target with positive `dt/dw` bracketing, guarded interval tails, center-of-mass, linear-momentum, centered-angular-momentum, total-energy, and triple-collision status certificates, reconstruct the target enclosure into the original inertial frame, contain positive- and negative-time reference integrations, explicitly report zero-angular-momentum triple-collision exclusion as `undecided`, handle the zero-time identity, and reject interval boxes that do not certify non-collision.
+- Taylor-chart continuation matches reference integration over a longer non-collision interval.
+- Continuation error decreases when the Taylor order is raised.
+- Backward continuation reverses a forward continuation to numerical tolerance.
+- The step chooser shrinks near close approaches.
+- A Sundman-time chart satisfies the lifted equations `dq/ds = gv`, `dv/ds = ga`, `dt/ds = g`.
+- The Sundman-time projected state matches Newtonian reference integration at the chart's projected physical time.
+- The Sundman factor slows physical time near binary close approach.
+- Sundman-time chart continuation reaches a requested physical time and matches reference integration.
+- Sundman-time Taylor charts now have outward-rounded interval coefficient enclosures.
+- Interval Sundman factor coefficients enclose the point Sundman distance-product coefficients.
+- Interval Sundman charts enclose point chart coefficients, evaluated states, and physical-time projections.
+- Interval Sundman charts can be seeded from interval initial data that certify non-collision.
+- Sundman continuation can now propagate interval state sets across multiple fixed `s`-time charts.
+- Interval Sundman continuation carries an accumulated physical-time interval and is tested to contain the matching point path.
+- Sundman charts can now certify a physical-time target by bracketing it in an `s` interval with `dt/ds` bounded strictly positive.
+- The physical-time target certificate is tested to contain the matching point root and projected state enclosure.
+- Interval Sundman continuation can now advance through multiple fixed `s` charts until a physical-time target is certified.
+- Interval Sundman physical-time targeting now adaptively shortens a proposed full `s` step when that step would contain the target but the target bracket is not certified.
+- Sundman physical-time target certificates and interval target continuation are now tested in both forward and backward time, including Cauchy-tail-certified backward targeting.
+- Multi-chart interval Sundman targeting is tested to contain matching point paths from both point and interval initial data.
+- Interval Sundman continuation steps now carry a certified positive `dt/ds` enclosure.
+- Interval Sundman continuation rejects steps whose `dt/ds` positivity is not certified.
+- Interval Sundman fixed-`s` and physical-time target results now distinguish structural certification from proof certification: `certified` requires monotone time plus lifted-equation residual certificates, while `proof_certified` additionally requires Cauchy tail certificates for all full steps and the final target chart when applicable.
+- Interval Sundman charts now carry coefficient-level center-of-mass motion, linear-momentum, centered-angular-momentum, and total-energy conservation certificates; nonconstant invariant coefficients and center-of-mass residuals must enclose zero, and continuation results count those certified invariant steps.
+- Interval Sundman fixed-`s` and physical-time target results now expose triple-collision status: `excluded` when interval arithmetic proves the centered angular-momentum norm is bounded away from zero, and `undecided` when the angular-momentum interval contains zero.
+- Sundman physical-time target certificates can now be rebuilt from propagated incoming interval boxes, recertifying full `s` steps, the final target-containing chart, Cauchy tails, and a tail-aware target-time bracket in both time directions.
+- A planar Levi-Civita chart projects to the isolated relative Kepler problem away from collision.
+- The lifted Levi-Civita acceleration projects to the inverse-square Kepler acceleration for `z != 0`.
+- The Levi-Civita Taylor chart has finite coefficients at binary collision.
+- A parabolic collision/ejection path passes through `z = 0` in the lifted chart.
+- A full planar binary-collision chart round-trips physical three-body states for a selected pair.
+- The chart right-hand side projects back to Newtonian accelerations away from exact collision.
+- The relative acceleration transform between physical pair acceleration and Levi-Civita `s`-acceleration is reversible away from collision.
+- Third-body perturbation terms stay regular under binary-collision scaling in the tested near-collision regime.
+- A distant third body recovers the isolated Levi-Civita limit to numerical tolerance.
+- The exact-collision-ready regularized binary chart round-trips noncollision physical states.
+- The regularized chart RHS projects to Newtonian accelerations away from collision.
+- The analytic split in `z` agrees with the physical acceleration split away from collision.
+- The regularized RHS is finite at exact binary collision with a separated third body.
+- The lifted pair-energy constraint is preserved by the regularized RHS.
+- Taylor coefficients for the regularized binary chart satisfy the lifted recurrence.
+- Interval Taylor coefficients for the regularized binary chart enclose the point coefficients.
+- Interval regularized binary RHS coefficients enclose the point RHS coefficients.
+- The regularized binary Taylor chart matches direct integration of the lifted ODE.
+- Away from collision, the regularized binary Taylor chart projects to the Newtonian three-body reference solution.
+- The regularized binary Taylor chart can start at exact binary collision with finite coefficients.
+- The interval regularized binary Taylor chart can start at exact binary collision and enclose the point chart.
+- Exact-binary-collision interval chart data can now be built directly in lifted variables when the third body is separated and the interval collision constraint `2|z'|^2 = m_i + m_j` is certified; incompatible lifted intervals are rejected.
+- Regularized-binary interval Cauchy certificates now accept certified lifted exact-collision interval starts and bound the omitted Taylor tail after the branch moves to positive regularized parameter.
+- The pair-energy constraint is preserved coefficient-by-coefficient in the tested Taylor charts.
+- Nonzero centered angular momentum is now interval-certified as a global obstruction to triple collision for represented initial-data boxes; zero-angular-momentum boxes carry explicit `undecided` status rather than being silently treated as merely false or overclaimed.
+- Hybrid continuation chooses ordinary charts when pair distances are healthy.
+- Hybrid continuation chooses the correct regularized binary chart for a close pair.
+- Ordinary-only hybrid continuation matches direct Newtonian reference integration.
+- Binary-chart hybrid continuation matches direct Newtonian reference integration away from collision.
+- Binary-chart steps solve for an `s` parameter when the requested physical-time target lies inside a trial chart.
+- Ordinary hybrid steps stop at the first detected binary-entry distance event.
+- Hybrid continuation records binary-entry events with the triggering pair.
+- Binary hybrid steps stop at binary-exit distance events.
+- Hybrid continuation records binary-exit events before returning to ordinary charts.
+- Hybrid continuation can now start from a certified lifted exact-binary-collision interval state, carry that regularized state on the first binary step, prove the step with a regularized-binary interval Cauchy certificate, and project to finite planar data only after positive regularized time.
+- Lifted exact-binary-collision hybrid starts are now tested across multiple subsequent regularized-binary charts; the full multi-step segment remains proof-certified and its set-propagated enclosure contains the projected endpoint.
+- Lifted exact-binary-collision hybrid starts are now tested through a certified binary-exit event and through a proof-certified handoff to an ordinary chart for a short post-exit interval; the set-propagated enclosure is rebuilt through that first ordinary handoff and contains the final endpoint.
+- Lifted exact-binary-collision hybrid starts are now tested through a certified binary-exit event followed by two proof-certified ordinary charts; the set-propagation layer subdivides those ordinary charts into certified Cauchy substeps, preserves positive pair-distance enclosures, and contains the final representative endpoint.
+- Hybrid event detection now uses roots of pair-distance polynomials instead of sampled sign checks.
+- Event steps now carry numerical root-isolation certificates: sign-changing bracket, derivative sign, and no derivative root inside the bracket.
+- Event root certificates now also carry outward-rounded interval checks for endpoint signs and derivative sign over the bracket.
+- Event-polynomial builders now produce outward-rounded coefficient enclosures for ordinary binary-entry and regularized binary-exit checks.
+- Ordinary binary-entry event certificates now use coefficient enclosures produced from the ordinary interval Taylor recurrence.
+- Binary-exit event certificates now use coefficient enclosures produced from the regularized binary interval Taylor recurrence.
+- Event certificates record the coefficient source, distinguishing ordinary interval Taylor certificates from regularized binary interval Taylor certificates.
+- Ordinary and regularized binary interval Taylor charts can be evaluated at concrete step parameters.
+- Hybrid ordinary and binary steps now record interval enclosures for their projected planar end states.
+- Ordinary hybrid steps now feed each step's interval end-state enclosure into the next ordinary step's interval Taylor recurrence.
+- Conservative interval pair-distance bounds are computed directly from planar interval state enclosures.
+- Conservative interval speed and Newtonian acceleration upper bounds are computed directly from planar interval state enclosures.
+- Ordinary hybrid step selection now uses interval lower bounds for minimum pair distance and interval upper bounds for speed and acceleration, rather than sizing the step only from the point state.
+- Hybrid steps record the interval distance, speed, and acceleration margins used by the ordinary step chooser.
+- Interval chart selection now certifies ordinary states when all interval pair-distance lower bounds exceed the binary threshold.
+- Interval chart selection now certifies a binary chart only when a unique pair's interval distance is below the threshold and the third body is separated.
+- Interval chart selection reports ambiguous threshold overlaps explicitly instead of treating the point-state chart decision as an interval proof.
+- Hybrid steps record the interval chart decision and whether it was certified.
+- Hybrid continuation now exposes `proof_certified` and proof-certified step counts for runs whose interval chart decisions, event certificates, binary interval lifts, and interval Cauchy tail certificates are all certified.
+- Hybrid continuation can now run in a proof-grade mode that rejects an uncertified interval chart decision instead of falling back to the point-state chart.
+- Certified ordinary binary-entry events can now certify the next binary chart even when the propagated endpoint interval overlaps the threshold.
+- Hybrid continuation is tested to take a certified binary chart immediately after a certified ordinary binary-entry event.
+- Noncollision planar interval states can now be lifted into interval regularized binary-chart initial states.
+- Interval regularized binary-chart lifts now carry Levi-Civita branch certificates for upper-half, lower-half, and right-half principal square-root charts.
+- Branch-cut-overlap interval lifts are explicitly marked uncertified instead of being treated as chart-atlas proof.
+- Branch-cut-overlap interval lifts can now be split into a two-chart Levi-Civita atlas with certified upper/lower branch boxes.
+- The branch atlas is tested to contain point lifts from both sides of the square-root cut.
+- Certified binary atlas charts are now each propagated through the regularized binary interval Taylor recurrence, and their projected planar endpoints are hulled into one enclosure.
+- The atlas endpoint hull is tested to contain point Taylor endpoints from both sides of the square-root cut.
+- Binary chart atlas lifting now operates on interval-state union members before hulling, so separated members can lift even when their hull contains binary collision.
+- A regression test covers a binary interval-state union whose hull contains collision while each member has a certified regularized atlas.
+- Binary hybrid steps propagate the flattened union atlas when certified.
+- Hybrid steps now carry start and end interval-state unions in addition to the existing hulled interval state.
+- Ordinary hybrid steps propagate each member of an interval-state union separately before hulling for compatibility with existing chart decisions.
+- Chart decisions now inspect interval-state union members directly and can certify ordinary or binary charts even when the union hull would be ambiguous.
+- Union-aware chart selection is tested for ordinary and binary cases where the hulled interval crosses the threshold or collision point.
+- Ordinary binary-entry events now carry a union certificate requiring each interval-state union member to isolate the same detected event root.
+- Union event certificates are tested with multiple union members and are recorded on hybrid binary-entry steps.
+- Ordinary hybrid steps now try a union-member binary-entry event search first, accepting an event only when all interval-state union members isolate the same triggering pair and root.
+- Event certificates now can carry interval root enclosures proving an event-time interval with opposite endpoint signs, consistent derivative sign, and subdivided interval evidence excluding earlier crossings.
+- Ordinary binary-entry union search now requires those earliest-root interval enclosures for every interval-state union member before accepting the event.
+- Interval polynomial crossing search can now find the first certified crossing from interval coefficients without being seeded by a point-polynomial root.
+- Ordinary binary-entry union search now gets candidate event intervals from interval polynomial crossing search before using the point polynomial only to choose a representative step time inside the common certified interval.
+- Hybrid ordinary binary-entry steps now record the certified physical event-time interval on the step.
+- Ordinary event endpoint interval-state unions are now propagated over each member's certified event-time interval, not only over the representative point event time.
+- Hybrid ordinary Cauchy tail certificates on certified binary-entry event steps now cover the recorded physical event-time interval, not only the representative event time.
+- Hybrid regularized-binary Cauchy tail certificates on certified binary-exit steps now cover the certified root-enclosure interval in regularized `s`, not only the representative exit root.
+- Levi-Civita interval projection now squares interval components with nonnegative square bounds, preventing false zero-containing `rho = |z|^2` intervals when a component interval crosses zero.
+- Certified binary atlas propagation is tested across the ordinary-to-binary event handoff without falling back to a point endpoint enclosure.
+- Binary interval endpoint propagation failures caused by genuinely overconservative interval sets are recorded explicitly instead of crashing or being treated as certified atlas propagation.
+- Certified union binary-entry events can select the next binary chart when both the interval-state union decision and the hulled interval decision are ambiguous.
+- Interval regularized binary Taylor charts can now be seeded from interval binary-chart initial data, not only point initial data.
+- Binary hybrid steps use interval-lifted regularized chart initial data when the selected pair interval excludes collision, and record whether that lift was certified.
+- Binary hybrid steps record whether the interval Levi-Civita branch was certified.
+- Binary hybrid steps record whether the interval Levi-Civita atlas has certified branch boxes.
+- Binary hybrid steps record whether a certified Levi-Civita atlas was propagated.
+- Interval polynomial evaluation is tested on point values and simple ranges.
+- Interval polynomial evaluation is tested with uncertain coefficients, and interval derivative coefficients are checked.
+- Interval series products and powers are tested against point Taylor-series coefficients.
+- Guarded Taylor-tail certificates bound the observed high-order tail for ordinary charts.
+- Interval-coefficient guarded Taylor-tail certificates bound the observed high-order tail for ordinary charts.
+- Ordinary-chart Cauchy majorant certificates bound the observed high-order tail without using an observed guard-term ratio.
+- Ordinary interval-box Cauchy majorant certificates bound sampled point tails from inside a planar interval initial-state box.
+- Ordinary interval-state-union Cauchy certificates aggregate member radii and tail bounds for set-valued ordinary chart starts.
+- Guarded Taylor-tail certificates bound the observed high-order tail for regularized binary charts.
+- Regularized-binary Cauchy majorant certificates bound the observed high-order tail without using an observed guard-term ratio.
+- Regularized-binary interval-chart Cauchy majorant certificates bound sampled point tails from inside a lifted interval chart box.
+- Regularized-binary interval-atlas Cauchy certificates aggregate branch boxes and bound sampled point tails from both sides of a Levi-Civita branch cut split.
+- Guarded Taylor-tail certificates now bound the observed high-order tail for Sundman-time charts.
+- Sundman-time Cauchy majorant certificates bound the observed high-order tail without using an observed guard-term ratio.
+- Sundman interval-box Cauchy majorant certificates bound sampled point tails from inside an interval initial-state box.
+- Sundman interval charts now have residual certificates proving the lifted coefficient equations `dq/ds = g v`, `dv/ds = g a(q)`, and `dt/ds = g` enclose zero through the retained order.
+- Fixed-`s` interval Sundman continuation and physical-time target continuation now carry certified lifted-equation residual certificates on every accepted chart, including the final target-containing chart.
+- Interval Sundman continuation result objects now expose `certified`, `tail_certified`, and `proof_certified` so tests can separate structural Sundman correctness from proof-grade Cauchy-tail coverage.
+- Tail helper constructors now source ordinary, regularized-binary, and Sundman guard terms from outward-rounded interval coefficient recurrences.
+- Hybrid steps can carry interval-sourced truncation certificates when a guard order is requested.
+- Point Sundman continuation steps can carry interval-sourced truncation certificates when a guard order is requested.
+- Hybrid continuation can run in Cauchy tail-certificate mode for ordinary and regularized-binary steps, adaptively capping oversized proposed steps at half the local certified radius; ordinary steps now use interval-state-union Cauchy certificates, directly interval-lifted binary steps use regularized-binary interval Cauchy certificates, certified binary atlas steps can use regularized-binary atlas Cauchy certificates rather than point-only Cauchy certificates, and event steps size those certificates over certified event/root intervals.
+- Point Sundman continuation can run in Cauchy tail-certificate mode, adaptively capping oversized proposed `s` steps at half the local certified radius.
+- Fixed-`s` interval Sundman continuation can run in Cauchy tail-certificate mode, adaptively capping oversized proposed `s` steps and attaching interval Cauchy certificates to accepted interval steps.
+- Interval Sundman physical-time targeting can run in Cauchy tail-certificate mode, capping full interval steps and attaching a Cauchy certificate to the final target-containing `s` interval.
+- Cauchy-mode interval Sundman full steps now inflate endpoint state and physical-time intervals by the certified tail before seeding the next chart; the physical-time target state enclosure is inflated by the final target chart's Cauchy tail as well.
+- Hybrid continuation exposes a local tail-bound ledger across certified steps.
+- Point Sundman continuation exposes a local tail-bound ledger across certified steps.
+- Hybrid chart selection is tested for all three binary pairs.
+- A numerical Gronwall-style propagated error budget accumulates local Taylor-tail certificates.
+- The propagated budget grows as pair-distance margins shrink through its Lipschitz factor.
+- On ordinary non-close-encounter paths, the propagated budget covers lower-order versus higher-order/reference differences in tests.
+- Propagated error budgets can now be materialized as endpoint interval boxes by inflating each chart-produced interval endpoint enclosure with the accumulated tail radius.
+- The propagated interval enclosures are tested to contain the low-order endpoint, a higher-order endpoint, and the reference integration endpoint on an ordinary non-close-encounter path.
+- Ordinary-only set propagation can now rebuild each interval Taylor chart from the previous propagated endpoint box and recertify a local ordinary interval Cauchy tail on that incoming box.
+- The ordinary set-propagated enclosure is tested to pass each endpoint box into the next step, contain low-order, higher-order, and reference endpoints, and produce a tighter final box than the scalar-inflated enclosure on the same ordinary path.
+- Ordinary non-event set propagation can now subdivide a hybrid ordinary step into smaller certified interval-Cauchy substeps, which prevents near-collision Cauchy tail inflation from wrapping an endpoint box across binary collision in the tested post-exit handoff.
+- Ordinary set propagation now preserves interval-state-union members through ordinary chart rebuilds instead of hulling first; a regression test covers a union whose hull contains a false collision while each member remains noncolliding and Cauchy-certified.
+- Certified ordinary binary-entry event prefixes can now be set-propagated over their recorded event-time interval when the incoming box is covered by the event certificate's start box.
+- Certified ordinary binary-entry event prefixes now preserve per-member event-time intervals during set propagation, so each interval-state-union branch is propagated over its own certified root enclosure before hulling.
+- Direct regularized-binary handoffs after certified ordinary binary-entry events can now be set-propagated from the event endpoint box when the lifted Levi-Civita interval branch is certified; the binary interval Taylor endpoint is projected back to planar coordinates after applying its regularized Cauchy tail bound.
+- Certified binary-exit event steps can now be set-propagated over their regularized root-enclosure interval, with the local regularized Cauchy tail sized by that whole interval rather than only by the representative point root.
+- Incoming-box set propagation for binary steps now falls back to certified Levi-Civita atlas splits when the direct interval branch overlaps the square-root cut, propagates each atlas branch through the regularized binary interval Taylor recurrence, and hulls the projected endpoints.
+- Incoming-box set propagation for binary steps now preserves interval-state-union members before Levi-Civita lifting; a regression test covers binary alternatives whose hull contains a false exact collision while each branch remains noncolliding and Cauchy-certified.
+- Binary set propagation can now consume a certified already-lifted exact-collision interval start directly; the planar start record is treated as a collision-position summary, and finite physical velocities are only asserted after stepping away from collision in regularized time.
+- Multi-step regularized-binary set propagation is now tested to rebuild every binary interval Taylor chart from the previous propagated endpoint box while preserving endpoint containment.
+- Sundman physical-time target set propagation is now tested to rebuild one-, two-, and three-step interval Sundman target proofs from incoming endpoint boxes in forward and backward time, while preserving target endpoint containment.
+- Classical invariants alone do not determine the vector field, preventing a false "solution" based only on the known conserved quantities.
+
+This is still not the requested general closed-form proof. The remaining viable exact-general path is closer to Sundman's global convergent series than to a finite elementary/algebraic formula.
+
+## 2026-05-26 validated atlas integration
+
+- Added `three_body_symmetry/validated_atlas.py` as the shared finite-time atlas/proof-pipeline object. It derives charts, transitions, invariant coverage, Newton residual coverage, tail budgets, collision policy, and proof-ledger entries from the existing finite-time evaluator outputs rather than accepting new top-level theorem booleans.
+- Added `method="validated_atlas"` to `evaluate_unrestricted_solution(...)`. Existing `auto`, `compactified_sundman`, and `sundman` behavior is unchanged; the new method wraps the existing `auto` finite-time result into `ValidatedAtlasSolution`.
+- Added a focused general-solution regression proving that the validated-atlas path preserves target-state containment, has no missing required ledger obligations, and derives chart/residual/invariant counts from the underlying compactified-Sundman target solution.
+- The separated-binary Levi-Civita Cauchy-envelope theorem test now passes, covering the newly documented uniform separated-binary primitive Cauchy input under a supplied third-body separation envelope.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry
+pytest tests/test_general_solution.py::test_unrestricted_solution_validated_atlas_method_derives_single_proof_pipeline
+pytest tests/test_obstructions.py::test_uniform_separated_binary_envelope_supplies_levi_civita_cauchy_inputs
+pytest tests/test_general_solution.py tests/test_obstructions.py tests/test_closed_form.py tests/test_compact_sundman.py
+pytest
+```
+
+Result: `240 passed in 63.79s` for the broad theorem/audit/general-solution subset, and `446 passed in 564.71s` for the full suite. This is still not the all-future recurrence proof or the zero-angular total-collision continuation theorem; it is the integration hook needed before binary, escape, and total-collision constructors can feed one unavoidable proof pipeline.
+
+## 2026-05-26 homothetic escape all-future recurrence constructor
+
+- Added `three_body_symmetry/escape_endpoint.py` for the log-subtracted escape endpoint route.
+- The new `construct_homothetic_escape_endpoint_data(...)` derives the positive-energy homothetic endpoint constants from finite radial data: energy, asymptotic speed, `beta`, time shift, and forced log coefficient.
+- The new `construct_homothetic_escape_dyadic_recurrence(...)` turns Cauchy polydisc data into an explicit all-future dyadic shell tail bound in the lifted endpoint variables `(tau, rho=tau log(tau))`. It computes `theta0`, shell ratio, positive tail exponent, first-shell tail, per-shell bounds, and the infinite future-tail sum; nonpositive energy, too-small polydiscs, and retained orders with no positive tail exponent are rejected.
+- Updated the homothetic endpoint tests to use the constructor rather than local notebook arithmetic. The focused regression checks exact implicit-equation residuals against large-radius radial states, sampled shell errors against the constructor's shell bounds, the infinite geometric tail sum, and rejection of uncertified inputs.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry
+pytest tests/test_obstructions.py::test_homothetic_escape_log_subtracted_endpoint_has_convergent_implicit_series tests/test_obstructions.py::test_homothetic_escape_dyadic_endpoint_constructor_bounds_all_future_tail tests/test_obstructions.py::test_homothetic_escape_dyadic_endpoint_constructor_rejects_uncertified_inputs
+pytest tests/test_obstructions.py tests/test_closed_form.py
+pytest
+```
+
+Result: `3 passed in 1.08s` for the focused constructor tests, `193 passed in 2.27s` for the obstruction/audit subset, and `447 passed in 650.58s` for the full suite. This is a real all-future recurrence constructor for the positive-energy homothetic escape endpoint subcase. It does not prove arbitrary escape classification, bounded recurrent behavior, the compact-Sundman all-data recurrence, or zero-angular total-collision continuation.
+
+## 2026-05-26 scattering endpoint recurrence constructor
+
+- Extended `three_body_symmetry/escape_endpoint.py` with constructor-derived fixed-point constants for prescribed distinct-asymptotic-velocity scattering endpoints.
+- Added `find_scattering_endpoint_tail_start(...)`, which performs the effective finite doubling search for a start time satisfying the scattering tube, contraction, and dyadic shell-ratio inequalities.
+- Added `construct_scattering_endpoint_dyadic_recurrence(...)`, which returns all-future dyadic shell bounds and infinite geometric sums for compact endpoint value tails, first-jet tails, and lifted endpoint residual tails.
+- Replaced the nonhomothetic compact endpoint shell-tail and effective-tail-start tests with constructor-backed checks, and added rejection tests for noncontracting starts, repeated asymptotic velocities, and invalid retained correction counts.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry
+pytest tests/test_obstructions.py::test_nonhomothetic_scattering_compact_endpoint_shell_tails_are_geometric tests/test_obstructions.py::test_hyperbolic_scattering_effective_tail_start_closes_future_recurrence tests/test_obstructions.py::test_hyperbolic_scattering_tail_start_constructor_rejects_uncertified_inputs
+pytest tests/test_obstructions.py tests/test_closed_form.py
+pytest
+```
+
+Result: `3 passed in 0.67s` for the focused constructor tests, `194 passed in 2.35s` for the obstruction/audit subset, and `448 passed in 581.55s` for the full suite. This is an all-future recurrence constructor for the prescribed nonhomothetic scattering endpoint class. It still assumes distinct asymptotic velocities and offsets are supplied, and it does not prove arbitrary-data escape classification or the global compact-Sundman recurrence.
+
+## 2026-05-26 two-ended scattering atlas recurrence constructor
+
+- Exported `construct_two_ended_scattering_atlas_recurrence(...)` from the package API.
+- Routed the mixed finite-middle, nonzero-angular compact-middle, automatic zero-angular finite-event middle, and projected physical-residual checks through the constructor-backed endpoint recurrences instead of recomputing Picard endpoint constants inside each regression.
+- Updated the hyperbolic-scattering proof note and closed-form audit to state the exact scoped theorem: prescribed distinct scattering ends plus an externally verified finite middle yield an all-real compact scattering atlas budget equal to a finite middle budget plus two constructor-derived endpoint geometric sums.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry
+pytest tests/test_obstructions.py::test_two_ended_scattering_allows_finite_mixed_collision_middle_budget tests/test_obstructions.py::test_two_ended_scattering_uses_nonzero_angular_compact_middle_budget tests/test_obstructions.py::test_two_ended_scattering_uses_automatic_zero_angular_finite_event_middle tests/test_obstructions.py::test_two_ended_scattering_projected_newton_residual_has_stronger_shell_decay
+pytest tests/test_obstructions.py -k two_ended_scattering
+pytest tests/test_obstructions.py tests/test_closed_form.py
+pytest
+```
+
+Result: `4 passed in 0.77s` for the focused constructor-backed all-real scattering checks, `8 passed, 149 deselected in 0.78s` for the two-ended scattering slice, `194 passed in 2.21s` for the obstruction/audit subset, and `448 passed in 603.24s` for the full suite. This closes the executable all-real recurrence composition for the prescribed two-ended scattering subcase, including physical Newton-residual decay after projection. It still does not prove that arbitrary initial data are scattering, that arbitrary incoming data connect to arbitrary outgoing data, the global compact-Sundman recurrence for bounded/recurrent motion, or the zero-angular total-collision continuation theorem.
+
+## 2026-05-26 Sundman Cauchy-radius state-envelope constructor
+
+- Added `SundmanCauchyRadiusStateEnvelopeCertificate` and `construct_sundman_cauchy_radius_state_envelope(...)` to `three_body_symmetry/compact_sundman.py`.
+- The constructor derives the analytic lower bound `R_s >= min(rho/(G_bar(V+nu_bar)), sqrt(rho/A_bar)/G_bar)` from ordinary state-envelope quantities `d`, `D`, `V`, and `M`, with `rho=d/10`.
+- The certificate checks the exact compact `atanh` image inequality needed by Cauchy-radius step capping and exposes the margin-only eventual-shell alpha bound.
+- Updated `docs/sundman-cauchy-radius-state-envelope-lemma.md`, the README, and the closed-form audit to state this as a real lower-step subproof, not a completed global recurrence.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry
+pytest tests/test_compact_sundman.py::test_sundman_cauchy_radius_state_envelope_lower_bounds_majorant tests/test_compact_sundman.py::test_sundman_cauchy_radius_state_envelope_closes_capped_lower_step
+pytest tests/test_compact_sundman.py
+pytest
+```
+
+Result: `2 passed in 0.71s` for the focused constructor tests, `31 passed in 55.71s` for the compact-Sundman file, and `450 passed in 556.32s` for the full suite. This closes one concrete analytic premise in the compact-Sundman all-future recurrence path: if future shell states satisfy the derived envelope inequality, then the Cauchy cap preserves the lower-step scale required by the shell segment-count recurrence. It still does not prove that arbitrary future shells satisfy the needed state envelopes, state-supremum recurrence, or tail-transfer recurrence.
+
+## 2026-05-26 homothetic total-collision continuation constructor
+
+- Added `three_body_symmetry/triple_collision.py` as the executable home for the homothetic zero-angular total-collision branch.
+- Moved the scalar Briot-Bouquet energy recurrence for `q_i=C_i tau^2 u(tau^2)` out of obstruction-test arithmetic and into `homothetic_energy_series_coefficients(...)`.
+- Added `construct_homothetic_total_collision_branch(...)`, which scales a supplied central configuration to `A(C)=-(2/9)C`, exposes the second and fourth regularized jets, evaluates punctured positions and velocities, checks the lifted scalar energy recurrence, and computes projected Newton residuals away from `tau=0`.
+- Updated the homothetic total-collision tests and proof notes to use that constructor rather than duplicating branch arithmetic in the regressions.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry
+pytest tests/test_obstructions.py::test_regularized_second_jet_branch_gives_homothetic_continuation tests/test_obstructions.py::test_energy_parameterized_homothetic_series_solves_regularized_energy_recurrence tests/test_obstructions.py::test_energy_parameterized_homothetic_branch_records_energy_in_fourth_jet tests/test_obstructions.py::test_arbitrary_mass_equilateral_homothetic_branch_continues_through_collision tests/test_obstructions.py::test_arbitrary_mass_homothetic_energy_branch_uses_mass_weighted_inertia
+pytest tests/test_obstructions.py tests/test_closed_form.py
+pytest
+```
+
+Result: `11 passed in 1.14s` for the focused constructor-backed homothetic continuation tests, `194 passed in 2.30s` for the obstruction/audit subset, and `450 passed in 560.11s` for the full suite. This is a real executable local continuation constructor for the homothetic zero-angular subcase, not the arbitrary zero-angular total-collision selector theorem and not the all-future compact-Sundman recurrence.
+
+## 2026-05-26 finite Fuchsian selector continuation constructor
+
+- Added `three_body_symmetry/fuchsian.py` as the executable finite nonresonant mixed-Fuchsian selector constructor for zero-angular total-collision branches.
+- The new `construct_fuchsian_shape_branch(...)` takes a scaled central shape, lifted powers such as `(2,k_1,k_2)`, selected scale/fractional coefficients, and a retained multi-index order. It solves every nonselected row of `(((|beta|_k+2)(|beta|_k-1)/9)I-DA(C))Phi_beta=[A(Phi with Phi_beta=0)]_beta`, records row singular-value floors and recurrence residuals, and rejects resonant rows.
+- The returned branch evaluates `S`, `q=tau^2S`, physical velocities for `t=tau^3`, regularized shape residuals, scaled/projected Newton residuals, the finite energy limit from the scale coordinate, regularized position jets, and the zero-angular collision-limit expression.
+- Added `construct_fuchsian_selector_continuation(...)`, which builds incoming and outgoing lifted branches from selector data; with no outgoing data it implements the identity-selector rule.
+- Added a constructor-backed regression for the unequal-mass mixed scale plus fractional Fuchsian class, checking identity-selector coefficient equality, nonidentity fractional selector freedom with the same energy, recurrence residuals, projected residuals, zero-angular limit, finite energy matching, and invisibility of the fractional branch data in finite regularized jets through order three.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry
+pytest tests/test_obstructions.py::test_fuchsian_selector_constructor_builds_two_sided_identity_branch
+pytest tests/test_obstructions.py::test_fractional_fuchsian_shape_recurrence_constructs_projected_branch tests/test_obstructions.py::test_fractional_fuchsian_full_eigenspace_projects_on_both_collision_sides tests/test_obstructions.py::test_general_nonresonant_fuchsian_eigenmode_builds_unequal_mass_branches tests/test_obstructions.py::test_multi_indicial_fuchsian_lift_constructs_simultaneous_fractional_modes tests/test_obstructions.py::test_scale_coordinate_couples_with_multi_indicial_fuchsian_modes tests/test_obstructions.py::test_two_sided_mixed_fuchsian_energy_matching_uses_scale_coordinate tests/test_obstructions.py::test_fuchsian_selector_constructor_builds_two_sided_identity_branch
+pytest tests/test_obstructions.py tests/test_closed_form.py
+pytest
+```
+
+Result: `1 passed in 1.13s` for the focused constructor-backed identity-selector test, `7 passed in 0.69s` for the surrounding Fuchsian continuation slice, `195 passed in 2.26s` for the obstruction/audit subset, and `451 passed in 566.98s` for the full suite. This is a local zero-angular continuation constructor for finite nonresonant mixed-Fuchsian selector data. It does not prove arbitrary zero-angular total-collision entry into this chart, resonant Fuchsian-log rows, or the all-future compact-Sundman recurrence.
+
+## 2026-05-26 resonant Fuchsian-log row constructor
+
+- Extended `three_body_symmetry/fuchsian.py` with `construct_fuchsian_log_row_solution(...)`, `FuchsianLogRowSolution`, and `FuchsianLogBranch`.
+- The row constructor solves the resonant triangular equations `M H_l +(l+1)(2omega+1)H_{l+1} +(l+2)(l+1)H_{l+2}=F_l` by descending log degree. Kernel forcing is lifted into the next log coefficient, range forcing is solved by the row operator, and the constant kernel component is retained as the selector.
+- The projected branch helper evaluates `S=C+alpha sigma^2C+sigma^omega sum_l H_l(log sigma)^l`, physical states under `q=tau^2S`, `t=tau^3`, the projection identity residual, selector recovery, the finite energy limit, and the angular-momentum collision-limit expression.
+- Added a constructor-backed regression for the equal-mass equilateral resonant row that checks log coefficient recovery, range solve, selector recovery, no-residual selector changes, two-sided identity projection, finite-energy convergence, and angular-momentum decay to the collision limit.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry
+pytest tests/test_obstructions.py::test_fuchsian_log_row_constructor_builds_resonant_selector_branch
+pytest tests/test_obstructions.py::test_fuchsian_log_shape_row_solves_resonant_forcing_triangularly tests/test_obstructions.py::test_fuchsian_log_shape_projection_identity_and_zero_angular_limit tests/test_obstructions.py::test_fuchsian_log_row_has_no_hidden_nonselector_coefficients tests/test_obstructions.py::test_fuchsian_log_row_constructor_builds_resonant_selector_branch tests/test_obstructions.py::test_fuchsian_log_selector_continuation_preserves_energy_limit tests/test_obstructions.py::test_identity_selector_continuation_matches_lifted_branch_data
+pytest tests/test_obstructions.py tests/test_closed_form.py
+pytest
+```
+
+Result: `1 passed in 1.55s` for the focused constructor-backed resonant-row test, `6 passed in 0.52s` for the surrounding Fuchsian-log row/projection/selector slice, `196 passed in 3.63s` for the obstruction/audit subset, and `452 passed in 580.14s` for the full suite. This closes one executable resonant Fuchsian-log row mechanism. It does not yet construct coupled finite Fuchsian-log normal forms, prove arbitrary zero-angular total-collision entry into those coordinates, or prove the all-future compact-Sundman recurrence.
+
+## 2026-05-26 finite stable log-selector chain constructor
+
+- Extended `three_body_symmetry/fuchsian.py` with `construct_stable_log_selector_chain(...)`, `StableLogSelectorChain`, `StableLogMode`, and `StableResonanceTerm`.
+- The constructor turns a finite triangular Poincare-Dulac stable normal form into explicit Fuchsian-log selector polynomials. It verifies each resonance `alpha_j=<n,alpha>`, rejects nontriangular dependencies, multiplies previously constructed lower-row polynomials in McGehee time, integrates the resonant forcing polynomial, and converts `s=-(2/beta)log(tau)` into log coefficients.
+- The returned modes evaluate both the McGehee-time form `e^(-alpha s)P(s)` and the Fuchsian-log form `tau^(2alpha/beta)P(-(2/beta)log tau)`, expose raw quotients, and recover selector constants after subtracting forced positive-log terms.
+- Added a constructor-backed regression for the coupled five-mode stable normal form with three resonant rows, including the log-squared fifth-row term forced by a lower resonant row. The test also checks rejection of nonresonant and nontriangular inputs.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry
+pytest tests/test_obstructions.py::test_stable_log_selector_chain_constructor_recovers_coupled_log_selectors
+pytest tests/test_obstructions.py::test_resonant_stable_normal_form_recovers_log_subtracted_selector tests/test_obstructions.py::test_finite_resonant_stable_chain_recovers_log_polynomial_selector tests/test_obstructions.py::test_poincare_dulac_stable_normal_form_has_complete_log_selectors tests/test_obstructions.py::test_stable_log_selector_chain_constructor_recovers_coupled_log_selectors tests/test_obstructions.py::test_fuchsian_log_shape_row_solves_resonant_forcing_triangularly tests/test_obstructions.py::test_fuchsian_log_row_constructor_builds_resonant_selector_branch
+pytest tests/test_obstructions.py tests/test_closed_form.py
+pytest
+```
+
+Result: `1 passed in 0.98s` for the focused constructor-backed stable selector-chain test, `6 passed in 0.50s` for the surrounding stable/Fuchsian-log selector slice, `197 passed in 2.37s` for the obstruction/audit subset, and `453 passed in 565.12s` for the full suite. This makes the finite triangular Poincare-Dulac selector-completeness mechanism executable once the reduced hyperbolic normal form is supplied. It still does not prove arbitrary zero-angular entry into that normal form or the all-future compact-Sundman recurrence.
+
+## 2026-05-26 finite Fuchsian-log branch composition
+
+- Extended `three_body_symmetry/fuchsian.py` with `FuchsianLogTerm`, `FiniteFuchsianLogBranch`, and `FiniteFuchsianLogContinuation`.
+- A finite branch now composes `S(sigma)=C+alpha sigma^2 C+sum_a sigma^(omega_a)P_a(log sigma)` from supplied rows, evaluates positions and velocities under `q=tau^2S`, `t=tau^3`, checks the projection identity, recovers each row's selector after subtracting the other known rows, and tracks the finite energy limit and angular-momentum collision-limit expression.
+- Added a constructor-backed identity-continuation regression with two rows: a resonant log selector row and a secondary nonlog Fuchsian row. It checks two-sided identity gluing, selector recovery for both rows, changed-selector detection, projection identity, limiting energy matching under changed non-scale selectors, and angular-momentum decay to the collision limit.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry
+pytest tests/test_obstructions.py::test_finite_fuchsian_log_branch_composes_selector_rows_and_projects
+pytest tests/test_obstructions.py::test_stable_log_selector_chain_constructor_recovers_coupled_log_selectors tests/test_obstructions.py::test_fuchsian_log_row_constructor_builds_resonant_selector_branch tests/test_obstructions.py::test_identity_selector_continuation_matches_lifted_branch_data tests/test_obstructions.py::test_finite_fuchsian_log_branch_composes_selector_rows_and_projects
+pytest tests/test_obstructions.py tests/test_closed_form.py
+pytest
+```
+
+Result: `1 passed in 1.07s` for the focused finite-branch composition test, `4 passed in 0.51s` for the surrounding Fuchsian-log/selector-chain slice, `198 passed in 2.63s` for the obstruction/audit subset, and `454 passed in 565.64s` for the full suite. This closes the local projection/composition layer for supplied finite Fuchsian-log germs. It still does not prove arbitrary zero-angular entry into such a germ or the all-future compact-Sundman recurrence.
+
+## 2026-05-26 stable selector-chain projection to finite Fuchsian-log branch
+
+- Exported and hardened `construct_finite_fuchsian_log_branch_from_stable_chain(...)` in `three_body_symmetry/fuchsian.py`.
+- The constructor now checks that the stable chain is certified, masses are positive and finite, the central shape is finite and nonzero, every supplied mode shape is finite and nonzero, every mode is mass-orthogonal to the central shape after normalization, and every non-scale Fuchsian power is greater than one.
+- Analytically, the constructor implements `S(tau)=C+alpha tau^2C+sum_j tau^(omega_j)P_j(log tau)E_j` with `<E_j,C>_m=0` and `omega_j>1`. Those hypotheses remove divergent energy cross-terms, give the finite energy limit `(10/9)alpha<C,C>_m`, force the angular-momentum collision limit to zero, and let selectors be recovered by mass projection after subtracting the other rows.
+- Added a constructor-backed regression that projects a coupled five-mode stable selector chain into a finite branch, checks selector recovery, projection identity, finite-energy convergence, angular-momentum decay, identity continuation, and rejection of missing, scale-contaminated, or low-power mode data.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry tests
+pytest tests/test_obstructions.py -k "stable_log_selector_chain_projects_to_finite_fuchsian_log_branch"
+pytest tests/test_obstructions.py -k "stable_log_selector_chain or finite_fuchsian_log_branch or fuchsian_log_shape_row"
+pytest tests/test_obstructions.py tests/test_closed_form.py
+pytest
+```
+
+Result: `1 passed, 161 deselected in 0.83s` for the focused stable-chain projection test, `4 passed, 158 deselected in 0.45s` for the surrounding Fuchsian slice, `199 passed in 2.31s` for the obstruction/audit subset, and `455 passed in 557.46s` for the full suite. This is a local stable-normal-form-to-physical-branch theorem. It still assumes the reduced hyperbolic normal form and vector mode shapes are supplied; it does not prove arbitrary zero-angular entry or the all-future compact-Sundman recurrence.
+
+## 2026-05-26 primitive event-recurrence constructor
+
+- Added `three_body_symmetry/event_recurrence.py` with constructor-derived all-future event-atlas budget certificates.
+- `derive_chart_family_counts_from_event_isolation(...)` turns a uniform shell isolation fraction `alpha` into the boundary-inclusive event packing bound `M=floor(1/alpha)+2`, with ordinary gap count `M+1` and separated-binary/automatic-total-collision counts `M`.
+- `construct_primitive_cauchy_tail_input(...)` and `derive_all_future_event_budget_from_primitive_cauchy_inputs(...)` turn primitive Cauchy data `(C_0, Lambda, sigma, p_0, d)` into local envelopes `A=C_0 sigma^(p_0+1)/(1-sigma)` and `r=Lambda sigma^d`, reject nondecaying inputs with `r>=1`, and derive both family-wise and scalar all-future sums for value, first-jet, lifted-residual, and projected physical-residual budgets.
+- Added a constructor-backed regression that checks observed shell charts against the primitive Cauchy inequalities, verifies family shell bounds are dominated by scalar shell bounds, checks holdout tails against the sharp family and scalar recurrence tails, and rejects nondecaying primitive data.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry tests
+pytest tests/test_obstructions.py -k "event_recurrence_constructor_derives_all_future_budget"
+pytest tests/test_obstructions.py -k "primitive_cauchy or local_chart_envelopes or uniform_cauchy_tail_schedule or event_isolation_supplies_chart_counts or event_recurrence_constructor or geometric_infinite_event_tail"
+pytest tests/test_obstructions.py -k "uniform_noncollision_state_envelope or uniform_separated_binary_envelope or uniform_event_isolation_gives_geometric_shell_count_bound"
+pytest tests/test_obstructions.py tests/test_closed_form.py
+pytest tests/test_compact_sundman.py
+pytest
+```
+
+Result: `1 passed, 162 deselected in 1.10s` for the focused constructor test, `6 passed, 157 deselected in 0.57s` for the primitive event-budget recurrence slice, `3 passed, 160 deselected in 0.55s` for the surrounding state-envelope/isolation recurrence slice, `200 passed in 2.70s` for the obstruction/audit subset, `31 passed in 64.63s` for compact-Sundman, and `456 passed in 608.17s` for the full suite. This closes the arithmetic all-future budget theorem once event-isolation counts and primitive Cauchy inputs are known. It still does not prove those primitive inputs for arbitrary future dynamics or close the full compact-Sundman all-data recurrence.
+
+## 2026-05-26 finite Fuchsian-log total-collision primitive Cauchy inputs
+
+- Extended `three_body_symmetry/fuchsian.py` with `FiniteFuchsianLogPrimitiveCauchyInputs` and `derive_finite_fuchsian_log_branch_primitive_cauchy_inputs(...)`.
+- The constructor derives primitive Cauchy tail inputs directly from a supplied finite Fuchsian-log branch. On punctured shells `tau_n=tau_0 theta^n`, disks `|tau-tau_n|<=a tau_n` avoid the log singularity, and polynomial log growth is absorbed into a chosen factor `gamma^n`. Differentiated rows `d^m/dtau^m [tau^omega P(log tau)]` are converted into component majorants with explicit geometric growth factors.
+- The returned component inputs are the same `PrimitiveCauchyTailInput` objects consumed by `derive_all_future_event_budget_from_primitive_cauchy_inputs(...)`, so automatic total-collision charts can now feed the all-future event recurrence from constructed branch coefficients rather than placeholder constants.
+- Added a regression that builds a coupled finite stable-selector Fuchsian-log branch, derives value/first-jet/lifted-residual/physical-residual primitive inputs, verifies sampled shell majorants and Cauchy tails, inserts the total-collision inputs into the all-future event budget, and rejects a low-order second-derivative schedule whose geometric ratio does not decay.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry tests
+pytest tests/test_obstructions.py -k "fuchsian_log_branch_supplies_total_collision_primitive_cauchy_inputs"
+pytest tests/test_obstructions.py -k "fuchsian_log_branch_supplies_total_collision_primitive_cauchy_inputs or event_recurrence_constructor_derives_all_future_budget or stable_log_selector_chain_projects_to_finite_fuchsian_log_branch"
+pytest tests/test_obstructions.py -k "stable_log_selector_chain or finite_fuchsian_log_branch or fuchsian_log_shape_row or primitive_cauchy or local_chart_envelopes"
+pytest tests/test_obstructions.py tests/test_closed_form.py
+pytest tests/test_compact_sundman.py
+pytest
+```
+
+Result: `1 passed, 163 deselected in 0.46s` for the focused total-collision primitive-input test, `3 passed, 161 deselected in 0.46s` for the constructor/event-recurrence integration slice, `7 passed, 157 deselected in 0.49s` for the surrounding Fuchsian/primitive-Cauchy slice, `201 passed in 2.58s` for the obstruction/audit subset, `31 passed in 57.26s` for compact-Sundman, and `457 passed in 559.15s` for the full suite. This closes the primitive Cauchy estimate for supplied finite Fuchsian-log total-collision charts. It still does not prove arbitrary zero-angular entry into such a finite branch or the full all-data compact-Sundman recurrence.
+
+## 2026-05-26 finite Fuchsian-log total-collision isolation constructor
+
+- Extended `three_body_symmetry/fuchsian.py` with `FiniteFuchsianLogTotalCollisionIsolationCertificate` and `certify_finite_fuchsian_log_total_collision_isolation(...)`.
+- The constructor bounds `S(tau)-C` on `0<|tau|<=rho` by summing the scale row and finite Fuchsian-log row suprema. For each monomial it uses the exact real punctured-radius bound for `x^omega |log x|^ell`, then compares the resulting shape deviation `E_rho` with the central-shape pair-distance floor `d_C`.
+- If `d_C-2 sqrt(d)E_rho>0`, the certificate proves all shape pair distances are positive on the punctured chart. Since `q_i-q_j=tau^2(S_i-S_j)`, all projected physical pair distances are positive for `0<|tau|<=rho` and all three vanish only at `tau=0`.
+- Added a regression that certifies punctured no-binary-collision isolation for the coupled finite Fuchsian-log branch, checks sampled signed branches against the certified projected pair-distance floor, and rejects a low-power branch with insufficient isolation margin.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry tests
+pytest tests/test_obstructions.py -k "finite_fuchsian_log_branch_certifies_punctured_total_collision_isolation"
+pytest tests/test_obstructions.py -k "finite_fuchsian_log_branch_certifies_punctured_total_collision_isolation or fuchsian_log_branch_supplies_total_collision_primitive_cauchy_inputs or stable_log_selector_chain_projects_to_finite_fuchsian_log_branch"
+pytest tests/test_obstructions.py -k "stable_log_selector_chain or finite_fuchsian_log_branch or fuchsian_log_shape_row or primitive_cauchy or event_recurrence_constructor"
+pytest tests/test_obstructions.py tests/test_closed_form.py
+pytest tests/test_compact_sundman.py
+pytest
+```
+
+Result: `1 passed, 164 deselected in 1.16s` for the focused isolation test, `3 passed, 162 deselected in 0.46s` for the isolation/primitive-input integration slice, `8 passed, 157 deselected in 0.52s` for the surrounding Fuchsian/event-recurrence slice, `202 passed in 2.67s` for the obstruction/audit subset, `31 passed in 56.72s` for compact-Sundman, and `458 passed in 564.28s` for the full suite. This closes the local event-isolation input for supplied finite Fuchsian-log total-collision charts. It still does not prove a uniform shell-isolation fraction for arbitrary future event tails.
+
+## 2026-05-26 finite Fuchsian-log compact-time event isolation
+
+- Extended the finite Fuchsian-log total-collision isolation path with `FiniteFuchsianLogCompactTimeIsolationCertificate` and `certify_finite_fuchsian_log_compact_time_isolation(...)`.
+- The constructor takes a certified punctured `tau` radius `rho`, maps the cubic event time window `t in [t_*-rho^3,t_*+rho^3]` through `u=tanh(lambda t)`, and derives the compact event-isolation radius `min(u_*-u_-,u_+-u_*)`.
+- When a compact shell interval `[a,b]` is supplied, it returns the shell-scale fraction `alpha=min(h,u_*-a,b-u_*)/(b-a)`, which can be passed directly to `derive_chart_family_counts_from_event_isolation(...)` to obtain the boundary-inclusive shell event-count bound.
+- Added a regression that builds the coupled finite stable-selector Fuchsian-log branch, certifies local total-collision isolation, projects it into compact physical time, derives the shell event-count certificate from the resulting fraction, checks sampled compact parameters recover punctured `tau` values with positive pair-distance floors, and rejects shells that do not contain the event.
+- Updated `docs/geometric-infinite-event-atlas-recurrence.md` with the analytic compact-time projection proof and updated the audit/README status.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry tests
+pytest tests/test_obstructions.py -k "fuchsian_log_total_collision_isolation_projects_to_compact_time_shell"
+pytest tests/test_obstructions.py -k "fuchsian_log_total_collision_isolation_projects_to_compact_time_shell or finite_fuchsian_log_branch_certifies_punctured_total_collision_isolation or fuchsian_log_branch_supplies_total_collision_primitive_cauchy_inputs or event_recurrence_constructor_derives_all_future_budget"
+pytest tests/test_obstructions.py tests/test_closed_form.py
+pytest tests/test_compact_sundman.py
+pytest
+```
+
+Result: `1 passed, 165 deselected in 1.22s` for the focused compact-time projection test, `4 passed, 162 deselected in 0.53s` for the compact-time/isolation/primitive-input/event-recurrence integration slice, `203 passed in 2.42s` for the obstruction/audit subset, `31 passed in 55.53s` for compact-Sundman, and `459 passed in 568.08s` for the full suite. This closes the local compact-time shell-count input for supplied finite Fuchsian-log total-collision charts. It still does not prove a uniform shell-isolation fraction for arbitrary future event tails or arbitrary zero-angular entry into finite Fuchsian-log charts.
+
+## 2026-05-26 geometric shell-isolation all-future recurrence constructor
+
+- Extended `three_body_symmetry/event_recurrence.py` with `GeometricShellEventIsolationCertificate`, `GeometricShellEventBudgetCertificate`, `derive_geometric_shell_event_isolation(...)`, and `derive_all_future_event_budget_from_geometric_shell_isolation(...)`.
+- The new analytic step starts with endpoint shells `S_n=[1-delta_0 theta^n,1-delta_0 theta^(n+1)]`, event-free radii `h_{n,c}>=H_0 theta^n`, and boundary clearances `dist(c,boundary(S_n))>=B_0 theta^n`. It derives the uniform packing fraction `alpha=min(H_0,B_0)/(delta_0(1-theta))`, caps it at `1` when appropriate, and obtains the boundary-inclusive chart counts `M_*=floor(1/alpha)+2`, `M_O=M_*+1`, `M_L=M_T=M_*`.
+- The composed constructor then feeds those counts directly into the primitive Cauchy recurrence, producing the family-wise and scalar all-future sums without accepting a standalone shell-count boolean.
+- Added a regression that derives `alpha=0.18` from geometric shell data, checks observed event-center packing and rejection of a too-dense shell, composes the resulting counts with ordinary/binary/total-collision primitive Cauchy inputs, verifies sampled chart tails against the scalar shell bound, and checks the holdout tail against the closed-form recurrence.
+- Updated `docs/geometric-infinite-event-atlas-recurrence.md` with the proof that geometric shell isolation closes the count recurrence, plus README and audit status.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry tests
+pytest tests/test_obstructions.py -k "geometric_shell_isolation_constructor_closes_all_future_event_budget"
+pytest tests/test_obstructions.py -k "geometric_shell_isolation_constructor or uniform_event_isolation_gives_geometric_shell_count_bound or event_recurrence_constructor_derives_all_future_budget or primitive_cauchy_inputs_close_all_future_event_budget"
+pytest tests/test_obstructions.py -k "geometric_shell_isolation_constructor or fuchsian_log_total_collision_isolation_projects_to_compact_time_shell or finite_fuchsian_log_branch_certifies_punctured_total_collision_isolation or fuchsian_log_branch_supplies_total_collision_primitive_cauchy_inputs"
+pytest tests/test_obstructions.py tests/test_closed_form.py
+pytest tests/test_compact_sundman.py
+pytest
+```
+
+Result: `1 passed, 166 deselected in 1.32s` for the focused geometric shell-isolation constructor test, `4 passed, 163 deselected in 0.82s` for the recurrence-shell-count slice, `4 passed, 163 deselected in 0.82s` for the Fuchsian/isolation integration slice, `204 passed in 3.21s` for the obstruction/audit subset, `31 passed in 87.86s` for compact-Sundman, and `460 passed in 618.44s` for the full suite. This closes the all-future count-and-budget recurrence once geometric event-isolation scales and primitive Cauchy inputs are proved for the future branch. It still does not prove those geometric scales for arbitrary three-body dynamics, nor arbitrary zero-angular entry into finite Fuchsian-log charts.
+
+## 2026-05-26 Cauchy-capped compact-Sundman segment-count constructor
+
+- Extended `three_body_symmetry/compact_sundman.py` with `CompactifiedSundmanCauchyCappedSegmentCountCertificate` and `certify_cauchy_capped_geometric_segment_count_from_state_envelope(...)`.
+- The constructor combines a `SundmanCauchyRadiusStateEnvelopeCertificate` with the compact `atanh` radius bound and a centered geometric endpoint schedule `delta_n=delta_0 c^n`. It checks `2 alpha <= eta` and `2 alpha/(lambda(1-eta)) <= R_s`, derives the first shell where `alpha delta_{n+1} <= H`, proves the Cauchy-capped lower-step inequality `h_n >= alpha delta_{n+1}` for every later nonterminal shell center with boundary margin at least `delta_{n+1}`, and returns the uniform segment-count bound `2*(ceil(max((1-c)delta_0/H,(1-c)/(alpha c)))+1)`.
+- Added a regression that derives the segment-count recurrence from the standing state-envelope data, checks late-shell lower-step certification on sampled compact centers, rejects centers too close to the endpoint, and rejects an alpha just above the state-envelope limit.
+- Updated `docs/cauchy-capped-lower-step-lemma.md`, `docs/geometric-shell-segment-count-lemma.md`, `docs/general-closed-form-audit.md`, and `README.md` so the proof chain is explicit: state envelope -> compact Cauchy radius -> lower-step rule -> segment-count recurrence with growth ratio `1`.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry tests
+pytest tests/test_compact_sundman.py -k "state_envelope_closes_cauchy_capped_geometric_segment_count"
+pytest tests/test_compact_sundman.py -k "compact_atanh_eventual_shell_lower_step_condition or sundman_cauchy_radius_state_envelope or state_envelope_closes_cauchy_capped_geometric_segment_count or geometric_shell_segment_count"
+pytest tests/test_obstructions.py tests/test_closed_form.py
+pytest tests/test_compact_sundman.py
+pytest
+```
+
+Result: `1 passed, 31 deselected in 0.81s` for the focused constructor test, `4 passed, 28 deselected in 0.69s` for the lower-step/segment-count slice, `204 passed in 2.74s` for the obstruction/audit subset, `32 passed in 57.88s` for compact-Sundman, and `461 passed in 644.04s` for the full suite. This closes the compact-Sundman segment-count recurrence when the required state envelope is available on future shell centers. It still does not prove that arbitrary future shell centers satisfy that state envelope, nor the denominator-growth and tail-transfer recurrences.
+
+## 2026-05-26 constructor-only general theorem assembler
+
+- Added `three_body_symmetry/general_solution_theorem.py` with `RegimeClassificationCertificate`, `GlobalAtlasCertificate`, and `GeneralSolutionTheoremCertificate`.
+- The assembler derives the positive-mass noncollision input-domain certificate and compact real-line time coverage from raw data, then accepts only named global regimes assembled from constructor certificates.
+- It rejects raw boolean global witnesses, composes a geometric infinite-event-tail regime from the geometric shell-isolation and all-future event-budget constructors, and keeps `global_regime_exhaustion` as an explicit missing obligation rather than promoting one certified regime to the full unrestricted general solution.
+- Added `tests/test_general_solution_theorem.py` covering the constructor-derived event-tail path, raw-boolean rejection, and propagation of missing primitive Cauchy/global-exhaustion obligations.
+- Updated README and the closed-form audit docs to mark this as a theorem-producing pipeline layer, not a completed arbitrary-data classification theorem.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry tests
+pytest tests/test_general_solution_theorem.py
+pytest tests/test_general_solution_theorem.py tests/test_obstructions.py -k "geometric_shell_isolation_constructor or event_recurrence_constructor_derives_all_future_budget"
+pytest tests/test_general_solution_theorem.py tests/test_closed_form.py
+pytest
+```
+
+Result: `3 passed in 0.53s` for the focused theorem assembler, `2 passed, 168 deselected in 0.68s` for the event-recurrence integration slice, `40 passed in 0.68s` for the theorem/closed-form audit subset, and `464 passed in 564.21s` for the full suite. This creates the single constructor-only theorem assembly surface requested by the research direction, while still leaving the arbitrary global regime-exhaustion classifier as the next proof gap.
+
+## 2026-05-26 closed-form audit consumes constructor theorem certificate
+
+- Extended `certify_general_closed_form_solution_target(...)` with a `general_theorem_certificate` input path.
+- The audit now consumes the constructor-only `GeneralSolutionTheoremCertificate` directly, rejects a raw boolean in that slot, uses the theorem route summary and missing obligations for the global-series requirement, and maps incomplete full-theorem status to the arbitrary-data/all-time scope requirements.
+- Added regressions proving that a geometric infinite-event-tail theorem certificate is accepted as constructor evidence but still leaves the closed-form target incomplete because `global_regime_exhaustion` is missing.
+- Updated README and `docs/general-closed-form-audit.md` to document that the top-level audit now reports constructor-pipeline blockers instead of relying only on a hand-supplied `global_series_certified` witness.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry tests
+pytest tests/test_closed_form.py -k "constructor_theorem or sundman_theorem_witness"
+pytest tests/test_general_solution_theorem.py
+pytest tests/test_closed_form.py
+pytest tests/test_closed_form.py tests/test_general_solution_theorem.py tests/test_obstructions.py -k "constructor_theorem or sundman_theorem_witness or geometric_shell_isolation_constructor or event_recurrence_constructor_derives_all_future_budget"
+pytest
+```
+
+Result: `6 passed, 33 deselected in 0.51s` for the constructor-theorem/Sundman-witness audit slice, `3 passed in 0.53s` for the theorem assembler, `39 passed in 0.51s` for the closed-form audit suite, `8 passed, 201 deselected in 0.49s` for the combined constructor/event-recurrence slice, and `466 passed in 557.52s` for the full suite. This wires the top-level closed-form audit to the constructor-only theorem pipeline while preserving the open status of the global regime-exhaustion proof.
+
+## 2026-05-26 planar hybrid atlas integration surface
+
+- Added `validated_atlas_from_hybrid_solution(...)` to `three_body_symmetry/validated_atlas.py` and exported it from the package.
+- The adapter converts proof-certified planar hybrid ordinary/Levi-Civita steps into `ValidatedChart` entries, event handoffs into `ValidatedTransition` entries, and exposes target containment, collision policy, and Cauchy tail budgets through the existing `ValidatedAtlasSolution` object family.
+- It deliberately does not mark the resulting atlas as fully proof-certified, because hybrid steps still lack the Newton residual and invariant ledgers required by the theorem pipeline. Those missing obligations are now explicit as `newton_residuals` and `invariant_ledger` instead of being hidden outside the shared atlas surface.
+- Added a regression using an exact-binary Levi-Civita collision start, a certified binary-exit event, and a certified ordinary post-exit handoff. The test verifies the binary and ordinary charts appear in the shared atlas, the transition is certified, target containment holds, and proof certification remains blocked on residual/invariant obligations.
+- Updated README and the closed-form audit notes to record the integration status and the remaining proof gap.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry tests
+pytest tests/test_hybrid.py -k "validated_atlas_from_hybrid_solution or exact_collision_start_hands_off"
+pytest tests/test_general_solution.py -k "validated_atlas"
+pytest tests/test_hybrid.py
+pytest tests/test_general_solution.py
+pytest tests/test_general_solution_theorem.py tests/test_closed_form.py -k "constructor_theorem or validated_atlas or geometric_event_tail"
+pytest
+```
+
+Result: `2 passed, 42 deselected in 13.80s` for the focused hybrid adapter/handoff slice, `1 passed, 18 deselected in 1.09s` for the finite-time validated-atlas evaluator test, `44 passed in 215.36s` for the hybrid suite, `19 passed in 8.02s` for the general-solution suite, `3 passed, 39 deselected in 0.58s` for the theorem/audit slice, and `467 passed in 573.76s` for the full suite. This moves the planar binary regularization machinery onto the common theorem-pipeline surface without falsely certifying residual or invariant obligations that are still missing for hybrid charts.
+
+## 2026-05-26 ordinary hybrid residual and invariant ledgers
+
+- Added `OrdinaryTaylorEquationResidualCertificate` and `certify_ordinary_interval_taylor_equations(...)` to `three_body_symmetry/hybrid.py`.
+- Ordinary hybrid interval Taylor steps now derive coefficient-level residual checks for `q'=v` and `v'=a(q)` directly from interval Taylor coefficients and interval acceleration coefficients.
+- Ordinary hybrid steps also derive center-of-mass, linear-momentum, centered-angular-momentum, and energy conservation certificates using the existing interval invariant constructors.
+- Updated `validated_atlas_from_hybrid_solution(...)` so residual and invariant ledgers are counted from the hybrid steps. An ordinary-only proof-certified hybrid continuation now becomes a fully proof-certified `ValidatedAtlasSolution`.
+- Mixed Levi-Civita binary/ordinary hybrid atlases remain intentionally incomplete at the atlas level because binary charts still lack projected Newton residual and invariant ledger certificates. The proof ledger now precisely distinguishes that case: ordinary charts close, binary chart obligations remain missing.
+- Added regressions for both cases: an ordinary-only hybrid atlas closes all ledgers, while an exact-binary collision start with binary exit and ordinary handoff exposes the ordinary certificates but keeps the binary residual/invariant blockers visible.
+- Updated README and the closed-form audit notes to reflect the mode-level status.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry tests
+pytest tests/test_hybrid.py -k "validated_atlas_from_hybrid_solution or validated_atlas_from_ordinary_hybrid_solution or hybrid_cauchy_ordinary_path_is_proof_certified"
+pytest tests/test_hybrid.py
+pytest tests/test_general_solution.py
+pytest tests/test_general_solution_theorem.py tests/test_closed_form.py -k "constructor_theorem or validated_atlas or geometric_event_tail"
+pytest
+```
+
+Result: `3 passed, 42 deselected in 43.85s` for the focused hybrid atlas/residual/invariant slice, `45 passed in 228.19s` for the hybrid suite, `19 passed in 8.12s` for the general-solution suite, `3 passed, 39 deselected in 0.51s` for the theorem/audit slice, and `468 passed in 591.13s` for the full suite. This advances the `finite_time` and `planar_binary_regularized` modes by closing ordinary hybrid residual/invariant ledgers on the shared atlas surface while preserving the remaining projected binary-chart proof obligations.
+
+## 2026-05-26 Levi-Civita binary lifted residual and projection certificates
+
+- Added `RegularizedBinaryEquationResidualCertificate` and `certify_regularized_binary_interval_taylor_equations(...)` to `three_body_symmetry/hybrid.py`.
+- Regularized binary interval Taylor steps now certify the lifted Levi-Civita recurrence coefficient-by-coefficient for `z`, `z'`, pair energy, binary center, third offset, and physical time.
+- The certificate carries an explicit punctured projection witness: for `rho>0`, the certified regularized equations project through the Levi-Civita chart to Newtonian physical accelerations; exact collision points remain excluded from the physical-velocity/acceleration claim.
+- Updated `ValidatedChart` with a `projection_certified` field and made `validated_atlas_from_hybrid_solution(...)` count binary residual/projection certificates from hybrid steps.
+- Mixed binary/ordinary hybrid atlases now close Newton residual and projection obligations in the shared `ValidatedAtlasSolution`; they remain not fully proof-certified only because binary physical invariant ledgers are still missing.
+- Updated the hybrid regression so an exact-binary start, binary-exit event, and ordinary handoff now has residual/projection certification on both charts while still reporting the invariant ledger blocker.
+- Updated README and audit docs to reflect the narrower remaining blocker.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry tests
+pytest tests/test_hybrid.py -k "validated_atlas_from_hybrid_solution or validated_atlas_from_ordinary_hybrid_solution or exact_collision_start_hands_off or exact_collision_start_stays_proof_certified"
+pytest tests/test_general_solution.py -k "validated_atlas"
+pytest tests/test_hybrid.py
+pytest tests/test_general_solution.py
+pytest tests/test_general_solution_theorem.py tests/test_closed_form.py -k "constructor_theorem or validated_atlas or geometric_event_tail"
+pytest
+```
+
+Result: `4 passed, 41 deselected in 37.83s` for the focused hybrid binary/atlas slice, `1 passed, 18 deselected in 1.08s` for the finite-time validated-atlas evaluator path, `45 passed in 237.52s` for the hybrid suite, `19 passed in 8.33s` for the general-solution suite, `3 passed, 39 deselected in 0.58s` for the theorem/audit slice, and `468 passed in 602.77s` for the full suite. This advances the `planar_binary_regularized` mode by making binary chart Newton/projection evidence constructor-derived, while keeping physical invariant ledgers as the precise remaining mixed-atlas proof obligation.
+
+## 2026-05-26 Levi-Civita binary finite invariant ledgers
+
+- Added constructor-derived regularized binary invariant certificates to `three_body_symmetry/hybrid.py`.
+- The binary chart now certifies inertial center-of-mass motion and total linear momentum from the finite regularized identities `M_total R + m_3 y` and `M_total R_dot + m_3 y_dot`.
+- It also certifies centered planar angular momentum from `(M_pair m_3 / M_total) y wedge y_dot + 2 mu z wedge z_dot`, the finite Levi-Civita form of the pair contribution through `z=0`.
+- The finite energy ledger now uses center-of-mass kinetic energy, third-body relative kinetic energy, the regularized pair-energy variable for the colliding pair, and inverse-distance Taylor series only for the separated third-body interactions. This avoids evaluating singular physical pair velocities at exact binary collision while still certifying the finite collision energy.
+- `validated_atlas_from_hybrid_solution(...)` now sees mixed exact-binary/ordinary planar hybrid atlases as fully proof-certified when chart choices, event handoffs, Cauchy tails, lifted residuals, punctured projection, and all invariant ledgers are constructor-derived.
+- Updated the hybrid regression from an expected invariant blocker to a positive proof: an exact binary collision start, certified binary-exit event, and ordinary handoff now produce a proof-certified `ValidatedAtlasSolution`.
+- Updated README and audit notes. The remaining scope boundary is now explicit: this closes planar Levi-Civita finite-time binary regularization, not spatial binary continuation or all-time global regime classification.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry tests
+pytest tests/test_hybrid.py::test_validated_atlas_from_hybrid_solution_closes_binary_handoff_ledgers tests/test_hybrid.py::test_validated_atlas_from_ordinary_hybrid_solution_closes_residual_and_invariant_ledgers
+pytest tests/test_hybrid.py
+pytest tests/test_general_solution_theorem.py tests/test_general_solution.py tests/test_closed_form.py
+pytest tests/test_obstructions.py::test_event_recurrence_constructor_derives_all_future_budget_from_primitive_inputs tests/test_obstructions.py::test_log_subtracted_escape_endpoint_cancels_leading_inverse_time_force
+```
+
+Result: `2 passed` for the focused atlas ledger tests, `45 passed` for the hybrid suite, `61 passed` for the theorem/general-solution/closed-form slice, `2 passed` for the selected event-recurrence and escape-endpoint checks, and the full `pytest -q` suite completed at `[100%]` with exit code 0.
+
+## 2026-05-26 planar hybrid route in `evaluate_unrestricted_solution`
+
+- Added `evaluate_planar_validated_atlas_solution(...)` to `three_body_symmetry/general_solution.py`.
+- The helper calls the proof-grade planar hybrid continuation with interval chart certification, Cauchy tail mode, constructor-derived ordinary/binary residuals, punctured binary projection, invariant ledgers, event transitions, and target containment, then exposes the result as a `ValidatedAtlasSolution` through `validated_atlas_from_hybrid_solution(...)`.
+- `evaluate_unrestricted_solution(..., method="validated_atlas")` now attempts this planar hybrid atlas for positive-time 2D data before falling back to the existing compactified-Sundman wrapper. Spatial, zero-time, negative-time, and unsupported planar cases preserve the previous finite-time path.
+- Added a regression where a noncollision planar close-binary state enters the public validated-atlas method and returns a proof-certified `HybridValidatedEvaluation` with a `planar_levi_civita_binary` chart, certified residual/projection/invariant ledgers, and target containment against the reference integrator.
+- Exported `evaluate_planar_validated_atlas_solution` and updated README/audit docs. This advances the `planar_binary_regularized` mode into the public finite-time evaluator; it does not claim spatial binary continuation or all-time regime classification.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry tests
+pytest tests/test_general_solution.py::test_unrestricted_solution_validated_atlas_routes_planar_binary_through_hybrid tests/test_general_solution.py::test_unrestricted_solution_validated_atlas_method_derives_single_proof_pipeline
+pytest tests/test_general_solution.py
+pytest tests/test_hybrid.py
+pytest tests/test_general_solution_theorem.py tests/test_closed_form.py
+pytest tests/test_obstructions.py::test_event_recurrence_constructor_derives_all_future_budget_from_primitive_inputs tests/test_obstructions.py::test_log_subtracted_escape_endpoint_cancels_leading_inverse_time_force
+```
+
+Result: `2 passed` for the focused validated-atlas dispatcher tests, `20 passed` for the general-solution suite, `45 passed` for the hybrid suite, `42 passed` for the theorem/closed-form slice, `2 passed` for the selected event-recurrence and escape-endpoint checks, and the full `pytest -q` suite completed at `[100%]` with exit code 0.
+
+## 2026-05-26 event-regime assembler
+
+- Added `three_body_symmetry/event_regime_assembler.py`.
+- `certify_local_chart_family_primitive_cauchy_inputs(...)` normalizes constructor-derived primitive Cauchy inputs for one local chart family and rejects raw boolean source certificates.
+- `derive_event_recurrence_from_chart_family_certificates(...)` now composes geometric shell isolation with certified ordinary-gap, separated-binary, and total-collision chart-family Cauchy inputs, derives the `GeometricShellEventBudgetCertificate`, and exposes explicit obligations for missing chart families, duplicate family certificates, unexpected families, and failed all-future recurrence closure.
+- `tests/test_general_solution_theorem.py` now feeds the theorem pipeline through the event-regime assembler instead of calling the primitive recurrence constructor directly. The positive test proves a `geometric_infinite_event_tail` regime theorem can consume the single `EventRegimeAssemblyCertificate`; the negative test proves a missing total-collision chart family propagates as exact missing obligations instead of being overclaimed.
+- Exported the new assembler types/functions and updated README/audit notes.
+- Remaining gap: this assembles an all-future event recurrence once local family certificates and shell isolation are supplied. It still does not prove arbitrary initial data enters that regime or prove global regime exhaustion.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry tests
+pytest tests/test_general_solution_theorem.py
+```
+
+Result: `4 passed` for the theorem assembler suite, `43 passed` for the theorem/closed-form slice, `3 passed` for selected event-recurrence/Fuchsian primitive-input checks, `65 passed` for the combined general-solution/hybrid finite-time suites, and the full `pytest -q` suite completed at `[100%]` with exit code 0.
+
+## 2026-05-26 nonzero-angular global atlas constructor
+
+- Added `construct_nonzero_angular_global_atlas(...)` to `three_body_symmetry/general_solution_theorem.py`.
+- The constructor derives the positive-mass noncollision input-domain certificate, compact real-line coverage certificate, and nonzero centered-angular-momentum triple-collision exclusion certificate from the supplied initial data. It does not accept a hand-supplied global boolean for any of those obligations.
+- Added the explicit `all_time_nonzero_angular` regime id. This regime certifies only when the data-derived angular-momentum obstruction excludes total collision and a constructor-derived all-future event-regime assembly closes the value, first-jet, lifted-residual, and physical-residual recurrence.
+- Extended `derive_geometric_shell_event_isolation(...)` and `EventIsolationChartCountCertificate` so total-collision chart counts can be omitted when another constructor has already excluded total collision. The nonzero-angular theorem path requires this binary-only ordinary/separated-binary event family and rejects a generic event assembly that still contains `automatic_identity_selector_total_collision`.
+- Added tests proving the positive binary-only nonzero-angular route certifies a regime theorem, zero-angular data reports `nonzero_angular_triple_collision_exclusion` as missing, and generic total-collision event families are rejected by the nonzero-angular mode.
+- Updated README and audit notes. Remaining gap: this is a certified nonzero-angular regime theorem given a binary-only all-future event recurrence. It still does not prove arbitrary-data global regime exhaustion or spatial binary regularization.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py tests/test_general_solution.py tests/test_hybrid.py
+```
+
+Result: `7 passed` for the theorem assembler suite, `46 passed` for the theorem/closed-form slice, and the broader theorem/closed-form/general-solution/hybrid slice completed at `[100%]` with exit code 0.
+
+## 2026-05-26 compact nonzero-angular finite-atlas constructor
+
+- Added `CompactNonzeroAngularFiniteAtlasCertificate`, `certify_compact_nonzero_angular_finite_atlas(...)`, and `construct_nonzero_angular_compact_finite_atlas(...)` to `three_body_symmetry/general_solution_theorem.py`.
+- The constructor derives the positive-mass noncollision input-domain certificate, compact real-line coverage certificate, and nonzero centered-angular-momentum triple-collision exclusion certificate from the supplied initial data, then consumes a proof-certified `ValidatedAtlasSolution` as the finite compact-interval atlas.
+- The finite-atlas certificate accepts only ordinary/Sundman chart families plus planar separated-binary Levi-Civita charts. It rejects total-collision chart families and reports spatial binary continuation as out of scope unless no binary chart is present.
+- This turns the compact nonzero-angular theorem from a test-local arithmetic note into a theorem-pipeline constructor: a finite validated atlas plus the nonzero-angular obstruction certifies the `compact_nonzero_angular_finite_events` regime, while the top-level theorem still reports `global_regime_exhaustion` as missing.
+- Added tests that build a real `ValidatedAtlasSolution` through `evaluate_unrestricted_solution(..., method="validated_atlas")`, feed it into the compact nonzero-angular theorem constructor, and verify that injecting a total-collision chart prevents certification.
+- Updated README and audit notes. Remaining gap: this proves the compact finite-atlas regime only for a supplied proof-certified finite atlas. It still does not prove all-time arbitrary-data regime exhaustion or spatial KS binary regularization.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py tests/test_general_solution.py
+python3 -m pytest -q tests/test_hybrid.py -k "validated_atlas_from_hybrid_solution or validated_atlas_from_ordinary_hybrid_solution"
+```
+
+Result: `9 passed` for the theorem assembler suite, `68 passed` for the theorem/closed-form/general-solution slice, and `2 passed` for the selected hybrid validated-atlas adapter checks.
+
+## 2026-05-26 prescribed two-ended scattering theorem bridge
+
+- Added `TwoEndedScatteringInvariantMatchCertificate` and `certify_two_ended_scattering_invariant_match(...)` to `three_body_symmetry/escape_endpoint.py`.
+- The invariant-match constructor derives asymptotic momentum, center offset, angular momentum, and kinetic energy from the past and future scattering endpoint velocities/offsets. It also checks that the forced logarithmic acceleration vectors have zero total momentum drift and zero angular-momentum log drift.
+- Added `PrescribedTwoEndedScatteringCertificate` and `construct_prescribed_two_ended_scattering_global_atlas(...)` to `three_body_symmetry/general_solution_theorem.py`.
+- The theorem bridge derives the finite middle input-domain and compact-time certificates, consumes a constructor-derived `TwoEndedScatteringAtlasRecurrence`, and certifies the `prescribed_two_ended_scattering` regime only when the two scattering ends are invariant-compatible. It rejects independently prescribed scattering ends with mismatched momentum, center offset, angular momentum, or energy.
+- Added theorem tests for the positive invariant-matched route and for a future-velocity mismatch that still has a certified endpoint recurrence but fails theorem-level invariant matching.
+- Exported the new constructors and updated README/audit notes. Remaining gap: this is a prescribed scattering-regime theorem. It still does not prove asymptotic completeness or arbitrary-data escape classification.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py
+python3 -m pytest -q tests/test_obstructions.py -k two_ended_scattering
+python3 -m pytest -q tests/test_closed_form.py tests/test_general_solution.py tests/test_general_solution_theorem.py
+```
+
+Result: `11 passed` for the theorem assembler suite, `8 passed` for the two-ended scattering slice, and the closed-form/general-solution/theorem slice completed at `[100%]` with exit code 0.
+
+## 2026-05-26 positive-energy homothetic escape theorem bridge
+
+- Added `PositiveEnergyHomotheticEscapeCertificate` and `construct_positive_energy_homothetic_escape_global_atlas(...)` to `three_body_symmetry/general_solution_theorem.py`.
+- The bridge consumes full masses, positions, and velocities. It derives the positive-mass noncollision input-domain certificate, compact-time certificate, homothetic central-configuration branch certificate, and homothetic dyadic endpoint recurrence from constructors rather than accepting a global escape boolean.
+- The branch certificate comes from `certify_homothetic_escape_branch_from_initial_data(...)`: it mass-centers the state, derives the radial speed and central-configuration multiplier, checks homothetic velocity and central-configuration residuals, and requires positive radial energy before constructing the log-subtracted endpoint.
+- The theorem route certifies only the scoped `positive_energy_homothetic_escape` regime. It deliberately leaves `global_regime_exhaustion` open and rejects nonhomothetic initial data even when the scalar endpoint recurrence parameters are otherwise valid.
+- Exported the new theorem and branch constructors and updated README/audit notes. Remaining gap: this is a special endpoint-regime theorem, not arbitrary escape classification, asymptotic completeness, or the missing all-regime global classifier.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_general_solution_theorem.py
+python3 -m pytest -q tests/test_obstructions.py -k homothetic_escape
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py tests/test_general_solution.py
+```
+
+Result: `13 passed` for the theorem assembler suite, `4 passed` for the homothetic escape obstruction/endpoint slice, and the closed-form/general-solution/theorem slice completed at `[100%]` with exit code 0.
+
+## 2026-05-26 isolated KS spatial binary chart
+
+- Added `three_body_symmetry/ks_binary_chart.py`, an isolated Kustaanheimo-Stiefel spatial binary chart using the same `dt/ds=|u|^2` normalization as the planar Levi-Civita chart.
+- The module implements the projection `q=K(u)`, its Jacobian, the KS gauge-fiber generator and rotations, canonical noncollision position lifts, horizontal physical-state lifts, projected physical velocity, Kepler-parameter recovery, the regularized RHS `u''=(h/2)u`, and projection of the lifted acceleration back to the inverse-square Kepler force.
+- Added `tests/test_ks_binary_chart.py`. The tests check projection against a spatial Kepler reference integration, the exact projected acceleration identity, gauge-fiber invariance, coverage of the negative-x branch, finite regularized RHS/series coefficients at exact binary collision, and the planar slice agreement with the existing Levi-Civita chart.
+- Exported the KS functions and updated README/audit notes. Remaining gap: this is the local isolated-pair chart only. Spatial binary continuation is still not theorem-level until KS interval branch/gauge covers, separated-third-body perturbation terms, transitions, invariant ledgers, and `ValidatedAtlasSolution` integration exist.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_ks_binary_chart.py
+python3 -m pytest -q tests/test_levi_civita.py tests/test_binary_chart.py
+python3 -m pytest -q tests/test_ks_binary_chart.py tests/test_levi_civita.py tests/test_binary_chart.py tests/test_binary_series.py
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+```
+
+Result: `6 passed` for the KS chart suite, `17 passed` for the existing Levi-Civita/binary-chart regression slice, `36 passed` for the broader KS/Levi-Civita/binary-series slice, and `52 passed` for the theorem/closed-form slice.
+
+## 2026-05-26 KS interval position branch certificates
+
+- Extended `three_body_symmetry/ks_binary_chart.py` with `KSBranchCertificate`, `IntervalKSPositionChart`, `ks_lift_position_on_branch(...)`, `ks_interval_position_chart(...)`, and `ks_interval_position_atlas(...)`.
+- The interval constructor now certifies the two gauge-fixed algebraic KS position charts `r+x>0` and `r-x>0`, emits a typed failed branch certificate when an interval can meet a branch singularity, and returns only certified charts in the local branch atlas.
+- Added KS regressions checking that a positive-x interval chart contains the point lift, that a negative-x-axis box is covered by the negative branch while the positive branch fails, that a collision-containing box yields no certified interval position atlas, and that the positive/negative point branches are related by a KS gauge rotation.
+- Exported the new certificate types and constructors and updated README/audit notes. Remaining gap: spatial binary continuation still needs interval velocity lifts, separated-third-body perturbation terms, transition certificates, invariant ledgers, and `ValidatedAtlasSolution` integration.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_ks_binary_chart.py
+python3 -m pytest -q tests/test_ks_binary_chart.py tests/test_levi_civita.py tests/test_binary_chart.py tests/test_binary_series.py
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+```
+
+Result: `10 passed` for the KS chart and interval-branch suite, `40 passed` for the broader KS/Levi-Civita/binary-series slice, and `52 passed` for the theorem/closed-form slice.
+
+## 2026-05-26 KS interval state and velocity lift certificates
+
+- Extended `three_body_symmetry/ks_binary_chart.py` with `IntervalKSStateChart`, `physical_to_ks_on_branch(...)`, `ks_interval_state_chart(...)`, and `ks_interval_state_atlas(...)`.
+- A certified interval state chart now combines a certified KS position branch with a relative velocity interval box, lifts it through `u'=DK(u)^T v/4`, encloses the Kepler energy, and records a horizontal-gauge constraint interval that must contain zero.
+- Failed position branches now propagate as typed failed interval state certificates rather than raw boolean witnesses. Certified state atlases return only branches with certified position chart, positive `mu`, and a horizontal constraint interval containing zero.
+- Added regressions checking point containment for `u`, `u'`, and energy; two-branch atlas coverage on overlapping positive/negative gauges; and precise failure for collision-containing boxes.
+- Exported the new state-lift certificate types/functions and updated README/audit notes. Remaining gap: spatial binary continuation still needs separated-third-body KS chart equations, transition certificates, invariant ledgers, and `ValidatedAtlasSolution` integration.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_ks_binary_chart.py
+python3 -m pytest -q tests/test_ks_binary_chart.py tests/test_levi_civita.py tests/test_binary_chart.py tests/test_binary_series.py
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+```
+
+Result: `13 passed` for the KS chart/state-lift suite, `43 passed` for the broader KS/Levi-Civita/binary-series slice, and `52 passed` for the theorem/closed-form slice.
+
+## 2026-05-26 point-level separated-third-body KS chart
+
+- Extended `three_body_symmetry/ks_binary_chart.py` with `SpatialKSBinaryChartState`, `SpatialKSBinaryChartDerivative`, `spatial_to_ks_binary_chart(...)`, `ks_binary_chart_to_spatial(...)`, `ks_analytic_coordinate_accelerations(...)`, `regularized_ks_binary_chart_rhs(...)`, `spatial_accelerations_from_ks_binary_rhs(...)`, and KS pair-energy constraint checks.
+- The point-level spatial chart now mirrors the planar Levi-Civita regularized binary chart: it stores the binary center, third-body offset, KS pair variables, and pair energy; computes analytic separated-third-body force fields; adds the relative perturbation as `(rho/4)DK(u)^T p`; and evolves pair energy by `q_s dot p`.
+- Added regressions proving noncollision spatial states round-trip through the KS chart, the regularized RHS projects to full Newtonian accelerations for `rho>0`, the KS acceleration formula agrees with the physical relative-acceleration split, the exact binary-collision RHS remains finite with separated third body, and the analytic third-body perturbation has the correct collision limit.
+- Exported the new point-chart APIs and updated README/audit notes. Remaining gap: spatial binary continuation still needs interval Taylor propagation, transition certificates, invariant ledgers, and `ValidatedAtlasSolution` integration before it can support theorem-level claims.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_ks_binary_chart.py
+python3 -m pytest -q tests/test_ks_binary_chart.py tests/test_levi_civita.py tests/test_binary_chart.py tests/test_binary_series.py
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+```
+
+Result: `18 passed` for the KS chart/state/separated-third-body suite, `48 passed` for the broader KS/Levi-Civita/binary-series slice, and `52 passed` for the theorem/closed-form slice.
+
+## 2026-05-26 point Taylor propagation for spatial KS binary chart
+
+- Added `three_body_symmetry/ks_binary_series.py`, a point Taylor-series constructor for the separated-third-body spatial KS binary chart.
+- The constructor derives coefficients for the regularized KS RHS, physical time, binary center, third-body offset, and pair-energy evolution from the chart equations rather than from hand-supplied theorem flags.
+- Added `tests/test_ks_binary_series.py`. The tests check the coefficient recurrence for every state block, compare the Taylor evaluation against numerical integration of the lifted KS chart, project the Taylor chart back to ordinary Newtonian motion, preserve the KS pair-energy constraint, and start from an exact binary collision with finite two-sided continuation.
+- Exported the point Taylor APIs through `three_body_symmetry.__init__` with `ks_binary_series_*` aliases for coefficient helpers. Remaining gap: this still is not a theorem-level spatial binary continuation until interval Taylor/tail propagation, certified transitions, invariant ledgers, and `ValidatedAtlasSolution` integration exist.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_ks_binary_series.py
+python3 -m pytest -q tests/test_ks_binary_chart.py tests/test_ks_binary_series.py tests/test_levi_civita.py tests/test_binary_chart.py tests/test_binary_series.py
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+```
+
+Result: `5 passed` for the KS spatial binary Taylor suite, `53 passed` for the broader KS/Levi-Civita/binary-series slice, and `52 passed` for the theorem/closed-form slice.
+
+## 2026-05-26 point-seeded interval Taylor and tail checks for spatial KS binary chart
+
+- Extended `three_body_symmetry/ks_binary_series.py` with `IntervalSpatialKSBinaryChartState`, `IntervalSpatialKSBinaryTaylorSolution`, interval KS projection/Jacobian/RHS coefficient recurrences, `construct_interval_spatial_ks_binary_taylor_solution(...)`, and `certify_spatial_ks_binary_interval_taylor_equations(...)`.
+- The interval constructor wraps point spatial KS chart data with outward-rounded scalar intervals, propagates the same separated-third-body KS recurrence coefficient-by-coefficient, and emits a residual certificate whose every coefficient interval must contain zero. Exact binary-collision starts are covered as long as the third body remains separated.
+- Extended `three_body_symmetry/tail_bounds.py` with spatial KS binary solution-array extractors and `spatial_ks_binary_tail_certificate(...)`, which computes guarded interval Taylor tail bounds from extra interval coefficients rather than a theorem-level boolean.
+- Expanded `tests/test_ks_binary_series.py` to check interval coefficient containment, point-value containment, residual certificate closure, exact-collision interval starts, and guarded interval-tail certification.
+- Exported the interval Taylor/residual APIs through `three_body_symmetry.__init__`. Remaining gap: this is point-seeded interval propagation, not yet uncertain interval-state-box propagation through the full KS chart family; spatial binary continuation still needs transition certificates, invariant ledgers, and `ValidatedAtlasSolution` integration.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_ks_binary_series.py tests/test_tail_bounds.py
+python3 -m pytest -q tests/test_ks_binary_series.py
+python3 -m pytest -q tests/test_ks_binary_chart.py tests/test_ks_binary_series.py tests/test_levi_civita.py tests/test_binary_chart.py tests/test_binary_series.py
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+```
+
+Result: `34 passed` for the KS spatial binary Taylor plus tail-bound slice, `9 passed` for the KS spatial binary Taylor/interval suite, `57 passed` for the broader KS/Levi-Civita/binary-series slice, and `52 passed` for the theorem/closed-form slice.
+
+## 2026-05-26 finite invariant ledgers for spatial KS binary chart
+
+- Extended `three_body_symmetry/ks_binary_series.py` with finite interval invariant certificates for the separated-third-body spatial KS chart: `certify_spatial_ks_binary_center_of_mass_motion(...)`, `certify_spatial_ks_binary_linear_momentum_conservation(...)`, `certify_spatial_ks_binary_centered_angular_momentum_conservation(...)`, and `certify_spatial_ks_binary_total_energy_conservation(...)`.
+- The center-of-mass and linear-momentum certificates use the finite Jacobi variables `R` and `y`. The energy certificate uses the pair energy variable for the singular internal binary energy plus the two analytic third-body potentials.
+- The centered-angular-momentum certificate uses the finite horizontal-KS expression for `q x qdot`, then converts axial-vector components to the repository's global invariant order `(xy, xz, yz)`. This avoids evaluating singular physical binary velocities at exact collision.
+- Expanded `tests/test_ks_binary_series.py` to compare the noncollision invariant constants against reconstructed centered physical data and to verify all four invariant certificates at an exact binary-collision start with the third body separated.
+- Exported the invariant constructors through `three_body_symmetry.__init__`. Remaining gap: spatial KS binary continuation still needs uncertain interval-state-box propagation, chart transition certificates, and `ValidatedAtlasSolution` integration.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_ks_binary_series.py tests/test_tail_bounds.py
+python3 -m pytest -q tests/test_ks_binary_chart.py tests/test_ks_binary_series.py tests/test_levi_civita.py tests/test_binary_chart.py tests/test_binary_series.py
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+```
+
+Result: `36 passed` for the KS spatial binary Taylor/tail/invariant slice, `59 passed` for the broader KS/Levi-Civita/binary-series slice, and `52 passed` for the theorem/closed-form slice.
+
+## 2026-05-26 KS horizontal and pair-energy constraint certificates
+
+- Extended `three_body_symmetry/ks_binary_series.py` with `SpatialKSBinaryConstraintCertificate`, point and interval coefficients for the KS horizontal-gauge constraint, interval coefficients for the KS pair-energy constraint, and constructors `certify_spatial_ks_binary_horizontal_constraint(...)` and `certify_spatial_ks_binary_pair_energy_constraint(...)`.
+- The horizontal certificate checks the finite KS fiber constraint `(-d,c,-b,a) dot u' = 0` coefficient-by-coefficient. The pair-energy certificate checks `2|u'|^2 - M - |u|^2 h = 0` coefficient-by-coefficient.
+- These checks are projection prerequisites rather than top-level theorem witnesses: the spatial KS chart can only project to physical Newtonian motion when the horizontal gauge and energy relation are preserved.
+- Expanded `tests/test_ks_binary_series.py` to certify both constraints for noncollision and exact-collision starts and to reject deliberately bad lifts with perturbed pair energy or a vertical gauge component.
+- Exported the constraint certificate and constructors through `three_body_symmetry.__init__`. Remaining gap: spatial KS binary continuation still needs uncertain interval-state-box propagation, chart transition certificates, and `ValidatedAtlasSolution` integration.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_ks_binary_series.py tests/test_tail_bounds.py
+python3 -m pytest -q tests/test_ks_binary_chart.py tests/test_ks_binary_series.py tests/test_levi_civita.py tests/test_binary_chart.py tests/test_binary_series.py
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+```
+
+Result: `39 passed` for the KS spatial binary Taylor/tail/invariant/constraint slice, `62 passed` for the broader KS/Levi-Civita/binary-series slice, and `52 passed` for the theorem/closed-form slice.
+
+## 2026-05-26 spatial interval-box entry for KS binary chart
+
+- Extended `three_body_symmetry/ks_binary_series.py` with `spatial_interval_to_ks_binary_chart_state(...)` and `spatial_interval_to_ks_binary_chart_state_atlas(...)`.
+- The constructor consumes a full spatial interval state box, derives the selected-pair relative position/velocity intervals, lifts them through the certified KS branch chart or branch atlas, and constructs interval chart data for `u`, `u'`, pair energy, binary center, binary-center velocity, third-body offset, and third-body offset velocity.
+- `IntervalSpatialKSBinaryChartState` now records the branch certificate and can check containment of physical point states on the selected KS gauge branch.
+- `three_body_symmetry/tail_bounds.py` now includes `spatial_ks_binary_interval_tail_certificate(...)`, so interval-box KS chart states can feed the guarded interval tail machinery directly.
+- Expanded `tests/test_ks_binary_series.py` to verify physical-point containment for a branch lift, coverage by both overlapping KS gauge branches, residual/constraint/invariant/tail closure after interval-box entry, and rejection of collision-containing selected-pair boxes.
+- Exported the spatial interval-box entry constructors through `three_body_symmetry.__init__`. Remaining gap: spatial KS binary continuation still needs chart transition certificates, long-chain set propagation across transitions, and `ValidatedAtlasSolution` integration.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_ks_binary_series.py tests/test_tail_bounds.py
+python3 -m pytest -q tests/test_ks_binary_chart.py tests/test_ks_binary_series.py tests/test_levi_civita.py tests/test_binary_chart.py tests/test_binary_series.py
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+```
+
+Result: `43 passed` for the KS spatial binary Taylor/tail/invariant/constraint/interval-entry slice, `66 passed` for the broader KS/Levi-Civita/binary-series slice, and `52 passed` for the theorem/closed-form slice.
+
+## 2026-05-26 rho-positive KS endpoint projection for spatial binary chart
+
+- Extended `three_body_symmetry/ks_binary_series.py` with `SpatialKSBinaryPhysicalProjectionCertificate`, `project_spatial_ks_binary_interval_chart_state_to_physical(...)`, and `project_spatial_ks_binary_taylor_endpoint_to_physical(...)`.
+- The projection constructor evaluates an interval KS endpoint, computes interval `rho=|u|^2`, and emits an ordinary 18-component physical position/velocity interval state only when `rho.lower>0`. Exact binary-collision endpoints remain explicitly uncertified for ordinary physical velocities through the missing obligation `rho_positive_interval`.
+- Expanded `tests/test_ks_binary_series.py` to check physical-state containment at KS entry, rho-positive interval Taylor endpoint projection, ordinary Newtonian reference containment after the KS endpoint handoff, and exact-collision rejection at `s=0` followed by certification after a rho-positive exit.
+- Exported the projection certificate and constructors through `three_body_symmetry.__init__`. Remaining gap: this closes the local KS-to-ordinary endpoint projection precondition, but spatial binary continuation still needs event-isolated chart transitions, long-chain set propagation across those transitions, and `ValidatedAtlasSolution` integration.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_ks_binary_series.py
+python3 -m pytest -q tests/test_ks_binary_series.py tests/test_tail_bounds.py
+python3 -m pytest -q tests/test_ks_binary_chart.py tests/test_ks_binary_series.py tests/test_levi_civita.py tests/test_binary_chart.py tests/test_binary_series.py
+python3 -m pytest -q tests/test_general_solution_theorem.py tests/test_closed_form.py
+```
+
+Result: compileall passed, `22 passed` for the KS spatial binary series suite, `47 passed` for the KS spatial binary/tail slice, `70 passed` for the broader KS/Levi-Civita/binary-series slice, and `52 passed` for the theorem/closed-form slice.
+
+## 2026-05-26 local spatial KS handoff enters ValidatedAtlasSolution
+
+- Extended `three_body_symmetry/validated_atlas.py` with `validated_atlas_from_spatial_ks_binary_chart(...)`.
+- The adapter consumes only constructor-derived local certificates: interval spatial KS Taylor residuals, horizontal-gauge and pair-energy projection constraints, finite invariant ledgers, guarded KS tail budget, rho-positive endpoint projection, ordinary spatial Taylor residuals, ordinary invariant ledgers, and an ordinary guarded tail budget.
+- The resulting object has two `ValidatedChart` entries, `spatial_ks_binary` and `spatial_ordinary_taylor_after_ks`, plus one certified `spatial_ks_to_ordinary_rho_positive_endpoint_projection` transition. The target interval is the ordinary post-handoff state enclosure with the guarded tail budget added.
+- The proof ledger intentionally refuses theorem-level certification and reports the current missing obligations: `spatial_ks_event_isolation`, `finite_time_physical_targeting`, and `spatial_collision_policy_scope`.
+- Expanded `tests/test_ks_binary_series.py` to verify both a noncollision spatial interval-box handoff and an exact-binary-collision exit handoff. Both close the local chart, transition, residual, invariant, tail, and target-containment checks while keeping `atlas.proof_certified == False` for the missing theorem obligations.
+- Exported `validated_atlas_from_spatial_ks_binary_chart(...)` through `three_body_symmetry.__init__` and updated README/audit notes.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_ks_binary_series.py
+python3 -m pytest -q tests/test_ks_binary_series.py tests/test_tail_bounds.py
+python3 -m pytest -q tests/test_ks_binary_chart.py tests/test_ks_binary_series.py tests/test_levi_civita.py tests/test_binary_chart.py tests/test_binary_series.py
+python3 -m pytest -q tests/test_general_solution.py -k validated_atlas
+python3 -m pytest -q tests/test_hybrid.py::test_validated_atlas_from_hybrid_solution_closes_binary_handoff_ledgers tests/test_hybrid.py::test_validated_atlas_from_ordinary_hybrid_solution_closes_residual_and_invariant_ledgers tests/test_general_solution_theorem.py tests/test_closed_form.py
+```
+
+Result: compileall passed, `24 passed` for the KS spatial binary series suite, `49 passed` for the KS spatial binary/tail slice, `72 passed` for the broader KS/Levi-Civita/binary-series slice, `2 passed` for the public validated-atlas dispatcher slice, and `54 passed` for the selected validated-atlas/theorem/closed-form slice.
+
+## 2026-05-26 spatial KS rho-exit event isolation
+
+- Extended `three_body_symmetry/ks_binary_series.py` with `SpatialKSRhoExitEventCertificate` and `certify_spatial_ks_binary_rho_exit_event(...)`.
+- The constructor forms the interval polynomial for `rho(s)-rho_exit`, finds the first increasing candidate root from the midpoint polynomial, then certifies it with interval arithmetic: negative left endpoint, positive right endpoint, positive derivative throughout the bracket, and negative pre-event interval from `s=0` to the bracket. A state already outside the threshold does not certify an exit.
+- Updated `validated_atlas_from_spatial_ks_binary_chart(...)` so callers may provide `exit_rho` and `s_upper` instead of a hand-chosen `s_endpoint`. The adapter derives the certified exit root and records `spatial_ks_exit_event_isolation` as solved while keeping `spatial_ks_entry_event_isolation`, `finite_time_physical_targeting`, and `spatial_collision_policy_scope` as missing theorem obligations.
+- Expanded `tests/test_ks_binary_series.py` with exact-collision rho-exit isolation, already-outside rejection, and an exact-collision `ValidatedAtlasSolution` handoff driven by the certified exit root.
+- Exported the event certificate and constructor through `three_body_symmetry.__init__` and updated README/audit notes.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_ks_binary_series.py
+python3 -m pytest -q tests/test_ks_binary_series.py tests/test_tail_bounds.py
+python3 -m pytest -q tests/test_ks_binary_chart.py tests/test_ks_binary_series.py tests/test_levi_civita.py tests/test_binary_chart.py tests/test_binary_series.py
+python3 -m pytest -q tests/test_general_solution.py -k validated_atlas
+python3 -m pytest -q tests/test_hybrid.py::test_validated_atlas_from_hybrid_solution_closes_binary_handoff_ledgers tests/test_hybrid.py::test_validated_atlas_from_ordinary_hybrid_solution_closes_residual_and_invariant_ledgers tests/test_general_solution_theorem.py tests/test_closed_form.py
+```
+
+Result: compileall passed, `26 passed` for the KS spatial binary series suite, `51 passed` for the KS spatial binary/tail slice, `74 passed` for the broader KS/Levi-Civita/binary-series slice, `2 passed` for the public validated-atlas dispatcher slice, and `54 passed` for the selected validated-atlas/theorem/closed-form slice.
+
+## 2026-05-26 spatial ordinary-to-KS entry event isolation
+
+- Extended `three_body_symmetry/ks_binary_series.py` with `SpatialKSEntryEventCertificate` and `certify_spatial_ordinary_ks_entry_event(...)`.
+- The constructor forms the interval polynomial for `|q_j(t)-q_i(t)|^2-d_entry^2` from an ordinary spatial interval Taylor chart, finds the first decreasing candidate root, and certifies it with interval signs: positive left endpoint, negative right endpoint, negative derivative throughout the bracket, and positive pre-event interval.
+- Added `spatial_ordinary_entry_event_to_ks_chart_state(...)` and `spatial_ordinary_entry_event_to_ks_chart_state_atlas(...)`, which evaluate the ordinary interval Taylor chart over the certified root interval and lift the resulting full 3D state box into one KS branch or the certified branch atlas.
+- Expanded `tests/test_ks_binary_series.py` with a decreasing pair-distance entry certificate, KS branch/atlas lift containment for the point Taylor state at the certified root, and a no-crossing-within-window rejection case.
+- Exported the new entry certificate and lift constructors through `three_body_symmetry.__init__` and updated README/audit notes.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_ks_binary_series.py
+python3 -m pytest -q tests/test_ks_binary_series.py tests/test_tail_bounds.py
+python3 -m pytest -q tests/test_ks_binary_chart.py tests/test_ks_binary_series.py tests/test_levi_civita.py tests/test_binary_chart.py tests/test_binary_series.py
+python3 -m pytest -q tests/test_general_solution.py -k validated_atlas
+python3 -m pytest -q tests/test_hybrid.py::test_validated_atlas_from_hybrid_solution_closes_binary_handoff_ledgers tests/test_hybrid.py::test_validated_atlas_from_ordinary_hybrid_solution_closes_residual_and_invariant_ledgers tests/test_general_solution_theorem.py tests/test_closed_form.py
+```
+
+Result: compileall passed, `29 passed` for the KS spatial binary series suite, `54 passed` for the KS spatial binary/tail slice, `77 passed` for the broader KS/Levi-Civita/binary-series slice, `2 passed` for the public validated-atlas dispatcher slice, and `54 passed` for the selected validated-atlas/theorem/closed-form slice.
+
+## 2026-05-31 generalized Fuchsian total-stop checker bridge
+
+- Added serialized supplied-entry generalized Fuchsian stop-chart evidence:
+  `TotalCollisionGeneralizedFuchsianStopChartCertificate`,
+  `GeneralizedFuchsianSelectedCoefficientCertificate`, and
+  `GeneralizedFuchsianRemainderMajorantCertificate`.
+- Added `check_total_collision_generalized_fuchsian_stop_chart(...)`. The checker
+  reconstructs the finite `FuchsianShapeBranch` from selected rows, recomputes
+  punctured isolation, verifies cubic-time binding, finite-energy scale-row
+  evidence, Banach contraction/self-map constants, primitive Cauchy first-shell
+  tails and shell ratios, sampled lifted residual plus tail, interval lifted
+  residuals on adaptively subdivided punctured slabs, interval zero-angular
+  momentum, interval center-of-mass and total-linear-momentum ledgers,
+  endpoint-collapse tail, and stop-chart grammar.
+- Updated `certify_supplied_generalized_fuchsian_stop_chart_for_admissible_entry_data(...)`
+  so the supplied local theorem now serializes its generalized stop chart and
+  consumes the independent checker result. It still explicitly does not claim
+  arbitrary incoming-germ derivation.
+- Remaining generalized total-collision blockers are now sharper: derive the
+  generalized entry data and Banach constants from arbitrary incoming germs,
+  add generalized projected Newton interval enclosures, and replace the
+  lightweight checker arithmetic with a proof-grade backend.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py three_body_symmetry/certificate_checker.py three_body_symmetry/certificate_language.py three_body_symmetry/__init__.py tests/test_certificate_checker.py tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_certificate_checker.py -k "generalized_fuchsian or fuchsian_stop"
+python3 -m pytest -q tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k generalized_fuchsian
+python3 -m pytest -q tests/test_open_time_atlas.py tests/test_closed_form.py -k "finite_target_completeness or regularized_locally_finite_atlas or total_collision"
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_certificate_checker.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py tests/test_closed_form.py
+```
+
+Result: py_compile passed, `5 passed` for the generalized/Fuchsian stop-checker slice, `42 passed` for the full certificate-checker file, `28 passed` for finite-target completeness, `8 passed` for the generalized finite-target-completeness slice, `5 passed` for the selected open-time/closed-form slice, compileall passed, and collect-only saw `129` tests across the affected files.
+
+## 2026-05-31 spatial KS-to-KS competing-handoff checker bridge
+
+- Extended `check_spatial_ks_transition(...)` to support
+  `spatial_ks_to_ks_competing_binary_entry` transitions between two serialized
+  spatial KS binary charts, with explicit source/target parameters, physical
+  time matching, and projected state-continuity checks.
+- Extended `construct_independent_validated_atlas_checked_chain(...)` so a
+  constructor-produced two-KS competing-binary `ValidatedAtlasSolution` can be
+  serialized into two checked `SpatialKSBinaryChartCertificate` objects, one
+  checked `SpatialKSTransitionCertificate`, and a checked `ChartChainCertificate`.
+- Hardened the KS chart checker for high-order near-event charts: absolute
+  coefficient recurrence remains accepted, but the checker can now also certify
+  scale-normalized KS recurrence when the exact-rational interval residual and
+  interval pair-energy/horizontal-gauge constraints are small over the certified
+  parameter interval. This prevents benign high-order cancellation from blocking
+  a value-level KS atlas proof.
+- Added an open-time regression for a real constructor-produced KS-to-KS
+  competing-handoff atlas. This is still a finite supplied-chain verifier slice,
+  not recursive arbitrary branch/event-order construction and not the missing
+  arbitrary-initial-data regime classifier.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/certificate_checker.py three_body_symmetry/open_time_atlas.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_open_time_atlas.py -k "spatial_ks_to_ks_competing_chain"
+python3 -m pytest -q tests/test_certificate_checker.py -k "spatial_ks or transition or chart_chain"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "spatial_ks_to_ks_competing_chain or branch_union_leaf_chains or supplied_branch_union_checked_prefix"
+python3 -m pytest -q tests/test_ks_binary_series.py::test_spatial_ks_competing_binary_handoff_builds_two_ks_atlas
+python3 -m pytest -q tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_closed_form.py -k "checked_prefix or independent_chart_verifier or regularized_locally_finite_atlas or branch_union"
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_certificate_checker.py tests/test_open_time_atlas.py tests/test_closed_form.py
+```
+
+Result: py_compile passed, the focused KS-to-KS checked-chain test passed, the
+spatial-KS/transition/chart-chain checker slice passed with `18 passed`, the
+open-time checked-prefix slice passed with `3 passed`, the existing KS
+competing-handoff constructor test passed, full `tests/test_certificate_checker.py`
+passed with `50 passed`, full `tests/test_open_time_atlas.py` passed with
+`24 passed`, the selected closed-form audit slice passed with `5 passed`,
+compileall passed, and collect-only saw `119` tests across the affected files.
+
+## 2026-05-31 stratified branch-union checker taxonomy
+
+- Tightened `check_branch_union(...)` for
+  `finite_time_stratified_branch_union`. The independent checker now requires
+  stratified unions to carry explicit leaf-kind taxonomy, checks those labels
+  against `SUPPORTED_STRATIFIED_LEAF_KINDS`, and rejects
+  `unsupported_analytic_stratum` even if the leaf response id itself points to
+  a checked chart or chain.
+- Added certificate-checker regressions for accepted stratified taxonomy,
+  missing taxonomy, and unsupported stratum rejection. This is a checker-side
+  enforcement step toward the recursive stratified branch/event-order theorem;
+  it does not derive arbitrary recursive branch trees from initial data.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/certificate_checker.py tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_certificate_checker.py -k "branch_union or stratified"
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "stratified or branch_tree or event_order_partition"
+python3 -m pytest -q tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_open_time_atlas.py -k "branch_union or checked_prefix or set_valued_constructor_branch_event_completeness"
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_certificate_checker.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+```
+
+Result: py_compile passed, the branch-union/stratified checker slice passed
+with `6 passed`, the finite-target stratified branch/event-order slice passed
+with `6 passed`, full `tests/test_certificate_checker.py` passed with
+`53 passed`, full `tests/test_finite_target_completeness.py` passed with
+`28 passed`, the selected open-time branch/check-prefix slice passed with
+`4 passed`, compileall passed, and collect-only saw `105` tests across the
+affected files.
+
+## 2026-05-31 stratified branch-union atlas serialization
+
+- Extended the validated-atlas branch-union serializer so a supplied
+  `StratifiedBranchTreeCertificate` is emitted as
+  `finite_time_stratified_branch_union` instead of losing its taxonomy and
+  falling back to the generic branch-union grammar.
+- `leaf_kind` labels from the stratified tree are now preserved as the
+  serialized `BranchUnionCertificate.leaf_kinds`, so constructed stratified
+  partitions must pass the independent checker's supported-stratum and
+  unsupported-stratum rejection obligations.
+- Added open-time regressions that build the real spatial close-pair
+  branch-union atlas, replace its source partition with the corresponding
+  stratified branch tree, verify that the independently checked aggregate
+  branch union uses `separated_binary_entry` leaf taxonomy, and then pass the
+  same stratified atlas through
+  `construct_open_time_locally_finite_atlas_theorem(...)` as a supplied checked
+  prefix. This tightens the existing finite supplied-branch-union path; it
+  still does not claim arbitrary recursive branch/event-order construction from
+  initial data.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/open_time_atlas.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_open_time_atlas.py -k "stratified_branch_union or branch_union_leaf_chains or supplied_branch_union_checked_prefix"
+python3 -m pytest -q tests/test_certificate_checker.py -k "branch_union or stratified"
+python3 -m pytest -q tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_certificate_checker.py tests/test_open_time_atlas.py tests/test_finite_target_completeness.py
+```
+
+Result: py_compile passed, the open-time stratified/branch-union slice passed
+with `4 passed`, and the branch-union/stratified checker slice passed with
+`6 passed`. Full `tests/test_certificate_checker.py` passed with `53 passed`,
+full `tests/test_open_time_atlas.py` passed with `26 passed`, full
+`tests/test_finite_target_completeness.py` passed with `28 passed`, compileall
+passed, and collect-only saw `107` tests across the affected files.
+
+## 2026-05-31 stratified branch-union closed-form audit propagation
+
+- Added a closed-form audit regression for the stratified supplied-prefix path:
+  the test builds the real spatial close-pair branch-union atlas, replaces its
+  branch partition with the corresponding `StratifiedBranchTreeCertificate`,
+  routes that atlas through the open-time supplied-prefix theorem, and audits
+  the `regularized_locally_finite_atlas` target.
+- The audit consumes the independent verifier evidence from the stratified
+  branch union, so `independent_chart_verifier` is no longer a blocker for
+  that checked instance.
+- The audit still refuses proof-grade certification: the
+  `audited_or_machine_checked_open_time_atlas_proof` and
+  `set_valued_constructor_branch_event_completeness` blockers remain visible.
+  This preserves the Pro steering split between checked finite-prefix evidence
+  and the still-open arbitrary recursive branch/event theorem.
+
+Verification:
+
+```text
+python3 -m py_compile tests/test_closed_form.py
+python3 -m pytest -q tests/test_closed_form.py -k "stratified_branch_union or supplied_branch_union_checked_prefix or supplied_spatial_ordinary_ks_checked_prefix or regularized_locally_finite_atlas"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "stratified_branch_union or branch_union_leaf_chains or supplied_branch_union_checked_prefix"
+python3 -m pytest -q tests/test_closed_form.py
+python3 -m pytest -q tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_certificate_checker.py -k "branch_union or stratified"
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_closed_form.py tests/test_open_time_atlas.py tests/test_certificate_checker.py
+```
+
+Result: py_compile passed, the selected closed-form audit slice passed with
+`4 passed`, and the selected open-time stratified/branch-union slice passed
+with `4 passed`. Full `tests/test_closed_form.py` passed with `46 passed`,
+full `tests/test_open_time_atlas.py` passed with `26 passed`, the
+branch-union/stratified checker slice passed with `6 passed`, compileall
+passed, and collect-only saw `125` tests across the affected files.
+
+## 2026-05-31 open-time search-refinement evidence bridge
+
+- Extended `construct_open_time_locally_finite_atlas_theorem(...)` and
+  `certify_finite_target_completeness_reduction(...)` to accept the existing
+  certificate-search evidence objects: uniform-margin branch/event refinement,
+  supplied stratified branch/event trees, and recursive stratified
+  branch/event consumption certificates.
+- The finite-target reduction now forwards those objects into
+  `certify_finite_target_certificate_search_completeness(...)`. This lets
+  checked instances remove the specific
+  `recursive_set_valued_branch_partition_consumption` and
+  `event_order_partition_consumption_theorem` blockers when constructor-derived
+  evidence is supplied.
+- The aggregate `set_valued_constructor_branch_event_completeness` blocker is
+  still deliberately left open. The new detail text distinguishes "this
+  displayed recursive evidence was consumed" from the stronger theorem that
+  derives such evidence for arbitrary positive-mass noncollision interval
+  inputs.
+- Added open-time and closed-form regressions showing that supplied refinement
+  evidence is consumed at the theorem/audit surfaces without promoting
+  proof-grade `regularized_locally_finite_atlas` certification.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/open_time_atlas.py tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_open_time_atlas.py -k "search_refinement or finite_target_completeness or pointwise_open_time"
+python3 -m pytest -q tests/test_closed_form.py -k "search_refinement or constructor_checked_prefix or regularized_locally_finite_atlas"
+python3 -m pytest -q tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_closed_form.py
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_open_time_atlas.py tests/test_closed_form.py tests/test_finite_target_completeness.py
+```
+
+Result: py_compile passed, the selected open-time reduction slice passed with
+`2 passed`, and the selected closed-form audit slice passed with `3 passed`.
+Full `tests/test_open_time_atlas.py` passed with `27 passed`, full
+`tests/test_closed_form.py` passed with `47 passed`, full
+`tests/test_finite_target_completeness.py` passed with `28 passed`, compileall
+passed, and collect-only saw `102` tests across the affected files.
+
+## 2026-05-31 chart-chain audit row machine-checked
+
+- Promoted only the structural `finite_chart_chain_concatenation` analytic
+  row from declared prose to `machine_checked_chart_chain_certificate`.
+- The audit record now points at the existing serialized checker inputs:
+  chart certificates, transition certificates, branch-union certificates, and
+  `ChartChainCertificate` verification. This removes
+  `finite_chart_chain_concatenation` from closed-form proof blockers without
+  touching the total-collision frontier.
+- The remaining Tier A rows, including Painleve, binary regularization,
+  binary isolation/accumulation, compact Taylor cover, and
+  `target_or_stop_dichotomy`, still require external audit or stronger
+  checker support. All Tier B total-collision entry blockers remain visible.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py tests/test_finite_target_completeness.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "analytic_lemma_registry or finite_target_completeness_theorem"
+python3 -m pytest -q tests/test_closed_form.py -k "closed_form_audit_consumes_open_time or regularized_locally_finite_atlas or search_refinement"
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_closed_form.py
+python3 -m pytest -q tests/test_open_time_atlas.py
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_closed_form.py tests/test_open_time_atlas.py
+```
+
+Result: py_compile passed, the selected finite-target analytic-registry slice
+passed with `1 passed`, and the selected closed-form audit slice passed with
+`3 passed`. Full `tests/test_finite_target_completeness.py` passed with
+`28 passed`, full `tests/test_closed_form.py` passed with `47 passed`, full
+`tests/test_open_time_atlas.py` passed with `27 passed`, compileall passed, and
+collect-only saw `102` tests across the affected files.
+
+## 2026-05-31 finite-target outcome partition machine-checked
+
+- Promoted only the structural `target_or_stop_dichotomy` row from declared
+  prose to `machine_checked_outcome_partition`.
+- The checker evidence is deliberately narrow: the finite-target theorem object
+  must expose exactly `FINITE_TARGET_COMPLETENESS_OUTCOMES` for the
+  maximal-classical statement. The lower-level finite-target adapter still
+  names selector continuation as a separate explicit policy outcome outside
+  this two-outcome theorem partition. The predecessor analytic existence
+  lemmas remain their own blockers.
+- This removes `target_or_stop_dichotomy` from closed-form proof blockers
+  without touching Painleve, binary regularization/isolation/accumulation,
+  compact Taylor cover, or any Tier B total-collision entry frontier blocker.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py tests/test_finite_target_completeness.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "analytic_lemma_registry or finite_target_completeness_theorem or target_or_stop"
+python3 -m pytest -q tests/test_closed_form.py -k "target_or_stop or regularized_locally_finite_atlas or closed_form_audit_consumes_open_time"
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_closed_form.py tests/test_open_time_atlas.py
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_closed_form.py tests/test_open_time_atlas.py
+```
+
+Result: py_compile passed, the selected finite-target registry slice passed
+with `1 passed`, the selected closed-form audit slice passed with `1 passed`,
+the full affected finite-target/closed-form/open-time run passed, compileall
+passed, and collect-only saw `106` tests across the affected files.
+
+## 2026-05-31 polynomial arrangement recursive consumption
+
+- Added `certify_polynomial_decision_arrangement_recursive_consumption(...)`.
+- The constructor does not introduce a new proof layer: it normalizes supplied
+  child certificates keyed by equality-stratum id, source leaf id, or
+  stratified leaf id, then returns the existing
+  `RecursiveStratifiedBranchEventConsumptionCertificate`.
+- This closes the finite polynomial-arrangement case where strict sign-vector
+  cells are terminal and root-bracket equality leaves descend to supplied
+  lower-dimensional or lower-rank child trees. It still leaves arbitrary
+  interval-input branch/event-order partition termination as the named open
+  theorem.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py three_body_symmetry/__init__.py tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "polynomial_decision_arrangement or polynomial_decision_stratifier or recursive_stratified"
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_closed_form.py tests/test_open_time_atlas.py
+```
+
+Result: py_compile passed, the focused recursive stratified slice passed with
+`7 passed`, the full affected finite-target/closed-form/open-time run passed,
+compileall passed, and collect-only saw `112` tests across the affected files.
+
+## 2026-05-31 pointwise open-time compact exhaustion internally proven
+
+- Added proof-bearing status to `AnalyticTheoremCertificate` and promoted only
+  the two compact-exhaustion lemmas used by
+  `certify_pointwise_open_time_locally_finite_atlas_theorem(...)`:
+  `finite_target_theorem_reduces_compact_interval_exhaustion` and
+  `countable_nested_compact_interval_local_finiteness`.
+- The proof is narrow: for each `K_n=[-nR,nR]`, apply the already audited
+  pointwise finite-target atlas-or-stop theorem to `+nR` and `-nR`; concatenate
+  the two one-sided finite chains when both endpoints are reached, or stop at
+  the earliest unselected total collision.  The nested compact intervals are
+  countable, cofinal in the real line, and every compact subinterval is
+  contained in one prefix, so the exact-input open-time atlas-or-stop family is
+  locally finite without endpoint-regime classification.
+- This closes `PointwiseOpenTimeLocallyFiniteAtlasTheoremCertificate` for
+  exact/computable point inputs.  It deliberately does not certify the public
+  interval-box constructor theorem: `set_valued_constructor_branch_event_completeness`
+  remains visible on `construct_open_time_locally_finite_atlas_theorem(...)`.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/open_time_atlas.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_open_time_atlas.py -k "pointwise_open_time or proof_certified_properties"
+python3 -m pytest -q tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_closed_form.py -k "open_time or regularized_locally_finite_atlas or checked_prefix"
+python3 -m pytest -q tests/test_finite_target_completeness.py
+```
+
+Result: py_compile passed, the pointwise/proof-certified slice passed with
+`2` tests, the full open-time suite passed, the focused closed-form slice
+passed with `7` tests, and the finite-target completeness suite passed with
+`29` tests.
+
+## 2026-05-31 uniform-margin set-valued constructor theorem
+
+- Added `UniformMarginSetValuedConstructorCompletenessCertificate` and
+  `certify_uniform_margin_set_valued_constructor_completeness(...)`.
+- The theorem is deliberately scoped to compact interval input families whose
+  branch-selection and event-order analytic discriminants have explicit
+  positive uniform margins and finite Lipschitz bounds.  The proof composes
+  the existing bisection-depth estimates for branch and event decisions,
+  the pointwise finite-target theorem, fair certificate enumeration, and
+  finite supplied branch-tree consumption.  Once terminal subboxes are smaller
+  than `eta/L`, each discriminator has constant sign/order on the leaf, so the
+  set-valued constructor produces a finite certified branch union.
+- This closes the aggregate `set_valued_constructor_branch_event_completeness`
+  obligation only when the new positive-margin theorem certificate is supplied
+  to `certify_finite_target_completeness_reduction(...)` or
+  `construct_open_time_locally_finite_atlas_theorem(...)`.  It does not claim
+  equality strata: simultaneous first events, selector boundaries, and
+  total-collision clusters still require the recursive stratified equality-tree
+  theorem or explicit stop/selector leaves.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py three_body_symmetry/open_time_atlas.py three_body_symmetry/__init__.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "uniform_margin_set_valued or uniform_margin_refinement"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "uniform_margin_set_valued or supplied_search_refinement"
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_closed_form.py tests/test_open_time_atlas.py
+python3 -m compileall three_body_symmetry tests
+```
+
+Initial result: py_compile passed, the focused finite-target slice passed with
+`2` tests, the focused open-time slice passed with `2` tests, the full
+affected finite-target/closed-form/open-time suite passed with `36` tests, and
+compileall passed. A status probe confirmed the default open-time constructor
+still reports the recursive branch/event and aggregate set-valued blockers,
+while the explicit uniform-margin route has `certified=True`,
+`proof_certified=False`, and no missing obligations.
+
+## 2026-05-31 polynomial decision stratified tree constructor
+
+- Added `PolynomialDecisionStratificationCertificate`,
+  `PolynomialDecisionStratumCertificate`, and
+  `certify_polynomial_decision_stratified_branch_event_tree(...)`.
+- This is the first branch/event tree path in this module that derives the
+  finite tree from explicit analytic decision data instead of only consuming a
+  pre-supplied tree.  For a one-dimensional polynomial discriminator on a
+  compact interval, supplied simple-root brackets are rechecked by interval
+  value and derivative signs.  The constructor then proves strict sign on each
+  cell between brackets and emits a `StratifiedBranchTreeCertificate` with
+  positive-margin leaves plus explicit equality-root leaves.
+- The equality leaves are intentionally not terminal.  They can be consumed
+  only by `certify_recursive_stratified_branch_event_consumption(...)` with a
+  certified lower-dimensional or lower-rank child theorem, preserving the
+  Pro-model instruction to keep zero-margin strata visible rather than hulling
+  them back into a box.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "polynomial_decision_stratifier"
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "polynomial_decision_stratifier or recursive_stratified"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "uniform_margin_set_valued or supplied_search_refinement or pointwise_open_time"
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_closed_form.py tests/test_open_time_atlas.py
+python3 -m compileall three_body_symmetry tests
+```
+
+Initial result: py_compile passed and the polynomial stratifier slice passed
+with `2` tests. The broader recursive-stratified slice passed with `5` tests,
+the focused open-time slice passed with `3` tests, the affected
+finite-target/closed-form/open-time suite passed with `38` tests, and
+compileall passed. A status probe confirmed the stratifier is certified,
+emits two sign strata and one equality stratum, does not certify the equality
+source tree as terminal, and becomes recursively consumed once a lower-
+dimensional child certificate is supplied.
+
+## 2026-05-31 polynomial decision arrangement stratifier
+
+- Added `PolynomialDecisionFunctionSpec`,
+  `PolynomialDecisionArrangementStratificationCertificate`, and
+  `certify_polynomial_decision_arrangement_stratified_branch_event_tree(...)`.
+- This extends the one-polynomial stratifier to the event-order setting where
+  several discriminator functions are active.  The constructor collects all
+  certified simple-root brackets, proves that every open cell between brackets
+  has a strict sign for every discriminator, and emits sign-vector leaves plus
+  explicit equality leaves for the defining root bracket.
+- This still does not claim arbitrary recursive exhaustion.  Equality leaves
+  remain nonterminal until a lower-dimensional/rank recursive child certificate
+  consumes them.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "polynomial_decision_arrangement or polynomial_decision_stratifier"
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py three_body_symmetry/__init__.py tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "polynomial_decision_arrangement or polynomial_decision_stratifier or recursive_stratified"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "uniform_margin_set_valued or supplied_search_refinement or pointwise_open_time"
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_closed_form.py tests/test_open_time_atlas.py
+python3 -m compileall three_body_symmetry tests
+```
+
+Initial result: py_compile passed and the polynomial decision arrangement slice
+passed with `3` tests. The broader focused finite-target slice passed with
+`6` tests, the open-time guard slice passed with `3` tests, the affected
+finite-target/closed-form/open-time suite passed with `39` tests, and
+compileall passed. A status probe confirmed the arrangement certificate is
+proof-certified, has three sign strata and two equality strata, keeps the
+source tree nonterminal, and leaves equality-root leaves missing until
+recursive children are supplied.
+
+## 2026-05-31 supplied Fuchsian-log stop chart machine-checked
+
+- Promoted `finite_fuchsian_log_stop_chart_for_admissible_entry_data` to
+  `machine_checked_supplied_fuchsian_log_stop_chart`.
+- This is the supplied-entry implication only: a constructor-derived finite
+  Fuchsian-log branch, recomputed punctured isolation, primitive Cauchy inputs,
+  and maximal-classical stop policy are serialized into a total-collision stop
+  chart and checked by `check_total_collision_fuchsian_stop_chart(...)`.
+- The bridge still records `arbitrary_total_collision_entry_not_claimed`; it
+  does not derive finite entry data from arbitrary incoming total-collision
+  germs and does not close the Tier B entry frontier.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py tests/test_finite_target_completeness.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "analytic_lemma_registry or finite_target_completeness_theorem or fuchsian_log_stop"
+python3 -m pytest -q tests/test_closed_form.py -k "fuchsian_log_stop or regularized_locally_finite_atlas or closed_form_audit_consumes_open_time"
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_closed_form.py tests/test_open_time_atlas.py
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_closed_form.py tests/test_open_time_atlas.py
+```
+
+Initial result: py_compile passed, the selected finite-target/Fuchsian-log
+slice passed with `9 passed`, and the selected closed-form audit slice passed
+with `2 passed`. The full affected finite-target/closed-form/open-time run
+passed, compileall passed, and collect-only saw `106` tests across the affected
+files.
+
+## 2026-05-31 total-collision zero-angular necessary condition internally proven
+
+- Promoted `total_collision_requires_zero_angular_momentum` to
+  `internal_sundman_inequality_zero_angular_proof`.
+- The proof is TC1 only: for finite-energy total collision, the centered
+  inertia `I -> 0`; the centered Sundman inequality gives `|C|^2 <= 2 I K`;
+  and the positive-mass potential estimate gives `I K = I(H+U) -> 0`.
+  Since centered angular momentum is conserved on the punctured branch, the
+  constant angular momentum must be zero.
+- This removes the zero-angular necessary-condition row from supporting audit
+  blockers without deriving generalized Fuchsian entry data, total-stop chart
+  existence, or any continuation convention.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py tests/test_finite_target_completeness.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "analytic_lemma_registry or finite_target_completeness_theorem or zero_angular"
+python3 -m pytest -q tests/test_closed_form.py -k "zero_angular or regularized_locally_finite_atlas or closed_form_audit_consumes_open_time"
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_closed_form.py tests/test_open_time_atlas.py
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_closed_form.py tests/test_open_time_atlas.py
+```
+
+Initial result: py_compile passed, the selected finite-target registry slice
+passed with `1 passed`, and the selected closed-form audit slice passed with
+`6 passed`. The full affected finite-target/closed-form/open-time run passed,
+compileall passed, and collect-only saw `106` tests across the affected files.
+
+## 2026-05-31 finite noncollision singularity exclusion internally proven
+
+- Promoted `three_body_painleve_no_noncollision_singularities` to
+  `internal_energy_compactness_continuation_proof`.
+- This is the finite-target theorem's needed Painleve component: if all pair
+  distances stay bounded below near a finite endpoint, the Newtonian potential
+  is bounded, conserved finite energy bounds kinetic energy, finite time keeps
+  positions bounded, and the phase point remains in a compact collision-free
+  analytic ODE domain. Analytic ODE continuation extends the branch, so a
+  finite maximal singular endpoint must be a collision endpoint.
+- This closes the Tier A finite-target audit bucket while still leaving all
+  Tier B total-collision entry blockers and supporting total-collision
+  asymptotic lemmas visible.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py tests/test_finite_target_completeness.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "analytic_lemma_registry or finite_target_completeness_theorem or painleve"
+python3 -m pytest -q tests/test_closed_form.py -k "painleve or regularized_locally_finite_atlas or closed_form_audit_consumes_open_time"
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_closed_form.py tests/test_open_time_atlas.py
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_closed_form.py tests/test_open_time_atlas.py
+```
+
+Initial result: py_compile passed, the selected finite-target registry slice
+passed with `1 passed`, and the selected closed-form audit slice passed with
+`1 passed`. The full affected finite-target/closed-form/open-time run passed,
+compileall passed, and collect-only saw `106` tests across the affected files.
+
+## 2026-05-31 separated binary LC/KS regularization internally proven
+
+- Promoted only `all_pair_binary_regularization` to
+  `internal_lc_ks_separated_binary_regularization_proof`.
+- The proof is local and scoped: for a selected pair, Jacobi coordinates
+  isolate the Kepler pair singularity while the third-body potentials are
+  analytic because the third body is separated. Levi-Civita in dimension two
+  and horizontal KS in dimension three use the quadratic pair map and
+  regularized energy shell `|lift|^2(H-h)` to make the vector field analytic
+  through the lifted binary collision.
+- This covers all three selected pairs, but it explicitly excludes
+  simultaneous multi-pair collapse and total collision. Painleve and all Tier B
+  total-collision entry blockers remain visible.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py tests/test_finite_target_completeness.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "analytic_lemma_registry or finite_target_completeness_theorem or all_pair_binary_regularization"
+python3 -m pytest -q tests/test_closed_form.py -k "all_pair_binary_regularization or regularized_locally_finite_atlas or closed_form_audit_consumes_open_time"
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_closed_form.py tests/test_open_time_atlas.py
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_closed_form.py tests/test_open_time_atlas.py
+```
+
+Initial result: py_compile passed, the selected finite-target registry slice
+passed with `1 passed`, and the selected closed-form audit slice passed with
+`1 passed`. The full affected finite-target/closed-form/open-time run passed,
+compileall passed, and collect-only saw `106` tests across the affected files.
+
+## 2026-05-31 binary collision isolation internally proven
+
+- Promoted only `binary_collision_isolation` to
+  `internal_analytic_identity_theorem_proof`.
+- The proof is conditional on the all-pair LC/KS regularization lemma supplying
+  a nontrivial analytic selected-pair lift with the third body separated. In
+  that chart the selected-pair separation is analytic; accumulated zeros would
+  force it to vanish identically by the identity theorem, contradicting the
+  separated-binary chart hypotheses.
+- This removes binary isolation as an independent audit blocker while keeping
+  `all_pair_binary_regularization`, Painleve, and all Tier B total-collision
+  entry blockers visible.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py tests/test_finite_target_completeness.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "analytic_lemma_registry or finite_target_completeness_theorem or binary_collision_isolation"
+python3 -m pytest -q tests/test_closed_form.py -k "binary_collision_isolation or regularized_locally_finite_atlas or closed_form_audit_consumes_open_time"
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_closed_form.py tests/test_open_time_atlas.py
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_closed_form.py tests/test_open_time_atlas.py
+```
+
+Initial result: py_compile passed, the selected finite-target registry slice
+passed with `1 passed`, and the selected closed-form audit slice passed with
+`1 passed`. The full affected finite-target/closed-form/open-time run passed,
+compileall passed, and collect-only saw `106` tests across the affected files.
+
+## 2026-05-31 binary accumulation-to-total internally proven
+
+- Promoted only `binary_accumulation_implies_total_collision` to
+  `internal_topological_collision_accumulation_proof`.
+- The proof is conditional: a compact sequence of separated-binary event times
+  has an accumulation time; a collision-free accumulation point is impossible
+  by continuity; an exactly one-pair collision is impossible by the separate
+  binary-isolation lemma; therefore at least two pair distances vanish, which
+  in the three-body problem is total collision.
+- Painleve reduction and binary isolation remain visible predecessor blockers,
+  and this proof does not construct the total-collision stop chart.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py tests/test_finite_target_completeness.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "analytic_lemma_registry or finite_target_completeness_theorem or binary_accumulation"
+python3 -m pytest -q tests/test_closed_form.py -k "binary_accumulation or regularized_locally_finite_atlas or closed_form_audit_consumes_open_time"
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_closed_form.py tests/test_open_time_atlas.py
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_closed_form.py tests/test_open_time_atlas.py
+```
+
+Initial result: py_compile passed, the selected finite-target registry slice
+passed with `1 passed`, and the selected closed-form audit slice passed with
+`1 passed`. The full affected finite-target/closed-form/open-time run passed,
+compileall passed, and collect-only saw `106` tests across the affected files.
+
+## 2026-05-31 compact collision-free cover internally proven
+
+- Added an explicit `internally_proven` audit status for short structural
+  proofs that are neither external audits nor numerical checker results.
+- Promoted only `compact_collision_free_taylor_cover` to
+  `internal_analytic_compactness_proof`: on a compact collision-free segment,
+  continuous positive pair distances attain a floor, the Newtonian vector field
+  is analytic on the resulting open tube, analytic ODE local existence gives
+  ordinary Taylor neighborhoods, and Heine-Borel selects a finite subcover.
+- The audit row records the proof's limits: it requires the segment to be
+  already collision-free, does not isolate events or total collision, and
+  still leaves supplied chart coefficients to the ordinary chart checker.
+  Painleve, binary regularization/isolation/accumulation, and all Tier B
+  total-collision entry blockers remain visible.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py tests/test_finite_target_completeness.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "analytic_lemma_registry or finite_target_completeness_theorem or compact_collision_free"
+python3 -m pytest -q tests/test_closed_form.py -k "compact_collision_free or regularized_locally_finite_atlas or closed_form_audit_consumes_open_time"
+python3 -m pytest -q tests/test_finite_target_completeness.py tests/test_closed_form.py tests/test_open_time_atlas.py
+python3 -m compileall three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_closed_form.py tests/test_open_time_atlas.py
+```
+
+Result: py_compile passed, the selected finite-target registry slice passed
+with `1 passed`, the selected closed-form audit slice passed with `1 passed`,
+the full affected finite-target/closed-form/open-time run passed, compileall
+passed, and collect-only saw `106` tests across the affected files.

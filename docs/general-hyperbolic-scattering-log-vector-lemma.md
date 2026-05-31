@@ -1,0 +1,332 @@
+# General Hyperbolic Scattering Log-Vector Lemma
+
+## Claim
+
+The logarithmic escape term is not a homothetic artifact. For any three-body
+hyperbolic scattering ansatz with distinct asymptotic relative velocities, the
+leading logarithmic coefficient is forced by the Newtonian vector field at the
+asymptotic velocity configuration.
+
+Let:
+
+```text
+q_i'' = A_i(q),
+A_i(q) = sum_{j != i} m_j (q_j - q_i) / |q_j - q_i|^3,
+q_i(t) / t -> v_i,
+q_i'(t) -> v_i,
+|v_j - v_i| > 0 for i != j.
+```
+
+Define the asymptotic velocity force:
+
+```text
+B_i(v) = A_i(v)
+       = sum_{j != i} m_j (v_j - v_i) / |v_j - v_i|^3.
+```
+
+Then the leading hyperbolic scattering expansion has the forced form:
+
+```text
+q_i(t) = v_i t - B_i(v) log(t) + O(1),
+```
+
+under the standard differentiable scattering remainder condition that
+`q_i(t) = v_i t + O(log t)`.
+
+Equivalently, for inverse time `tau = 1/t` and scaled position
+`X_i(tau) = q_i(t) / t`,
+
+```text
+X_i(tau) = v_i + B_i(v) tau log(tau) + O(tau).
+```
+
+The corresponding regular endpoint variable is:
+
+```text
+Y_i(tau) = X_i(tau) - B_i(v) tau log(tau).
+```
+
+## Proof
+
+For each pair, write:
+
+```text
+q_j(t) - q_i(t)
+  = t(v_j - v_i) + O(log t)
+  = t((v_j - v_i) + O(log t / t)).
+```
+
+Since every `v_j - v_i` is nonzero, the map:
+
+```text
+z -> z / |z|^3
+```
+
+is smooth in a neighborhood of each limiting relative velocity. Therefore:
+
+```text
+(q_j - q_i) / |q_j - q_i|^3
+  = t^-2 (v_j - v_i) / |v_j - v_i|^3
+    + O(t^-3 log t).
+```
+
+Summing over `j != i` gives:
+
+```text
+q_i''(t) = A_i(q(t))
+         = t^-2 B_i(v) + O(t^-3 log t).
+```
+
+Because `q_i'(t) -> v_i` as `t -> infinity`, integrate from `t` to infinity:
+
+```text
+q_i'(t) - v_i
+  = - int_t^infinity q_i''(s) ds
+  = -B_i(v) / t + O(t^-2 log t).
+```
+
+Integrating once more gives:
+
+```text
+q_i(t) = v_i t - B_i(v) log(t) + O(1).
+```
+
+This proves the coefficient. It is not a free term in the representation.
+
+## Endpoint Equation
+
+The inverse-time scaled equation is:
+
+```text
+tau X_{i,tau tau} = A_i(X).
+```
+
+Using:
+
+```text
+(tau log tau)_{tau tau} = 1 / tau,
+X_i = Y_i + B_i(v) tau log(tau),
+```
+
+we get:
+
+```text
+tau Y_{i,tau tau}
+  = A_i(Y + B(v) tau log(tau)) - B_i(v).
+```
+
+At the endpoint `Y -> v`, the right side tends to:
+
+```text
+A_i(v) - B_i(v) = 0.
+```
+
+Thus the vector log subtraction cancels the leading escape endpoint force.
+
+## Exact Projection Identity
+
+The transformed equation is not only an endpoint cancellation. It is exactly
+equivalent to Newton's equation away from `tau=0`.
+
+Let `tau=1/t`, define:
+
+```text
+X_i(tau) = Y_i(tau) + B_i tau log(tau),
+q_i(t) = X_i(tau) / tau,
+```
+
+with fixed vector `B`. Differentiating with respect to physical time gives:
+
+```text
+q_i'(t) = X_i - tau X_{i,tau},
+q_i''(t) = tau^3 X_{i,tau tau}.
+```
+
+Newtonian acceleration is homogeneous of degree `-2`, so:
+
+```text
+A_i(q) = A_i(X/tau) = tau^2 A_i(X).
+```
+
+Therefore `q''=A(q)` for every `tau>0` if and only if:
+
+```text
+tau X_{i,tau tau} = A_i(X).
+```
+
+Since:
+
+```text
+X_{i,tau tau} = Y_{i,tau tau} + B_i/tau,
+```
+
+this is equivalent to the log-subtracted lifted equation:
+
+```text
+tau Y_{i,tau tau}
+  = A_i(Y + B tau log(tau)) - B_i.
+```
+
+Thus a construction in the `Y` variable can be projected back by:
+
+```text
+q_i(t) = (Y_i(1/t) + B_i (1/t) log(1/t)) * t
+```
+
+and the projected curve automatically satisfies Newton's equations for all
+finite `t` where the lifted equation is satisfied and no pair collision occurs.
+
+## First Transseries Coefficients
+
+The log-subtracted equation is closed under the expected endpoint transseries
+algebra. Let `L=log(tau)` and write the first terms of the regularized
+remainder as:
+
+```text
+Y(tau) = v + C tau + tau^2(P L + Q) + higher terms,
+```
+
+where `C` is the free next asymptotic vector. Since all relative velocities
+`v_j-v_i` are nonzero, the acceleration map `A` is analytic near `v`. Denote
+its Frechet derivative at `v` by:
+
+```text
+DA(v)[H].
+```
+
+With `B=A(v)`, the scaled argument is:
+
+```text
+X = Y + B tau L
+  = v + B tau L + C tau + O(tau^2 L).
+```
+
+Therefore:
+
+```text
+A(X) - B
+  = DA(v)[B] tau L + DA(v)[C] tau + O(tau^2 L^2).
+```
+
+On the left side of the transformed equation:
+
+```text
+tau Y_tautau
+  = tau(2P L + 2Q + 3P) + higher terms.
+```
+
+Matching the `tau L` and `tau` coefficients gives the constructive recurrence
+start:
+
+```text
+P = (1/2) DA(v)[B],
+Q = (1/2)(DA(v)[C] - 3P).
+```
+
+With these choices, the transformed equation residual is:
+
+```text
+tau Y_tautau - (A(Y + B tau L) - B)
+  = O(tau^2 L^2).
+```
+
+This is the first explicit coefficient step for a log-polynomial escape
+endpoint construction. It does not prove convergence of the full transseries,
+but it shows that the lifted equation supplies a real recursive algebra rather
+than only an endpoint cancellation identity.
+
+## All-Order Formal Recurrence
+
+The same mechanism is triangular at every later order. Work in the formal
+log-polynomial algebra generated by monomials:
+
+```text
+tau^n L^k,      L = log(tau).
+```
+
+Because every asymptotic relative velocity is nonzero, `A` has a convergent
+Taylor expansion in a neighborhood of `v`; formally, substituting a
+log-polynomial `X-v` into that Taylor series gives another log-polynomial at
+each finite order. Write:
+
+```text
+Y = v + C tau + sum_{n>=2} sum_{k=0}^{K_n} y_{n,k} tau^n L^k,
+X = Y + B tau L.
+```
+
+Assume the coefficients of `Y` through order `n-1` have already been chosen.
+Then the coefficient of:
+
+```text
+tau^(n-1) L^k
+```
+
+in `A(X)-B` is already known, because `X` contains no order-`n` term except
+through `Y`, and the equation has one fewer power of `tau` on the left. Denote
+that known coefficient by `F_{n-1,k}`.
+
+The only order-`n` unknowns enter through:
+
+```text
+tau d^2/dtau^2 (tau^n L^k)
+  = tau^(n-1) [
+      n(n-1)L^k
+      + k(2n-1)L^(k-1)
+      + k(k-1)L^(k-2)
+    ].
+```
+
+Thus the coefficient equations at order `tau^(n-1)` are:
+
+```text
+n(n-1)y_{n,k}
+  + (k+1)(2n-1)y_{n,k+1}
+  + (k+2)(k+1)y_{n,k+2}
+  = F_{n-1,k},
+```
+
+with missing higher-`k` coefficients interpreted as zero. Since:
+
+```text
+n(n-1) != 0      for every n >= 2,
+```
+
+the coefficients `y_{n,k}` are solved recursively by descending `k`. This proves
+formal closure of the escape endpoint construction in log-polynomial
+transseries once `v`, the free vector `C`, and the forced log vector `B=A(v)`
+are fixed.
+
+This still does not prove convergence or asymptotic completeness. It proves the
+formal construction step needed before such a theorem can be attempted: no
+division by a zero resonance appears in the coefficient recursion for `n>=2`.
+
+## Relation To The Homothetic Lemma
+
+For a homothetic hyperbolic escape with endpoint `v_i = c Q_i`, central
+configuration identity gives:
+
+```text
+B_i(v) = A_i(cQ) = c^-2 A_i(Q) = -(mu / c^2) Q_i.
+```
+
+The general formula becomes:
+
+```text
+X_i(tau)
+  = cQ_i - (mu / c^2) tau log(tau) Q_i + O(tau),
+```
+
+which is exactly the homothetic log term previously derived.
+
+## Consequence
+
+This proves a concrete missing analytic component of the escape endpoint route:
+the logarithmic coefficient for general hyperbolic scattering is the vector
+`A(v)`, evaluated at the asymptotic velocity configuration. A future global
+closed-form construction cannot choose this term arbitrarily; it must include
+this forced vector log term, or use an equivalent transformed variable `Y` whose
+endpoint equation has the leading force removed.
+
+This still does not prove the full general three-body solution. It upgrades the
+escape repair from a central-configuration example to the general distinct
+asymptotic-velocity scattering form.
