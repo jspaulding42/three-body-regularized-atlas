@@ -1,4 +1,5 @@
 import numpy as np
+from decimal import Decimal, localcontext
 
 from three_body_symmetry.intervals import (
     FloatInterval,
@@ -73,6 +74,25 @@ def test_interval_division_and_positive_power_enclose_point_operations():
 
     assert quotient.lower <= 2.0 / 3.0 <= quotient.upper
     assert root.lower <= 0.125 <= root.upper
+
+
+def test_directed_negative_half_integer_powers_contain_high_precision_values():
+    values = (
+        np.nextafter(1.0, 0.0),
+        np.nextafter(1.0, np.inf),
+        np.nextafter(0.01, 0.0),
+        np.nextafter(12345.0, np.inf),
+    )
+    for value in values:
+        for exponent, integer_power in ((-0.5, 0), (-1.5, 1), (-2.5, 2)):
+            enclosure = FloatInterval.point(float(value)).positive_power(exponent)
+            with localcontext() as context:
+                context.prec = 200
+                base = Decimal.from_float(float(value))
+                denominator = context.sqrt(base) * (base**integer_power)
+                reference = Decimal(1) / denominator
+            assert Decimal.from_float(enclosure.lower) <= reference
+            assert reference <= Decimal.from_float(enclosure.upper)
 
 
 def test_interval_series_power_encloses_point_series_power():

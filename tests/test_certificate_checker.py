@@ -1,18 +1,51 @@
 from dataclasses import replace
 from functools import lru_cache
+from fractions import Fraction
 from types import SimpleNamespace
 
 import numpy as np
 import pytest
 
 from three_body_symmetry.certificate_checker import (
+    BranchUnionCheckResult,
+    CertificateCheckObligation,
+    CertificateCheckResult,
+    ChartChainCheckResult,
+    CertificateCheckerKernelSupportCertificate,
+    EventIsolationCheckResult,
+    IndependentChartVerifierCertificate,
+    InitialValueBindingCheckResult,
+    OrdinaryAposterioriTubeCheckResult,
+    WeightedOrdinaryAposterioriTubeCheckResult,
+    OrdinaryEnclosureTransitionCheckResult,
+    PlanarLCAposterioriTubeCheckResult,
+    OrdinaryToPlanarLCEnclosureTransitionCheckResult,
+    PlanarLCToOrdinaryEnclosureTransitionCheckResult,
+    PlanarLCExactCollisionAnchorCheckResult,
+    PlanarLCTwoSidedCollisionPassageCheckResult,
+    ValidatedOrdinaryIVPChainCheckResult,
+    ValidatedOrdinaryIVPChartCheckResult,
+    TransitionCheckResult,
     attach_independent_chart_verifier,
+    certify_certificate_checker_kernel_support,
+    certify_rational_interval_arithmetic_backend_soundness,
     check_branch_union,
     check_chart_chain,
     check_event_isolation,
+    check_initial_value_problem_binding,
+    check_ordinary_aposteriori_tube,
+    check_weighted_ordinary_aposteriori_tube,
+    check_ordinary_enclosure_transition,
+    check_ordinary_to_planar_lc_enclosure_transition,
+    check_planar_lc_to_ordinary_enclosure_transition,
+    check_planar_lc_exact_collision_anchor,
+    check_planar_lc_two_sided_collision_passage,
+    check_validated_ordinary_ivp_chain,
+    check_validated_ordinary_ivp_chart,
     check_ordinary_chart_transition,
     check_ordinary_taylor_chart,
     check_planar_levi_civita_binary_chart,
+    check_planar_lc_aposteriori_tube,
     check_planar_levi_civita_transition,
     check_spatial_ks_binary_chart,
     check_spatial_ks_transition,
@@ -24,10 +57,20 @@ from three_body_symmetry.certificate_language import (
     BranchUnionCertificate,
     ChartChainCertificate,
     EventIsolationCertificate,
+    InitialValueProblemBindingCertificate,
+    OrdinaryAposterioriTubeCertificate,
+    WeightedOrdinaryAposterioriTubeCertificate,
+    OrdinaryEnclosureTransitionCertificate,
+    OrdinaryToPlanarLCEnclosureTransitionCertificate,
+    PlanarLCToOrdinaryEnclosureTransitionCertificate,
+    PlanarLCExactCollisionAnchorCertificate,
+    PlanarLCTwoSidedCollisionPassageCertificate,
+    ValidatedOrdinaryIVPChainCertificate,
     GeneralizedFuchsianRemainderMajorantCertificate,
     TotalCollisionFuchsianStopChartCertificate,
     TotalCollisionGeneralizedFuchsianStopChartCertificate,
     PlanarLeviCivitaBinaryChartCertificate,
+    PlanarLCAposterioriTubeCertificate,
     OrdinaryTaylorChartCertificate,
     PrimitiveCauchyTailInputCertificate,
     SpatialKSBinaryChartCertificate,
@@ -43,7 +86,10 @@ from three_body_symmetry.certificate_language import (
     total_collision_fuchsian_stop_chart_certificate_from_branch,
     total_collision_generalized_fuchsian_stop_chart_certificate_from_branch,
 )
-from three_body_symmetry.binary_chart import planar_to_regularized_binary_collision_chart
+from three_body_symmetry.binary_chart import (
+    RegularizedBinaryCollisionChartState,
+    planar_to_regularized_binary_collision_chart,
+)
 from three_body_symmetry.binary_chart import regularized_binary_collision_chart_to_planar
 from three_body_symmetry.binary_series import construct_regularized_binary_taylor_solution
 from three_body_symmetry.ks_binary_chart import SpatialKSBinaryChartState, ks_binary_chart_to_spatial
@@ -76,6 +122,222 @@ from three_body_symmetry.open_time_atlas import (
     construct_open_time_locally_finite_atlas_theorem,
 )
 from three_body_symmetry.series import construct_interval_taylor_solution, construct_taylor_solution
+
+
+def test_certificate_check_obligation_rejects_truthy_nonboolean_certification():
+    result = CertificateCheckResult(
+        certificate_id="manual-result",
+        certificate_type="manual",
+        checker_id="test",
+        obligations=(
+            CertificateCheckObligation(
+                obligation="raw_truthy_gate",
+                certified="yes",
+                detail="truthy strings are not checker evidence",
+            ),
+        ),
+        max_coefficient_residual=0.0,
+        max_sampled_newton_residual=0.0,
+    )
+
+    assert result.obligations[0].certified is False
+    assert not result.certified
+    assert result.missing_obligations == ("raw_truthy_gate",)
+
+
+def test_certificate_check_results_reject_spoofed_obligation_ledgers():
+    fake_obligation = SimpleNamespace(
+        obligation="fake",
+        certified=True,
+        detail="attribute-compatible spoof",
+    )
+    check_results = (
+        CertificateCheckResult(
+            certificate_id="chart-result",
+            certificate_type="manual",
+            checker_id="test",
+            obligations=(fake_obligation,),
+            max_coefficient_residual=0.0,
+            max_sampled_newton_residual=0.0,
+        ),
+        TransitionCheckResult(
+            transition_id="transition-result",
+            transition_type="manual",
+            checker_id="test",
+            obligations=(fake_obligation,),
+            max_position_gap=0.0,
+            max_velocity_gap=0.0,
+        ),
+        EventIsolationCheckResult(
+            event_id="event-result",
+            event_type="manual",
+            checker_id="test",
+            obligations=(fake_obligation,),
+            root_interval_width=0.0,
+        ),
+        BranchUnionCheckResult(
+            union_id="branch-union-result",
+            union_type="manual",
+            checker_id="test",
+            obligations=(fake_obligation,),
+            leaf_count=1,
+        ),
+        ChartChainCheckResult(
+            chain_id="chart-chain-result",
+            chain_type="manual",
+            checker_id="test",
+            obligations=(fake_obligation,),
+            chart_count=1,
+        ),
+    )
+
+    for result in check_results:
+        assert not result.certified
+        assert any(
+            missing.endswith("_obligation_type")
+            for missing in result.missing_obligations
+        )
+
+    empty = replace(check_results[0], obligations=())
+    assert not empty.certified
+    assert empty.missing_obligations == ("chart-result_obligations_present",)
+
+
+def test_proof_grade_backend_and_kernel_reject_truthy_direct_flags():
+    backend = certify_rational_interval_arithmetic_backend_soundness()
+    assert backend.proof_certified
+
+    truthy_backend = replace(backend, exact_fraction_endpoints="yes")
+    assert not truthy_backend.proof_certified
+    assert truthy_backend.missing_obligations == ("exact_fraction_endpoints",)
+
+    fake_backend_kernel = CertificateCheckerKernelSupportCertificate(
+        checker_id="independent_chart_verifier_v1",
+        supported_chart_types=(
+            "ordinary_taylor",
+            "planar_levi_civita_binary",
+            "spatial_ks_binary",
+            "total_collision_fuchsian_stop",
+            "total_collision_generalized_fuchsian_stop",
+        ),
+        event_obligation_ids=("event_root_endpoint_signs",),
+        branch_union_obligation_ids=("branch_union_leaf_cover",),
+        chart_chain_obligation_ids=("chart_chain_transition_count_matches",),
+        transition_obligation_ids=("transition_state_continuity",),
+        proof_grade_arithmetic_backend_certificate=SimpleNamespace(
+            proof_certified=True,
+        ),
+    )
+    assert not fake_backend_kernel.proof_certified
+    assert "proof_grade_arithmetic_backend_sound" in (
+        fake_backend_kernel.missing_obligations
+    )
+
+    with pytest.raises(
+        TypeError,
+        match="ProofGradeArithmeticBackendCertificate",
+    ):
+        certify_certificate_checker_kernel_support(
+            proof_grade_arithmetic_backend_sound=True,
+        )
+
+
+def test_independent_verifier_rejects_spoofed_result_objects():
+    certified_obligation = CertificateCheckObligation(
+        obligation="ordinary_taylor_exact_rational_residual_polynomials",
+        certified=True,
+        detail="fixture",
+    )
+    real_result = CertificateCheckResult(
+        certificate_id="ordinary-result",
+        certificate_type="ordinary_taylor",
+        checker_id="test",
+        obligations=(certified_obligation,),
+        max_coefficient_residual=0.0,
+        max_sampled_newton_residual=0.0,
+    )
+    fake_result = SimpleNamespace(
+        certificate_id="fake-result",
+        certificate_type="ordinary_taylor",
+        certified=True,
+        obligations=(certified_obligation,),
+        missing_obligations=(),
+    )
+
+    verifier = IndependentChartVerifierCertificate(
+        checker_id="independent_chart_verifier_v1",
+        chart_results=(real_result,),
+    )
+    assert verifier.certified
+
+    spoofed = replace(verifier, chart_results=(fake_result,))
+    assert not spoofed.certified
+    assert "chart_result_type" in spoofed.missing_obligations
+    assert "chart_result_type" in spoofed.proof_grade_arithmetic_blockers
+
+
+def test_independent_verifier_rejects_subclassed_result_objects():
+    class SpoofedCertificateCheckResult(CertificateCheckResult):
+        @property
+        def certified(self):
+            return True
+
+        @property
+        def missing_obligations(self):
+            return ()
+
+    class SpoofedChartChainCheckResult(ChartChainCheckResult):
+        @property
+        def certified(self):
+            return True
+
+        @property
+        def missing_obligations(self):
+            return ()
+
+    real_chart_result = check_ordinary_taylor_chart(_ordinary_chart_certificate())
+    spoofed_chart_result = SpoofedCertificateCheckResult(
+        certificate_id="spoofed-chart-result",
+        certificate_type="ordinary_taylor",
+        checker_id="test",
+        obligations=(),
+        max_coefficient_residual=0.0,
+        max_sampled_newton_residual=0.0,
+    )
+    spoofed_chain_result = SpoofedChartChainCheckResult(
+        chain_id="spoofed-chart-chain",
+        chain_type="regularized_atlas_chart_chain",
+        checker_id="test",
+        obligations=(),
+        chart_count=1,
+    )
+
+    spoofed_chart_verifier = IndependentChartVerifierCertificate(
+        checker_id="independent_chart_verifier_v1",
+        chart_results=(spoofed_chart_result,),
+    )
+    spoofed_chain_verifier = IndependentChartVerifierCertificate(
+        checker_id="independent_chart_verifier_v1",
+        chart_results=(real_chart_result,),
+        chart_chain_results=(spoofed_chain_result,),
+    )
+
+    assert real_chart_result.certified
+    assert spoofed_chart_result.certified
+    assert spoofed_chain_result.certified
+    assert not spoofed_chart_verifier.certified
+    assert "chart_result_type" in spoofed_chart_verifier.missing_obligations
+    assert "chart_result_type" in (
+        spoofed_chart_verifier.proof_grade_arithmetic_blockers
+    )
+    assert not spoofed_chain_verifier.certified
+    assert not spoofed_chain_verifier.proof_grade_finite_atlas_bundle_certified
+    assert "chart_chain_result_type" in (
+        spoofed_chain_verifier.missing_obligations
+    )
+    assert "chart_chain_result_type" in (
+        spoofed_chain_verifier.proof_grade_finite_atlas_blockers
+    )
 
 
 def _ordinary_chart_certificate():
@@ -181,7 +443,9 @@ def _planar_lc_binary_chart_certificate():
 
 
 def _planar_lc_binary_solution():
-    masses = np.array([1.0, 0.8, 1.2])
+    # Exact dyadic pair ratios keep the proof-facing LC/Newton mass algebra
+    # identical to the serialized binary mass system.
+    masses = np.array([1.0, 1.0, 1.2])
     positions = np.array(
         [
             [-0.12, 0.025],
@@ -203,6 +467,39 @@ def _planar_lc_binary_solution():
         pair=(0, 1),
     )
     return construct_regularized_binary_taylor_solution(initial, order=12)
+
+
+def _planar_lc_exact_collision_solution():
+    masses = np.array([1.0, 1.0, 1.2])
+    pair_mass = float(masses[0] + masses[1])
+    initial = RegularizedBinaryCollisionChartState(
+        masses=masses,
+        pair=(0, 1),
+        z=np.array([0.0, 0.0]),
+        z_velocity=np.array([np.sqrt(pair_mass / 2.0), 0.0]),
+        pair_energy=0.0,
+        binary_center=np.array([0.0, 0.0]),
+        binary_center_velocity=np.array([0.01, -0.02]),
+        third_offset=np.array([2.0, 1.0]),
+        third_offset_velocity=np.array([-0.01, 0.015]),
+    )
+    return construct_regularized_binary_taylor_solution(initial, order=12)
+
+
+def _planar_lc_exact_collision_chart_certificate():
+    solution = _planar_lc_exact_collision_solution()
+    return planar_levi_civita_binary_chart_certificate_from_solution(
+        solution,
+        certificate_id="planar-lc-exact-collision-chart",
+        chart_id="planar-lc-exact-collision",
+        parameter_interval=(-1.0e-4, 1.0e-4),
+        coefficient_tolerance=1.0e-10,
+        regularized_residual_tolerance=1.0e-7,
+        projected_residual_tolerance=1.0,
+        tail_bound=1.0e-9,
+        sample_count=8,
+        projection_rho_lower_bound=1.0e-12,
+    )
 
 
 def _spatial_ks_binary_chart_certificate():
@@ -868,6 +1165,10 @@ def test_verifier_arithmetic_audit_accepts_chart_only_exact_rational_bundle():
     assert verifier.certified
     assert verifier.proof_grade_arithmetic_checked_bundle_certified
     assert verifier.proof_grade_arithmetic_blockers == ()
+    assert not verifier.proof_grade_finite_atlas_bundle_certified
+    assert verifier.proof_grade_finite_atlas_blockers == (
+        "finite_atlas_chart_chain_checked",
+    )
     assert "ordinary_taylor_exact_rational_residual_polynomials" in (
         verifier.proof_grade_arithmetic_obligation_ids
     )
@@ -963,6 +1264,437 @@ def test_independent_checker_accepts_ordinary_transition_chain():
     )
 
 
+def test_initial_value_binding_anchors_ordinary_chart_polynomial():
+    chart = _ordinary_chart_certificate()
+    binding = InitialValueProblemBindingCertificate(
+        binding_id="ivp-binding:ordinary",
+        chart_id=chart.chart_id,
+        masses=chart.masses,
+        initial_time=0.0,
+        chart_parameter=0.0,
+        positions=chart.position_coefficients[0],
+        velocities=chart.velocity_coefficients[0],
+        time_tolerance=0.0,
+        position_tolerance=0.0,
+        velocity_tolerance=0.0,
+    )
+
+    result = check_initial_value_problem_binding(binding, (chart,))
+
+    assert type(result) is InitialValueBindingCheckResult
+    assert result.certified
+    assert result.missing_obligations == ()
+
+
+def test_initial_value_binding_rejects_wrong_initial_state():
+    chart = _ordinary_chart_certificate()
+    positions = [list(row) for row in chart.position_coefficients[0]]
+    positions[0][0] += 0.25
+    binding = InitialValueProblemBindingCertificate(
+        binding_id="ivp-binding:wrong-state",
+        chart_id=chart.chart_id,
+        masses=chart.masses,
+        initial_time=0.0,
+        chart_parameter=0.0,
+        positions=tuple(tuple(row) for row in positions),
+        velocities=chart.velocity_coefficients[0],
+        time_tolerance=0.0,
+        position_tolerance=0.0,
+        velocity_tolerance=0.0,
+    )
+
+    result = check_initial_value_problem_binding(binding, (chart,))
+
+    assert not result.certified
+    assert "initial_value_binding_polynomial_state_matches" in (
+        result.missing_obligations
+    )
+
+
+def test_ordinary_aposteriori_tube_certifies_exact_solution_enclosure():
+    chart = _ordinary_chart_certificate()
+    tube = OrdinaryAposterioriTubeCertificate(
+        tube_id="ordinary-tube:fixture",
+        chart_id=chart.chart_id,
+        anchor_parameter=0.0,
+        initial_error_bound=0.0,
+        tube_radius=2.0e-2,
+        max_defect_bound=1.0e-1,
+        max_lipschitz_bound=70.0,
+    )
+
+    result = check_ordinary_aposteriori_tube(tube, chart)
+
+    assert type(result) is OrdinaryAposterioriTubeCheckResult
+    assert result.certified
+    assert result.defect_bound <= tube.max_defect_bound
+    assert result.lipschitz_bound <= tube.max_lipschitz_bound
+    assert result.gronwall_error_bound <= tube.tube_radius
+    assert result.tube_pair_distance_floor > 0.0
+
+
+def test_ordinary_aposteriori_tube_rejects_inconsistent_initial_error():
+    chart = _ordinary_chart_certificate()
+    tube = OrdinaryAposterioriTubeCertificate(
+        tube_id="ordinary-tube:bad-initial-error",
+        chart_id=chart.chart_id,
+        anchor_parameter=0.0,
+        initial_error_bound=2.0e-2,
+        tube_radius=2.0e-2,
+        max_defect_bound=1.0e-1,
+        max_lipschitz_bound=70.0,
+    )
+
+    result = check_ordinary_aposteriori_tube(tube, chart)
+
+    assert not result.certified
+    assert "ordinary_tube_gronwall_self_consistent" in result.missing_obligations
+
+
+def test_validated_ordinary_ivp_chart_encloses_bound_initial_value_problem():
+    chart = _ordinary_chart_certificate()
+    binding = InitialValueProblemBindingCertificate(
+        binding_id="ivp-binding:validated-ordinary",
+        chart_id=chart.chart_id,
+        masses=chart.masses,
+        initial_time=0.0,
+        chart_parameter=0.0,
+        positions=chart.position_coefficients[0],
+        velocities=chart.velocity_coefficients[0],
+        time_tolerance=0.0,
+        position_tolerance=0.0,
+        velocity_tolerance=0.0,
+    )
+    tube = OrdinaryAposterioriTubeCertificate(
+        tube_id="ordinary-tube:validated-ordinary",
+        chart_id=chart.chart_id,
+        anchor_parameter=0.0,
+        initial_error_bound=0.0,
+        tube_radius=2.0e-2,
+        max_defect_bound=1.0e-1,
+        max_lipschitz_bound=70.0,
+    )
+
+    result = check_validated_ordinary_ivp_chart(binding, tube, chart)
+
+    assert type(result) is ValidatedOrdinaryIVPChartCheckResult
+    assert result.certified
+    assert result.missing_obligations == ()
+
+
+def test_weighted_ordinary_tube_recovers_scalar_case_with_equal_radii():
+    chart = _ordinary_chart_certificate()
+    result = check_weighted_ordinary_aposteriori_tube(
+        WeightedOrdinaryAposterioriTubeCertificate(
+            "weighted-ordinary-tube:equal-radii",
+            chart.chart_id,
+            0.0,
+            0.0,
+            0.0,
+            2.0e-2,
+            2.0e-2,
+            10.0,
+            70.0,
+        ),
+        chart,
+    )
+
+    assert type(result) is WeightedOrdinaryAposterioriTubeCheckResult
+    assert result.certified
+    assert result.normalized_gronwall_error_bound < 1.0
+    assert result.proven_position_error_bound < 2.0e-2
+    assert result.proven_velocity_error_bound < 2.0e-2
+
+
+def test_validated_ordinary_ivp_chart_rejects_uncovered_binding_error():
+    chart = _ordinary_chart_certificate()
+    positions = [list(row) for row in chart.position_coefficients[0]]
+    positions[0][0] += 1.0e-3
+    binding = InitialValueProblemBindingCertificate(
+        binding_id="ivp-binding:uncovered-error",
+        chart_id=chart.chart_id,
+        masses=chart.masses,
+        initial_time=0.0,
+        chart_parameter=0.0,
+        positions=tuple(tuple(row) for row in positions),
+        velocities=chart.velocity_coefficients[0],
+        time_tolerance=0.0,
+        position_tolerance=1.0e-2,
+        velocity_tolerance=0.0,
+    )
+    tube = OrdinaryAposterioriTubeCertificate(
+        tube_id="ordinary-tube:uncovered-error",
+        chart_id=chart.chart_id,
+        anchor_parameter=0.0,
+        initial_error_bound=0.0,
+        tube_radius=2.0e-2,
+        max_defect_bound=1.0e-1,
+        max_lipschitz_bound=70.0,
+    )
+
+    result = check_validated_ordinary_ivp_chart(binding, tube, chart)
+
+    assert result.binding_result.certified
+    assert result.tube_result.certified
+    assert not result.certified
+    assert "validated_ordinary_actual_initial_error_covered" in (
+        result.missing_obligations
+    )
+
+
+def test_ordinary_enclosure_transition_continues_exact_ivp_branch():
+    charts, _ = _ordinary_chart_chain()
+    source, target = charts
+    binding = InitialValueProblemBindingCertificate(
+        binding_id="ivp-binding:transition-source",
+        chart_id=source.chart_id,
+        masses=source.masses,
+        initial_time=0.0,
+        chart_parameter=0.0,
+        positions=source.position_coefficients[0],
+        velocities=source.velocity_coefficients[0],
+        time_tolerance=0.0,
+        position_tolerance=0.0,
+        velocity_tolerance=0.0,
+    )
+    source_tube = OrdinaryAposterioriTubeCertificate(
+        tube_id="ordinary-tube:transition-source",
+        chart_id=source.chart_id,
+        anchor_parameter=0.0,
+        initial_error_bound=0.0,
+        tube_radius=2.0e-2,
+        max_defect_bound=1.0e-1,
+        max_lipschitz_bound=70.0,
+    )
+    source_validation = check_validated_ordinary_ivp_chart(
+        binding, source_tube, source
+    )
+    target_tube = OrdinaryAposterioriTubeCertificate(
+        tube_id="ordinary-tube:transition-target",
+        chart_id=target.chart_id,
+        anchor_parameter=0.0,
+        initial_error_bound=2.0e-3,
+        tube_radius=3.0e-2,
+        max_defect_bound=2.0e-1,
+        max_lipschitz_bound=100.0,
+    )
+    transition = OrdinaryEnclosureTransitionCertificate(
+        transition_id="ordinary-enclosure-transition:0-1",
+        source_chart_id=source.chart_id,
+        target_chart_id=target.chart_id,
+        source_parameter=0.02,
+        target_parameter=0.0,
+        handoff_time=0.02,
+        max_time_gap=0.0,
+    )
+
+    result = check_ordinary_enclosure_transition(
+        transition, source, target, source_validation, target_tube
+    )
+
+    assert type(result) is OrdinaryEnclosureTransitionCheckResult
+    assert result.certified
+    assert result.required_target_initial_error <= target_tube.initial_error_bound
+    assert result.missing_obligations == ()
+
+
+def test_ordinary_enclosure_transition_rejects_uncovered_source_tube_error():
+    charts, _ = _ordinary_chart_chain()
+    source, target = charts
+    binding = InitialValueProblemBindingCertificate(
+        binding_id="ivp-binding:transition-reject",
+        chart_id=source.chart_id,
+        masses=source.masses,
+        initial_time=0.0,
+        chart_parameter=0.0,
+        positions=source.position_coefficients[0],
+        velocities=source.velocity_coefficients[0],
+        time_tolerance=0.0,
+        position_tolerance=0.0,
+        velocity_tolerance=0.0,
+    )
+    source_tube = OrdinaryAposterioriTubeCertificate(
+        tube_id="ordinary-tube:transition-reject-source",
+        chart_id=source.chart_id,
+        anchor_parameter=0.0,
+        initial_error_bound=0.0,
+        tube_radius=2.0e-2,
+        max_defect_bound=1.0e-1,
+        max_lipschitz_bound=70.0,
+    )
+    source_validation = check_validated_ordinary_ivp_chart(
+        binding, source_tube, source
+    )
+    target_tube = OrdinaryAposterioriTubeCertificate(
+        tube_id="ordinary-tube:transition-reject-target",
+        chart_id=target.chart_id,
+        anchor_parameter=0.0,
+        initial_error_bound=1.0e-3,
+        tube_radius=3.0e-2,
+        max_defect_bound=2.0e-1,
+        max_lipschitz_bound=100.0,
+    )
+    transition = OrdinaryEnclosureTransitionCertificate(
+        transition_id="ordinary-enclosure-transition:reject",
+        source_chart_id=source.chart_id,
+        target_chart_id=target.chart_id,
+        source_parameter=0.02,
+        target_parameter=0.0,
+        handoff_time=0.02,
+        max_time_gap=0.0,
+    )
+
+    result = check_ordinary_enclosure_transition(
+        transition, source, target, source_validation, target_tube
+    )
+
+    assert result.target_tube_result.certified
+    assert not result.certified
+    assert "ordinary_enclosure_transition_target_error_covers_handoff" in (
+        result.missing_obligations
+    )
+
+
+def test_validated_ordinary_ivp_chain_certifies_oriented_target_coverage():
+    charts, _ = _ordinary_chart_chain()
+    source, target = charts
+    binding = InitialValueProblemBindingCertificate(
+        binding_id="ivp-binding:validated-chain",
+        chart_id=source.chart_id,
+        masses=source.masses,
+        initial_time=0.0,
+        chart_parameter=0.0,
+        positions=source.position_coefficients[0],
+        velocities=source.velocity_coefficients[0],
+        time_tolerance=0.0,
+        position_tolerance=0.0,
+        velocity_tolerance=0.0,
+    )
+    tubes = (
+        OrdinaryAposterioriTubeCertificate(
+            "ordinary-tube:chain-0", source.chart_id, 0.0, 0.0, 2.0e-2, 1.0e-1, 70.0
+        ),
+        OrdinaryAposterioriTubeCertificate(
+            "ordinary-tube:chain-1", target.chart_id, 0.0, 2.0e-3, 3.0e-2, 2.0e-1, 100.0
+        ),
+    )
+    transitions = (
+        OrdinaryEnclosureTransitionCertificate(
+            "ordinary-enclosure-transition:chain-0-1",
+            source.chart_id,
+            target.chart_id,
+            0.02,
+            0.0,
+            0.02,
+            0.0,
+        ),
+    )
+    chain = ValidatedOrdinaryIVPChainCertificate(
+        chain_id="validated-ordinary-chain",
+        chart_ids=(source.chart_id, target.chart_id),
+        transition_ids=(transitions[0].transition_id,),
+        target_physical_time_interval=(0.0, 0.04),
+    )
+
+    result = check_validated_ordinary_ivp_chain(
+        chain, binding, charts, tubes, transitions
+    )
+
+    assert type(result) is ValidatedOrdinaryIVPChainCheckResult
+    assert result.certified
+    assert result.exact_ivp_enclosure_certified
+    assert result.target_state_enclosure_certified
+    assert result.target_time == 0.04
+    assert len(result.target_position_intervals) == 3
+    assert len(result.target_velocity_intervals) == 3
+    assert all(
+        lower <= upper
+        for body in result.target_position_intervals
+        for lower, upper in body
+    )
+    assert result.covered_physical_time_interval == (0.0, 0.04)
+    assert result.missing_obligations == ()
+
+
+def test_validated_ordinary_ivp_chain_rejects_uncovered_target_interval():
+    charts, _ = _ordinary_chart_chain()
+    source, target = charts
+    binding = InitialValueProblemBindingCertificate(
+        binding_id="ivp-binding:validated-chain-target-reject",
+        chart_id=source.chart_id,
+        masses=source.masses,
+        initial_time=0.0,
+        chart_parameter=0.0,
+        positions=source.position_coefficients[0],
+        velocities=source.velocity_coefficients[0],
+        time_tolerance=0.0,
+        position_tolerance=0.0,
+        velocity_tolerance=0.0,
+    )
+    tubes = (
+        OrdinaryAposterioriTubeCertificate(
+            "ordinary-tube:chain-reject-0", source.chart_id, 0.0, 0.0, 2.0e-2, 1.0e-1, 70.0
+        ),
+        OrdinaryAposterioriTubeCertificate(
+            "ordinary-tube:chain-reject-1", target.chart_id, 0.0, 2.0e-3, 3.0e-2, 2.0e-1, 100.0
+        ),
+    )
+    transitions = (
+        OrdinaryEnclosureTransitionCertificate(
+            "ordinary-enclosure-transition:chain-reject",
+            source.chart_id,
+            target.chart_id,
+            0.02,
+            0.0,
+            0.02,
+            0.0,
+        ),
+    )
+    chain = ValidatedOrdinaryIVPChainCertificate(
+        chain_id="validated-ordinary-chain-target-reject",
+        chart_ids=(source.chart_id, target.chart_id),
+        transition_ids=(transitions[0].transition_id,),
+        target_physical_time_interval=(0.0, 0.05),
+    )
+
+    result = check_validated_ordinary_ivp_chain(
+        chain, binding, charts, tubes, transitions
+    )
+
+    assert not result.certified
+    assert "validated_ordinary_chain_target_interval_covered" in (
+        result.missing_obligations
+    )
+
+
+def test_independent_checker_rejects_duplicate_chart_ids_in_bundle():
+    charts, _ = _ordinary_chart_chain()
+    duplicate = replace(
+        charts[1],
+        chart_id=charts[0].chart_id,
+        certificate_id="ordinary-chart:duplicate-chart-id",
+    )
+
+    verifier = verify_chart_certificates((charts[0], duplicate))
+
+    assert not verifier.certified
+    assert "bundle_chart_ids_unique" in verifier.missing_obligations
+
+
+def test_independent_checker_rejects_duplicate_certificate_ids_in_bundle():
+    charts, _ = _ordinary_chart_chain()
+    duplicate = replace(
+        charts[1],
+        chart_id="ordinary-chart:duplicate-certificate-id",
+        certificate_id=charts[0].certificate_id,
+    )
+
+    verifier = verify_chart_certificates((charts[0], duplicate))
+
+    assert not verifier.certified
+    assert "bundle_certificate_ids_unique" in verifier.missing_obligations
+
+
 def test_independent_checker_accepts_serialized_chart_chain_coverage():
     charts, transitions = _ordinary_chart_chain()
     chain = ChartChainCertificate(
@@ -993,6 +1725,8 @@ def test_independent_checker_accepts_serialized_chart_chain_coverage():
     )
     assert verifier.certified
     assert verifier.checked_chart_chain_count == 1
+    assert verifier.proof_grade_finite_atlas_bundle_certified
+    assert verifier.proof_grade_finite_atlas_blockers == ()
     assert verifier.missing_obligations == ()
     assert "chart_chain_exact_rational_time_coverage" in (
         verifier.proof_grade_arithmetic_obligation_ids
@@ -1289,6 +2023,456 @@ def test_independent_checker_accepts_serialized_planar_lc_binary_chart():
     assert round_trip_result.certified
     assert verifier.certified
     assert verifier.planar_levi_civita_binary_chart_count == 1
+
+
+def test_planar_lc_aposteriori_tube_encloses_lifted_solution():
+    chart = _planar_lc_binary_chart_certificate()
+    tube = PlanarLCAposterioriTubeCertificate(
+        tube_id="planar-lc-tube:regular",
+        chart_id=chart.chart_id,
+        anchor_parameter=0.0,
+        initial_error_bound=0.0,
+        tube_radius=1.0e-8,
+        max_defect_bound=1.0e-9,
+        max_lipschitz_bound=5.0,
+    )
+
+    result = check_planar_lc_aposteriori_tube(tube, chart)
+
+    assert type(result) is PlanarLCAposterioriTubeCheckResult
+    assert result.certified
+    assert result.lifted_exact_solution_enclosure_certified
+    assert result.third_body_distance_floor > 0.0
+    assert result.gronwall_error_bound < tube.tube_radius
+
+
+def test_planar_lc_aposteriori_tube_crosses_exact_binary_collision():
+    chart = _planar_lc_exact_collision_chart_certificate()
+    legacy_result = check_planar_levi_civita_binary_chart(chart)
+    tube = PlanarLCAposterioriTubeCertificate(
+        tube_id="planar-lc-tube:exact-collision",
+        chart_id=chart.chart_id,
+        anchor_parameter=0.0,
+        initial_error_bound=0.0,
+        tube_radius=1.0e-6,
+        max_defect_bound=1.0e-7,
+        max_lipschitz_bound=2.0,
+        require_pair_energy_constraint=True,
+    )
+
+    result = check_planar_lc_aposteriori_tube(tube, chart)
+
+    assert not legacy_result.certified
+    assert "interval_projected_newton_residual_away_from_binary_collision" in (
+        legacy_result.missing_obligations
+    )
+    assert result.certified
+    assert result.third_body_distance_floor > 2.0
+    assert result.pair_energy_constraint_anchor_certified
+    assert result.constrained_newtonian_lift_certified
+    assert result.anchor_pair_energy_constraint_residual == 0.0
+
+
+def test_planar_lc_tube_does_not_promote_approximate_energy_constraint():
+    chart = _planar_lc_binary_chart_certificate()
+    tube = PlanarLCAposterioriTubeCertificate(
+        tube_id="planar-lc-tube:constraint-required",
+        chart_id=chart.chart_id,
+        anchor_parameter=0.0,
+        initial_error_bound=0.0,
+        tube_radius=1.0e-8,
+        max_defect_bound=1.0e-9,
+        max_lipschitz_bound=5.0,
+        require_pair_energy_constraint=True,
+    )
+
+    result = check_planar_lc_aposteriori_tube(tube, chart)
+
+    assert not result.pair_energy_constraint_anchor_certified
+    assert not result.certified
+    assert "planar_lc_tube_pair_energy_constraint_when_required" in (
+        result.missing_obligations
+    )
+
+
+def test_planar_lc_positive_anchor_ball_is_not_promoted_to_constrained_family():
+    chart = _planar_lc_exact_collision_chart_certificate()
+    result = check_planar_lc_aposteriori_tube(
+        PlanarLCAposterioriTubeCertificate(
+            "planar-lc-tube:positive-anchor-ball", chart.chart_id,
+            0.0, 1.0e-12, 1.0e-6, 1.0e-7, 5.0, True,
+        ),
+        chart,
+    )
+
+    assert result.certified
+    assert result.pair_energy_constraint_anchor_certified
+    assert not result.anchor_is_polynomial_center
+    assert not result.constrained_newtonian_lift_certified
+
+
+def _exact_collision_anchor_bundle():
+    chart = _planar_lc_exact_collision_chart_certificate()
+    tube = PlanarLCAposterioriTubeCertificate(
+        "planar-lc-tube:exact-collision-anchor", chart.chart_id,
+        0.0, 0.0, 1.0e-6, 1.0e-7, 2.0, True,
+    )
+    certificate = PlanarLCExactCollisionAnchorCertificate(
+        "planar-lc-collision:0", chart.chart_id, tube.tube_id, 0.0,
+    )
+    return certificate, tube, chart
+
+
+def test_planar_lc_exact_collision_anchor_certifies_selected_exact_ivp():
+    certificate, tube, chart = _exact_collision_anchor_bundle()
+    result = check_planar_lc_exact_collision_anchor(certificate, tube, chart)
+
+    assert type(result) is PlanarLCExactCollisionAnchorCheckResult
+    assert result.certified
+    assert result.tube_result.certified
+    assert result.isolated_binary_collision_certified
+    assert result.local_physical_time_strictly_increasing_certified
+    assert result.exact_speed_squared == 1.0
+    assert result.pair_mass == 2.0
+    assert result.mass_ratio_arithmetic_exact
+    assert result.collision_physical_time == 0.0
+
+
+def test_planar_lc_collision_anchor_rejects_positive_initial_error_ball():
+    certificate, tube, chart = _exact_collision_anchor_bundle()
+    result = check_planar_lc_exact_collision_anchor(
+        certificate, replace(tube, initial_error_bound=1.0e-12), chart
+    )
+
+    assert result.tube_result.certified
+    assert not result.certified
+    assert "planar_lc_collision_zero_error_center_anchor" in (
+        result.missing_obligations
+    )
+
+
+@pytest.mark.parametrize(
+    "field, center, missing",
+    [
+        ("z_coefficients", (1.0e-12, 0.0), "planar_lc_collision_exact_z_zero"),
+        (
+            "z_velocity_coefficients",
+            (1.0 + 1.0e-12, 0.0),
+            "planar_lc_collision_exact_pair_energy_constraint",
+        ),
+    ],
+)
+def test_planar_lc_collision_anchor_rejects_noncollision_or_off_constraint_center(
+    field, center, missing
+):
+    certificate, tube, chart = _exact_collision_anchor_bundle()
+    coefficients = list(getattr(chart, field))
+    coefficients[0] = center
+    corrupted = replace(chart, **{field: tuple(coefficients)})
+    result = check_planar_lc_exact_collision_anchor(
+        certificate, tube, corrupted
+    )
+
+    assert not result.certified
+    assert missing in result.missing_obligations
+
+
+def test_two_sided_lc_passage_certifies_one_exact_binary_collision_continuation():
+    endpoint = 1.0e-2
+    solution = _planar_lc_exact_collision_solution()
+    source_chart = replace(
+        _planar_lc_exact_collision_chart_certificate(),
+        parameter_interval=(-endpoint, endpoint),
+    )
+    source_tube = PlanarLCAposterioriTubeCertificate(
+        "planar-lc-tube:two-sided-passage", source_chart.chart_id,
+        0.0, 0.0, 1.0e-5, 1.0, 10.0, True,
+    )
+    collision = check_planar_lc_exact_collision_anchor(
+        PlanarLCExactCollisionAnchorCertificate(
+            "planar-lc-collision:two-sided", source_chart.chart_id,
+            source_tube.tube_id, 0.0,
+        ),
+        source_tube,
+        source_chart,
+    )
+    target_charts = []
+    target_tubes = []
+    for side, parameter, interval in (
+        ("left", -endpoint, (-1.0e-12, 0.0)),
+        ("right", endpoint, (0.0, 1.0e-12)),
+    ):
+        positions, velocities = regularized_binary_collision_chart_to_planar(
+            solution.state_at(parameter)
+        )
+        ordinary_solution = construct_taylor_solution(
+            positions, velocities, solution.masses, order=12
+        )
+        chart = ordinary_taylor_chart_certificate_from_solution(
+            ordinary_solution,
+            certificate_id=f"ordinary-collision-{side}",
+            chart_id=f"ordinary-collision-{side}",
+            parameter_interval=interval,
+            physical_time_interval=interval,
+            coefficient_tolerance=1.0,
+            residual_tolerance=1.0,
+            tail_bound=0.0,
+            sample_count=3,
+        )
+        tube = WeightedOrdinaryAposterioriTubeCertificate(
+            f"weighted-ordinary-collision-{side}", chart.chart_id,
+            0.0, 5.0e-6, 1.0e-1, 1.0e-5, 1.0, 1.0e3, 1.0e9,
+        )
+        target_charts.append(chart)
+        target_tubes.append(tube)
+
+    result = check_planar_lc_two_sided_collision_passage(
+        PlanarLCTwoSidedCollisionPassageCertificate(
+            "planar-lc-passage:two-sided",
+            source_chart.chart_id,
+            collision.collision_id,
+            target_charts[0].chart_id,
+            target_charts[1].chart_id,
+            -endpoint,
+            endpoint,
+            0.0,
+            0.0,
+        ),
+        source_chart,
+        collision,
+        target_charts[0],
+        target_charts[1],
+        target_tubes[0],
+        target_tubes[1],
+    )
+
+    assert collision.certified
+    assert type(result) is PlanarLCTwoSidedCollisionPassageCheckResult
+    assert result.certified
+    assert result.generalized_binary_collision_continuation_certified
+    assert result.left_rho_lower_bound > 0.0
+    assert result.right_rho_lower_bound > 0.0
+    assert np.isfinite(result.left_time_origin_interval).all()
+    assert np.isfinite(result.right_time_origin_interval).all()
+
+
+def test_ordinary_to_lc_enclosure_transition_binds_exact_source_branch():
+    charts, _ = _ordinary_to_lc_transition_bundle()
+    ordinary = replace(
+        charts[0],
+        parameter_interval=(0.0, 1.0e-6),
+        physical_time_interval=(0.0, 1.0e-6),
+        residual_tolerance=10.0,
+    )
+    lc = replace(
+        charts[1],
+        parameter_interval=(0.0, 1.0e-6),
+    )
+    binding = InitialValueProblemBindingCertificate(
+        "ivp-binding:ordinary-to-lc",
+        ordinary.chart_id,
+        ordinary.masses,
+        0.0,
+        0.0,
+        ordinary.position_coefficients[0],
+        ordinary.velocity_coefficients[0],
+        0.0,
+        0.0,
+        0.0,
+    )
+    ordinary_tube = OrdinaryAposterioriTubeCertificate(
+        "ordinary-tube:ordinary-to-lc",
+        ordinary.chart_id,
+        0.0,
+        0.0,
+        1.0e-6,
+        10.0,
+        1.0e6,
+    )
+    source = check_validated_ordinary_ivp_chart(
+        binding, ordinary_tube, ordinary
+    )
+    lc_tube = PlanarLCAposterioriTubeCertificate(
+        tube_id="planar-lc-tube:ordinary-entry",
+        chart_id=lc.chart_id,
+        anchor_parameter=0.0,
+        initial_error_bound=1.0e-5,
+        tube_radius=1.0e-1,
+        max_defect_bound=10.0,
+        max_lipschitz_bound=1.0e6,
+    )
+    transition = OrdinaryToPlanarLCEnclosureTransitionCertificate(
+        "ordinary-to-lc-enclosure:entry",
+        ordinary.chart_id,
+        lc.chart_id,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+    )
+
+    result = check_ordinary_to_planar_lc_enclosure_transition(
+        transition, ordinary, lc, source, lc_tube
+    )
+
+    assert type(result) is OrdinaryToPlanarLCEnclosureTransitionCheckResult
+    assert source.certified
+    assert result.certified
+    assert result.constrained_newtonian_lift_certified
+    assert result.physical_time_strictly_monotone_certified
+    assert result.entry_lift_rho_lower_bound > 0.0
+    assert result.lift_branch_count >= 1
+    assert result.max_lift_box_gap <= lc_tube.initial_error_bound
+
+
+def test_ordinary_to_lc_transition_rejects_tube_smaller_than_lift_atlas():
+    charts, _ = _ordinary_to_lc_transition_bundle()
+    ordinary = replace(
+        charts[0],
+        parameter_interval=(0.0, 1.0e-6),
+        physical_time_interval=(0.0, 1.0e-6),
+        residual_tolerance=10.0,
+    )
+    lc = replace(charts[1], parameter_interval=(0.0, 1.0e-6))
+    binding = InitialValueProblemBindingCertificate(
+        "ivp-binding:ordinary-to-lc-reject",
+        ordinary.chart_id,
+        ordinary.masses,
+        0.0,
+        0.0,
+        ordinary.position_coefficients[0],
+        ordinary.velocity_coefficients[0],
+        0.0,
+        0.0,
+        0.0,
+    )
+    source = check_validated_ordinary_ivp_chart(
+        binding,
+        OrdinaryAposterioriTubeCertificate(
+            "ordinary-tube:ordinary-to-lc-reject",
+            ordinary.chart_id,
+            0.0,
+            0.0,
+            1.0e-6,
+            10.0,
+            1.0e6,
+        ),
+        ordinary,
+    )
+    lc_tube = PlanarLCAposterioriTubeCertificate(
+        "planar-lc-tube:ordinary-entry-reject",
+        lc.chart_id,
+        0.0,
+        1.0e-10,
+        1.0e-1,
+        10.0,
+        1.0e6,
+    )
+    transition = OrdinaryToPlanarLCEnclosureTransitionCertificate(
+        "ordinary-to-lc-enclosure:reject",
+        ordinary.chart_id,
+        lc.chart_id,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+    )
+
+    result = check_ordinary_to_planar_lc_enclosure_transition(
+        transition, ordinary, lc, source, lc_tube
+    )
+
+    assert result.target_tube_result.certified
+    assert not result.certified
+    assert "ordinary_to_lc_target_initial_error_contains_lift_atlas" in (
+        result.missing_obligations
+    )
+
+
+@pytest.mark.parametrize("target_initial_error, expected", [(2.0e-3, True), (1.0e-3, False)])
+def test_lc_to_ordinary_exit_projects_certified_punctured_enclosure(
+    target_initial_error, expected
+):
+    (ordinary_entry, lc), _ = _ordinary_to_lc_transition_bundle()
+    ordinary_entry = replace(
+        ordinary_entry,
+        parameter_interval=(0.0, 1.0e-6),
+        physical_time_interval=(0.0, 1.0e-6),
+        residual_tolerance=10.0,
+    )
+    binding = InitialValueProblemBindingCertificate(
+        "ivp-binding:lc-exit-source", ordinary_entry.chart_id,
+        ordinary_entry.masses, 0.0, 0.0,
+        ordinary_entry.position_coefficients[0],
+        ordinary_entry.velocity_coefficients[0], 0.0, 0.0, 0.0,
+    )
+    source = check_validated_ordinary_ivp_chart(
+        binding,
+        OrdinaryAposterioriTubeCertificate(
+            "ordinary-tube:lc-exit-source", ordinary_entry.chart_id,
+            0.0, 0.0, 1.0e-6, 10.0, 1.0e6,
+        ),
+        ordinary_entry,
+    )
+    lc_tube = PlanarLCAposterioriTubeCertificate(
+        "planar-lc-tube:exit-source", lc.chart_id,
+        0.0, 1.0e-5, 1.0e-3, 10.0, 1.0e6,
+    )
+    entry = check_ordinary_to_planar_lc_enclosure_transition(
+        OrdinaryToPlanarLCEnclosureTransitionCertificate(
+            "ordinary-to-lc-enclosure:for-exit", ordinary_entry.chart_id,
+            lc.chart_id, 0.0, 0.0, 0.0, 0.0,
+        ),
+        ordinary_entry, lc, source, lc_tube,
+    )
+    (_, ordinary_exit), _ = _lc_to_ordinary_transition_bundle()
+    ordinary_exit = replace(
+        ordinary_exit,
+        parameter_interval=(0.0, 1.0e-6),
+        physical_time_interval=(0.0, 1.0e-6),
+    )
+    target_tube = OrdinaryAposterioriTubeCertificate(
+        "ordinary-tube:lc-exit-target", ordinary_exit.chart_id,
+        0.0, target_initial_error, 2.0e-2, 10.0, 1.0e6,
+    )
+    result = check_planar_lc_to_ordinary_enclosure_transition(
+        PlanarLCToOrdinaryEnclosureTransitionCertificate(
+            "lc-to-ordinary-enclosure:exit", lc.chart_id,
+            ordinary_exit.chart_id, 0.006, 0.0,
+        ),
+        lc, ordinary_exit, entry, target_tube,
+    )
+
+    assert entry.certified
+    assert result.certified is expected
+    assert result.punctured_newton_projection_certified is expected
+    assert result.source_rho_lower_bound > 0.0
+    assert result.max_projected_lift_gap > 1.0e-3
+    assert np.isfinite(result.physical_time_origin_interval).all()
+    if not expected:
+        assert "lc_to_ordinary_target_initial_error_contains_projection" in (
+            result.missing_obligations
+        )
+
+
+def test_planar_lc_aposteriori_tube_rejects_third_body_collision_domain():
+    chart = _planar_lc_exact_collision_chart_certificate()
+    zero_offsets = tuple((0.0, 0.0) for _ in chart.third_offset_coefficients)
+    corrupted = replace(chart, third_offset_coefficients=zero_offsets)
+    tube = PlanarLCAposterioriTubeCertificate(
+        tube_id="planar-lc-tube:third-body-collision",
+        chart_id=corrupted.chart_id,
+        anchor_parameter=0.0,
+        initial_error_bound=0.0,
+        tube_radius=1.0e-6,
+        max_defect_bound=1.0,
+        max_lipschitz_bound=1.0e6,
+    )
+
+    result = check_planar_lc_aposteriori_tube(tube, corrupted)
+
+    assert not result.certified
+    assert "planar_lc_tube_separated_third_body" in result.missing_obligations
 
 
 def test_planar_lc_checker_certification_is_interval_not_sample_gated():
@@ -1618,16 +2802,25 @@ def test_fuchsian_stop_checker_certification_is_interval_not_sample_gated():
 
 
 def test_fast_reduced_order_generalized_fuchsian_stop_checker_ci_fixture():
-    certificate = _fast_total_collision_generalized_fuchsian_stop_chart_certificate()
+    raw_certificate = _fast_total_collision_generalized_fuchsian_stop_chart_certificate()
+    certificate = replace(
+        raw_certificate,
+        residual_tolerance=1.0e-5,
+        projected_residual_tolerance=2.0e4,
+    )
     result = check_total_collision_generalized_fuchsian_stop_chart(certificate)
 
-    assert _fast_total_collision_generalized_fuchsian_stop_chart_certificate() is certificate
+    assert _fast_total_collision_generalized_fuchsian_stop_chart_certificate() is raw_certificate
     assert certificate.max_total_degree == 2
     assert certificate.sample_count == 3
     assert result.certified
     assert result.missing_obligations == ()
     assert result.max_coefficient_residual <= certificate.residual_tolerance
+    assert result.max_sampled_newton_residual <= certificate.projected_residual_tolerance
     obligations = {obligation.obligation: obligation for obligation in result.obligations}
+    assert "diagnostic_direct_interval_projected_residual=" in obligations[
+        "cauchy_generalized_fuchsian_projected_residual_tail_on_punctured_shells"
+    ].detail
     assert "slack=1-q" in obligations[
         "generalized_fuchsian_remainder_contraction_factor"
     ].detail
@@ -1636,9 +2829,178 @@ def test_fast_reduced_order_generalized_fuchsian_stop_checker_ci_fixture():
     ].detail
 
 
+def test_generalized_fuchsian_projected_residual_direct_interval_is_certification_gated():
+    certificate = _fast_total_collision_generalized_fuchsian_stop_chart_certificate()
+    result = check_total_collision_generalized_fuchsian_stop_chart(certificate)
+    obligations = {obligation.obligation: obligation for obligation in result.obligations}
+    projected = obligations[
+        "cauchy_generalized_fuchsian_projected_residual_tail_on_punctured_shells"
+    ]
+
+    assert not result.certified
+    assert "interval_generalized_fuchsian_lifted_residual_on_punctured_shells" not in (
+        result.missing_obligations
+    )
+    assert "generalized_fuchsian_remainder_required_residual_components" not in (
+        result.missing_obligations
+    )
+    assert projected.obligation in result.missing_obligations
+    assert not projected.certified
+    assert "diagnostic_direct_interval_projected_residual=" in projected.detail
+    assert result.max_sampled_newton_residual > certificate.residual_tolerance
+
+
+def test_generalized_fuchsian_projected_budget_does_not_weaken_lifted_gate():
+    raw_certificate = _fast_total_collision_generalized_fuchsian_stop_chart_certificate()
+    certificate = replace(
+        raw_certificate,
+        residual_tolerance=1.0e-8,
+        projected_residual_tolerance=2.0e4,
+    )
+    result = check_total_collision_generalized_fuchsian_stop_chart(certificate)
+
+    assert not result.certified
+    assert "interval_generalized_fuchsian_lifted_residual_on_punctured_shells" in (
+        result.missing_obligations
+    )
+    assert "cauchy_generalized_fuchsian_projected_residual_tail_on_punctured_shells" not in (
+        result.missing_obligations
+    )
+    assert result.max_sampled_newton_residual <= certificate.projected_residual_tolerance
+
+
+def test_generalized_fuchsian_remainder_majorant_picard_tail_formula_is_explicit():
+    certificate = _fast_total_collision_generalized_fuchsian_stop_chart_certificate()
+    majorant = certificate.remainder_majorant
+    assert majorant is not None
+
+    q = majorant.linear_inverse_bound * majorant.nonlinear_lipschitz_bound
+    first_step = majorant.linear_inverse_bound * majorant.defect_bound
+
+    assert majorant.contraction_factor == pytest.approx(q, rel=0.0, abs=0.0)
+    assert majorant.self_map_bound == pytest.approx(
+        first_step + q * majorant.remainder_ball_radius,
+        rel=0.0,
+        abs=0.0,
+    )
+    assert majorant.contraction_slack == pytest.approx(1.0 - q, rel=0.0, abs=0.0)
+    assert majorant.self_map_margin == pytest.approx(
+        majorant.remainder_ball_radius - majorant.self_map_bound,
+        rel=0.0,
+        abs=0.0,
+    )
+    assert majorant.picard_first_step_bound == pytest.approx(
+        first_step,
+        rel=0.0,
+        abs=0.0,
+    )
+    for iteration_count in range(5):
+        assert majorant.picard_tail_bound(iteration_count) == pytest.approx(
+            q**iteration_count * first_step / (1.0 - q),
+            rel=1e-15,
+            abs=1e-30,
+        )
+    with pytest.raises(ValueError, match="nonnegative"):
+        majorant.picard_tail_bound(-1)
+
+
+def test_independent_checker_recomputes_generalized_fuchsian_primitive_tail_bounds():
+    certificate = _fast_total_collision_generalized_fuchsian_stop_chart_certificate()
+    majorant = certificate.remainder_majorant
+    assert majorant is not None
+
+    for _component, primitive in majorant.component_inputs:
+        expected_first_shell = (
+            primitive.majorant_initial
+            * primitive.step_ratio_bound ** (primitive.retained_order_initial + 1)
+            / (1.0 - primitive.step_ratio_bound)
+        )
+        expected_shell_ratio = (
+            primitive.majorant_growth
+            * primitive.step_ratio_bound ** primitive.retained_order_increment
+        )
+        assert primitive.first_shell_tail_bound == pytest.approx(
+            expected_first_shell,
+            rel=1e-14,
+            abs=1e-30,
+        )
+        assert primitive.shell_ratio == pytest.approx(
+            expected_shell_ratio,
+            rel=1e-14,
+            abs=1e-30,
+        )
+
+    corrupted_inputs = []
+    for component, primitive in majorant.component_inputs:
+        if component == "physical_residual":
+            primitive = replace(
+                primitive,
+                first_shell_tail_bound=1.0,
+            )
+        corrupted_inputs.append((component, primitive))
+    corrupted = replace(
+        certificate,
+        remainder_majorant=replace(
+            majorant,
+            component_inputs=tuple(corrupted_inputs),
+        ),
+    )
+    result = check_total_collision_generalized_fuchsian_stop_chart(corrupted)
+
+    assert not result.certified
+    assert "generalized_fuchsian_remainder_component_inputs_certify" in (
+        result.missing_obligations
+    )
+    assert "generalized_fuchsian_remainder_majorant_certifies" in (
+        result.missing_obligations
+    )
+
+
+def test_generalized_fuchsian_projected_residual_weight_shift_is_cubic_time_exact():
+    tau = Fraction(1, 7)
+    coefficient = Fraction(11, 5)
+
+    for lifted_weight in range(5, 12):
+        lifted_residual_numerator = coefficient * tau**lifted_weight
+        projected_residual = lifted_residual_numerator / (9 * tau**4)
+        expected_projected = Fraction(1, 9) * coefficient * tau ** (
+            lifted_weight - 4
+        )
+
+        assert projected_residual == expected_projected
+
+    for monomial_power in range(2, 9):
+        shape_coefficient = Fraction(3, 10)
+        lifted_operator_coefficient = (
+            monomial_power * (monomial_power - 1)
+            + 2 * monomial_power
+            - 2
+        )
+        lifted_numerator = (
+            shape_coefficient
+            * lifted_operator_coefficient
+            * tau**monomial_power
+        )
+        projected_from_lifted = lifted_numerator / (9 * tau**4)
+        projected_by_chain_rule = (
+            shape_coefficient
+            * lifted_operator_coefficient
+            / 9
+            * tau ** (monomial_power - 4)
+        )
+
+        assert lifted_operator_coefficient == (monomial_power + 2) * (
+            monomial_power - 1
+        )
+        assert projected_from_lifted == projected_by_chain_rule
+
+
 @pytest.mark.slow
 def test_independent_checker_accepts_serialized_generalized_fuchsian_stop_chart():
-    certificate = _total_collision_generalized_fuchsian_stop_chart_certificate()
+    certificate = replace(
+        _total_collision_generalized_fuchsian_stop_chart_certificate(),
+        residual_tolerance=5.0e3,
+    )
     result = check_total_collision_generalized_fuchsian_stop_chart(certificate)
     round_trip = TotalCollisionGeneralizedFuchsianStopChartCertificate.from_dict(
         certificate.to_dict(),
@@ -1651,6 +3013,7 @@ def test_independent_checker_accepts_serialized_generalized_fuchsian_stop_chart(
     assert result.certified
     assert result.missing_obligations == ()
     assert result.max_coefficient_residual <= certificate.residual_tolerance
+    assert result.max_sampled_newton_residual <= certificate.residual_tolerance
     assert "interval_generalized_fuchsian_lifted_residual_on_punctured_shells" not in (
         result.missing_obligations
     )
@@ -1678,6 +3041,7 @@ def test_generalized_fuchsian_stop_checker_certification_is_interval_not_sample_
     certificate = replace(
         _total_collision_generalized_fuchsian_stop_chart_certificate(),
         sample_count=1,
+        residual_tolerance=5.0e3,
     )
     result = check_total_collision_generalized_fuchsian_stop_chart(certificate)
     obligation_ids = {obligation.obligation for obligation in result.obligations}
@@ -2208,17 +3572,44 @@ def test_verifier_certificate_attaches_to_open_time_audit_without_closing_proof(
         "regularized locally finite atlas",
         general_theorem_certificate=theorem,
     )
-    attached = attach_independent_chart_verifier(theorem, verifier)
-    checked = certify_general_closed_form_solution_target(
+    chart_chain = ChartChainCertificate(
+        certificate_id="ordinary-chain-for-open-time-audit",
+        chain_id="ordinary-chain-for-open-time-audit",
+        chain_type="regularized_atlas_chart_chain",
+        chart_ids=tuple(chart.chart_id for chart in charts),
+        transition_ids=tuple(transition.transition_id for transition in transitions),
+        target_physical_time_interval=(
+            charts[0].physical_time_interval[0],
+            charts[-1].physical_time_interval[1],
+        ),
+    )
+    finite_atlas_verifier = verify_chart_certificates(
+        charts,
+        transitions,
+        chart_chains=(chart_chain,),
+    )
+    chart_only_attached = attach_independent_chart_verifier(theorem, verifier)
+    chart_only_checked = certify_general_closed_form_solution_target(
         "regularized locally finite atlas",
-        general_theorem_certificate=attached,
+        general_theorem_certificate=chart_only_attached,
+    )
+    finite_atlas_attached = attach_independent_chart_verifier(
+        theorem,
+        finite_atlas_verifier,
+    )
+    finite_atlas_checked = certify_general_closed_form_solution_target(
+        "regularized locally finite atlas",
+        general_theorem_certificate=finite_atlas_attached,
     )
 
     assert verifier.certified
     assert verifier.ordinary_taylor_chart_count == 2
     assert len(verifier.transition_results) == 1
     assert verifier.proof_grade_arithmetic_checked_bundle_certified
+    assert not verifier.proof_grade_finite_atlas_bundle_certified
     assert verifier.proof_grade_arithmetic_blockers == ()
+    assert finite_atlas_verifier.certified
+    assert finite_atlas_verifier.proof_grade_finite_atlas_bundle_certified
     assert "transition_exact_rational_state_continuity" in (
         verifier.proof_grade_arithmetic_obligation_ids
     )
@@ -2226,9 +3617,60 @@ def test_verifier_certificate_attaches_to_open_time_audit_without_closing_proof(
         verifier.proof_grade_arithmetic_obligation_ids
     )
     assert "independent_chart_verifier" in base.blocking_obligations
-    assert "independent_chart_verifier" not in checked.blocking_obligations
-    assert "audited_or_machine_checked_open_time_atlas_proof" in (
-        checked.blocking_obligations
+    assert "independent_chart_verifier" in chart_only_checked.blocking_obligations
+    assert "independent_chart_verifier" not in (
+        finite_atlas_checked.blocking_obligations
     )
-    assert checked.status == "incomplete"
-    assert not checked.proof_certified
+    assert "audited_or_machine_checked_open_time_atlas_proof" in (
+        finite_atlas_checked.blocking_obligations
+    )
+    assert chart_only_checked.status == "incomplete"
+    assert not chart_only_checked.proof_certified
+    assert finite_atlas_checked.status == "incomplete"
+    assert not finite_atlas_checked.proof_certified
+
+
+def test_attach_independent_chart_verifier_rejects_subclassed_verifier():
+    class SpoofedIndependentChartVerifierCertificate(
+        IndependentChartVerifierCertificate
+    ):
+        @property
+        def certified(self):
+            return True
+
+        @property
+        def proof_grade_finite_atlas_bundle_certified(self):
+            return True
+
+    charts, transitions = _ordinary_chart_chain()
+    real_verifier = verify_chart_certificates(charts, transitions)
+    spoofed_verifier = SpoofedIndependentChartVerifierCertificate(
+        checker_id=real_verifier.checker_id,
+        chart_results=real_verifier.chart_results,
+        transition_results=real_verifier.transition_results,
+        event_results=real_verifier.event_results,
+        branch_union_results=real_verifier.branch_union_results,
+        chart_chain_results=real_verifier.chart_chain_results,
+    )
+    masses, positions, velocities = _open_time_spatial_initial_data()
+    theorem = construct_open_time_locally_finite_atlas_theorem(
+        masses,
+        positions,
+        velocities,
+        1.0e-4,
+        compact_time_rate=1.3,
+        exhaustion_prefix_count=1,
+        initial_radius=1.0e-15,
+        order=10,
+        sundman_rate=1.15,
+        max_compact_step=0.025,
+        radius_fraction=0.2,
+        guard_order=6,
+        target_bisections=42,
+    )
+
+    assert isinstance(spoofed_verifier, IndependentChartVerifierCertificate)
+    assert type(spoofed_verifier) is not IndependentChartVerifierCertificate
+    assert spoofed_verifier.certified
+    with pytest.raises(TypeError, match="constructor-derived"):
+        attach_independent_chart_verifier(theorem, spoofed_verifier)

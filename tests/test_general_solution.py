@@ -17,6 +17,15 @@ from three_body_symmetry.general_solution import (
     evaluate_reduced_sundman_solution,
     evaluate_unrestricted_solution,
 )
+from three_body_symmetry.general_solution_theorem import (
+    GeneralSolutionTheoremCertificate,
+    GlobalAtlasCertificate,
+    GlobalRegimeExhaustionCertificate,
+    RegimeClassificationCertificate,
+    TheoremPipelineObligation,
+    certify_compact_time_real_line_coverage,
+    certify_positive_mass_noncollision_input_domain,
+)
 from three_body_symmetry.intervals import FloatInterval, interval_array_contains_point
 from three_body_symmetry.ks_binary_chart import (
     SpatialKSBinaryChartState,
@@ -127,6 +136,233 @@ def _general_initial_data():
         ]
     )
     return masses, positions, velocities
+
+
+def test_theorem_pipeline_obligation_rejects_truthy_nonboolean_certification():
+    obligation = TheoremPipelineObligation(
+        obligation="raw_truthy_gate",
+        certified="yes",
+        source="test",
+        required=0,
+        detail="truthy strings and falsy non-bool required flags are not evidence",
+    )
+
+    assert obligation.certified is False
+    assert obligation.required is True
+
+
+def test_general_solution_theorem_assembly_rejects_spoofed_obligation_ledgers():
+    masses, positions, velocities = _general_initial_data()
+    input_domain = certify_positive_mass_noncollision_input_domain(
+        masses,
+        positions,
+        velocities,
+    )
+    compact_time = certify_compact_time_real_line_coverage(1.3)
+    classification = RegimeClassificationCertificate(
+        input_domain_certificate=input_domain,
+        compact_time_certificate=compact_time,
+        regime_id="uniformly_noncollision_bounded_tail",
+        finite_middle_atlas=None,
+        event_regime_handoff=None,
+        event_tail_margin_certificate=None,
+        first_event_shell_prefix=None,
+        event_shell_invariance_certificate=None,
+        ordinary_gap_envelope=None,
+        separated_binary_envelope=None,
+        triple_collision_exclusion_certificate=None,
+        total_collision_selector_envelope=None,
+        escape_endpoint_envelope=None,
+        scattering_endpoint_envelope=None,
+        event_isolation_certificate=None,
+        primitive_cauchy_inputs=None,
+        obligations=(
+            TheoremPipelineObligation(
+                obligation="classification_obligation",
+                certified=True,
+                source="test",
+            ),
+        ),
+    )
+    atlas = GlobalAtlasCertificate(
+        classification=classification,
+        validated_atlas=None,
+        finite_middle_atlas=None,
+        ordinary_gap_atlas=None,
+        event_budget=None,
+        scattering_atlas=None,
+        escape_atlas=None,
+        obligations=(
+            TheoremPipelineObligation(
+                obligation="atlas_obligation",
+                certified=True,
+                source="test",
+            ),
+        ),
+    )
+    theorem = GeneralSolutionTheoremCertificate(
+        global_atlas=atlas,
+        global_regime_exhaustion_certificate=None,
+        obligations=(
+            TheoremPipelineObligation(
+                obligation="theorem_obligation",
+                certified=True,
+                source="test",
+            ),
+        ),
+    )
+    exhaustion = GlobalRegimeExhaustionCertificate(
+        candidate_regimes=(atlas,),
+        input_scope="test_scope",
+        required_regime_ids=("uniformly_noncollision_bounded_tail",),
+        obligations=(
+            TheoremPipelineObligation(
+                obligation="exhaustion_obligation",
+                certified=True,
+                source="test",
+            ),
+        ),
+    )
+    spoofed_classification = replace(
+        classification,
+        obligations=(
+            SimpleNamespace(
+                obligation="fake_classification_obligation",
+                certified=True,
+                required=True,
+            ),
+        ),
+    )
+    stale_classification = replace(
+        classification,
+        input_domain_certificate=SimpleNamespace(certified=True),
+        compact_time_certificate=SimpleNamespace(certified=True),
+    )
+    fake_classification_atlas = replace(
+        atlas,
+        classification=SimpleNamespace(
+            certified=True,
+            missing_obligations=(),
+            regime_id=classification.regime_id,
+        ),
+    )
+    empty_atlas = replace(atlas, obligations=())
+    fake_global_atlas_theorem = replace(
+        theorem,
+        global_atlas=SimpleNamespace(
+            certified=True,
+            missing_obligations=(),
+        ),
+    )
+    optional_theorem = replace(
+        theorem,
+        obligations=tuple(
+            replace(obligation, required=False) for obligation in theorem.obligations
+        ),
+    )
+    spoofed_exhaustion = replace(
+        exhaustion,
+        obligations=(
+            SimpleNamespace(
+                obligation="fake_exhaustion_obligation",
+                certified=True,
+                required=True,
+            ),
+        ),
+    )
+    fake_candidate_exhaustion = replace(
+        exhaustion,
+        candidate_regimes=(
+            SimpleNamespace(
+                certified=True,
+                classification=SimpleNamespace(regime_id=classification.regime_id),
+            ),
+        ),
+    )
+    stale_required_ids_exhaustion = replace(
+        exhaustion,
+        input_scope="arbitrary_positive_mass_noncollision",
+        required_regime_ids=("missing_regime",),
+    )
+    manual_true_partition_exhaustion = replace(
+        exhaustion,
+        input_scope="arbitrary_positive_mass_noncollision",
+        obligations=(
+            TheoremPipelineObligation(
+                obligation="arbitrary_initial_data_partition_theorem",
+                certified=True,
+                source="manual_true_partition_row",
+            ),
+        ),
+    )
+    theorem_with_manual_true_partition = replace(
+        theorem,
+        global_regime_exhaustion_certificate=manual_true_partition_exhaustion,
+        obligations=(
+            TheoremPipelineObligation(
+                obligation="global_regime_exhaustion",
+                certified=True,
+                source="manual_true_top_level_row",
+            ),
+        ),
+    )
+
+    assert classification.certified
+    assert atlas.certified
+    assert theorem.regime_theorem_certified
+    assert not theorem.full_general_solution_certified
+    assert "global_regime_exhaustion" in theorem.missing_obligations
+    assert not exhaustion.certified
+    assert "global_exhaustion_input_scope" in exhaustion.missing_obligations
+    assert "global_regime_exhaustion_partition_theorem_obligation_present" in (
+        exhaustion.missing_obligations
+    )
+    assert not manual_true_partition_exhaustion.certified
+    assert "arbitrary_initial_data_partition_theorem" in (
+        manual_true_partition_exhaustion.missing_obligations
+    )
+    assert not theorem_with_manual_true_partition.full_general_solution_certified
+    assert "global_regime_exhaustion" in (
+        theorem_with_manual_true_partition.missing_obligations
+    )
+    assert not spoofed_classification.certified
+    assert "regime_classification_obligation_type" in (
+        spoofed_classification.missing_obligations
+    )
+    assert not stale_classification.certified
+    assert "regime_classification_input_domain_type" in (
+        stale_classification.missing_obligations
+    )
+    assert "regime_classification_compact_time_type" in (
+        stale_classification.missing_obligations
+    )
+    assert not fake_classification_atlas.certified
+    assert "global_atlas_classification_type" in (
+        fake_classification_atlas.missing_obligations
+    )
+    assert not empty_atlas.certified
+    assert "global_atlas_obligations_present" in empty_atlas.missing_obligations
+    assert not fake_global_atlas_theorem.regime_theorem_certified
+    assert not fake_global_atlas_theorem.full_general_solution_certified
+    assert "general_solution_theorem_global_atlas_type" in (
+        fake_global_atlas_theorem.missing_obligations
+    )
+    assert not optional_theorem.full_general_solution_certified
+    assert "general_solution_theorem_required_obligation_present" in (
+        optional_theorem.missing_obligations
+    )
+    assert not spoofed_exhaustion.certified
+    assert "global_regime_exhaustion_obligation_type" in (
+        spoofed_exhaustion.missing_obligations
+    )
+    assert not fake_candidate_exhaustion.certified
+    assert "global_regime_exhaustion_candidate_regime_type" in (
+        fake_candidate_exhaustion.missing_obligations
+    )
+    assert not stale_required_ids_exhaustion.certified
+    assert "global_exhaustion_required_regime_ids" in (
+        stale_required_ids_exhaustion.missing_obligations
+    )
 
 
 def _target_time_from_reduced_s(reduced, s_value):
@@ -400,6 +636,7 @@ def test_unrestricted_solution_validated_atlas_method_derives_single_proof_pipel
         "planar_hybrid",
         "compactified_sundman",
     ]
+
     assert solution.evaluation.reduced_target is not None
     assert solution.chart_count == len(solution.evaluation.reduced_target.steps) + 1
     assert solution.transition_count == solution.chart_count - 1
@@ -637,6 +874,289 @@ def test_unrestricted_solution_validated_atlas_method_derives_single_proof_pipel
     assert not missing_collision_reason_solution.proof_certified
 
 
+def test_validated_atlas_proof_ledger_rejects_truthy_fake_and_optional_only_entries():
+    truthy_entry = ProofLedgerEntry("truthy_entry", "yes", "test")
+    truthy_ledger = ProofLedger(entries=(truthy_entry,))
+    fake_ledger = ProofLedger(
+        entries=(
+            SimpleNamespace(
+                name="fake_entry",
+                certified=True,
+                source="test",
+                required=True,
+            ),
+        )
+    )
+    optional_only_ledger = ProofLedger(
+        entries=(ProofLedgerEntry("optional_entry", True, "test", required=False),)
+    )
+
+    assert truthy_entry.certified is False
+    assert not truthy_ledger.certified
+    assert truthy_ledger.missing_required_obligations == ("truthy_entry",)
+    assert not fake_ledger.certified
+    assert fake_ledger.missing_required_obligations == ("proof_ledger_entry_type",)
+    assert not optional_only_ledger.certified
+
+
+def _minimal_validated_atlas_solution_for_proof_boundary() -> ValidatedAtlasSolution:
+    interval_box = np.asarray(
+        [FloatInterval.point(0.0), FloatInterval.point(0.0)],
+        dtype=object,
+    )
+
+    class Evaluation:
+        initial_state = np.zeros(2)
+        final_state = np.zeros(2)
+        target_state_interval = interval_box
+
+        def target_state_contains(self, state):
+            return interval_array_contains_point(
+                self.target_state_interval,
+                np.asarray(state, dtype=float).reshape(-1),
+            )
+
+    chart = ValidatedChart(
+        chart_id="chart0",
+        chart_type="spatial_branch_union",
+        source="test",
+        parameter_name="t",
+        parameter_interval=FloatInterval(0.0, 0.1),
+        physical_time_interval=FloatInterval(0.0, 0.1),
+        dynamics_certified=True,
+        residual_certified=True,
+        projection_certified=True,
+        invariants_certified=True,
+        tail_certified=True,
+        tail_bound=0.0,
+    )
+    invariants = GlobalInvariantLedger(
+        center_of_mass_certified=True,
+        linear_momentum_certified=True,
+        angular_momentum_certified=True,
+        energy_certified=True,
+        certified_chart_count=1,
+        expected_chart_count=1,
+    )
+    residual = NewtonResidualLedger(
+        certified=True,
+        certified_chart_count=1,
+        expected_chart_count=1,
+    )
+    tail_budget = TailBudgetLedger(
+        local_tail_bound=0.0,
+        max_step_tail_bound=0.0,
+        certified=True,
+    )
+    collision_policy = CollisionPolicyWitness(
+        policy_id="test_policy",
+        binary_policy="test_binary",
+        total_collision_policy="maximal_classical_stop",
+        triple_collision_status="excluded",
+        triple_collision_reason="unit test proof boundary",
+        certified=True,
+    )
+    proof_ledger = ProofLedger(
+        entries=(
+            ProofLedgerEntry("mass_domain", True, "test"),
+            ProofLedgerEntry("initial_state_domain", True, "test"),
+            ProofLedgerEntry("target_time_domain", True, "test"),
+            ProofLedgerEntry("finite_time_physical_targeting", True, "test"),
+            ProofLedgerEntry("projection_ledger", True, "test"),
+            ProofLedgerEntry("newton_residuals", True, "test"),
+            ProofLedgerEntry("invariant_ledger", True, "test"),
+            ProofLedgerEntry("local_tail_budget", True, "test"),
+            ProofLedgerEntry("collision_policy", True, "test"),
+            ProofLedgerEntry("simultaneous_close_pair_partition", True, "test"),
+            ProofLedgerEntry("finite_time_branch_union_consumption", True, "test"),
+        )
+    )
+    return ValidatedAtlasSolution(
+        masses=(1.0,),
+        target_time=0.05,
+        initial_state_interval=interval_box,
+        charts=(chart,),
+        transitions=(),
+        invariants=invariants,
+        tail_budget=tail_budget,
+        residual_budget=residual,
+        collision_policy=collision_policy,
+        proof_ledger=proof_ledger,
+        evaluation=Evaluation(),
+    )
+
+
+def test_validated_atlas_rejects_truthy_component_certification_flags():
+    solution = _minimal_validated_atlas_solution_for_proof_boundary()
+    chart = solution.charts[0]
+    invariants = solution.invariants
+    residual = solution.residual_budget
+    tail_budget = solution.tail_budget
+    collision_policy = solution.collision_policy
+
+    truthy_chart = replace(chart, residual_certified="yes")
+    truthy_invariants = replace(invariants, energy_certified="yes")
+    truthy_residual = replace(residual, certified="yes")
+    truthy_tail = replace(tail_budget, certified="yes")
+    truthy_policy = replace(collision_policy, certified="yes")
+    truthy_attempt = FiniteTimeChartSelectorAttempt(
+        route_id="truthy_route",
+        attempted="yes",
+        selected="yes",
+        certified="yes",
+        reason="truthy fields must not select or certify",
+    )
+    truthy_trace = FiniteTimeChartSelectorTrace(
+        selected_route_id="truthy_route",
+        attempts=(truthy_attempt,),
+    )
+
+    assert solution.proof_certified
+    assert not truthy_chart.certified
+    assert not replace(solution, charts=(truthy_chart,)).proof_certified
+    assert "chart_certification" in (
+        replace(solution, charts=(truthy_chart,)).missing_certification_obligations
+    )
+    assert not truthy_invariants.certified
+    assert not replace(solution, invariants=truthy_invariants).proof_certified
+    assert not truthy_residual.coverage_certified
+    assert not replace(solution, residual_budget=truthy_residual).proof_certified
+    assert not replace(solution, tail_budget=truthy_tail).proof_certified
+    assert not replace(solution, collision_policy=truthy_policy).proof_certified
+    assert not truthy_attempt.well_formed
+    assert not truthy_trace.certified
+    assert "selector_trace_single_selected_route" in truthy_trace.missing_obligations
+
+
+def test_validated_atlas_rejects_attribute_compatible_nested_proof_objects():
+    solution = _minimal_validated_atlas_solution_for_proof_boundary()
+    spoof_cases = (
+        (
+            "proof_ledger_type",
+            replace(
+                solution,
+                proof_ledger=SimpleNamespace(
+                    entries=solution.proof_ledger.entries,
+                    certified=True,
+                    well_formed=True,
+                    missing_required_obligations=(),
+                ),
+            ),
+        ),
+        (
+            "chart_type",
+            replace(
+                solution,
+                charts=(
+                    SimpleNamespace(
+                        chart_id="chart0",
+                        chart_type="spatial_branch_union",
+                        source="test",
+                        parameter_interval=FloatInterval(0.0, 0.1),
+                        physical_time_interval=FloatInterval(0.0, 0.1),
+                        tail_bound=0.0,
+                        certified=True,
+                    ),
+                ),
+            ),
+        ),
+        (
+            "transition_type",
+            replace(
+                solution,
+                charts=(
+                    solution.charts[0],
+                    replace(
+                        solution.charts[0],
+                        chart_id="chart1",
+                        parameter_interval=FloatInterval(0.1, 0.2),
+                        physical_time_interval=FloatInterval(0.1, 0.2),
+                    ),
+                ),
+                transitions=(
+                    SimpleNamespace(
+                        source_chart_id="chart0",
+                        target_chart_id="chart1",
+                        transition_type="test_transition",
+                        source="test",
+                        certified=True,
+                    ),
+                ),
+                invariants=replace(
+                    solution.invariants,
+                    certified_chart_count=2,
+                    expected_chart_count=2,
+                ),
+                residual_budget=replace(
+                    solution.residual_budget,
+                    certified_chart_count=2,
+                    expected_chart_count=2,
+                ),
+            ),
+        ),
+        (
+            "invariant_ledger_type",
+            replace(
+                solution,
+                invariants=SimpleNamespace(
+                    certified=True,
+                    expected_chart_count=1,
+                    certified_chart_count=1,
+                ),
+            ),
+        ),
+        (
+            "tail_budget_type",
+            replace(
+                solution,
+                tail_budget=SimpleNamespace(
+                    certified=True,
+                    admissible=True,
+                ),
+            ),
+        ),
+        (
+            "residual_budget_type",
+            replace(
+                solution,
+                residual_budget=SimpleNamespace(
+                    coverage_certified=True,
+                    expected_chart_count=1,
+                    certified_chart_count=1,
+                ),
+            ),
+        ),
+        (
+            "collision_policy_type",
+            replace(
+                solution,
+                collision_policy=SimpleNamespace(
+                    certified=True,
+                    well_formed=True,
+                    missing_obligations=(),
+                ),
+            ),
+        ),
+        (
+            "selector_trace_type",
+            replace(
+                solution,
+                selector_trace=SimpleNamespace(
+                    certified=True,
+                    selected_route_id="fake_route",
+                    atlas_binding_token="fake",
+                    missing_obligations=(),
+                ),
+            ),
+        ),
+    )
+
+    for missing_obligation, spoofed_solution in spoof_cases:
+        assert not spoofed_solution.component_types_certified
+        assert not spoofed_solution.proof_certified
+        assert missing_obligation in spoofed_solution.missing_certification_obligations
+
+
 def test_finite_time_regime_classifier_constructs_validated_atlas_route():
     masses, positions, velocities = _general_initial_data()
     reduced = reduce_to_center_of_mass_frame(positions, velocities, masses)
@@ -668,6 +1188,58 @@ def test_finite_time_regime_classifier_constructs_validated_atlas_route():
     assert classification.validated_atlas.target_state_contains(reference)
     assert "compactified_sundman_target" in classification.chart_types
     assert classification.missing_obligations == ()
+
+
+def test_finite_time_regime_classifier_rejects_spoofed_obligation_ledgers():
+    masses, positions, velocities = _general_initial_data()
+    reduced = reduce_to_center_of_mass_frame(positions, velocities, masses)
+    target_time = _target_time_from_reduced_s(reduced, 0.006)
+    classification = classify_finite_time_regime(
+        masses,
+        positions,
+        velocities,
+        target_time,
+        initial_radius=1e-15,
+        order=10,
+        sundman_rate=1.15,
+        max_compact_step=0.025,
+        radius_fraction=0.2,
+        guard_order=6,
+        target_bisections=42,
+    )
+    spoofed = replace(
+        classification,
+        obligations=(
+            SimpleNamespace(
+                obligation="fake_finite_time_obligation",
+                certified=True,
+                source="test",
+                required=True,
+            ),
+        ),
+    )
+    empty = replace(classification, obligations=())
+    optional_only = replace(
+        classification,
+        obligations=tuple(
+            replace(obligation, required=False)
+            for obligation in classification.obligations
+        ),
+    )
+
+    assert classification.certified
+    assert not spoofed.certified
+    assert "finite_time_regime_classification_obligation_type" in (
+        spoofed.missing_obligations
+    )
+    assert not empty.certified
+    assert "finite_time_regime_classification_obligations_present" in (
+        empty.missing_obligations
+    )
+    assert not optional_only.certified
+    assert "finite_time_regime_classification_required_obligation_present" in (
+        optional_only.missing_obligations
+    )
 
 
 def test_finite_time_regime_classifier_rejects_foreign_validated_atlas_input_domain(
@@ -1307,6 +1879,29 @@ def test_finite_time_regime_classifier_stops_before_invalid_input_domain():
     assert classification.failure_reason == (
         "input domain is not positive-mass noncollision data"
     )
+
+
+def test_finite_time_regime_classifier_reports_invalid_target_time_as_obligation():
+    masses, positions, velocities = _general_initial_data()
+
+    classification = classify_finite_time_regime(
+        masses,
+        positions,
+        velocities,
+        "not-a-time",
+        order=8,
+    )
+
+    assert not classification.certified
+    assert classification.input_domain_certified
+    assert not classification.target_time_certified
+    assert classification.validated_atlas is None
+    assert classification.selected_route_id is None
+    assert classification.failure_reason == "target_time must be finite real"
+    assert "finite_target_time" in classification.missing_obligations
+    assert "finite_time_validated_atlas_type" in classification.missing_obligations
+    assert "finite_time_validated_atlas" in classification.missing_obligations
+    assert "finite_time_chart_selector" in classification.missing_obligations
 
 
 def test_validated_atlas_proof_rejects_stale_selector_trace():
@@ -3380,6 +3975,57 @@ def test_finite_time_regime_classifier_mirrors_consumed_branch_union_ledger(
     assert "event_order_partition_consumption_theorem" not in (
         event_classification.missing_obligations
     )
+
+
+def test_finite_time_regime_classifier_ignores_fake_proof_ledger_entries():
+    fake_obligations: list[TheoremPipelineObligation] = []
+    fake_atlas = SimpleNamespace(
+        proof_ledger=SimpleNamespace(
+            entries=(
+                SimpleNamespace(
+                    name="simultaneous_close_pair_partition",
+                    certified=True,
+                    source="fake",
+                    detail="attribute-compatible placeholder",
+                ),
+                ProofLedgerEntry(
+                    "finite_time_branch_union_consumption",
+                    "yes",
+                    "test",
+                    detail="truthy non-bool certification",
+                ),
+            )
+        )
+    )
+    finite_time_regime_module._append_certified_atlas_proof_obligations(
+        fake_obligations,
+        fake_atlas,
+        selected_route_id="fake_branch_union",
+    )
+
+    real_obligations: list[TheoremPipelineObligation] = []
+    real_atlas = SimpleNamespace(
+        proof_ledger=ProofLedger(
+            entries=(
+                ProofLedgerEntry(
+                    "simultaneous_close_pair_partition",
+                    True,
+                    "test",
+                    detail="constructor-derived partition evidence",
+                ),
+            )
+        )
+    )
+    finite_time_regime_module._append_certified_atlas_proof_obligations(
+        real_obligations,
+        real_atlas,
+        selected_route_id="spatial_branch_union",
+    )
+
+    assert fake_obligations == []
+    assert len(real_obligations) == 1
+    assert real_obligations[0].obligation == "simultaneous_close_pair_partition"
+    assert real_obligations[0].certified is True
 
 
 def test_spatial_ks_loop_composes_later_event_order_partition_with_prefix(

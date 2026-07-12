@@ -1,4 +1,7 @@
+from dataclasses import replace
+from fractions import Fraction
 import itertools
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -49,7 +52,9 @@ from three_body_symmetry.event_recurrence import (
     derive_geometric_shell_event_isolation,
 )
 from three_body_symmetry.event_regime_assembler import (
+    certify_local_chart_family_primitive_cauchy_inputs,
     certify_uniform_separated_binary_levi_civita_chart_family,
+    derive_event_recurrence_from_chart_family_certificates,
 )
 from three_body_symmetry.intervals import FloatInterval
 from three_body_symmetry.obstructions import (
@@ -453,6 +458,36 @@ def _add_multi_index(left, right):
 
 def _sub_multi_index(left, right):
     return tuple(left_value - right_value for left_value, right_value in zip(left, right))
+
+
+def _poly_add(left, right):
+    length = max(len(left), len(right))
+    result = [Fraction(0) for _ in range(length)]
+    for index, value in enumerate(left):
+        result[index] += value
+    for index, value in enumerate(right):
+        result[index] += value
+    while len(result) > 1 and result[-1] == 0:
+        result.pop()
+    return tuple(result)
+
+
+def _poly_sub(left, right):
+    return _poly_add(left, tuple(-value for value in right))
+
+
+def _poly_mul(left, right):
+    result = [Fraction(0) for _ in range(len(left) + len(right) - 1)]
+    for left_index, left_value in enumerate(left):
+        for right_index, right_value in enumerate(right):
+            result[left_index + right_index] += left_value * right_value
+    while len(result) > 1 and result[-1] == 0:
+        result.pop()
+    return tuple(result)
+
+
+def _poly_shift(poly, degree):
+    return (Fraction(0),) * degree + tuple(poly)
 
 
 def _multi_index_leq(left, right):
@@ -2465,6 +2500,152 @@ def test_stable_log_selector_chain_constructor_recovers_coupled_log_selectors():
                 3: (StableResonanceTerm(coupling_d, (1, 1, 0, 0, 0)),),
             },
         )
+
+
+def test_stable_log_selector_chain_log_degree_bound_is_finite_and_triangular():
+    def log_degree_bounds(source_indices, resonant_rows):
+        bounds = {index: 0 for index in source_indices}
+        for target_index in sorted(resonant_rows):
+            term_bounds = []
+            for term in resonant_rows[target_index]:
+                term_bound = 0
+                for source_index, power in enumerate(term.powers):
+                    if power == 0:
+                        continue
+                    assert source_index in bounds
+                    assert source_index < target_index
+                    term_bound += power * bounds[source_index]
+                term_bounds.append(term_bound)
+            bounds[target_index] = 1 + max(term_bounds, default=0)
+        return bounds
+
+    resonant_rows = {
+        1: (StableResonanceTerm(0.5, (2, 0, 0)),),
+        2: (StableResonanceTerm(-0.25, (0, 2, 0)),),
+    }
+    chain = construct_stable_log_selector_chain(
+        radial_decay=1.0,
+        stable_rates=(1.0, 2.0, 4.0),
+        source_amplitudes={0: 0.125},
+        selectors={1: -0.031, 2: 0.017},
+        resonant_rows=resonant_rows,
+    )
+    bounds = log_degree_bounds((0,), resonant_rows)
+    actual_degrees = {
+        index: len(mode.polynomial_in_time) - 1
+        for index, mode in chain.modes.items()
+    }
+
+    assert chain.certified
+    assert bounds == {0: 0, 1: 1, 2: 3}
+    assert actual_degrees == bounds
+    assert chain.mode(2).forcing_polynomial_in_time[-1] != 0.0
+    assert chain.mode(2).polynomial_in_time[-1] == pytest.approx(
+        chain.mode(2).forcing_polynomial_in_time[-1] / 3.0,
+        rel=1e-14,
+        abs=1e-14,
+    )
+
+
+def test_fuchsian_log_resonant_projector_right_inverse_identities_are_exact():
+    def mat_mul(left, right):
+        rows = len(left)
+        cols = len(right[0])
+        inner = len(right)
+        return tuple(
+            tuple(
+                sum(left[row][k] * right[k][col] for k in range(inner))
+                for col in range(cols)
+            )
+            for row in range(rows)
+        )
+
+    def mat_add(left, right):
+        return tuple(
+            tuple(left[row][col] + right[row][col] for col in range(len(left[0])))
+            for row in range(len(left))
+        )
+
+    def mat_sub(left, right):
+        return tuple(
+            tuple(left[row][col] - right[row][col] for col in range(len(left[0])))
+            for row in range(len(left))
+        )
+
+    def mat_vec(mat, vec):
+        return tuple(
+            sum(mat[row][col] * vec[col] for col in range(len(vec)))
+            for row in range(len(mat))
+        )
+
+    def vec_add(left, right):
+        return tuple(left[index] + right[index] for index in range(len(left)))
+
+    def vec_scale(scale, vec):
+        return tuple(scale * value for value in vec)
+
+    zero = Fraction(0)
+    one = Fraction(1)
+    identity = (
+        (one, zero, zero),
+        (zero, one, zero),
+        (zero, zero, one),
+    )
+    row_operator = (
+        (zero, zero, zero),
+        (zero, Fraction(2), zero),
+        (zero, zero, Fraction(-3)),
+    )
+    projector = (
+        (one, zero, zero),
+        (zero, zero, zero),
+        (zero, zero, zero),
+    )
+    right_inverse = (
+        (zero, zero, zero),
+        (zero, Fraction(1, 2), zero),
+        (zero, zero, Fraction(-1, 3)),
+    )
+    zero_matrix = (
+        (zero, zero, zero),
+        (zero, zero, zero),
+        (zero, zero, zero),
+    )
+    range_projector = mat_sub(identity, projector)
+
+    assert mat_mul(projector, projector) == projector
+    assert mat_mul(row_operator, projector) == zero_matrix
+    assert mat_mul(projector, row_operator) == zero_matrix
+    assert mat_mul(row_operator, right_inverse) == range_projector
+    assert mat_mul(projector, right_inverse) == zero_matrix
+    assert mat_mul(right_inverse, projector) == zero_matrix
+
+    denominator_floor_candidates = (
+        Fraction(1, 7),
+        Fraction(-2, 5),
+        Fraction(3, 11),
+    )
+    assert min(abs(value) for value in denominator_floor_candidates) == Fraction(1, 7)
+    assert all(value != 0 for value in denominator_floor_candidates)
+
+    log_coupling = Fraction(5, 2)
+    forcing = (Fraction(7, 13), Fraction(-3, 5), Fraction(11, 17))
+    selector = (Fraction(19, 23), zero, zero)
+    resonant_log_coefficient = vec_scale(
+        Fraction(1, 1) / log_coupling,
+        mat_vec(projector, forcing),
+    )
+    range_constant = mat_vec(right_inverse, mat_vec(range_projector, forcing))
+    constant_coefficient = vec_add(range_constant, selector)
+
+    row_residual = vec_add(
+        mat_vec(row_operator, constant_coefficient),
+        vec_scale(log_coupling, resonant_log_coefficient),
+    )
+    assert row_residual == forcing
+    assert mat_vec(projector, constant_coefficient) == selector
+    assert mat_vec(projector, range_constant) == (zero, zero, zero)
+    assert mat_vec(range_projector, resonant_log_coefficient) == (zero, zero, zero)
 
 
 def test_stable_log_selector_chain_projects_to_finite_fuchsian_log_branch():
@@ -5333,6 +5514,83 @@ def test_ordered_euler_shape_eigenvalue_bounds_limit_higher_resonance_orders():
         assert 4.0 / 9.0 < horizontal_shape_eigenvalue < 32.0 / 9.0
         assert possible_higher_resonance_orders == [5, 6, 7]
         assert 8.0 * (8.0 - 3.0) / 9.0 > 32.0 / 9.0
+
+
+def test_ordered_euler_shape_gap_public_audit_polynomial_identities_are_exact():
+    r = (Fraction(0), Fraction(1))
+    one = (Fraction(1),)
+    one_plus_r = (Fraction(1), Fraction(1))
+    one_minus_r = (Fraction(1), Fraction(-1))
+    r_minus_one = (Fraction(-1), Fraction(1))
+    r_squared_plus_r_plus_one = (Fraction(1), Fraction(1), Fraction(1))
+    r_squared_plus_three_r_plus_three = (
+        Fraction(3),
+        Fraction(3),
+        Fraction(1),
+    )
+
+    upper_gap_m1_factor = _poly_mul(
+        _poly_shift(one, 2),
+        _poly_mul(
+            _poly_mul(r_minus_one, r_minus_one),
+            _poly_mul((Fraction(2), Fraction(1)), (Fraction(1), Fraction(2))),
+        ),
+    )
+    upper_gap_m2_factor = (
+        Fraction(4),
+        Fraction(16),
+        Fraction(24),
+        Fraction(22),
+        Fraction(19),
+        Fraction(11),
+        Fraction(2),
+    )
+
+    assert upper_gap_m1_factor == (
+        Fraction(0),
+        Fraction(0),
+        Fraction(2),
+        Fraction(1),
+        Fraction(-6),
+        Fraction(1),
+        Fraction(2),
+    )
+    assert all(coefficient > 0 for coefficient in upper_gap_m2_factor)
+
+    lower_gap_m2_factor_in_u = _poly_mul(
+        r,
+        _poly_mul((Fraction(2), Fraction(1)), r_squared_plus_three_r_plus_three),
+    )
+    assert all(coefficient >= 0 for coefficient in lower_gap_m2_factor_in_u)
+    assert any(coefficient > 0 for coefficient in lower_gap_m2_factor_in_u)
+
+    lower_gap_m1 = _poly_shift(r_squared_plus_three_r_plus_three, 2)
+    lower_gap_m2 = _poly_mul(
+        r_minus_one,
+        _poly_mul(one_plus_r, r_squared_plus_r_plus_one),
+    )
+    m3_numerator_m1 = _poly_shift(r_squared_plus_three_r_plus_three, 3)
+    m3_numerator_m2 = _poly_mul(
+        r_minus_one,
+        _poly_mul(
+            _poly_mul(one_plus_r, one_plus_r),
+            r_squared_plus_r_plus_one,
+        ),
+    )
+    positive_remainder = _poly_mul(
+        one_minus_r,
+        _poly_mul(one_plus_r, r_squared_plus_r_plus_one),
+    )
+
+    assert _poly_shift(lower_gap_m1, 1) == m3_numerator_m1
+    assert _poly_shift(lower_gap_m2, 1) == _poly_add(
+        m3_numerator_m2,
+        positive_remainder,
+    )
+    assert _poly_sub(
+        _poly_shift(lower_gap_m2, 1),
+        m3_numerator_m2,
+    ) == positive_remainder
 
 
 def test_ordered_euler_resonance_surfaces_match_shape_eigenvalue_condition():
@@ -12380,6 +12638,77 @@ def test_geometric_shell_isolation_constructor_closes_all_future_event_budget():
             theta=1.0,
             event_isolation_initial=0.018,
             boundary_clearance_initial=0.02,
+        )
+
+
+def test_event_regime_assembly_rejects_spoofed_obligation_ledgers():
+    components = ("value", "first_jet", "lifted_residual", "physical_residual")
+    shell_isolation = derive_geometric_shell_event_isolation(
+        delta_initial=0.2,
+        theta=0.5,
+        event_isolation_initial=0.018,
+        boundary_clearance_initial=0.02,
+    )
+    primitive_inputs = {
+        "value": (0.9e-5, 1.06, 0.30, 5, 3),
+        "first_jet": (2.1e-5, 1.08, 0.32, 5, 3),
+        "lifted_residual": (4.6e-5, 1.05, 0.28, 6, 3),
+        "physical_residual": (2.4e-9, 1.03, 0.22, 6, 3),
+    }
+    chart_families = tuple(
+        certify_local_chart_family_primitive_cauchy_inputs(
+            kind=kind,
+            primitive_inputs=primitive_inputs,
+            source_certificate=SimpleNamespace(certified=True),
+            components=components,
+        )
+        for kind in shell_isolation.chart_family_counts
+    )
+    assembly = derive_event_recurrence_from_chart_family_certificates(
+        shell_isolation=shell_isolation,
+        chart_family_certificates=chart_families,
+        checked_prefix=6,
+        components=components,
+    )
+    spoofed = replace(
+        assembly,
+        obligations=(
+            SimpleNamespace(
+                obligation="fake_event_regime_obligation",
+                certified=True,
+                required=True,
+            ),
+        ),
+    )
+    empty = replace(assembly, obligations=())
+    optional_only = replace(
+        assembly,
+        obligations=tuple(
+            replace(obligation, required=False)
+            for obligation in assembly.obligations
+        ),
+    )
+
+    assert assembly.certified
+    assert not spoofed.certified
+    assert "event_regime_assembly_obligation_type" in spoofed.missing_obligations
+    assert not empty.certified
+    assert "event_regime_assembly_obligations_present" in empty.missing_obligations
+    assert not optional_only.certified
+    assert "event_regime_assembly_required_obligation_present" in (
+        optional_only.missing_obligations
+    )
+
+
+def test_event_regime_local_chart_family_rejects_truthy_source_certificate():
+    with pytest.raises(ValueError, match="do not certify"):
+        certify_local_chart_family_primitive_cauchy_inputs(
+            kind="ordinary_gap_taylor",
+            primitive_inputs={
+                "value": (0.9e-5, 1.06, 0.30, 5, 3),
+            },
+            source_certificate=SimpleNamespace(certified="yes"),
+            components=("value",),
         )
 
 

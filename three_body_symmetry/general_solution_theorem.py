@@ -29,8 +29,15 @@ from .triple_collision import (
     certify_homothetic_total_collision_scalar_majorant,
     construct_homothetic_total_collision_branch,
 )
-from .validated_atlas import validated_atlas_from_homothetic_total_collision_branch
-from .zero_angular_entry import certify_homothetic_finite_jet_identity_selector_entry
+from .validated_atlas import (
+    ValidatedAtlasSolution,
+    validated_atlas_from_homothetic_total_collision_branch,
+)
+from .zero_angular_entry import (
+    FiniteJetDerivedIdentitySelectorEntryCertificate,
+    FiniteJetIdentitySelectorEntryCertificate,
+    certify_homothetic_finite_jet_identity_selector_entry,
+)
 
 
 ORDINARY_FINITE_ATLAS_CHART_TYPES = (
@@ -97,6 +104,59 @@ class TheoremPipelineObligation:
     source: str
     required: bool = True
     detail: str = ""
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "certified", self.certified is True)
+        object.__setattr__(
+            self,
+            "required",
+            self.required if type(self.required) is bool else True,
+        )
+
+
+def _theorem_pipeline_obligation_ledger_certified(
+    obligations: tuple[Any, ...],
+) -> bool:
+    return bool(
+        obligations
+        and any(
+            isinstance(obligation, TheoremPipelineObligation)
+            and obligation.required
+            for obligation in obligations
+        )
+        and all(
+            isinstance(obligation, TheoremPipelineObligation)
+            for obligation in obligations
+        )
+        and all(
+            obligation.certified is True
+            for obligation in obligations
+            if obligation.required
+        )
+    )
+
+
+def _theorem_pipeline_obligation_ledger_missing(
+    obligations: tuple[Any, ...],
+    *,
+    ledger_name: str,
+) -> tuple[str, ...]:
+    missing: list[str] = []
+    if not obligations:
+        missing.append(f"{ledger_name}_obligations_present")
+    if obligations and not any(
+        isinstance(obligation, TheoremPipelineObligation)
+        and obligation.required
+        for obligation in obligations
+    ):
+        missing.append(f"{ledger_name}_required_obligation_present")
+    for obligation in obligations:
+        if not isinstance(obligation, TheoremPipelineObligation):
+            missing.append(f"{ledger_name}_obligation_type")
+            continue
+        if obligation.required and obligation.certified is not True:
+            missing.append(obligation.obligation)
+    return tuple(dict.fromkeys(missing))
 
 
 @dataclass(frozen=True)
@@ -188,11 +248,20 @@ class RegimeClassificationCertificate:
 
     @property
     def input_domain_certified(self) -> bool:
-        return bool(getattr(self.input_domain_certificate, "certified", False))
+        return bool(
+            isinstance(
+                self.input_domain_certificate,
+                PositiveMassNoncollisionInputDomainCertificate,
+            )
+            and self.input_domain_certificate.certified is True
+        )
 
     @property
     def compact_time_coverage_certified(self) -> bool:
-        return bool(getattr(self.compact_time_certificate, "certified", False))
+        return bool(
+            isinstance(self.compact_time_certificate, CompactTimeCoverageCertificate)
+            and self.compact_time_certificate.certified is True
+        )
 
     @property
     def triple_collision_exclusion_certified(self) -> bool:
@@ -202,21 +271,23 @@ class RegimeClassificationCertificate:
     def certified(self) -> bool:
         return bool(
             self.regime_id in REGIME_IDS
-            and self.obligations
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
-            )
+            and self.input_domain_certified
+            and self.compact_time_coverage_certified
+            and _theorem_pipeline_obligation_ledger_certified(self.obligations)
         )
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+        structural_missing = []
+        if not self.input_domain_certified:
+            structural_missing.append("regime_classification_input_domain_type")
+        if not self.compact_time_coverage_certified:
+            structural_missing.append("regime_classification_compact_time_type")
+        ledger_missing = _theorem_pipeline_obligation_ledger_missing(
+            self.obligations,
+            ledger_name="regime_classification",
         )
+        return tuple(dict.fromkeys((*structural_missing, *ledger_missing)))
 
 
 @dataclass(frozen=True)
@@ -235,23 +306,23 @@ class GlobalAtlasCertificate:
     @property
     def certified(self) -> bool:
         return bool(
-            self.classification.certified
-            and self.obligations
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
-            )
+            isinstance(self.classification, RegimeClassificationCertificate)
+            and self.classification.certified is True
+            and _theorem_pipeline_obligation_ledger_certified(self.obligations)
         )
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        own_missing = tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+        classification_missing = (
+            self.classification.missing_obligations
+            if isinstance(self.classification, RegimeClassificationCertificate)
+            else ("global_atlas_classification_type",)
         )
-        return (*self.classification.missing_obligations, *own_missing)
+        own_missing = _theorem_pipeline_obligation_ledger_missing(
+            self.obligations,
+            ledger_name="global_atlas",
+        )
+        return (*classification_missing, *own_missing)
 
 
 @dataclass(frozen=True)
@@ -356,14 +427,7 @@ class CompactNonzeroAngularFiniteAtlasCertificate:
 
     @property
     def certified(self) -> bool:
-        return bool(
-            self.obligations
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
-            )
-        )
+        return _theorem_pipeline_obligation_ledger_certified(self.obligations)
 
     @property
     def proof_certified(self) -> bool:
@@ -371,10 +435,9 @@ class CompactNonzeroAngularFiniteAtlasCertificate:
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+        return _theorem_pipeline_obligation_ledger_missing(
+            self.obligations,
+            ledger_name="compact_nonzero_angular_finite_atlas",
         )
 
 
@@ -393,14 +456,7 @@ class CompactOrdinaryBinaryFiniteAtlasCertificate:
 
     @property
     def certified(self) -> bool:
-        return bool(
-            self.obligations
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
-            )
-        )
+        return _theorem_pipeline_obligation_ledger_certified(self.obligations)
 
     @property
     def proof_certified(self) -> bool:
@@ -408,10 +464,9 @@ class CompactOrdinaryBinaryFiniteAtlasCertificate:
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+        return _theorem_pipeline_obligation_ledger_missing(
+            self.obligations,
+            ledger_name="compact_ordinary_binary_finite_atlas",
         )
 
 
@@ -426,14 +481,7 @@ class NonzeroAngularFiniteMiddleAtlasCertificate:
 
     @property
     def certified(self) -> bool:
-        return bool(
-            self.obligations
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
-            )
-        )
+        return _theorem_pipeline_obligation_ledger_certified(self.obligations)
 
     @property
     def proof_certified(self) -> bool:
@@ -441,10 +489,9 @@ class NonzeroAngularFiniteMiddleAtlasCertificate:
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+        return _theorem_pipeline_obligation_ledger_missing(
+            self.obligations,
+            ledger_name="nonzero_angular_finite_middle_atlas",
         )
 
 
@@ -465,14 +512,7 @@ class NonzeroAngularEventRegimeHandoffCertificate:
 
     @property
     def certified(self) -> bool:
-        return bool(
-            self.obligations
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
-            )
-        )
+        return _theorem_pipeline_obligation_ledger_certified(self.obligations)
 
     @property
     def handoff_certified(self) -> bool:
@@ -484,10 +524,9 @@ class NonzeroAngularEventRegimeHandoffCertificate:
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+        return _theorem_pipeline_obligation_ledger_missing(
+            self.obligations,
+            ledger_name="nonzero_angular_event_regime_handoff",
         )
 
 
@@ -507,14 +546,7 @@ class NonzeroAngularEventTailMarginCertificate:
 
     @property
     def certified(self) -> bool:
-        return bool(
-            self.obligations
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
-            )
-        )
+        return _theorem_pipeline_obligation_ledger_certified(self.obligations)
 
     @property
     def tail_margin_certified(self) -> bool:
@@ -526,10 +558,9 @@ class NonzeroAngularEventTailMarginCertificate:
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+        return _theorem_pipeline_obligation_ledger_missing(
+            self.obligations,
+            ledger_name="nonzero_angular_event_tail_margin",
         )
 
 
@@ -548,14 +579,7 @@ class NonzeroAngularFirstEventShellPrefixCertificate:
 
     @property
     def certified(self) -> bool:
-        return bool(
-            self.obligations
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
-            )
-        )
+        return _theorem_pipeline_obligation_ledger_certified(self.obligations)
 
     @property
     def prefix_certified(self) -> bool:
@@ -567,10 +591,9 @@ class NonzeroAngularFirstEventShellPrefixCertificate:
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+        return _theorem_pipeline_obligation_ledger_missing(
+            self.obligations,
+            ledger_name="nonzero_angular_first_event_shell_prefix",
         )
 
 
@@ -592,14 +615,7 @@ class NonzeroAngularEventShellInvarianceCertificate:
 
     @property
     def certified(self) -> bool:
-        return bool(
-            self.obligations
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
-            )
-        )
+        return _theorem_pipeline_obligation_ledger_certified(self.obligations)
 
     @property
     def shell_invariance_certified(self) -> bool:
@@ -611,10 +627,9 @@ class NonzeroAngularEventShellInvarianceCertificate:
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+        return _theorem_pipeline_obligation_ledger_missing(
+            self.obligations,
+            ledger_name="nonzero_angular_event_shell_invariance",
         )
 
 
@@ -633,14 +648,7 @@ class CompactZeroAngularFiniteSelectorAtlasCertificate:
 
     @property
     def certified(self) -> bool:
-        return bool(
-            self.obligations
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
-            )
-        )
+        return _theorem_pipeline_obligation_ledger_certified(self.obligations)
 
     @property
     def proof_certified(self) -> bool:
@@ -652,10 +660,9 @@ class CompactZeroAngularFiniteSelectorAtlasCertificate:
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+        return _theorem_pipeline_obligation_ledger_missing(
+            self.obligations,
+            ledger_name="compact_zero_angular_finite_selector_atlas",
         )
 
 
@@ -672,14 +679,7 @@ class MaximalClassicalUntilTotalCollisionStopCertificate:
 
     @property
     def certified(self) -> bool:
-        return bool(
-            self.obligations
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
-            )
-        )
+        return _theorem_pipeline_obligation_ledger_certified(self.obligations)
 
     @property
     def proof_certified(self) -> bool:
@@ -687,10 +687,9 @@ class MaximalClassicalUntilTotalCollisionStopCertificate:
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+        return _theorem_pipeline_obligation_ledger_missing(
+            self.obligations,
+            ledger_name="maximal_classical_until_total_collision_stop",
         )
 
 
@@ -706,14 +705,7 @@ class PrescribedTwoEndedScatteringCertificate:
 
     @property
     def certified(self) -> bool:
-        return bool(
-            self.obligations
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
-            )
-        )
+        return _theorem_pipeline_obligation_ledger_certified(self.obligations)
 
     @property
     def recurrence_closes(self) -> bool:
@@ -721,10 +713,9 @@ class PrescribedTwoEndedScatteringCertificate:
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+        return _theorem_pipeline_obligation_ledger_missing(
+            self.obligations,
+            ledger_name="prescribed_two_ended_scattering",
         )
 
 
@@ -821,14 +812,7 @@ class PositiveEnergyHomotheticEscapeCertificate:
 
     @property
     def certified(self) -> bool:
-        return bool(
-            self.obligations
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
-            )
-        )
+        return _theorem_pipeline_obligation_ledger_certified(self.obligations)
 
     @property
     def recurrence_closes(self) -> bool:
@@ -836,10 +820,9 @@ class PositiveEnergyHomotheticEscapeCertificate:
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+        return _theorem_pipeline_obligation_ledger_missing(
+            self.obligations,
+            ledger_name="positive_energy_homothetic_escape",
         )
 
 
@@ -854,14 +837,7 @@ class UniformlyNoncollisionBoundedTailCertificate:
 
     @property
     def certified(self) -> bool:
-        return bool(
-            self.obligations
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
-            )
-        )
+        return _theorem_pipeline_obligation_ledger_certified(self.obligations)
 
     @property
     def proof_certified(self) -> bool:
@@ -873,10 +849,9 @@ class UniformlyNoncollisionBoundedTailCertificate:
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+        return _theorem_pipeline_obligation_ledger_missing(
+            self.obligations,
+            ledger_name="uniformly_noncollision_bounded_tail",
         )
 
 
@@ -917,28 +892,45 @@ class GeneralSolutionTheoremCertificate:
 
     @property
     def regime_theorem_certified(self) -> bool:
-        return bool(self.global_atlas.certified)
+        return bool(
+            isinstance(self.global_atlas, GlobalAtlasCertificate)
+            and self.global_atlas.certified is True
+        )
+
+    @property
+    def global_regime_exhaustion_certified(self) -> bool:
+        return _global_regime_exhaustion_obligation(
+            self.global_regime_exhaustion_certificate,
+        ).certified is True
 
     @property
     def full_general_solution_certified(self) -> bool:
         return bool(
             self.regime_theorem_certified
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
-            )
+            and self.global_regime_exhaustion_certified
+            and _theorem_pipeline_obligation_ledger_certified(self.obligations)
         )
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        atlas_missing = self.global_atlas.missing_obligations
-        own_missing = tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+        atlas_missing = (
+            self.global_atlas.missing_obligations
+            if isinstance(self.global_atlas, GlobalAtlasCertificate)
+            else ("general_solution_theorem_global_atlas_type",)
         )
-        return (*atlas_missing, *own_missing)
+        own_missing = _theorem_pipeline_obligation_ledger_missing(
+            self.obligations,
+            ledger_name="general_solution_theorem",
+        )
+        exhaustion = _global_regime_exhaustion_obligation(
+            self.global_regime_exhaustion_certificate,
+        )
+        exhaustion_missing = (
+            ()
+            if exhaustion.certified is True
+            else (exhaustion.obligation,)
+        )
+        return tuple(dict.fromkeys((*atlas_missing, *exhaustion_missing, *own_missing)))
 
     @property
     def route_summary(self) -> str:
@@ -973,21 +965,143 @@ class GlobalRegimeExhaustionCertificate:
         return tuple(
             sorted(
                 {
-                    str(getattr(atlas.classification, "regime_id", "missing"))
+                    str(
+                        getattr(
+                            getattr(atlas, "classification", None),
+                            "regime_id",
+                            "missing",
+                        )
+                    )
                     for atlas in self.candidate_regimes
                 }
             )
         )
 
     @property
+    def candidate_regime_id_sequence(self) -> tuple[str, ...]:
+        return tuple(
+            str(
+                getattr(
+                    getattr(candidate, "classification", None),
+                    "regime_id",
+                    "missing",
+                )
+            )
+            for candidate in self.candidate_regimes
+        )
+
+    @property
+    def candidate_regime_types_certified(self) -> bool:
+        return bool(
+            self.candidate_regimes
+            and all(
+                isinstance(candidate, GlobalAtlasCertificate)
+                for candidate in self.candidate_regimes
+            )
+        )
+
+    @property
+    def input_scope_certified(self) -> bool:
+        return str(self.input_scope) == "arbitrary_positive_mass_noncollision"
+
+    @property
+    def unique_regime_ids_certified(self) -> bool:
+        covered = self.candidate_regime_id_sequence
+        return bool(
+            self.candidate_regime_types_certified
+            and covered
+            and len(covered) == len(set(covered))
+        )
+
+    @property
+    def required_regime_ids_certified(self) -> bool:
+        return set(self.covered_regime_ids).issuperset(
+            tuple(str(regime_id) for regime_id in self.required_regime_ids)
+        )
+
+    @property
+    def candidate_regime_theorems_certified(self) -> bool:
+        return bool(
+            self.candidate_regime_types_certified
+            and all(candidate.certified is True for candidate in self.candidate_regimes)
+        )
+
+    @property
+    def field_consistency_obligations(self) -> tuple[TheoremPipelineObligation, ...]:
+        return (
+            TheoremPipelineObligation(
+                obligation="global_exhaustion_input_scope",
+                certified=self.input_scope_certified,
+                source=self.source,
+                detail=f"input_scope={self.input_scope}",
+            ),
+            TheoremPipelineObligation(
+                obligation="global_exhaustion_unique_regime_ids",
+                certified=self.unique_regime_ids_certified,
+                source=self.source,
+                detail="covered=" + ",".join(self.covered_regime_ids),
+            ),
+            TheoremPipelineObligation(
+                obligation="global_exhaustion_candidate_input_domains",
+                certified=(
+                    self.candidate_regime_types_certified
+                    and self.candidate_input_domains_consistent
+                ),
+                source=self.source,
+                detail=_candidate_regime_input_domain_detail(
+                    tuple(
+                        candidate
+                        for candidate in self.candidate_regimes
+                        if isinstance(candidate, GlobalAtlasCertificate)
+                    )
+                ),
+            ),
+            TheoremPipelineObligation(
+                obligation="global_exhaustion_required_regime_ids",
+                certified=self.required_regime_ids_certified,
+                source=self.source,
+                detail=(
+                    "required="
+                    + ",".join(str(item) for item in self.required_regime_ids)
+                    + "; covered="
+                    + ",".join(self.covered_regime_ids)
+                ),
+            ),
+            TheoremPipelineObligation(
+                obligation="global_exhaustion_candidate_regime_theorems",
+                certified=self.candidate_regime_theorems_certified,
+                source=self.source,
+                detail="covered=" + ",".join(self.covered_regime_ids),
+            ),
+        )
+
+    @property
+    def partition_theorem_obligation_present(self) -> bool:
+        return any(
+            isinstance(obligation, TheoremPipelineObligation)
+            and obligation.required is True
+            and obligation.obligation == "arbitrary_initial_data_partition_theorem"
+            for obligation in self.obligations
+        )
+
+    @property
+    def partition_theorem_certified(self) -> bool:
+        # Current code has no constructor for the arbitrary-data partition
+        # theorem.  A raw obligation row, even if set to True by hand, is not
+        # proof of global regime exhaustion.
+        return False
+
+    @property
     def certified(self) -> bool:
         return bool(
-            self.obligations
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
+            self.candidate_regime_types_certified
+            and _theorem_pipeline_obligation_ledger_certified(
+                self.field_consistency_obligations
             )
+            and self.partition_theorem_obligation_present
+            and self.partition_theorem_certified
+            and
+            _theorem_pipeline_obligation_ledger_certified(self.obligations)
         )
 
     @property
@@ -1000,10 +1114,39 @@ class GlobalRegimeExhaustionCertificate:
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
+        structural_missing = (
+            ()
+            if self.candidate_regime_types_certified
+            else ("global_regime_exhaustion_candidate_regime_type",)
+        )
+        field_missing = _theorem_pipeline_obligation_ledger_missing(
+            self.field_consistency_obligations,
+            ledger_name="global_regime_exhaustion_fields",
+        )
+        ledger_missing = _theorem_pipeline_obligation_ledger_missing(
+            self.obligations,
+            ledger_name="global_regime_exhaustion",
+        )
+        partition_missing = (
+            ()
+            if self.partition_theorem_obligation_present
+            else ("global_regime_exhaustion_partition_theorem_obligation_present",)
+        )
+        partition_certification_missing = (
+            ()
+            if self.partition_theorem_certified
+            else ("arbitrary_initial_data_partition_theorem",)
+        )
         return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+            dict.fromkeys(
+                (
+                    *structural_missing,
+                    *field_missing,
+                    *partition_missing,
+                    *partition_certification_missing,
+                    *ledger_missing,
+                )
+            )
         )
 
 
@@ -1364,13 +1507,7 @@ def construct_global_atlas_for_regime(
                 "ordinary_gap_envelope",
             )
         )
-        obligations.append(
-            _required_constructor_obligation(
-                "validated_atlas_solution",
-                validated_atlas,
-                ("proof_certified", "certified"),
-            )
-        )
+        obligations.append(_required_validated_atlas_solution_obligation(validated_atlas))
         obligations.append(
             _classification_validated_atlas_match_obligation(
                 classification,
@@ -1379,13 +1516,7 @@ def construct_global_atlas_for_regime(
         )
         ordinary_gap_atlas = selected_ordinary_gap
     else:
-        obligations.append(
-            _required_constructor_obligation(
-                "validated_atlas_solution",
-                validated_atlas,
-                ("proof_certified", "certified"),
-            )
-        )
+        obligations.append(_required_validated_atlas_solution_obligation(validated_atlas))
         obligations.append(
             _classification_validated_atlas_match_obligation(
                 classification,
@@ -1443,11 +1574,7 @@ def certify_compact_ordinary_binary_finite_atlas(
             input_domain_certificate,
             ("certified",),
         ),
-        _required_constructor_obligation(
-            "validated_atlas_solution",
-            validated_atlas,
-            ("proof_certified",),
-        ),
+        _required_validated_atlas_solution_obligation(validated_atlas),
         TheoremPipelineObligation(
             obligation="finite_atlas_mass_consistency",
             certified=_finite_atlas_mass_consistency_certified(
@@ -1507,7 +1634,7 @@ def certify_compact_ordinary_binary_finite_atlas(
         ),
         TheoremPipelineObligation(
             obligation="finite_atlas_collision_policy",
-            certified=bool(getattr(getattr(validated_atlas, "collision_policy", None), "certified", False)),
+            certified=getattr(getattr(validated_atlas, "collision_policy", None), "certified", False) is True,
             source=type(validated_atlas).__name__,
             detail=getattr(getattr(validated_atlas, "collision_policy", None), "binary_policy", "missing"),
         ),
@@ -1519,7 +1646,7 @@ def certify_compact_ordinary_binary_finite_atlas(
         ),
         TheoremPipelineObligation(
             obligation="finite_atlas_target_time_domain",
-            certified=bool(getattr(validated_atlas, "target_time_certified", False)),
+            certified=getattr(validated_atlas, "target_time_certified", False) is True,
             source=type(validated_atlas).__name__,
             detail="requested physical target time must lie in the final chart time interval",
         ),
@@ -1531,7 +1658,7 @@ def certify_compact_ordinary_binary_finite_atlas(
         ),
         TheoremPipelineObligation(
             obligation="finite_atlas_proof_ledger",
-            certified=bool(getattr(getattr(validated_atlas, "proof_ledger", None), "certified", False)),
+            certified=getattr(getattr(validated_atlas, "proof_ledger", None), "certified", False) is True,
             source=type(validated_atlas).__name__,
             detail="typed proof ledger must certify every required finite-atlas entry",
         ),
@@ -1635,11 +1762,7 @@ def certify_compact_nonzero_angular_finite_atlas(
             input_domain_certificate,
             ("certified",),
         ),
-        _required_constructor_obligation(
-            "validated_atlas_solution",
-            validated_atlas,
-            ("proof_certified",),
-        ),
+        _required_validated_atlas_solution_obligation(validated_atlas),
         TheoremPipelineObligation(
             obligation="finite_atlas_mass_consistency",
             certified=_finite_atlas_mass_consistency_certified(
@@ -1699,7 +1822,7 @@ def certify_compact_nonzero_angular_finite_atlas(
         ),
         TheoremPipelineObligation(
             obligation="finite_atlas_collision_policy",
-            certified=bool(getattr(getattr(validated_atlas, "collision_policy", None), "certified", False)),
+            certified=getattr(getattr(validated_atlas, "collision_policy", None), "certified", False) is True,
             source=type(validated_atlas).__name__,
             detail=getattr(getattr(validated_atlas, "collision_policy", None), "binary_policy", "missing"),
         ),
@@ -1711,7 +1834,7 @@ def certify_compact_nonzero_angular_finite_atlas(
         ),
         TheoremPipelineObligation(
             obligation="finite_atlas_target_time_domain",
-            certified=bool(getattr(validated_atlas, "target_time_certified", False)),
+            certified=getattr(validated_atlas, "target_time_certified", False) is True,
             source=type(validated_atlas).__name__,
             detail="requested physical target time must lie in the final chart time interval",
         ),
@@ -1723,7 +1846,7 @@ def certify_compact_nonzero_angular_finite_atlas(
         ),
         TheoremPipelineObligation(
             obligation="finite_atlas_proof_ledger",
-            certified=bool(getattr(getattr(validated_atlas, "proof_ledger", None), "certified", False)),
+            certified=getattr(getattr(validated_atlas, "proof_ledger", None), "certified", False) is True,
             source=type(validated_atlas).__name__,
             detail="typed proof ledger must certify every required finite-atlas entry",
         ),
@@ -2714,11 +2837,7 @@ def certify_compact_zero_angular_finite_selector_atlas(
             input_domain_certificate,
             ("certified",),
         ),
-        _required_constructor_obligation(
-            "validated_atlas_solution",
-            validated_atlas,
-            ("proof_certified",),
-        ),
+        _required_validated_atlas_solution_obligation(validated_atlas),
         TheoremPipelineObligation(
             obligation="finite_atlas_mass_consistency",
             certified=_finite_atlas_mass_consistency_certified(
@@ -2784,7 +2903,7 @@ def certify_compact_zero_angular_finite_selector_atlas(
         ),
         TheoremPipelineObligation(
             obligation="finite_atlas_target_time_domain",
-            certified=bool(getattr(validated_atlas, "target_time_certified", False)),
+            certified=getattr(validated_atlas, "target_time_certified", False) is True,
             source=type(validated_atlas).__name__,
             detail="requested physical target time must lie in the final chart time interval",
         ),
@@ -2796,7 +2915,7 @@ def certify_compact_zero_angular_finite_selector_atlas(
         ),
         TheoremPipelineObligation(
             obligation="finite_atlas_proof_ledger",
-            certified=bool(getattr(getattr(validated_atlas, "proof_ledger", None), "certified", False)),
+            certified=getattr(getattr(validated_atlas, "proof_ledger", None), "certified", False) is True,
             source=type(validated_atlas).__name__,
             detail="typed proof ledger must certify every required finite-atlas entry",
         ),
@@ -2871,9 +2990,9 @@ def certify_compact_zero_angular_finite_selector_atlas(
         ),
         TheoremPipelineObligation(
             obligation="finite_atlas_total_collision_selector_policy",
-            certified=bool(
+            certified=(
                 total_collision_count > 0
-                and getattr(collision_policy, "certified", False)
+                and getattr(collision_policy, "certified", False) is True
                 and "selector" in str(getattr(collision_policy, "total_collision_policy", ""))
             ),
             source=type(validated_atlas).__name__,
@@ -2909,11 +3028,11 @@ def _normalize_selector_envelopes(selector_envelopes: object) -> tuple[object, .
 
 
 def _selector_envelope_certified(selector: object) -> bool:
-    return bool(
-        getattr(selector, "certified", False)
-        or getattr(selector, "identity_selector_certified", False)
-        or getattr(selector, "proof_certified", False)
-    )
+    if isinstance(selector, FiniteJetIdentitySelectorEntryCertificate):
+        return selector.certified is True
+    if isinstance(selector, FiniteJetDerivedIdentitySelectorEntryCertificate):
+        return selector.identity_selector_certified is True
+    return False
 
 
 def _selector_envelopes_mass_consistent(
@@ -5934,7 +6053,7 @@ def _required_constructor_obligation(
             detail="no constructor certificate supplied",
         )
     present_fields = tuple(field for field in certified_fields if hasattr(certificate, field))
-    certified = any(bool(getattr(certificate, field)) for field in present_fields)
+    certified = any(getattr(certificate, field) is True for field in present_fields)
     return TheoremPipelineObligation(
         obligation=obligation,
         certified=certified,
@@ -5943,6 +6062,28 @@ def _required_constructor_obligation(
             "checked fields "
             + ",".join(present_fields or certified_fields)
         ),
+    )
+
+
+def _required_validated_atlas_solution_obligation(
+    validated_atlas: object | None,
+) -> TheoremPipelineObligation:
+    _reject_raw_bool("validated_atlas_solution", validated_atlas)
+    if not isinstance(validated_atlas, ValidatedAtlasSolution):
+        return TheoremPipelineObligation(
+            obligation="validated_atlas_solution",
+            certified=False,
+            source=type(validated_atlas).__name__ if validated_atlas is not None else "missing",
+            detail=(
+                "finite-atlas theorem constructors require an actual "
+                "ValidatedAtlasSolution, not an attribute-compatible wrapper"
+            ),
+        )
+    return TheoremPipelineObligation(
+        obligation="validated_atlas_solution",
+        certified=validated_atlas.proof_certified is True,
+        source=type(validated_atlas).__name__,
+        detail="checked typed ValidatedAtlasSolution.proof_certified",
     )
 
 

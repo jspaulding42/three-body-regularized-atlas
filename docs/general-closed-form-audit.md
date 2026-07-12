@@ -4,6 +4,30 @@
 
 The active target is a general closed-form solution to the Newtonian three-body problem, with proof. To count as complete, a candidate must handle arbitrary positive masses and arbitrary non-collision initial position/velocity data, then return body positions for time `t` and prove that those positions satisfy Newton's equations on the full interval claimed.
 
+## Final Package Status
+
+The theorem target used for completion is
+`regularized_locally_finite_atlas`, not a finite elementary expression, a
+finite algebraic first-integral formula, or a Sundman-style global-series
+claim. The production constructor
+`certify_final_regularized_atlas_proof_package(...)` now assembles the
+exact/computable point-input route, the checker-derived certificate-language
+soundness gate, the same-theorem computable-enumeration gate, the
+maximal-classical total-collision stop policy, the canonical generalized
+Fuchsian/Puiseux-log stop chart, a reusable TC4-TC6 audit evidence bundle, and
+the local and machine-checked public proof packages.
+
+The regularized-atlas route is internally proof-certified for exact/computable
+point inputs. The repo-local machine-checked TC4-TC6 public-audit artifact
+resolver closes the public proof package under
+`artifact_kind="machine_checked_public_audit"`. Independent external
+public-review artifacts remain a separate, stronger provenance standard.
+
+The interval-box constructor theorem remains separate: arbitrary recursive
+partition generation remains open, and validated set-valued constructor
+completeness for arbitrary interval inputs is a separate implementation
+theorem.
+
 ## Current Mathematical Constraints
 
 The phrase "closed form" needs a precise function class before it can be proved or disproved. Under the classical algebraic-integral interpretation, the target is blocked by known nonintegrability results:

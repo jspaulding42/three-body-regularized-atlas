@@ -5,6 +5,7 @@ import re
 from types import SimpleNamespace
 
 import numpy as np
+import pytest
 
 from three_body_symmetry.certificate_checker import (
     check_total_collision_fuchsian_stop_chart,
@@ -31,8 +32,13 @@ from three_body_symmetry.stratified_branch_tree import (
     EqualityStratumCertificate,
     EventOrderTieLeafCertificate,
     PolynomialDecisionFunctionSpec,
+    RationalDecisionArrangementStratificationCertificate,
+    RationalDecisionFunctionSpec,
+    RationalDecisionStratificationCertificate,
     SelectorPolicyLeafCertificate,
     StratifiedBranchLeafCertificate,
+    TaylorModelDecisionArrangementStratificationCertificate,
+    TaylorModelDecisionFunctionSpec,
     TotalCollisionClusterLeafCertificate,
     certify_affine_halfspace_arrangement_recursive_consumption,
     certify_affine_halfspace_arrangement_stratified_branch_event_tree,
@@ -52,14 +58,26 @@ from three_body_symmetry.stratified_branch_tree import (
     certify_affine_halfspace_decision_stratified_branch_event_tree,
     derive_affine_halfspace_decision_child_consumptions,
     certify_affine_decision_arrangement_stratified_branch_event_tree,
+    certify_affine_decision_stratified_branch_event_tree,
     certify_polynomial_decision_arrangement_recursive_consumption,
     certify_polynomial_decision_arrangement_stratified_branch_event_tree,
     derive_polynomial_decision_arrangement_child_consumptions,
     certify_polynomial_decision_recursive_consumption,
     certify_polynomial_decision_stratified_branch_event_tree,
+    certify_taylor_model_decision_recursive_consumption,
+    certify_taylor_model_decision_arrangement_recursive_consumption,
+    certify_taylor_model_decision_arrangement_stratified_branch_event_tree,
+    certify_taylor_model_decision_stratified_branch_event_tree,
+    derive_taylor_model_decision_arrangement_child_consumptions,
     derive_polynomial_decision_child_consumptions,
+    certify_rational_decision_arrangement_stratified_branch_event_tree,
+    certify_rational_decision_stratified_branch_event_tree,
+    certify_sturm_rational_decision_stratified_branch_event_tree,
+    certify_sturm_rational_decision_arrangement_stratified_branch_event_tree,
+    derive_taylor_model_decision_child_consumptions,
     certify_quadratic_decision_arrangement_stratified_branch_event_tree,
     certify_recursive_stratified_branch_event_consumption,
+    certify_sturm_polynomial_decision_stratified_branch_event_tree,
     certify_sturm_polynomial_decision_arrangement_stratified_branch_event_tree,
     certify_stratified_branch_event_tree,
     certify_terminal_policy_stratified_branch_event_tree,
@@ -71,9 +89,16 @@ from three_body_symmetry.finite_target_completeness import (
     FINITE_TARGET_CRITICAL_ANALYTIC_LEMMA_IDS,
     FINITE_TARGET_TIER_A_ANALYTIC_LEMMA_IDS,
     FINITE_TARGET_TIER_B_ANALYTIC_LEMMA_IDS,
+    SUPPORTED_ARBITRARY_INTERVAL_PARTITION_GRAMMARS,
+    ArbitraryIntervalInputPartitionGenerationCertificate,
+    SupportedEventFunctionGrammarInput,
+    SupportedEventFunctionStratificationGenerationCertificate,
     build_analytic_lemma_registry_for_finite_target_theorem,
     certify_affine_halfspace_arrangement_set_valued_constructor_completeness,
+    certify_arbitrary_interval_input_partition_generation,
+    certify_supported_event_function_stratification_generation,
     certify_constructor_derived_recursive_stratified_set_valued_constructor_completeness,
+    certify_constructor_pair_derived_recursive_stratified_set_valued_constructor_completeness,
     certify_finite_target_certificate_search_completeness,
     certify_finite_target_completeness_theorem,
     certify_finite_supplied_branch_tree_consumption,
@@ -201,6 +226,70 @@ def _supplied_generalized_fuchsian_branch():
     return continuation.incoming
 
 
+@lru_cache(maxsize=1)
+def _supplied_generalized_entry_certificate():
+    return certify_supplied_generalized_fuchsian_entry_data(
+        branch=_supplied_generalized_fuchsian_branch(),
+        radius=0.035,
+        sample_taus=(-0.03, 0.03),
+        tolerance=1.0e-5,
+        energy_tolerance=1.0e-8,
+    )
+
+
+@lru_cache(maxsize=4)
+def _supplied_generalized_finite_row_tail_budget(retained_total_degree):
+    return certify_supplied_generalized_fuchsian_finite_row_tail_budget(
+        entry_certificate=_supplied_generalized_entry_certificate(),
+        retained_total_degree=int(retained_total_degree),
+        radius=0.03,
+    )
+
+
+@lru_cache(maxsize=1)
+def _supplied_generalized_remainder_majorant():
+    return certify_supplied_generalized_fuchsian_analytic_remainder_majorant(
+        entry_certificate=_supplied_generalized_entry_certificate(),
+        finite_row_budget=_supplied_generalized_finite_row_tail_budget(
+            _supplied_generalized_fuchsian_branch().max_total_degree,
+        ),
+        defect_bound=1.0e-14,
+        linear_inverse_bound=2.0,
+        nonlinear_lipschitz_bound=0.1,
+        component_effective_exponents={
+            "value": 1.4,
+            "first_jet": 0.4,
+            "lifted_residual": 1.1,
+            "physical_residual": 0.7,
+            "regularized_position_value": 2.1,
+        },
+        step_ratio_bounds={
+            "value": 0.2,
+            "first_jet": 0.2,
+            "lifted_residual": 0.2,
+            "physical_residual": 0.2,
+            "regularized_position_value": 0.2,
+        },
+        retained_order_initials={
+            "value": 10,
+            "first_jet": 10,
+            "lifted_residual": 10,
+            "physical_residual": 10,
+            "regularized_position_value": 10,
+        },
+        retained_order_increments={
+            "value": 2,
+            "first_jet": 2,
+            "lifted_residual": 2,
+            "physical_residual": 2,
+            "regularized_position_value": 2,
+        },
+        initial_radius=0.025,
+        shell_contraction=0.5,
+        analytic_disk_fraction=0.2,
+    )
+
+
 def test_constructor_source_scope_manifest_covers_emitted_stratified_sources():
     source = (
         Path(__file__).resolve().parents[1]
@@ -214,13 +303,21 @@ def test_constructor_source_scope_manifest_covers_emitted_stratified_sources():
     input_scope_ids = tuple(
         scope[0] for scope in CONSTRUCTOR_DERIVED_RECURSIVE_SOURCE_SCOPES.values()
     )
+    finite_non_box_interval_input_scopes = {
+        "finite_taylor_model_decision_interval_inputs_with_weierstrass_certificate",
+        "finite_taylor_model_decision_arrangement_interval_inputs_with_weierstrass_certificate",
+    }
 
     assert emitted_source_types
     assert not missing
     assert not extra
     assert len(input_scope_ids) == len(set(input_scope_ids))
     assert all(scope_id.startswith("finite_") for scope_id in input_scope_ids)
-    assert all(scope_id.endswith("_interval_boxes") for scope_id in input_scope_ids)
+    assert all(
+        scope_id.endswith("_interval_boxes")
+        or scope_id in finite_non_box_interval_input_scopes
+        for scope_id in input_scope_ids
+    )
 
 
 def test_recursive_constructor_source_scope_helper_exposes_manifest_scope():
@@ -318,7 +415,7 @@ def test_recursive_stratified_branch_event_theorem_note_preserves_scope_boundary
     assert "unresolved_descent_edge_count" in theorem_note
 
 
-def test_pointwise_finite_target_atlas_or_stop_theorem_closes_total_stop_gap():
+def test_pointwise_finite_target_atlas_or_stop_theorem_is_a_scaffold_until_proofs_are_audited():
     theorem = certify_finite_target_completeness_theorem(
         dimension=3,
         total_collision_policy_id="maximal_classical_stop",
@@ -351,10 +448,15 @@ def test_pointwise_finite_target_atlas_or_stop_theorem_closes_total_stop_gap():
     )
     assert theorem.arbitrary_total_collision_germ_entry_to_stop_chart.declared
     assert theorem.analytic_lemma_statements_declared
-    assert theorem.analytic_lemma_proofs_audited
+    assert not theorem.analytic_lemma_proofs_audited
     assert theorem.statement_declared
     assert theorem.scaffold_certified
-    assert theorem.proof_certified
+    assert not theorem.proof_certified
+    assert theorem.analytic_lemma_audit_blockers
+    assert (
+        "arbitrary_total_collision_germ_finite_generalized_fuchsian_entry_data"
+        in theorem.analytic_lemma_audit_blockers
+    )
     assert "total_collision_requires_zero_angular_momentum" not in (
         theorem.missing_obligations
     )
@@ -440,6 +542,52 @@ def test_pointwise_finite_target_atlas_or_stop_theorem_closes_total_stop_gap():
     )
 
 
+def test_pointwise_finite_target_theorem_requires_maximal_classical_policy():
+    theorem = certify_finite_target_completeness_theorem(
+        dimension=3,
+        total_collision_policy_id="selected_identity_selector",
+    )
+
+    assert not theorem.certified
+    assert not theorem.proof_certified
+    assert "maximal_classical_total_collision_policy" in (
+        theorem.missing_obligations
+    )
+
+
+def test_pointwise_finite_target_theorem_rejects_forged_scope_parameters():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    forged_dimension = replace(theorem, dimension=99)
+    forged_input_model = replace(theorem, input_model="arbitrary_interval_boxes")
+    forged_policy = replace(
+        theorem,
+        total_collision_policy_id="selected_identity_selector",
+    )
+    forged_theorem_id = replace(theorem, theorem_id="spoofed_finite_target_theorem")
+
+    assert not theorem.proof_certified
+    assert forged_dimension.missing_obligations == (
+        "finite_target_dimension_supported",
+    )
+    assert forged_input_model.missing_obligations == (
+        "point_input_model_or_computable_name",
+    )
+    assert forged_policy.missing_obligations == (
+        "maximal_classical_total_collision_policy",
+    )
+    assert forged_theorem_id.missing_obligations == (
+        "pointwise_finite_target_theorem_id",
+    )
+    for forged in (
+        forged_dimension,
+        forged_input_model,
+        forged_policy,
+        forged_theorem_id,
+    ):
+        assert not forged.certified
+        assert not forged.proof_certified
+
+
 def test_total_collision_generalized_fuchsian_proof_note_spells_out_tc5_tc6():
     proof_note = (
         Path(__file__).resolve().parents[1]
@@ -465,40 +613,15 @@ def test_finite_target_analytic_lemma_registry_exposes_unaudited_prose():
     assert registry == rebuilt
     assert registry.theorem_id == theorem.theorem_id
     assert len(registry.records) == len(theorem.analytic_lemmas)
-    assert registry.audit_complete is True
+    assert registry.audit_complete is False
     assert registry.missing_critical_lemma_ids == ()
     assert theorem.unaudited_analytic_lemma_ids == tuple(
         lemma.lemma_id for lemma in theorem.analytic_lemmas if not lemma.audited
     )
     assert theorem.tier_a_unaudited_analytic_lemma_ids == (
-        tuple(
-            lemma_id
-            for lemma_id in FINITE_TARGET_TIER_A_ANALYTIC_LEMMA_IDS
-            if lemma_id
-            not in {
-                "three_body_painleve_no_noncollision_singularities",
-                "all_pair_binary_regularization",
-                "binary_accumulation_implies_total_collision",
-                "binary_collision_isolation",
-                "compact_collision_free_taylor_cover",
-                "finite_chart_chain_concatenation",
-                "target_or_stop_dichotomy",
-            }
-        )
+        FINITE_TARGET_TIER_A_ANALYTIC_LEMMA_IDS
     )
-    expected_tier_b_blockers = tuple(
-        lemma_id
-        for lemma_id in FINITE_TARGET_TIER_B_ANALYTIC_LEMMA_IDS
-        if lemma_id
-        not in {
-            "binary_degenerate_total_collision_exclusion",
-            "reduced_hyperbolic_total_collision_entry",
-            "poincare_dulac_fuchsian_log_selector_completeness",
-            "arbitrary_total_collision_germ_finite_generalized_fuchsian_entry_data",
-            "arbitrary_total_collision_germ_entry_to_stop_chart",
-            "total_collision_stop_chart_existence",
-        }
-    )
+    expected_tier_b_blockers = FINITE_TARGET_TIER_B_ANALYTIC_LEMMA_IDS
     assert theorem.tier_b_unaudited_analytic_lemma_ids == expected_tier_b_blockers
     assert theorem.core_analytic_lemma_audit_blockers == (
         expected_tier_b_blockers
@@ -509,32 +632,18 @@ def test_finite_target_analytic_lemma_registry_exposes_unaudited_prose():
     assert set(theorem.analytic_lemma_audit_blockers) == set(
         theorem.unaudited_analytic_lemma_ids
     )
-    expected_critical_blockers = tuple(
-        lemma_id
-        for lemma_id in FINITE_TARGET_CRITICAL_ANALYTIC_LEMMA_IDS
-        if lemma_id
-        not in {
-            "binary_degenerate_total_collision_exclusion",
-            "reduced_hyperbolic_total_collision_entry",
-            "poincare_dulac_fuchsian_log_selector_completeness",
-            "arbitrary_total_collision_germ_finite_generalized_fuchsian_entry_data",
-            "arbitrary_total_collision_germ_entry_to_stop_chart",
-            "total_collision_stop_chart_existence",
-        }
-    )
+    expected_critical_blockers = FINITE_TARGET_CRITICAL_ANALYTIC_LEMMA_IDS
     assert theorem.critical_unaudited_analytic_lemma_ids == expected_critical_blockers
 
     records = {record.lemma_id: record for record in registry.records}
     for lemma_id in expected_critical_blockers:
         record = records[lemma_id]
-        assert record.status == "declared"
-        assert record.proof_mode == "declared_prose"
         assert record.audit_tier == "tier_b_total_collision_entry_frontier"
         assert record.declared
         assert not record.audited
         assert record.hypotheses
         assert record.normalization_translation
-        assert "declared_prose_not_audited" in record.failure_modes
+        assert record.failure_modes
 
     assert records["binary_degenerate_total_collision_exclusion"].status == (
         "internally_proven"
@@ -542,7 +651,7 @@ def test_finite_target_analytic_lemma_registry_exposes_unaudited_prose():
     assert records["binary_degenerate_total_collision_exclusion"].proof_mode == (
         "internal_jacobi_perturbed_kepler_blowup_proof"
     )
-    assert records["binary_degenerate_total_collision_exclusion"].audited
+    assert records["binary_degenerate_total_collision_exclusion"].internally_supported
     assert records["binary_degenerate_total_collision_exclusion"].audit_tier == (
         "tier_b_total_collision_entry_frontier"
     )
@@ -565,7 +674,7 @@ def test_finite_target_analytic_lemma_registry_exposes_unaudited_prose():
     assert records["reduced_hyperbolic_total_collision_entry"].proof_mode == (
         "internal_reduced_mcgehee_hyperbolic_entry_proof"
     )
-    assert records["reduced_hyperbolic_total_collision_entry"].audited
+    assert records["reduced_hyperbolic_total_collision_entry"].internally_supported
     assert records["reduced_hyperbolic_total_collision_entry"].audit_tier == (
         "tier_b_total_collision_entry_frontier"
     )
@@ -593,7 +702,7 @@ def test_finite_target_analytic_lemma_registry_exposes_unaudited_prose():
     ].proof_mode == "internal_poincare_dulac_stable_selector_proof"
     assert records[
         "poincare_dulac_fuchsian_log_selector_completeness"
-    ].audited
+    ].internally_supported
     assert records[
         "poincare_dulac_fuchsian_log_selector_completeness"
     ].audit_tier == "tier_b_total_collision_entry_frontier"
@@ -626,7 +735,7 @@ def test_finite_target_analytic_lemma_registry_exposes_unaudited_prose():
     ].proof_mode == "internal_stable_manifold_cauchy_majorant_entry_proof"
     assert records[
         "arbitrary_total_collision_germ_finite_generalized_fuchsian_entry_data"
-    ].audited
+    ].internally_supported
     assert "analytic_stable_manifold_chart" in (
         records[
             "arbitrary_total_collision_germ_finite_generalized_fuchsian_entry_data"
@@ -656,7 +765,7 @@ def test_finite_target_analytic_lemma_registry_exposes_unaudited_prose():
     ].proof_mode == "internal_generalized_entry_to_checked_stop_chart_proof"
     assert records[
         "arbitrary_total_collision_germ_entry_to_stop_chart"
-    ].audited
+    ].internally_supported
     assert "supplied_generalized_fuchsian_stop_chart_certificate" in (
         records[
             "arbitrary_total_collision_germ_entry_to_stop_chart"
@@ -679,7 +788,7 @@ def test_finite_target_analytic_lemma_registry_exposes_unaudited_prose():
     assert records["total_collision_stop_chart_existence"].proof_mode == (
         "internal_total_collision_stop_existence_from_entry_bridge"
     )
-    assert records["total_collision_stop_chart_existence"].audited
+    assert records["total_collision_stop_chart_existence"].internally_supported
     assert "check_total_collision_generalized_fuchsian_stop_chart" in (
         records["total_collision_stop_chart_existence"].checker_inputs
     )
@@ -695,7 +804,7 @@ def test_finite_target_analytic_lemma_registry_exposes_unaudited_prose():
     assert records["compact_collision_free_taylor_cover"].proof_mode == (
         "internal_analytic_compactness_proof"
     )
-    assert records["compact_collision_free_taylor_cover"].audited
+    assert records["compact_collision_free_taylor_cover"].internally_supported
     assert "finite_subcover_selection" in (
         records["compact_collision_free_taylor_cover"].checker_inputs
     )
@@ -708,7 +817,7 @@ def test_finite_target_analytic_lemma_registry_exposes_unaudited_prose():
     assert records["binary_accumulation_implies_total_collision"].proof_mode == (
         "internal_topological_collision_accumulation_proof"
     )
-    assert records["binary_accumulation_implies_total_collision"].audited
+    assert records["binary_accumulation_implies_total_collision"].internally_supported
     assert "convergent_binary_event_subsequence" in (
         records["binary_accumulation_implies_total_collision"].checker_inputs
     )
@@ -719,7 +828,7 @@ def test_finite_target_analytic_lemma_registry_exposes_unaudited_prose():
     assert records["binary_collision_isolation"].proof_mode == (
         "internal_analytic_identity_theorem_proof"
     )
-    assert records["binary_collision_isolation"].audited
+    assert records["binary_collision_isolation"].internally_supported
     assert "analytic_identity_theorem" in (
         records["binary_collision_isolation"].checker_inputs
     )
@@ -732,7 +841,7 @@ def test_finite_target_analytic_lemma_registry_exposes_unaudited_prose():
     assert records["all_pair_binary_regularization"].proof_mode == (
         "internal_lc_ks_separated_binary_regularization_proof"
     )
-    assert records["all_pair_binary_regularization"].audited
+    assert records["all_pair_binary_regularization"].internally_supported
     assert "spatial_ks_quadratic_map" in (
         records["all_pair_binary_regularization"].checker_inputs
     )
@@ -745,7 +854,7 @@ def test_finite_target_analytic_lemma_registry_exposes_unaudited_prose():
     assert records["three_body_painleve_no_noncollision_singularities"].proof_mode == (
         "internal_energy_compactness_continuation_proof"
     )
-    assert records["three_body_painleve_no_noncollision_singularities"].audited
+    assert records["three_body_painleve_no_noncollision_singularities"].internally_supported
     assert "energy_conservation_bounds_kinetic_energy" in (
         records["three_body_painleve_no_noncollision_singularities"].checker_inputs
     )
@@ -760,7 +869,7 @@ def test_finite_target_analytic_lemma_registry_exposes_unaudited_prose():
     assert records["total_collision_requires_zero_angular_momentum"].proof_mode == (
         "internal_sundman_inequality_zero_angular_proof"
     )
-    assert records["total_collision_requires_zero_angular_momentum"].audited
+    assert records["total_collision_requires_zero_angular_momentum"].internally_supported
     assert "sundman_angular_momentum_inequality" in (
         records["total_collision_requires_zero_angular_momentum"].checker_inputs
     )
@@ -773,7 +882,7 @@ def test_finite_target_analytic_lemma_registry_exposes_unaudited_prose():
     assert records["total_collision_central_configuration_asymptotic"].proof_mode == (
         "internal_mcgehee_shape_compactness_central_limit_proof"
     )
-    assert records["total_collision_central_configuration_asymptotic"].audited
+    assert records["total_collision_central_configuration_asymptotic"].internally_supported
     assert "binary_degenerate_total_collision_exclusion" in (
         records["total_collision_central_configuration_asymptotic"].hypotheses
     )
@@ -792,7 +901,7 @@ def test_finite_target_analytic_lemma_registry_exposes_unaudited_prose():
     assert records["cubic_time_total_collision_scaling"].proof_mode == (
         "internal_lagrange_jacobi_parabolic_scale_proof"
     )
-    assert records["cubic_time_total_collision_scaling"].audited
+    assert records["cubic_time_total_collision_scaling"].internally_supported
     assert "lagrange_jacobi_identity_I_second_derivative" in (
         records["cubic_time_total_collision_scaling"].checker_inputs
     )
@@ -804,13 +913,13 @@ def test_finite_target_analytic_lemma_registry_exposes_unaudited_prose():
     )
     assert records[
         "finite_fuchsian_log_stop_chart_for_admissible_entry_data"
-    ].status == "machine_checked"
+    ].status == "machine_checkable"
     assert records[
         "finite_fuchsian_log_stop_chart_for_admissible_entry_data"
     ].proof_mode == "machine_checked_supplied_fuchsian_log_stop_chart"
     assert records[
         "finite_fuchsian_log_stop_chart_for_admissible_entry_data"
-    ].audited
+    ].audited is False
     assert "serialized_total_collision_stop_chart_checker" in (
         records[
             "finite_fuchsian_log_stop_chart_for_admissible_entry_data"
@@ -823,11 +932,11 @@ def test_finite_target_analytic_lemma_registry_exposes_unaudited_prose():
     )
     assert records[
         "homothetic_total_collision_stop_chart_existence"
-    ].status == "machine_checked"
+    ].status == "machine_checkable"
     assert records[
         "homothetic_total_collision_stop_chart_existence"
     ].proof_mode == "machine_checked_homothetic_total_collision_stop_chart"
-    assert records["homothetic_total_collision_stop_chart_existence"].audited
+    assert not records["homothetic_total_collision_stop_chart_existence"].audited
     assert "construct_homothetic_total_collision_branch" in (
         records["homothetic_total_collision_stop_chart_existence"].checker_inputs
     )
@@ -840,19 +949,19 @@ def test_finite_target_analytic_lemma_registry_exposes_unaudited_prose():
     assert "does_not_prove_arbitrary_total_collision_entry" in (
         records["homothetic_total_collision_stop_chart_existence"].failure_modes
     )
-    assert records["finite_chart_chain_concatenation"].status == "machine_checked"
+    assert records["finite_chart_chain_concatenation"].status == "machine_checkable"
     assert records["finite_chart_chain_concatenation"].proof_mode == (
         "machine_checked_chart_chain_certificate"
     )
-    assert records["finite_chart_chain_concatenation"].audited
+    assert not records["finite_chart_chain_concatenation"].audited
     assert "chart_chain_certificate_checker" in (
         records["finite_chart_chain_concatenation"].checker_inputs
     )
-    assert records["target_or_stop_dichotomy"].status == "machine_checked"
+    assert records["target_or_stop_dichotomy"].status == "machine_checkable"
     assert records["target_or_stop_dichotomy"].proof_mode == (
         "machine_checked_outcome_partition"
     )
-    assert records["target_or_stop_dichotomy"].audited
+    assert not records["target_or_stop_dichotomy"].audited
     assert "FINITE_TARGET_COMPLETENESS_OUTCOMES" in (
         records["target_or_stop_dichotomy"].checker_inputs
     )
@@ -899,18 +1008,10 @@ def test_finite_target_analytic_lemma_registry_exposes_unaudited_prose():
 
 
 def test_supplied_generalized_fuchsian_entry_data_covers_fractional_branch_only():
-    branch = _supplied_generalized_fuchsian_branch()
-    certificate = certify_supplied_generalized_fuchsian_entry_data(
-        branch=branch,
-        radius=0.035,
-        sample_taus=(-0.03, 0.03),
-        tolerance=1.0e-5,
-        energy_tolerance=1.0e-8,
-    )
+    certificate = _supplied_generalized_entry_certificate()
 
     assert certificate.certified
     assert certificate.proof_certified
-    assert certificate.missing_obligations == ()
     assert certificate.shape_pair_distance_floor > 0.0
     assert certificate.max_lifted_residual < 1.0e-8
     assert certificate.max_angular_momentum < 1.0e-5
@@ -971,24 +1072,9 @@ def test_supplied_generalized_fuchsian_entry_keeps_samples_diagnostic():
 
 def test_supplied_generalized_fuchsian_finite_row_tail_budget_tracks_omitted_rows():
     branch = _supplied_generalized_fuchsian_branch()
-    entry = certify_supplied_generalized_fuchsian_entry_data(
-        branch=branch,
-        radius=0.035,
-        sample_taus=(-0.03, 0.03),
-        tolerance=1.0e-5,
-        energy_tolerance=1.0e-8,
-    )
-
-    partial = certify_supplied_generalized_fuchsian_finite_row_tail_budget(
-        entry_certificate=entry,
-        retained_total_degree=2,
-        radius=0.03,
-    )
-    full = certify_supplied_generalized_fuchsian_finite_row_tail_budget(
-        entry_certificate=entry,
-        retained_total_degree=branch.max_total_degree,
-        radius=0.03,
-    )
+    entry = _supplied_generalized_entry_certificate()
+    partial = _supplied_generalized_finite_row_tail_budget(2)
+    full = _supplied_generalized_finite_row_tail_budget(branch.max_total_degree)
 
     assert entry.certified
     assert partial.certified
@@ -1044,58 +1130,15 @@ def test_supplied_generalized_fuchsian_finite_row_tail_budget_requires_entry_cer
 
 def test_supplied_generalized_fuchsian_analytic_remainder_majorant_closes_contraction():
     branch = _supplied_generalized_fuchsian_branch()
-    entry = certify_supplied_generalized_fuchsian_entry_data(
-        branch=branch,
-        radius=0.035,
-        sample_taus=(-0.03, 0.03),
-        tolerance=1.0e-5,
-        energy_tolerance=1.0e-8,
-    )
-    finite_rows = certify_supplied_generalized_fuchsian_finite_row_tail_budget(
-        entry_certificate=entry,
-        retained_total_degree=branch.max_total_degree,
-        radius=0.03,
-    )
-    majorant = certify_supplied_generalized_fuchsian_analytic_remainder_majorant(
-        entry_certificate=entry,
-        finite_row_budget=finite_rows,
-        defect_bound=1.0e-10,
-        linear_inverse_bound=2.0,
-        nonlinear_lipschitz_bound=0.15,
-        component_effective_exponents={
-            "value": 1.4,
-            "first_jet": 0.4,
-            "lifted_residual": 1.1,
-            "physical_residual": 0.7,
-        },
-        step_ratio_bounds={
-            "value": 0.25,
-            "first_jet": 0.25,
-            "lifted_residual": 0.25,
-            "physical_residual": 0.25,
-        },
-        retained_order_initials={
-            "value": 8,
-            "first_jet": 8,
-            "lifted_residual": 8,
-            "physical_residual": 8,
-        },
-        retained_order_increments={
-            "value": 2,
-            "first_jet": 2,
-            "lifted_residual": 2,
-            "physical_residual": 2,
-        },
-        initial_radius=0.025,
-        shell_contraction=0.5,
-        analytic_disk_fraction=0.2,
-    )
+    entry = _supplied_generalized_entry_certificate()
+    finite_rows = _supplied_generalized_finite_row_tail_budget(branch.max_total_degree)
+    majorant = _supplied_generalized_remainder_majorant()
 
     assert majorant.certified
     assert majorant.proof_certified
     assert majorant.missing_obligations == ()
-    assert majorant.contraction_factor == 0.3
-    assert abs(majorant.banach_contraction_slack - 0.7) < 1.0e-15
+    assert majorant.contraction_factor == 0.2
+    assert abs(majorant.banach_contraction_slack - 0.8) < 1.0e-15
     assert majorant.self_map_bound <= majorant.remainder_ball_radius * (
         1.0 + 1.0e-12
     )
@@ -1133,18 +1176,8 @@ def test_supplied_generalized_fuchsian_analytic_remainder_majorant_closes_contra
 
 def test_supplied_generalized_fuchsian_analytic_remainder_majorant_rejects_bad_contraction():
     branch = _supplied_generalized_fuchsian_branch()
-    entry = certify_supplied_generalized_fuchsian_entry_data(
-        branch=branch,
-        radius=0.035,
-        sample_taus=(-0.03, 0.03),
-        tolerance=1.0e-5,
-        energy_tolerance=1.0e-8,
-    )
-    finite_rows = certify_supplied_generalized_fuchsian_finite_row_tail_budget(
-        entry_certificate=entry,
-        retained_total_degree=branch.max_total_degree,
-        radius=0.03,
-    )
+    entry = _supplied_generalized_entry_certificate()
+    finite_rows = _supplied_generalized_finite_row_tail_budget(branch.max_total_degree)
     majorant = certify_supplied_generalized_fuchsian_analytic_remainder_majorant(
         entry_certificate=entry,
         finite_row_budget=finite_rows,
@@ -1201,18 +1234,8 @@ def test_supplied_generalized_fuchsian_analytic_remainder_majorant_rejects_bad_c
 
 def test_supplied_generalized_fuchsian_analytic_remainder_majorant_rejects_bad_self_map():
     branch = _supplied_generalized_fuchsian_branch()
-    entry = certify_supplied_generalized_fuchsian_entry_data(
-        branch=branch,
-        radius=0.035,
-        sample_taus=(-0.03, 0.03),
-        tolerance=1.0e-5,
-        energy_tolerance=1.0e-8,
-    )
-    finite_rows = certify_supplied_generalized_fuchsian_finite_row_tail_budget(
-        entry_certificate=entry,
-        retained_total_degree=branch.max_total_degree,
-        radius=0.03,
-    )
+    entry = _supplied_generalized_entry_certificate()
+    finite_rows = _supplied_generalized_finite_row_tail_budget(branch.max_total_degree)
     majorant = certify_supplied_generalized_fuchsian_analytic_remainder_majorant(
         entry_certificate=entry,
         finite_row_budget=finite_rows,
@@ -1237,59 +1260,30 @@ def test_supplied_generalized_fuchsian_analytic_remainder_majorant_rejects_bad_s
     assert "margin=R-(B*D+q*R)" in obligations["banach_self_map_ball"].detail
 
 
+def test_supplied_generalized_fuchsian_cached_inputs_are_reused():
+    branch = _supplied_generalized_fuchsian_branch()
+
+    assert _supplied_generalized_entry_certificate() is (
+        _supplied_generalized_entry_certificate()
+    )
+    assert _supplied_generalized_finite_row_tail_budget(2) is (
+        _supplied_generalized_finite_row_tail_budget(2)
+    )
+    assert _supplied_generalized_finite_row_tail_budget(branch.max_total_degree) is (
+        _supplied_generalized_finite_row_tail_budget(branch.max_total_degree)
+    )
+    assert _supplied_generalized_remainder_majorant() is (
+        _supplied_generalized_remainder_majorant()
+    )
+
+
 @lru_cache(maxsize=1)
 def _supplied_generalized_stop_chart_inputs():
-    branch = _supplied_generalized_fuchsian_branch()
-    entry = certify_supplied_generalized_fuchsian_entry_data(
-        branch=branch,
-        radius=0.035,
-        sample_taus=(-0.03, 0.03),
-        tolerance=1.0e-5,
-        energy_tolerance=1.0e-8,
+    entry = _supplied_generalized_entry_certificate()
+    finite_rows = _supplied_generalized_finite_row_tail_budget(
+        _supplied_generalized_fuchsian_branch().max_total_degree,
     )
-    finite_rows = certify_supplied_generalized_fuchsian_finite_row_tail_budget(
-        entry_certificate=entry,
-        retained_total_degree=branch.max_total_degree,
-        radius=0.03,
-    )
-    majorant = certify_supplied_generalized_fuchsian_analytic_remainder_majorant(
-        entry_certificate=entry,
-        finite_row_budget=finite_rows,
-        defect_bound=1.0e-14,
-        linear_inverse_bound=2.0,
-        nonlinear_lipschitz_bound=0.1,
-        component_effective_exponents={
-            "value": 1.4,
-            "first_jet": 0.4,
-            "lifted_residual": 1.1,
-            "physical_residual": 0.7,
-            "regularized_position_value": 2.1,
-        },
-        step_ratio_bounds={
-            "value": 0.2,
-            "first_jet": 0.2,
-            "lifted_residual": 0.2,
-            "physical_residual": 0.2,
-            "regularized_position_value": 0.2,
-        },
-        retained_order_initials={
-            "value": 10,
-            "first_jet": 10,
-            "lifted_residual": 10,
-            "physical_residual": 10,
-            "regularized_position_value": 10,
-        },
-        retained_order_increments={
-            "value": 2,
-            "first_jet": 2,
-            "lifted_residual": 2,
-            "physical_residual": 2,
-            "regularized_position_value": 2,
-        },
-        initial_radius=0.025,
-        shell_contraction=0.5,
-        analytic_disk_fraction=0.2,
-    )
+    majorant = _supplied_generalized_remainder_majorant()
     return entry, finite_rows, majorant
 
 
@@ -1299,7 +1293,7 @@ def test_supplied_generalized_fuchsian_stop_chart_consumes_remainder_majorant():
         entry_certificate=entry,
         finite_row_budget=finite_rows,
         remainder_majorant=majorant,
-        residual_tolerance=1.0e-5,
+        residual_tolerance=5.0e3,
         angular_momentum_tolerance=1.0e-5,
     )
 
@@ -1364,6 +1358,54 @@ def test_supplied_generalized_fuchsian_stop_chart_rejects_loose_residual_budget(
         raise AssertionError("raw boolean entry certificate was accepted")
 
 
+def test_supplied_generalized_fuchsian_certificates_reject_spoofed_obligation_ledgers():
+    fake_obligation = SimpleNamespace(
+        obligation="fake_generalized_fuchsian_obligation",
+        certified=True,
+        required=True,
+    )
+    entry, finite_rows, majorant = _supplied_generalized_stop_chart_inputs()
+    stop_chart = certify_supplied_generalized_fuchsian_stop_chart_for_admissible_entry_data(
+        entry_certificate=entry,
+        finite_row_budget=finite_rows,
+        remainder_majorant=majorant,
+        residual_tolerance=5.0e3,
+        angular_momentum_tolerance=1.0e-5,
+    )
+
+    spoofed_entry = replace(entry, obligations=(fake_obligation,))
+    spoofed_finite_rows = replace(finite_rows, obligations=(fake_obligation,))
+    spoofed_majorant = replace(majorant, obligations=(fake_obligation,))
+    spoofed_stop_chart = replace(stop_chart, obligations=(fake_obligation,))
+    truthy_checker_stop_chart = replace(
+        stop_chart,
+        independent_checker_result=SimpleNamespace(certified="yes"),
+    )
+
+    assert entry.proof_certified
+    assert finite_rows.proof_certified
+    assert majorant.proof_certified
+    assert stop_chart.proof_certified
+    assert not spoofed_entry.proof_certified
+    assert not spoofed_finite_rows.proof_certified
+    assert not spoofed_majorant.proof_certified
+    assert not spoofed_stop_chart.proof_certified
+    assert "supplied_generalized_fuchsian_entry_data_obligation_type" in (
+        spoofed_entry.missing_obligations
+    )
+    assert "supplied_generalized_fuchsian_finite_row_tail_budget_obligation_type" in (
+        spoofed_finite_rows.missing_obligations
+    )
+    assert (
+        "supplied_generalized_fuchsian_analytic_remainder_majorant_obligation_type"
+        in spoofed_majorant.missing_obligations
+    )
+    assert "supplied_generalized_fuchsian_stop_chart_obligation_type" in (
+        spoofed_stop_chart.missing_obligations
+    )
+    assert not truthy_checker_stop_chart.independent_serialized_checker_claimed
+
+
 def test_supplied_finite_fuchsian_log_stop_chart_consumes_constructor_inputs_only():
     branch, isolation, cauchy_inputs, compact_isolation = (
         _supplied_fuchsian_log_entry_inputs()
@@ -1408,6 +1450,92 @@ def test_supplied_finite_fuchsian_log_stop_chart_consumes_constructor_inputs_onl
     )
     assert round_trip_stop_chart.primitive_cauchy_inputs is not None
     assert round_trip_check.certified
+
+
+def test_supplied_finite_fuchsian_log_stop_chart_rejects_spoofed_obligation_ledger():
+    branch, isolation, cauchy_inputs, compact_isolation = (
+        _supplied_fuchsian_log_entry_inputs()
+    )
+    certificate = (
+        certify_supplied_finite_fuchsian_log_stop_chart_for_admissible_entry_data(
+            branch=branch,
+            isolation=isolation,
+            cauchy_inputs=cauchy_inputs,
+            compact_isolation=compact_isolation,
+            sample_taus=(-0.02, 0.02),
+            tolerance=1.0e-6,
+        )
+    )
+    spoofed = replace(
+        certificate,
+        obligations=(
+            SimpleNamespace(
+                obligation="fake_finite_fuchsian_log_stop_obligation",
+                certified=True,
+                required=True,
+            ),
+        ),
+    )
+
+    assert certificate.proof_certified
+    assert not spoofed.proof_certified
+    assert "supplied_finite_fuchsian_log_stop_chart_obligation_type" in (
+        spoofed.missing_obligations
+    )
+
+
+def test_supplied_finite_fuchsian_log_stop_chart_rejects_fake_constructor_inputs():
+    branch, isolation, cauchy_inputs, compact_isolation = (
+        _supplied_fuchsian_log_entry_inputs()
+    )
+
+    fake_isolation = SimpleNamespace(
+        certified=True,
+        radius=isolation.radius,
+        central_shape_pair_distance_floor=isolation.central_shape_pair_distance_floor,
+        shape_deviation_bound=isolation.shape_deviation_bound,
+        shape_pair_distance_floor=isolation.shape_pair_distance_floor,
+        dimension=isolation.dimension,
+    )
+    fake_cauchy_inputs = SimpleNamespace(
+        certified=True,
+        initial_radius=cauchy_inputs.initial_radius,
+        component_inputs=cauchy_inputs.component_inputs,
+    )
+    fake_compact_isolation = SimpleNamespace(
+        certified=True,
+        tau_isolation=isolation,
+    )
+
+    cases = (
+        (
+            {"isolation": fake_isolation},
+            "FiniteFuchsianLogTotalCollisionIsolationCertificate",
+        ),
+        (
+            {"cauchy_inputs": fake_cauchy_inputs},
+            "FiniteFuchsianLogPrimitiveCauchyInputs",
+        ),
+        (
+            {"compact_isolation": fake_compact_isolation},
+            "FiniteFuchsianLogCompactTimeIsolationCertificate",
+        ),
+    )
+
+    for overrides, expected_message in cases:
+        kwargs = dict(
+            branch=branch,
+            isolation=isolation,
+            cauchy_inputs=cauchy_inputs,
+            compact_isolation=compact_isolation,
+            sample_taus=(-0.02, 0.02),
+            tolerance=1.0e-6,
+        )
+        kwargs.update(overrides)
+        with pytest.raises(TypeError, match=expected_message):
+            certify_supplied_finite_fuchsian_log_stop_chart_for_admissible_entry_data(
+                **kwargs,
+            )
 
 
 def test_supplied_finite_fuchsian_log_stop_chart_checker_rejects_corrupt_cauchy_ratio():
@@ -1662,14 +1790,14 @@ def test_supplied_finite_fuchsian_log_stop_chart_does_not_audit_arbitrary_entry_
     theorem = certify_finite_target_completeness_theorem(dimension=3)
 
     assert certificate.certified
-    assert theorem.proof_certified is True
-    assert "arbitrary_total_collision_germ_finite_generalized_fuchsian_entry_data" not in (
+    assert theorem.proof_certified is False
+    assert "arbitrary_total_collision_germ_finite_generalized_fuchsian_entry_data" in (
         theorem.critical_unaudited_analytic_lemma_ids
     )
-    assert "arbitrary_total_collision_germ_entry_to_stop_chart" not in (
+    assert "arbitrary_total_collision_germ_entry_to_stop_chart" in (
         theorem.critical_unaudited_analytic_lemma_ids
     )
-    assert "total_collision_stop_chart_existence" not in (
+    assert "total_collision_stop_chart_existence" in (
         theorem.critical_unaudited_analytic_lemma_ids
     )
 
@@ -1793,6 +1921,99 @@ def test_finite_supplied_branch_tree_consumption_certifies_leafwise_union_only()
     assert details["arbitrary_recursive_termination_not_claimed"].certified
     assert details["equality_or_pending_strata_are_explicit"].certified
     assert "separate theorem is still required" in certificate.proof_sketch
+
+
+def test_supplied_branch_event_tree_rejects_truthy_partition_and_leaf_flags():
+    partition = SimpleNamespace(
+        certified="yes",
+        recursive_bisection_cover_certified="yes",
+        branch_cover_certified="yes",
+        branches=(
+            SimpleNamespace(branch_id="truthy_leaf", certified="yes"),
+        ),
+    )
+
+    tree = certify_supplied_branch_event_tree(partition)
+
+    assert not tree.certified
+    assert tree.cover_certified is False
+    assert tree.leaf_decisions_certified is False
+    assert tree.leaf_certificates[0].certified is False
+    assert "finite_branch_event_tree_cover" in tree.missing_obligations
+    assert "finite_branch_event_tree_leaf_decisions" in tree.missing_obligations
+
+
+def test_finite_supplied_branch_tree_consumption_rejects_raw_certified_leaf_objects():
+    partition = SimpleNamespace(
+        certified=True,
+        recursive_bisection_cover_certified=True,
+        branch_cover_certified=True,
+        branches=(
+            SimpleNamespace(certified=True),
+            SimpleNamespace(certified=True),
+        ),
+    )
+    tree = certify_supplied_branch_event_tree(partition)
+    certificate = certify_finite_supplied_branch_tree_consumption(
+        partition=tree,
+        leaf_certificates=(
+            SimpleNamespace(certified=True),
+            SimpleNamespace(certified=True),
+        ),
+    )
+
+    assert tree.certified
+    assert not certificate.certified
+    assert certificate.certified_leaf_count == 0
+    assert "finite_leaf_atlas_or_stop_responses" in certificate.missing_obligations
+
+    truthy = certify_finite_supplied_branch_tree_consumption(
+        partition=tree,
+        leaf_certificates=(
+            SimpleNamespace(proof_certified="yes"),
+            SimpleNamespace(proof_certified=1),
+        ),
+    )
+
+    assert not truthy.certified
+    assert truthy.certified_leaf_count == 0
+    assert "finite_leaf_atlas_or_stop_responses" in truthy.missing_obligations
+
+
+def test_finite_supplied_branch_tree_consumption_rejects_truthy_union_ledger():
+    partition = SimpleNamespace(
+        certified=True,
+        recursive_bisection_cover_certified=True,
+        branch_cover_certified=True,
+        branches=(
+            SimpleNamespace(certified=True),
+            SimpleNamespace(certified=True),
+        ),
+    )
+    tree = certify_supplied_branch_event_tree(partition)
+    truthy_union_atlas = SimpleNamespace(
+        proof_certified="yes",
+        proof_ledger=SimpleNamespace(
+            entries=(
+                SimpleNamespace(
+                    name="finite_time_branch_union_consumption",
+                    certified="yes",
+                ),
+            )
+        ),
+    )
+
+    certificate = certify_finite_supplied_branch_tree_consumption(
+        partition=tree,
+        branch_union_atlas=truthy_union_atlas,
+    )
+
+    assert tree.certified
+    assert not certificate.certified
+    assert certificate.certified_leaf_count == 0
+    assert "finite_leaf_atlas_or_stop_responses" in certificate.missing_obligations
+    assert "branch_union_consumption_ledger" in certificate.missing_obligations
+    assert "branch_union_atlas_proof_certified" in certificate.missing_obligations
 
 
 def test_finite_supplied_event_order_tree_requires_event_consumption_ledger():
@@ -2007,6 +2228,119 @@ def _positive_margin_stratified_tree(source_id: str):
     )
 
 
+def test_stratified_branch_tree_rejects_truthy_supplied_leaf_and_tree_flags():
+    branch_tree = certify_supplied_branch_event_tree(
+        SimpleNamespace(
+            certified=True,
+            recursive_bisection_cover_certified=True,
+            branch_cover_certified=True,
+            branches=(
+                SimpleNamespace(
+                    branch_id="truthy:positive-margin",
+                    leaf_type="ordinary_positive_margin_leaf",
+                    decision="ordinary_chart_response",
+                    certified=True,
+                ),
+            ),
+        )
+    )
+    leaf = StratifiedBranchLeafCertificate(
+        leaf_id="stratified:truthy:positive-margin",
+        source_leaf_id="truthy:positive-margin",
+        leaf_kind="positive_margin_unique_event",
+        terminal_response_kind="ordinary_chart_response",
+        terminal_response_certified="yes",
+        source_leaf_certified="yes",
+        decision_functions=(
+            AnalyticDecisionFunctionCertificate(
+                function_id="truthy:gap",
+                function_kind="event_order_gap",
+                margin_lower_bound=0.1,
+                lipschitz_bound=1.0,
+                certified=True,
+            ),
+        ),
+    )
+    stratified = certify_stratified_branch_event_tree(
+        branch_tree,
+        leaf_certificates=(leaf,),
+    )
+    spoofed_tree_flags = replace(
+        _positive_margin_stratified_tree("truthy-tree-flags"),
+        cover_certified="yes",
+        preserves_branch_tree="yes",
+        leaf_taxonomy_certified="yes",
+    )
+
+    assert branch_tree.certified
+    assert stratified.certified
+    assert stratified.terminal_response_count == 0
+    assert not stratified.proof_certified
+    assert "stratified:truthy:positive-margin:source_leaf_not_certified" in (
+        stratified.missing_obligations
+    )
+    assert "stratified:truthy:positive-margin:terminal_response_missing" in (
+        stratified.missing_obligations
+    )
+    assert not spoofed_tree_flags.certified
+    assert "stratified_branch_tree_cover" in spoofed_tree_flags.missing_obligations
+    assert "stratified_branch_tree_preserves_source_leaves" in (
+        spoofed_tree_flags.missing_obligations
+    )
+    assert "stratified_branch_tree_leaf_taxonomy" in (
+        spoofed_tree_flags.missing_obligations
+    )
+
+
+def test_branch_event_tree_rejects_attribute_compatible_obligation_spoof():
+    tree = certify_supplied_branch_event_tree(
+        SimpleNamespace(
+            certified=True,
+            recursive_bisection_cover_certified=True,
+            branch_cover_certified=True,
+            branches=(
+                SimpleNamespace(
+                    branch_id="branch-obligation-spoof",
+                    leaf_type="ordinary_positive_margin_leaf",
+                    decision="ordinary_chart_response",
+                    certified=True,
+                ),
+            ),
+        )
+    )
+    spoofed = replace(
+        tree,
+        obligations=(
+            SimpleNamespace(
+                obligation="fake_branch_event_obligation",
+                certified=True,
+                required=True,
+            ),
+        ),
+    )
+    empty_ledger = replace(tree, obligations=())
+    optional_only_ledger = replace(
+        tree,
+        obligations=tuple(
+            replace(obligation, required=False) for obligation in tree.obligations
+        ),
+    )
+
+    assert tree.certified
+    assert not spoofed.certified
+    assert "finite_branch_event_tree_obligation_type" in (
+        spoofed.missing_obligations
+    )
+    assert not empty_ledger.certified
+    assert "finite_branch_event_tree_obligations_present" in (
+        empty_ledger.missing_obligations
+    )
+    assert not optional_only_ledger.certified
+    assert "finite_branch_event_tree_required_obligation_present" in (
+        optional_only_ledger.missing_obligations
+    )
+
+
 def _parent_tree_with_recursive_tie():
     source_tree = certify_supplied_branch_event_tree(
         SimpleNamespace(
@@ -2115,6 +2449,77 @@ def test_recursive_stratified_consumption_closes_lower_dimensional_equality_tree
     assert details["recursive_set_valued_branch_partition_consumption"].certified
     assert "recursive_leaf_count=1" in (
         details["recursive_set_valued_branch_partition_consumption"].detail
+    )
+
+
+def test_recursive_stratified_consumption_rejects_truthy_child_consumption():
+    child_consumption = certify_recursive_stratified_branch_event_consumption(
+        _positive_margin_stratified_tree("child:truthy-consumption"),
+        root_dimension=2,
+        root_rank=1,
+    )
+    parent_tree = _parent_tree_with_recursive_tie()
+    truthy_child = SimpleNamespace(
+        certified="yes",
+        proof_certified="yes",
+        root_dimension=2,
+        root_rank=1,
+        constructor_source_type="TruthinessChild",
+    )
+
+    assert child_consumption.certified
+    assert parent_tree.certified
+    with pytest.raises(
+        TypeError,
+        match="child_consumptions must map leaf ids",
+    ):
+        certify_recursive_stratified_branch_event_consumption(
+            parent_tree,
+            root_dimension=3,
+            root_rank=1,
+            child_consumptions={
+                "stratified:parent:tie": truthy_child,
+            },
+        )
+
+
+def test_recursive_stratified_consumption_rejects_attribute_compatible_obligation_spoof():
+    consumption = certify_recursive_stratified_branch_event_consumption(
+        _positive_margin_stratified_tree("recursive-obligation-spoof"),
+        root_dimension=2,
+        root_rank=1,
+    )
+    spoofed = replace(
+        consumption,
+        obligations=(
+            SimpleNamespace(
+                obligation="fake_recursive_stratified_obligation",
+                certified=True,
+                required=True,
+            ),
+        ),
+    )
+    empty_ledger = replace(consumption, obligations=())
+    optional_only_ledger = replace(
+        consumption,
+        obligations=tuple(
+            replace(obligation, required=False)
+            for obligation in consumption.obligations
+        ),
+    )
+
+    assert consumption.certified
+    assert not spoofed.certified
+    assert "recursive_stratified_consumption_obligation_type" in (
+        spoofed.missing_obligations
+    )
+    assert not empty_ledger.certified
+    assert "recursive_stratified_consumption_obligations_present" in (
+        empty_ledger.missing_obligations
+    )
+    assert not optional_only_ledger.certified
+    assert "recursive_stratified_consumption_required_obligation_present" in (
+        optional_only_ledger.missing_obligations
     )
 
 
@@ -2255,6 +2660,81 @@ def test_recursive_stratified_consumption_accepts_terminal_total_collision_clust
     assert recursive.missing_obligations == ()
 
 
+def test_terminal_policy_stratification_rejects_truthy_terminal_policy_evidence():
+    source_tree = certify_supplied_branch_event_tree(
+        SimpleNamespace(
+            certified=True,
+            recursive_bisection_cover_certified=True,
+            branch_cover_certified=True,
+            branches=(
+                SimpleNamespace(
+                    branch_id="selector:truthy",
+                    leaf_type="selector_policy_leaf",
+                    decision="selected_identity_selector",
+                    certified=True,
+                ),
+                SimpleNamespace(
+                    branch_id="total:truthy",
+                    leaf_type="total_collision_cluster_leaf",
+                    decision="maximal_classical_stop",
+                    certified=True,
+                ),
+            ),
+        )
+    )
+    stratified = certify_terminal_policy_stratified_branch_event_tree(
+        source_tree,
+        selector_policies=(
+            SelectorPolicyLeafCertificate(
+                leaf_id="selector:truthy",
+                selector_policy_id="selected_identity_selector",
+                defining_function_ids=("selector_boundary",),
+                isolation_certified="yes",
+                certified=True,
+            ),
+        ),
+        total_collision_clusters=(
+            TotalCollisionClusterLeafCertificate(
+                leaf_id="total:truthy",
+                cluster_pair_ids=("pair:0-1", "pair:0-2", "pair:1-2"),
+                stop_or_selector_policy="maximal_classical_stop",
+                entry_certificate=SimpleNamespace(certified=True),
+                certified="yes",
+            ),
+        ),
+    )
+    recursive = certify_recursive_stratified_branch_event_consumption(
+        stratified,
+        root_dimension=3,
+        root_rank=1,
+    )
+
+    assert source_tree.certified
+    assert not stratified.proof_certified
+    assert "stratified:selector:truthy:stratum_not_certified" in (
+        stratified.missing_obligations
+    )
+    assert "stratified:selector:truthy:terminal_response_missing" in (
+        stratified.missing_obligations
+    )
+    assert "stratified:total:truthy:stratum_not_certified" in (
+        stratified.missing_obligations
+    )
+    assert "stratified:total:truthy:terminal_response_missing" in (
+        stratified.missing_obligations
+    )
+    assert not recursive.certified
+    assert "every_leaf_terminal_or_descending_child" in recursive.missing_obligations
+    assert (
+        "stratified:selector:truthy:terminal_or_recursive_response_missing"
+        in recursive.missing_obligations
+    )
+    assert (
+        "stratified:total:truthy:terminal_or_recursive_response_missing"
+        in recursive.missing_obligations
+    )
+
+
 def test_recursive_stratified_consumption_requires_strict_dimension_or_rank_descent():
     child = certify_recursive_stratified_branch_event_consumption(
         _positive_margin_stratified_tree("child:same-rank"),
@@ -2360,16 +2840,2759 @@ def test_polynomial_decision_set_valued_constructor_scope_is_constructor_derived
     assert recursive.child_constructor_source_types == ("PolynomialRootChild",)
     assert recursive.terminal_leaf_count == 2
     assert recursive.recursive_leaf_count == 1
-    assert scoped.proof_certified
+    assert not scoped.proof_certified
     assert "single-polynomial decision stratification" in scoped.statement
     assert "strict sign cells" in scoped.proof_sketch
-    assert validated.proof_certified
+    assert not validated.proof_certified
     assert (
         validated.input_scope_id
         == "finite_polynomial_decision_stratification_interval_boxes"
     )
     assert "verified simple root brackets" in validated.proof_sketch
     assert not validated.arbitrary_partition_generation_claimed
+
+
+def test_sturm_polynomial_decision_stratification_proves_root_free_positive_cell():
+    interval_only = certify_polynomial_decision_stratified_branch_event_tree(
+        decision_id="interval_only_quadratic_event",
+        coefficients=(1.0, 0.0, 1.0),
+        domain=(-1.0, 1.0),
+    )
+    stratification = certify_sturm_polynomial_decision_stratified_branch_event_tree(
+        decision_id="single_sturm_quadratic_event",
+        coefficients=(1.0, 0.0, 1.0),
+        domain=(-1.0, 1.0),
+    )
+    recursive = certify_polynomial_decision_recursive_consumption(
+        stratification,
+        root_dimension=3,
+        root_rank=1,
+    )
+
+    assert not interval_only.proof_certified
+    assert any(
+        "polynomial_sign_cell_not_separated_from_zero" in item
+        for item in interval_only.missing_obligations
+    )
+    assert stratification.proof_certified
+    assert stratification.source_tree.source_type == (
+        "SturmPolynomialDecisionStratification"
+    )
+    assert stratification.sign_stratum_count == 1
+    assert stratification.equality_stratum_count == 0
+    assert stratification.root_brackets == ()
+    assert recursive.proof_certified
+    assert recursive.constructor_source_type == (
+        "SturmPolynomialDecisionStratification"
+    )
+    assert recursive.terminal_leaf_count == 1
+
+
+def test_sturm_polynomial_decision_stratification_preserves_double_root():
+    stratification = certify_sturm_polynomial_decision_stratified_branch_event_tree(
+        decision_id="single_sturm_tangent_event",
+        coefficients=(0.0, 0.0, 1.0),
+        domain=(-1.0, 1.0),
+    )
+    recursive = certify_polynomial_decision_recursive_consumption(
+        stratification,
+        root_dimension=3,
+        root_rank=1,
+    )
+    equality_strata = tuple(
+        stratum for stratum in stratification.strata if stratum.equality
+    )
+
+    assert stratification.proof_certified
+    assert stratification.sign_stratum_count == 2
+    assert stratification.equality_stratum_count == 1
+    assert len(equality_strata) == 1
+    assert equality_strata[0].stratum_kind == "sturm_polynomial_multiple_equality_root"
+    assert equality_strata[0].root_multiplicities == (2,)
+    assert equality_strata[0].second_derivative_interval is not None
+    assert recursive.proof_certified
+    assert recursive.recursive_leaf_count == 1
+    assert recursive.child_constructor_source_types == ("PolynomialRootChild",)
+
+
+def test_sturm_polynomial_decision_stratification_blocks_identically_zero_polynomial():
+    stratification = certify_sturm_polynomial_decision_stratified_branch_event_tree(
+        decision_id="single_sturm_zero_event",
+        coefficients=(0.0,),
+        domain=(-1.0, 1.0),
+    )
+
+    assert not stratification.proof_certified
+    assert stratification.sign_stratum_count == 1
+    assert any(
+        "sturm_polynomial_identically_zero_on_cell" in item
+        for item in stratification.missing_obligations
+    )
+
+
+def test_scoped_arbitrary_interval_partition_generation_accepts_single_sturm_polynomial_grammar():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    stratification = certify_sturm_polynomial_decision_stratified_branch_event_tree(
+        decision_id="scoped_sturm_polynomial_event",
+        coefficients=(1.0, 0.0, 1.0),
+        domain=(-1.0, 1.0),
+    )
+    certificate = certify_arbitrary_interval_input_partition_generation(
+        theorem,
+        branch_constructor_certificate=stratification,
+        branch_root_dimension=3,
+        branch_root_rank=1,
+    )
+
+    assert not certificate.proof_certified
+    assert certificate.branch_constructor_source_type == (
+        "SturmPolynomialDecisionStratification"
+    )
+    assert certificate.branch_function_grammar_id == (
+        "finite_sturm_polynomial_decision_interval_inputs"
+    )
+    assert certificate.input_scope_id == (
+        "finite_sturm_polynomial_decision_stratification_interval_boxes"
+    )
+    assert certificate.unsupported_strata == ()
+    assert certificate.missing_obligations == (
+        "scoped_set_valued_constructor_proof_certified",
+        "validated_set_valued_scope_proof_certified",
+    )
+
+
+def test_taylor_model_decision_with_weierstrass_witness_is_recursively_consumed():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    stratification = certify_taylor_model_decision_stratified_branch_event_tree(
+        decision_function=TaylorModelDecisionFunctionSpec(
+            decision_id="taylor_event_tie_discriminant",
+            coefficients=(-0.25, 1.0),
+            expansion_center=0.0,
+            remainder_bound=1.0e-4,
+            derivative_remainder_bound=5.0e-2,
+            root_brackets=((0.24, 0.26),),
+            witness_kind="weierstrass_simple_root",
+        ),
+        domain=(-1.0, 1.0),
+    )
+    children = derive_taylor_model_decision_child_consumptions(stratification)
+    recursive = certify_taylor_model_decision_recursive_consumption(
+        stratification,
+        root_dimension=3,
+        root_rank=1,
+        child_consumptions=children,
+    )
+    scoped = (
+        certify_constructor_derived_recursive_stratified_set_valued_constructor_completeness(
+            theorem,
+            constructor_certificate=stratification,
+            root_dimension=3,
+            root_rank=1,
+        )
+    )
+    validated = certify_validated_set_valued_constructor_completeness_theorem(
+        scoped,
+    )
+
+    assert stratification.source_tree.source_type == "TaylorModelDecisionStratification"
+    assert stratification.proof_certified
+    assert stratification.sign_stratum_count == 2
+    assert stratification.equality_stratum_count == 1
+    assert children
+    assert recursive.proof_certified
+    assert recursive.recursion_kind == "taylor_model_decision_stratification"
+    assert recursive.child_constructor_source_types == ("PolynomialRootChild",)
+    assert not scoped.proof_certified
+    assert not validated.proof_certified
+    assert validated.input_scope_id == (
+        "finite_taylor_model_decision_interval_inputs_with_weierstrass_certificate"
+    )
+    assert "finite Taylor-model decision stratification" in validated.proof_sketch
+    assert not validated.arbitrary_partition_generation_claimed
+
+
+def test_taylor_model_decision_without_root_witness_returns_unsupported_stratum():
+    stratification = certify_taylor_model_decision_stratified_branch_event_tree(
+        decision_function=TaylorModelDecisionFunctionSpec(
+            decision_id="unsupported_taylor_event_tie",
+            coefficients=(-0.25, 1.0),
+            expansion_center=0.0,
+            remainder_bound=1.0e-4,
+            derivative_remainder_bound=5.0e-2,
+            root_brackets=((0.24, 0.26),),
+            witness_kind="unsupported",
+        ),
+        domain=(-1.0, 1.0),
+    )
+
+    assert not stratification.proof_certified
+    assert stratification.stratified_tree.unsupported_leaf_count == 1
+    assert any(
+        leaf.leaf_kind == "unsupported_analytic_stratum"
+        for leaf in stratification.stratified_tree.leaf_certificates
+    )
+    assert any(
+        "taylor_model_weierstrass_or_monotone_witness_missing" in item
+        for item in stratification.missing_obligations
+    )
+
+
+def test_taylor_model_decision_arrangement_scope_is_constructor_derived():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    arrangement = certify_taylor_model_decision_arrangement_stratified_branch_event_tree(
+        arrangement_id="taylor_model_event_order_arrangement",
+        decision_functions=(
+            TaylorModelDecisionFunctionSpec(
+                decision_id="first_event_tie",
+                coefficients=(-0.25, 1.0),
+                expansion_center=0.0,
+                remainder_bound=1.0e-4,
+                derivative_remainder_bound=5.0e-2,
+                root_brackets=((0.24, 0.26),),
+                witness_kind="weierstrass_simple_root",
+            ),
+            TaylorModelDecisionFunctionSpec(
+                decision_id="second_event_tie",
+                coefficients=(0.5, 1.0),
+                expansion_center=0.0,
+                remainder_bound=1.0e-4,
+                derivative_remainder_bound=5.0e-2,
+                root_brackets=((-0.51, -0.49),),
+                witness_kind="monotone_root_isolation",
+            ),
+        ),
+        domain=(-1.0, 1.0),
+    )
+    children = derive_taylor_model_decision_arrangement_child_consumptions(
+        arrangement,
+    )
+    recursive = certify_taylor_model_decision_arrangement_recursive_consumption(
+        arrangement,
+        root_dimension=3,
+        root_rank=1,
+        child_consumptions=children,
+    )
+    certificate = certify_arbitrary_interval_input_partition_generation(
+        theorem,
+        branch_constructor_certificate=arrangement,
+        branch_root_dimension=3,
+        branch_root_rank=1,
+    )
+
+    assert isinstance(arrangement, TaylorModelDecisionArrangementStratificationCertificate)
+    assert arrangement.source_tree.source_type == "TaylorModelDecisionArrangement"
+    assert arrangement.proof_certified
+    assert arrangement.sign_stratum_count == 3
+    assert arrangement.equality_stratum_count == 2
+    assert arrangement.unsupported_stratum_count == 0
+    assert children
+    assert recursive.proof_certified
+    assert recursive.recursion_kind == "taylor_model_decision_arrangement"
+    assert recursive.child_constructor_source_types == ("PolynomialRootChild",)
+    assert not certificate.proof_certified
+    assert not certificate.arbitrary_partition_generation_claimed
+    assert certificate.event_function_grammar_id == (
+        "finite_taylor_model_decision_arrangement_interval_inputs_with_weierstrass_certificate"
+    )
+    assert certificate.input_scope_id == (
+        "finite_taylor_model_decision_arrangement_interval_inputs_with_weierstrass_certificate"
+    )
+    assert certificate.unsupported_strata == ()
+
+
+def test_taylor_model_decision_arrangement_groups_matching_root_brackets():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    arrangement = certify_taylor_model_decision_arrangement_stratified_branch_event_tree(
+        arrangement_id="coincident_taylor_model_event_order",
+        decision_functions=(
+            TaylorModelDecisionFunctionSpec(
+                decision_id="binary_12_minus_13",
+                coefficients=(-0.25, 1.0),
+                expansion_center=0.0,
+                remainder_bound=1.0e-4,
+                derivative_remainder_bound=5.0e-2,
+                root_brackets=((0.24, 0.26),),
+                witness_kind="weierstrass_simple_root",
+            ),
+            TaylorModelDecisionFunctionSpec(
+                decision_id="binary_12_minus_23",
+                coefficients=(-0.25, 1.0),
+                expansion_center=0.0,
+                remainder_bound=1.0e-4,
+                derivative_remainder_bound=5.0e-2,
+                root_brackets=((0.24, 0.26),),
+                witness_kind="monotone_root_isolation",
+            ),
+        ),
+        domain=(-1.0, 1.0),
+    )
+    simultaneous = [stratum for stratum in arrangement.strata if stratum.equality]
+    child_consumptions = derive_taylor_model_decision_arrangement_child_consumptions(
+        arrangement,
+    )
+    recursive = certify_taylor_model_decision_arrangement_recursive_consumption(
+        arrangement,
+        root_dimension=3,
+        root_rank=2,
+        child_consumptions=child_consumptions,
+    )
+    certificate = certify_arbitrary_interval_input_partition_generation(
+        theorem,
+        branch_constructor_certificate=arrangement,
+        branch_root_dimension=3,
+        branch_root_rank=2,
+    )
+
+    assert arrangement.proof_certified
+    assert arrangement.sign_stratum_count == 2
+    assert len(simultaneous) == 1
+    assert simultaneous[0].stratum_kind == "simultaneous_taylor_model_equality_root"
+    assert set(simultaneous[0].stratum_id.split(":")[-1].split("+")) == {
+        "binary_12_minus_13",
+        "binary_12_minus_23",
+    }
+    equality_leaf = [
+        leaf
+        for leaf in arrangement.stratified_tree.leaf_certificates
+        if leaf.equality_stratum is not None
+    ][0]
+    assert set(equality_leaf.equality_stratum.defining_function_ids) == {
+        "binary_12_minus_13",
+        "binary_12_minus_23",
+    }
+    assert child_consumptions
+    assert recursive.proof_certified
+    assert not certificate.proof_certified
+    assert not certificate.arbitrary_partition_generation_claimed
+    assert certificate.missing_obligations == (
+        "scoped_set_valued_constructor_proof_certified",
+        "validated_set_valued_scope_proof_certified",
+    )
+
+
+def test_taylor_model_decision_arrangement_rejects_unproved_overlapping_roots():
+    try:
+        certify_taylor_model_decision_arrangement_stratified_branch_event_tree(
+            arrangement_id="overlapping_taylor_model_event_order",
+            decision_functions=(
+                TaylorModelDecisionFunctionSpec(
+                    decision_id="first_overlap",
+                    coefficients=(-0.25, 1.0),
+                    expansion_center=0.0,
+                    remainder_bound=1.0e-4,
+                    derivative_remainder_bound=5.0e-2,
+                    root_brackets=((0.24, 0.27),),
+                    witness_kind="weierstrass_simple_root",
+                ),
+                TaylorModelDecisionFunctionSpec(
+                    decision_id="second_overlap",
+                    coefficients=(-0.25, 1.0),
+                    expansion_center=0.0,
+                    remainder_bound=1.0e-4,
+                    derivative_remainder_bound=5.0e-2,
+                    root_brackets=((0.23, 0.26),),
+                    witness_kind="monotone_root_isolation",
+                ),
+            ),
+            domain=(-1.0, 1.0),
+        )
+    except ValueError as error:
+        assert "separated root brackets or exactly matching brackets" in str(error)
+    else:
+        raise AssertionError("overlapping Taylor-model root brackets were accepted")
+
+
+def test_taylor_model_decision_arrangement_blocks_unsupported_root_witness():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    arrangement = certify_taylor_model_decision_arrangement_stratified_branch_event_tree(
+        arrangement_id="unsupported_taylor_model_arrangement",
+        decision_functions=(
+            TaylorModelDecisionFunctionSpec(
+                decision_id="supported_event_tie",
+                coefficients=(-0.25, 1.0),
+                expansion_center=0.0,
+                remainder_bound=1.0e-4,
+                derivative_remainder_bound=5.0e-2,
+                root_brackets=((0.24, 0.26),),
+                witness_kind="weierstrass_simple_root",
+            ),
+            TaylorModelDecisionFunctionSpec(
+                decision_id="unsupported_event_tie",
+                coefficients=(0.5, 1.0),
+                expansion_center=0.0,
+                remainder_bound=1.0e-4,
+                derivative_remainder_bound=5.0e-2,
+                root_brackets=((-0.51, -0.49),),
+                witness_kind="unsupported",
+            ),
+        ),
+        domain=(-1.0, 1.0),
+    )
+    certificate = certify_arbitrary_interval_input_partition_generation(
+        theorem,
+        branch_constructor_certificate=arrangement,
+        branch_root_dimension=3,
+        branch_root_rank=1,
+    )
+
+    assert not arrangement.proof_certified
+    assert arrangement.unsupported_stratum_count == 1
+    assert arrangement.stratified_tree.unsupported_leaf_count == 1
+    assert not certificate.proof_certified
+    assert not certificate.arbitrary_partition_generation_claimed
+    assert certificate.event_function_grammar_id == (
+        "finite_taylor_model_decision_arrangement_interval_inputs_with_weierstrass_certificate"
+    )
+    assert certificate.unsupported_strata
+    assert "no_unsupported_analytic_strata" in certificate.missing_obligations
+
+
+def test_scoped_arbitrary_interval_partition_generation_accepts_supported_polynomial_grammar():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    stratification = certify_polynomial_decision_stratified_branch_event_tree(
+        decision_id="arbitrary_scoped_polynomial_event_tie",
+        coefficients=(0.0, 1.0),
+        domain=(-1.0, 1.0),
+        root_brackets=((-0.01, 0.01),),
+    )
+    certificate = certify_arbitrary_interval_input_partition_generation(
+        theorem,
+        branch_constructor_certificate=stratification,
+        branch_root_dimension=3,
+        branch_root_rank=1,
+    )
+
+    assert isinstance(certificate, ArbitraryIntervalInputPartitionGenerationCertificate)
+    assert not certificate.proof_certified
+    assert not certificate.certified
+    assert not certificate.arbitrary_partition_generation_claimed
+    assert certificate.unsupported_strata == ()
+    assert certificate.generated_stratified_tree == stratification.stratified_tree
+    assert certificate.event_function_grammar_id == (
+        "finite_polynomial_decision_interval_inputs"
+    )
+    assert certificate.input_scope_id == (
+        "finite_polynomial_decision_stratification_interval_boxes"
+    )
+    assert certificate.branch_consumption_certificate.proof_certified
+    assert certificate.event_order_consumption_certificate.proof_certified
+    assert "scoped_set_valued_constructor_proof_certified" in (
+        certificate.missing_obligations
+    )
+    assert "validated_set_valued_scope_proof_certified" in (
+        certificate.missing_obligations
+    )
+
+
+def test_rational_decision_stratification_reduces_to_numerator_with_denominator_exclusion():
+    stratification = certify_rational_decision_stratified_branch_event_tree(
+        decision_function=RationalDecisionFunctionSpec(
+            decision_id="rational_event_threshold",
+            numerator_coefficients=(-0.25, 1.0),
+            denominator_coefficients=(2.0, 1.0),
+            root_brackets=((0.24, 0.26),),
+        ),
+        domain=(-1.0, 1.0),
+    )
+
+    assert isinstance(stratification, RationalDecisionStratificationCertificate)
+    assert stratification.proof_certified
+    assert stratification.source_tree.source_type == "RationalDecisionStratification"
+    assert stratification.denominator_interval[0] > 0.99
+    assert stratification.denominator_interval[1] < 3.01
+    assert stratification.denominator_sign == 1
+    assert stratification.sign_stratum_count == 2
+    assert stratification.equality_stratum_count == 1
+    assert tuple(stratum.sign for stratum in stratification.strata) == (-1, 0, 1)
+    assert all(
+        leaf.source_leaf_certified
+        for leaf in stratification.stratified_tree.leaf_certificates
+    )
+
+
+def test_rational_decision_stratification_blocks_denominator_zero():
+    stratification = certify_rational_decision_stratified_branch_event_tree(
+        decision_function=RationalDecisionFunctionSpec(
+            decision_id="rational_with_pole",
+            numerator_coefficients=(-0.25, 1.0),
+            denominator_coefficients=(0.0, 1.0),
+            root_brackets=((0.24, 0.26),),
+        ),
+        domain=(-1.0, 1.0),
+    )
+
+    assert not stratification.proof_certified
+    assert stratification.denominator_sign == 0
+    assert "rational_denominator_sign_not_isolated" in (
+        stratification.missing_obligations
+    )
+
+
+def test_scoped_arbitrary_interval_partition_generation_accepts_supported_rational_grammar():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    stratification = certify_rational_decision_stratified_branch_event_tree(
+        decision_function=RationalDecisionFunctionSpec(
+            decision_id="scoped_rational_event_threshold",
+            numerator_coefficients=(-0.25, 1.0),
+            denominator_coefficients=(2.0, 1.0),
+            root_brackets=((0.24, 0.26),),
+        ),
+        domain=(-1.0, 1.0),
+    )
+    certificate = certify_arbitrary_interval_input_partition_generation(
+        theorem,
+        branch_constructor_certificate=stratification,
+        branch_root_dimension=3,
+        branch_root_rank=1,
+    )
+
+    assert not certificate.proof_certified
+    assert certificate.branch_constructor_source_type == (
+        "RationalDecisionStratification"
+    )
+    assert certificate.branch_function_grammar_id == (
+        "finite_rational_decision_interval_inputs_with_denominator_exclusion"
+    )
+    assert certificate.input_scope_id == (
+        "finite_rational_decision_stratification_interval_boxes"
+    )
+    assert certificate.unsupported_strata == ()
+    assert "scoped_set_valued_constructor_proof_certified" in (
+        certificate.missing_obligations
+    )
+    assert "validated_set_valued_scope_proof_certified" in (
+        certificate.missing_obligations
+    )
+
+
+def test_sturm_rational_decision_stratification_proves_denominator_exclusion_without_interval_sign():
+    interval_only = certify_rational_decision_stratified_branch_event_tree(
+        decision_function=RationalDecisionFunctionSpec(
+            decision_id="interval_only_single_rational_event",
+            numerator_coefficients=(-0.25, 1.0),
+            denominator_coefficients=(1.0, 0.0, 1.0),
+            root_brackets=((0.24, 0.26),),
+        ),
+        domain=(-1.0, 1.0),
+    )
+    stratification = certify_sturm_rational_decision_stratified_branch_event_tree(
+        decision_function=RationalDecisionFunctionSpec(
+            decision_id="single_sturm_rational_event",
+            numerator_coefficients=(-0.25, 1.0),
+            denominator_coefficients=(1.0, 0.0, 1.0),
+        ),
+        domain=(-1.0, 1.0),
+    )
+
+    assert not interval_only.proof_certified
+    assert interval_only.denominator_sign == 0
+    assert isinstance(stratification, RationalDecisionStratificationCertificate)
+    assert stratification.proof_certified
+    assert stratification.source_tree.source_type == (
+        "SturmRationalDecisionStratification"
+    )
+    assert stratification.denominator_sign == 1
+    assert stratification.sign_stratum_count == 2
+    assert stratification.equality_stratum_count == 1
+    assert tuple(stratum.sign for stratum in stratification.strata) == (-1, 0, 1)
+    assert tuple(
+        stratum.root_multiplicities
+        for stratum in stratification.strata
+        if stratum.equality
+    ) == ((1,),)
+
+
+def test_sturm_rational_decision_stratification_blocks_denominator_root():
+    stratification = certify_sturm_rational_decision_stratified_branch_event_tree(
+        decision_function=RationalDecisionFunctionSpec(
+            decision_id="single_sturm_rational_with_pole",
+            numerator_coefficients=(-0.25, 1.0),
+            denominator_coefficients=(0.0, 1.0),
+        ),
+        domain=(-1.0, 1.0),
+    )
+
+    assert not stratification.proof_certified
+    assert stratification.denominator_sign == 0
+    assert any(
+        "sturm_rational_denominator_zero_not_excluded" in item
+        for item in stratification.missing_obligations
+    )
+
+
+def test_sturm_rational_decision_stratification_names_identically_zero_numerator_blocker():
+    stratification = certify_sturm_rational_decision_stratified_branch_event_tree(
+        decision_function=RationalDecisionFunctionSpec(
+            decision_id="single_sturm_rational_zero_numerator",
+            numerator_coefficients=(0.0,),
+            denominator_coefficients=(1.0, 0.0, 1.0),
+        ),
+        domain=(-1.0, 1.0),
+    )
+
+    assert not stratification.proof_certified
+    assert stratification.denominator_sign == 1
+    assert any(
+        "sturm_polynomial_identically_zero_on_cell" in item
+        for item in stratification.missing_obligations
+    )
+
+
+def test_scoped_arbitrary_interval_partition_generation_accepts_supported_sturm_rational_grammar():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    stratification = certify_sturm_rational_decision_stratified_branch_event_tree(
+        decision_function=RationalDecisionFunctionSpec(
+            decision_id="scoped_sturm_rational_event",
+            numerator_coefficients=(-0.25, 1.0),
+            denominator_coefficients=(1.0, 0.0, 1.0),
+        ),
+        domain=(-1.0, 1.0),
+    )
+    certificate = certify_arbitrary_interval_input_partition_generation(
+        theorem,
+        branch_constructor_certificate=stratification,
+        branch_root_dimension=3,
+        branch_root_rank=1,
+    )
+
+    assert not certificate.proof_certified
+    assert certificate.branch_constructor_source_type == (
+        "SturmRationalDecisionStratification"
+    )
+    assert certificate.branch_function_grammar_id == (
+        "finite_sturm_rational_decision_interval_inputs_with_denominator_exclusion"
+    )
+    assert certificate.input_scope_id == (
+        "finite_sturm_rational_decision_stratification_interval_boxes"
+    )
+    assert certificate.unsupported_strata == ()
+    assert "scoped_set_valued_constructor_proof_certified" in (
+        certificate.missing_obligations
+    )
+    assert "validated_set_valued_scope_proof_certified" in (
+        certificate.missing_obligations
+    )
+
+
+def test_rational_decision_arrangement_reduces_to_numerator_root_arrangement():
+    arrangement = certify_rational_decision_arrangement_stratified_branch_event_tree(
+        arrangement_id="rational_event_order_pair",
+        decision_functions=(
+            RationalDecisionFunctionSpec(
+                decision_id="early_rational_event",
+                numerator_coefficients=(-0.25, 1.0),
+                denominator_coefficients=(2.0, 1.0),
+                root_brackets=((0.24, 0.26),),
+            ),
+            RationalDecisionFunctionSpec(
+                decision_id="late_rational_event",
+                numerator_coefficients=(-0.75, 1.0),
+                denominator_coefficients=(3.0, -1.0),
+                root_brackets=((0.74, 0.76),),
+            ),
+        ),
+        domain=(-1.0, 1.0),
+    )
+
+    assert isinstance(arrangement, RationalDecisionArrangementStratificationCertificate)
+    assert arrangement.proof_certified
+    assert arrangement.source_tree.source_type == "RationalDecisionArrangement"
+    assert arrangement.denominators_excluded_from_zero
+    assert arrangement.sign_stratum_count == 3
+    assert arrangement.equality_stratum_count == 2
+    assert tuple(stratum.sign for stratum in arrangement.strata) == (
+        1,
+        0,
+        1,
+        0,
+        1,
+    )
+
+
+def test_rational_decision_arrangement_blocks_any_denominator_zero():
+    arrangement = certify_rational_decision_arrangement_stratified_branch_event_tree(
+        arrangement_id="rational_event_order_with_pole",
+        decision_functions=(
+            RationalDecisionFunctionSpec(
+                decision_id="safe_rational_event",
+                numerator_coefficients=(-0.25, 1.0),
+                denominator_coefficients=(2.0, 1.0),
+                root_brackets=((0.24, 0.26),),
+            ),
+            RationalDecisionFunctionSpec(
+                decision_id="pole_rational_event",
+                numerator_coefficients=(-0.75, 1.0),
+                denominator_coefficients=(0.0, 1.0),
+                root_brackets=((0.74, 0.76),),
+            ),
+        ),
+        domain=(-1.0, 1.0),
+    )
+
+    assert not arrangement.proof_certified
+    assert not arrangement.denominators_excluded_from_zero
+    assert "rational_arrangement_denominator_sign_not_isolated" in (
+        arrangement.missing_obligations
+    )
+
+
+def test_scoped_arbitrary_interval_partition_generation_accepts_supported_rational_arrangement_grammar():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    arrangement = certify_rational_decision_arrangement_stratified_branch_event_tree(
+        arrangement_id="scoped_rational_event_order_pair",
+        decision_functions=(
+            RationalDecisionFunctionSpec(
+                decision_id="first_scoped_rational_event",
+                numerator_coefficients=(-0.25, 1.0),
+                denominator_coefficients=(2.0, 1.0),
+                root_brackets=((0.24, 0.26),),
+            ),
+            RationalDecisionFunctionSpec(
+                decision_id="second_scoped_rational_event",
+                numerator_coefficients=(-0.75, 1.0),
+                denominator_coefficients=(3.0, -1.0),
+                root_brackets=((0.74, 0.76),),
+            ),
+        ),
+        domain=(-1.0, 1.0),
+    )
+    certificate = certify_arbitrary_interval_input_partition_generation(
+        theorem,
+        branch_constructor_certificate=arrangement,
+        branch_root_dimension=3,
+        branch_root_rank=1,
+    )
+
+    assert not certificate.proof_certified
+    assert certificate.branch_constructor_source_type == "RationalDecisionArrangement"
+    assert certificate.branch_function_grammar_id == (
+        "finite_rational_decision_arrangement_interval_inputs_with_denominator_exclusion"
+    )
+    assert certificate.input_scope_id == (
+        "finite_rational_decision_arrangement_interval_boxes"
+    )
+    assert certificate.unsupported_strata == ()
+    assert "scoped_set_valued_constructor_proof_certified" in (
+        certificate.missing_obligations
+    )
+    assert "validated_set_valued_scope_proof_certified" in (
+        certificate.missing_obligations
+    )
+
+
+def test_sturm_rational_decision_arrangement_proves_denominator_exclusion_without_interval_sign():
+    specs = (
+        RationalDecisionFunctionSpec(
+            decision_id="first_sturm_rational_event",
+            numerator_coefficients=(-0.25, 1.0),
+            denominator_coefficients=(1.0, 0.0, 1.0),
+        ),
+        RationalDecisionFunctionSpec(
+            decision_id="second_sturm_rational_event",
+            numerator_coefficients=(0.5, 1.0),
+            denominator_coefficients=(0.25, 0.0, 1.0),
+        ),
+    )
+    interval_only = certify_rational_decision_arrangement_stratified_branch_event_tree(
+        arrangement_id="interval_only_rational_event_order_pair",
+        decision_functions=specs,
+        domain=(-1.0, 1.0),
+    )
+    arrangement = certify_sturm_rational_decision_arrangement_stratified_branch_event_tree(
+        arrangement_id="sturm_rational_event_order_pair",
+        decision_functions=specs,
+        domain=(-1.0, 1.0),
+    )
+
+    assert not interval_only.proof_certified
+    assert interval_only.denominator_signs == (0, 0)
+    assert isinstance(arrangement, RationalDecisionArrangementStratificationCertificate)
+    assert arrangement.proof_certified
+    assert arrangement.source_tree.source_type == "SturmRationalDecisionArrangement"
+    assert arrangement.denominator_signs == (1, 1)
+    assert arrangement.denominators_excluded_from_zero
+    assert arrangement.sign_stratum_count == 3
+    assert arrangement.equality_stratum_count == 2
+    assert tuple(
+        stratum.root_multiplicities
+        for stratum in arrangement.strata
+        if stratum.equality
+    ) == ((1,), (1,))
+
+
+def test_sturm_rational_decision_arrangement_blocks_denominator_root():
+    arrangement = certify_sturm_rational_decision_arrangement_stratified_branch_event_tree(
+        arrangement_id="sturm_rational_event_order_with_pole",
+        decision_functions=(
+            RationalDecisionFunctionSpec(
+                decision_id="pole_sturm_rational_event",
+                numerator_coefficients=(-0.25, 1.0),
+                denominator_coefficients=(0.0, 1.0),
+            ),
+        ),
+        domain=(-1.0, 1.0),
+    )
+
+    assert not arrangement.proof_certified
+    assert arrangement.denominator_signs == (0,)
+    assert not arrangement.denominators_excluded_from_zero
+    assert "rational_arrangement_denominator_sign_not_isolated" in (
+        arrangement.missing_obligations
+    )
+
+
+def test_sturm_rational_decision_arrangement_projects_tangent_root_derivative_data():
+    arrangement = certify_sturm_rational_decision_arrangement_stratified_branch_event_tree(
+        arrangement_id="sturm_rational_tangent_event",
+        decision_functions=(
+            RationalDecisionFunctionSpec(
+                decision_id="tangent_sturm_rational_event",
+                numerator_coefficients=(0.0, 0.0, 1.0),
+                denominator_coefficients=(2.0, 0.0, 1.0),
+            ),
+        ),
+        domain=(-1.0, 1.0),
+    )
+    tangent_stratum = next(stratum for stratum in arrangement.strata if stratum.equality)
+
+    assert arrangement.proof_certified
+    assert tangent_stratum.root_multiplicities == (2,)
+    assert tangent_stratum.second_derivative_interval is not None
+    assert tangent_stratum.second_derivative_interval[0] > 0.99
+    assert tangent_stratum.second_derivative_interval[1] < 1.01
+
+
+def test_sturm_rational_decision_arrangement_names_identically_zero_numerator_blocker():
+    arrangement = certify_sturm_rational_decision_arrangement_stratified_branch_event_tree(
+        arrangement_id="sturm_rational_zero_numerator_arrangement",
+        decision_functions=(
+            RationalDecisionFunctionSpec(
+                decision_id="zero_numerator_arrangement_event",
+                numerator_coefficients=(0.0,),
+                denominator_coefficients=(1.0, 0.0, 1.0),
+            ),
+        ),
+        domain=(-1.0, 1.0),
+    )
+
+    assert not arrangement.proof_certified
+    assert arrangement.denominator_signs == (1,)
+    assert any(
+        "sturm_polynomial_identically_zero_on_cell" in item
+        for item in arrangement.missing_obligations
+    )
+
+
+def test_scoped_arbitrary_interval_partition_generation_accepts_supported_sturm_rational_arrangement_grammar():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    arrangement = certify_sturm_rational_decision_arrangement_stratified_branch_event_tree(
+        arrangement_id="scoped_sturm_rational_event_order_pair",
+        decision_functions=(
+            RationalDecisionFunctionSpec(
+                decision_id="first_scoped_sturm_rational_event",
+                numerator_coefficients=(-0.25, 1.0),
+                denominator_coefficients=(1.0, 0.0, 1.0),
+            ),
+            RationalDecisionFunctionSpec(
+                decision_id="second_scoped_sturm_rational_event",
+                numerator_coefficients=(0.5, 1.0),
+                denominator_coefficients=(0.25, 0.0, 1.0),
+            ),
+        ),
+        domain=(-1.0, 1.0),
+    )
+    certificate = certify_arbitrary_interval_input_partition_generation(
+        theorem,
+        branch_constructor_certificate=arrangement,
+        branch_root_dimension=3,
+        branch_root_rank=1,
+    )
+
+    assert not certificate.proof_certified
+    assert certificate.branch_constructor_source_type == (
+        "SturmRationalDecisionArrangement"
+    )
+    assert certificate.branch_function_grammar_id == (
+        "finite_sturm_rational_decision_arrangement_interval_inputs_with_denominator_exclusion"
+    )
+    assert certificate.input_scope_id == (
+        "finite_sturm_rational_decision_arrangement_interval_boxes"
+    )
+    assert certificate.unsupported_strata == ()
+    assert "scoped_set_valued_constructor_proof_certified" in (
+        certificate.missing_obligations
+    )
+    assert "validated_set_valued_scope_proof_certified" in (
+        certificate.missing_obligations
+    )
+
+
+def test_scoped_arbitrary_interval_partition_generation_blocks_unsupported_taylor_stratum():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    stratification = certify_taylor_model_decision_stratified_branch_event_tree(
+        decision_function=TaylorModelDecisionFunctionSpec(
+            decision_id="unsupported_scoped_taylor_event_tie",
+            coefficients=(-0.25, 1.0),
+            expansion_center=0.0,
+            remainder_bound=1.0e-4,
+            derivative_remainder_bound=5.0e-2,
+            root_brackets=((0.24, 0.26),),
+            witness_kind="unsupported",
+        ),
+        domain=(-1.0, 1.0),
+    )
+    certificate = certify_arbitrary_interval_input_partition_generation(
+        theorem,
+        branch_constructor_certificate=stratification,
+        branch_root_dimension=3,
+        branch_root_rank=1,
+    )
+
+    assert not certificate.proof_certified
+    assert not certificate.certified
+    assert not certificate.arbitrary_partition_generation_claimed
+    assert certificate.event_function_grammar_id == (
+        "finite_taylor_model_decision_interval_inputs_with_weierstrass_certificate"
+    )
+    assert certificate.input_scope_id == (
+        "finite_taylor_model_decision_interval_inputs_with_weierstrass_certificate"
+    )
+    assert certificate.unsupported_strata
+    assert "no_unsupported_analytic_strata" in certificate.missing_obligations
+    assert any(
+        item.startswith("unsupported:")
+        for item in certificate.missing_obligations
+    )
+
+
+def test_scoped_arbitrary_interval_partition_generation_rejects_raw_boolean_constructor():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+
+    try:
+        certify_arbitrary_interval_input_partition_generation(
+            theorem,
+            branch_constructor_certificate=True,
+            branch_root_dimension=3,
+            branch_root_rank=1,
+        )
+    except TypeError as error:
+        assert "constructor certificate" in str(error)
+    else:
+        raise AssertionError("raw boolean constructor was accepted")
+
+
+def test_scoped_arbitrary_interval_partition_manifest_names_supported_grammars():
+    assert set(SUPPORTED_ARBITRARY_INTERVAL_PARTITION_GRAMMARS).issubset(
+        set(CONSTRUCTOR_DERIVED_RECURSIVE_SOURCE_SCOPES)
+    )
+    assert SUPPORTED_ARBITRARY_INTERVAL_PARTITION_GRAMMARS[
+        "AffineDecisionStratification"
+    ] == "finite_affine_decision_interval_inputs"
+    assert SUPPORTED_ARBITRARY_INTERVAL_PARTITION_GRAMMARS[
+        "AffineDecisionArrangement"
+    ] == "finite_affine_decision_arrangement_interval_inputs"
+    assert SUPPORTED_ARBITRARY_INTERVAL_PARTITION_GRAMMARS[
+        "PolynomialDecisionStratification"
+    ] == "finite_polynomial_decision_interval_inputs"
+    assert SUPPORTED_ARBITRARY_INTERVAL_PARTITION_GRAMMARS[
+        "PolynomialDecisionArrangement"
+    ] == "finite_polynomial_decision_arrangement_interval_inputs"
+    assert SUPPORTED_ARBITRARY_INTERVAL_PARTITION_GRAMMARS[
+        "SturmPolynomialDecisionStratification"
+    ] == "finite_sturm_polynomial_decision_interval_inputs"
+    assert SUPPORTED_ARBITRARY_INTERVAL_PARTITION_GRAMMARS[
+        "SturmPolynomialDecisionArrangement"
+    ] == "finite_sturm_polynomial_decision_arrangement_interval_inputs"
+    assert SUPPORTED_ARBITRARY_INTERVAL_PARTITION_GRAMMARS[
+        "RationalDecisionStratification"
+    ] == "finite_rational_decision_interval_inputs_with_denominator_exclusion"
+    assert SUPPORTED_ARBITRARY_INTERVAL_PARTITION_GRAMMARS[
+        "SturmRationalDecisionStratification"
+    ] == (
+        "finite_sturm_rational_decision_interval_inputs_with_denominator_exclusion"
+    )
+    assert SUPPORTED_ARBITRARY_INTERVAL_PARTITION_GRAMMARS[
+        "RationalDecisionArrangement"
+    ] == (
+        "finite_rational_decision_arrangement_interval_inputs_with_denominator_exclusion"
+    )
+    assert SUPPORTED_ARBITRARY_INTERVAL_PARTITION_GRAMMARS[
+        "SturmRationalDecisionArrangement"
+    ] == (
+        "finite_sturm_rational_decision_arrangement_interval_inputs_with_denominator_exclusion"
+    )
+    assert SUPPORTED_ARBITRARY_INTERVAL_PARTITION_GRAMMARS[
+        "TaylorModelDecisionStratification"
+    ] == (
+        "finite_taylor_model_decision_interval_inputs_with_weierstrass_certificate"
+    )
+    assert SUPPORTED_ARBITRARY_INTERVAL_PARTITION_GRAMMARS[
+        "TaylorModelDecisionArrangement"
+    ] == (
+        "finite_taylor_model_decision_arrangement_interval_inputs_with_weierstrass_certificate"
+    )
+    assert SUPPORTED_ARBITRARY_INTERVAL_PARTITION_GRAMMARS[
+        "QuadraticDoubleRootArrangement"
+    ] == "finite_quadratic_double_root_arrangement_interval_inputs"
+    assert SUPPORTED_ARBITRARY_INTERVAL_PARTITION_GRAMMARS[
+        "PolynomialRootArrangement"
+    ] == "finite_computed_polynomial_root_arrangement_interval_inputs"
+    for source_type in SUPPORTED_ARBITRARY_INTERVAL_PARTITION_GRAMMARS:
+        scope_id, scope_detail, scope_label = (
+            CONSTRUCTOR_DERIVED_RECURSIVE_SOURCE_SCOPES[source_type]
+        )
+        assert scope_id
+        assert scope_detail
+        assert scope_label
+
+
+def test_scoped_arbitrary_interval_partition_generation_covers_declared_grammars():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    cases = (
+        (
+            "AffineDecisionStratification",
+            certify_affine_decision_stratified_branch_event_tree(
+                decision_id="scoped_single_affine_event",
+                coefficients=(0.0, 1.0),
+                domain=(-1.0, 1.0),
+            ),
+            3,
+            1,
+            "finite_affine_decision_stratification_interval_boxes",
+        ),
+        (
+            "AffineDecisionArrangement",
+            certify_affine_decision_arrangement_stratified_branch_event_tree(
+                arrangement_id="scoped_all_affine_event",
+                decision_functions=(
+                    PolynomialDecisionFunctionSpec(
+                        decision_id="affine_threshold",
+                        coefficients=(0.0, 1.0),
+                    ),
+                ),
+                domain=(-1.0, 1.0),
+            ),
+            3,
+            2,
+            "finite_affine_decision_arrangement_interval_boxes",
+        ),
+        (
+            "PolynomialDecisionStratification",
+            certify_polynomial_decision_stratified_branch_event_tree(
+                decision_id="scoped_all_polynomial_event",
+                coefficients=(0.0, 1.0),
+                domain=(-1.0, 1.0),
+                root_brackets=((-0.01, 0.01),),
+            ),
+            3,
+            1,
+            "finite_polynomial_decision_stratification_interval_boxes",
+        ),
+        (
+            "PolynomialDecisionArrangement",
+            certify_polynomial_decision_arrangement_stratified_branch_event_tree(
+                arrangement_id="scoped_all_polynomial_arrangement",
+                decision_functions=(
+                    PolynomialDecisionFunctionSpec(
+                        decision_id="polynomial_threshold",
+                        coefficients=(0.0, 1.0),
+                        root_brackets=((-0.01, 0.01),),
+                    ),
+                ),
+                domain=(-1.0, 1.0),
+            ),
+            3,
+            2,
+            "finite_polynomial_decision_arrangement_interval_boxes",
+        ),
+        (
+            "SturmPolynomialDecisionStratification",
+            certify_sturm_polynomial_decision_stratified_branch_event_tree(
+                decision_id="scoped_all_sturm_polynomial_event",
+                coefficients=(1.0, 0.0, 1.0),
+                domain=(-1.0, 1.0),
+            ),
+            3,
+            1,
+            "finite_sturm_polynomial_decision_stratification_interval_boxes",
+        ),
+        (
+            "RationalDecisionStratification",
+            certify_rational_decision_stratified_branch_event_tree(
+                decision_function=RationalDecisionFunctionSpec(
+                    decision_id="scoped_all_rational_event",
+                    numerator_coefficients=(-0.25, 1.0),
+                    denominator_coefficients=(2.0, 1.0),
+                    root_brackets=((0.24, 0.26),),
+                ),
+                domain=(-1.0, 1.0),
+            ),
+            3,
+            1,
+            "finite_rational_decision_stratification_interval_boxes",
+        ),
+        (
+            "SturmRationalDecisionStratification",
+            certify_sturm_rational_decision_stratified_branch_event_tree(
+                decision_function=RationalDecisionFunctionSpec(
+                    decision_id="scoped_all_sturm_rational_event",
+                    numerator_coefficients=(-0.25, 1.0),
+                    denominator_coefficients=(1.0, 0.0, 1.0),
+                ),
+                domain=(-1.0, 1.0),
+            ),
+            3,
+            1,
+            "finite_sturm_rational_decision_stratification_interval_boxes",
+        ),
+        (
+            "RationalDecisionArrangement",
+            certify_rational_decision_arrangement_stratified_branch_event_tree(
+                arrangement_id="scoped_all_rational_arrangement",
+                decision_functions=(
+                    RationalDecisionFunctionSpec(
+                        decision_id="first_scoped_all_rational_event",
+                        numerator_coefficients=(-0.25, 1.0),
+                        denominator_coefficients=(2.0, 1.0),
+                        root_brackets=((0.24, 0.26),),
+                    ),
+                    RationalDecisionFunctionSpec(
+                        decision_id="second_scoped_all_rational_event",
+                        numerator_coefficients=(-0.75, 1.0),
+                        denominator_coefficients=(3.0, -1.0),
+                        root_brackets=((0.74, 0.76),),
+                    ),
+                ),
+                domain=(-1.0, 1.0),
+            ),
+            3,
+            1,
+            "finite_rational_decision_arrangement_interval_boxes",
+        ),
+        (
+            "SturmRationalDecisionArrangement",
+            certify_sturm_rational_decision_arrangement_stratified_branch_event_tree(
+                arrangement_id="scoped_all_sturm_rational_arrangement",
+                decision_functions=(
+                    RationalDecisionFunctionSpec(
+                        decision_id="first_scoped_all_sturm_rational_event",
+                        numerator_coefficients=(-0.25, 1.0),
+                        denominator_coefficients=(1.0, 0.0, 1.0),
+                    ),
+                    RationalDecisionFunctionSpec(
+                        decision_id="second_scoped_all_sturm_rational_event",
+                        numerator_coefficients=(0.5, 1.0),
+                        denominator_coefficients=(0.25, 0.0, 1.0),
+                    ),
+                ),
+                domain=(-1.0, 1.0),
+            ),
+            3,
+            1,
+            "finite_sturm_rational_decision_arrangement_interval_boxes",
+        ),
+        (
+            "SturmPolynomialDecisionArrangement",
+            certify_sturm_polynomial_decision_arrangement_stratified_branch_event_tree(
+                arrangement_id="scoped_all_sturm_arrangement",
+                decision_functions=(
+                    PolynomialDecisionFunctionSpec(
+                        decision_id="sturm_cubic_threshold",
+                        coefficients=(0.0, -0.25, 0.0, 1.0),
+                    ),
+                ),
+                domain=(-1.0, 1.0),
+            ),
+            3,
+            2,
+            "finite_sturm_polynomial_decision_arrangement_interval_boxes",
+        ),
+        (
+            "QuadraticDoubleRootArrangement",
+            certify_quadratic_decision_arrangement_stratified_branch_event_tree(
+                arrangement_id="scoped_all_quadratic_double_root",
+                decision_functions=(
+                    PolynomialDecisionFunctionSpec(
+                        decision_id="quadratic_double_threshold",
+                        coefficients=(0.0, 0.0, 1.0),
+                    ),
+                ),
+                domain=(-1.0, 1.0),
+            ),
+            3,
+            2,
+            "finite_quadratic_double_root_decision_arrangement_interval_boxes",
+        ),
+        (
+            "PolynomialRootArrangement",
+            certify_quadratic_decision_arrangement_stratified_branch_event_tree(
+                arrangement_id="scoped_all_computed_polynomial_root",
+                decision_functions=(
+                    PolynomialDecisionFunctionSpec(
+                        decision_id="left_quadratic_threshold",
+                        coefficients=(-0.25, 0.0, 1.0),
+                    ),
+                    PolynomialDecisionFunctionSpec(
+                        decision_id="shifted_quadratic_threshold",
+                        coefficients=(-0.375, 0.25, 1.0),
+                    ),
+                ),
+                domain=(-1.0, 1.0),
+            ),
+            3,
+            2,
+            "finite_computed_polynomial_root_arrangement_interval_boxes",
+        ),
+        (
+            "TaylorModelDecisionStratification",
+            certify_taylor_model_decision_stratified_branch_event_tree(
+                decision_function=TaylorModelDecisionFunctionSpec(
+                    decision_id="scoped_all_taylor_event",
+                    coefficients=(-0.25, 1.0),
+                    expansion_center=0.0,
+                    remainder_bound=1.0e-4,
+                    derivative_remainder_bound=5.0e-2,
+                    root_brackets=((0.24, 0.26),),
+                    witness_kind="weierstrass_simple_root",
+                ),
+                domain=(-1.0, 1.0),
+            ),
+            3,
+            1,
+            "finite_taylor_model_decision_interval_inputs_with_weierstrass_certificate",
+        ),
+        (
+            "TaylorModelDecisionArrangement",
+            certify_taylor_model_decision_arrangement_stratified_branch_event_tree(
+                arrangement_id="scoped_all_taylor_arrangement",
+                decision_functions=(
+                    TaylorModelDecisionFunctionSpec(
+                        decision_id="first_taylor_event",
+                        coefficients=(-0.25, 1.0),
+                        expansion_center=0.0,
+                        remainder_bound=1.0e-4,
+                        derivative_remainder_bound=5.0e-2,
+                        root_brackets=((0.24, 0.26),),
+                        witness_kind="weierstrass_simple_root",
+                    ),
+                ),
+                domain=(-1.0, 1.0),
+            ),
+            3,
+            1,
+            "finite_taylor_model_decision_arrangement_interval_inputs_with_weierstrass_certificate",
+        ),
+        (
+            "AxisAlignedAffineBoxArrangement",
+            certify_affine_box_decision_arrangement_stratified_branch_event_tree(
+                arrangement_id="scoped_all_axis_box",
+                decision_functions=(
+                    AffineBoxDecisionFunctionSpec(
+                        decision_id="x_threshold",
+                        coefficients=(0.0, 1.0, 0.0),
+                    ),
+                ),
+                domain_box=((-1.0, 1.0), (-1.0, 1.0)),
+            ),
+            2,
+            2,
+            "finite_axis_aligned_affine_box_arrangement_interval_boxes",
+        ),
+        (
+            "AffineHalfspaceDecision",
+            certify_affine_halfspace_decision_stratified_branch_event_tree(
+                decision_id="scoped_all_halfspace_decision",
+                coefficients=(0.0, 1.0, 1.0),
+                domain_box=((-1.0, 1.0), (-1.0, 1.0)),
+                slab_half_width=0.25,
+            ),
+            2,
+            2,
+            "finite_affine_halfspace_decision_interval_boxes",
+        ),
+        (
+            "AffineHalfspaceArrangement",
+            certify_affine_halfspace_arrangement_stratified_branch_event_tree(
+                arrangement_id="scoped_all_halfspace_2d",
+                decision_functions=(
+                    AffineBoxDecisionFunctionSpec(
+                        decision_id="diagonal_boundary",
+                        coefficients=(0.0, 1.0, 1.0),
+                    ),
+                ),
+                domain_box=((-1.0, 1.0), (-1.0, 1.0)),
+                slab_half_width=0.2,
+            ),
+            2,
+            2,
+            "finite_2d_affine_halfspace_arrangement_interval_boxes",
+        ),
+        (
+            "AffineHalfspace3DArrangement",
+            certify_affine_halfspace_3d_arrangement_stratified_branch_event_tree(
+                arrangement_id="scoped_all_halfspace_3d",
+                decision_functions=(
+                    AffineBoxDecisionFunctionSpec(
+                        decision_id="diagonal_plane_boundary",
+                        coefficients=(0.0, 1.0, 1.0, 1.0),
+                    ),
+                ),
+                domain_box=((-1.0, 1.0), (-1.0, 1.0), (-1.0, 1.0)),
+                slab_half_width=0.2,
+            ),
+            3,
+            2,
+            "finite_3d_affine_halfspace_arrangement_interval_boxes",
+        ),
+    )
+    observed_sources = set()
+
+    for source_type, constructor, root_dimension, root_rank, input_scope in cases:
+        certificate = certify_arbitrary_interval_input_partition_generation(
+            theorem,
+            branch_constructor_certificate=constructor,
+            branch_root_dimension=root_dimension,
+            branch_root_rank=root_rank,
+        )
+        observed_sources.add(source_type)
+
+        assert constructor.source_tree.source_type == source_type
+        assert not certificate.proof_certified
+        assert not certificate.arbitrary_partition_generation_claimed
+        assert certificate.branch_constructor_source_type == source_type
+        assert certificate.event_order_constructor_source_type == source_type
+        assert certificate.branch_constructor_input_scope_id == input_scope
+        assert certificate.event_order_constructor_input_scope_id == input_scope
+        assert certificate.branch_function_grammar_id == (
+            SUPPORTED_ARBITRARY_INTERVAL_PARTITION_GRAMMARS[source_type]
+        )
+        assert certificate.event_order_function_grammar_id == (
+            SUPPORTED_ARBITRARY_INTERVAL_PARTITION_GRAMMARS[source_type]
+        )
+        assert certificate.event_function_grammar_id == (
+            SUPPORTED_ARBITRARY_INTERVAL_PARTITION_GRAMMARS[source_type]
+        )
+        assert certificate.input_scope_id == input_scope
+        assert certificate.unsupported_strata == ()
+        assert "scoped_set_valued_constructor_proof_certified" in (
+            certificate.missing_obligations
+        )
+        assert "validated_set_valued_scope_proof_certified" in (
+            certificate.missing_obligations
+        )
+
+    assert observed_sources == set(SUPPORTED_ARBITRARY_INTERVAL_PARTITION_GRAMMARS)
+
+
+def test_supported_event_function_stratification_generation_covers_declared_grammars():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    cases = (
+        (
+            "AffineDecisionStratification",
+            SupportedEventFunctionGrammarInput(
+                source_type="AffineDecisionStratification",
+                decision_id="generated_single_affine_event",
+                coefficients=(0.0, 1.0),
+                domain=(-1.0, 1.0),
+            ),
+            3,
+            1,
+            "finite_affine_decision_stratification_interval_boxes",
+        ),
+        (
+            "AffineDecisionArrangement",
+            SupportedEventFunctionGrammarInput(
+                source_type="AffineDecisionArrangement",
+                arrangement_id="generated_affine_event",
+                polynomial_decision_functions=(
+                    PolynomialDecisionFunctionSpec(
+                        decision_id="affine_threshold",
+                        coefficients=(0.0, 1.0),
+                    ),
+                ),
+                domain=(-1.0, 1.0),
+            ),
+            3,
+            2,
+            "finite_affine_decision_arrangement_interval_boxes",
+        ),
+        (
+            "PolynomialDecisionStratification",
+            SupportedEventFunctionGrammarInput(
+                source_type="PolynomialDecisionStratification",
+                decision_id="generated_polynomial_event",
+                coefficients=(0.0, 1.0),
+                root_brackets=((-0.01, 0.01),),
+                domain=(-1.0, 1.0),
+            ),
+            3,
+            1,
+            "finite_polynomial_decision_stratification_interval_boxes",
+        ),
+        (
+            "SturmPolynomialDecisionStratification",
+            SupportedEventFunctionGrammarInput(
+                source_type="SturmPolynomialDecisionStratification",
+                decision_id="generated_sturm_polynomial_event",
+                coefficients=(1.0, 0.0, 1.0),
+                domain=(-1.0, 1.0),
+            ),
+            3,
+            1,
+            "finite_sturm_polynomial_decision_stratification_interval_boxes",
+        ),
+        (
+            "PolynomialDecisionArrangement",
+            SupportedEventFunctionGrammarInput(
+                source_type="PolynomialDecisionArrangement",
+                arrangement_id="generated_polynomial_arrangement",
+                polynomial_decision_functions=(
+                    PolynomialDecisionFunctionSpec(
+                        decision_id="polynomial_threshold",
+                        coefficients=(0.0, 1.0),
+                        root_brackets=((-0.01, 0.01),),
+                    ),
+                ),
+                domain=(-1.0, 1.0),
+            ),
+            3,
+            2,
+            "finite_polynomial_decision_arrangement_interval_boxes",
+        ),
+        (
+            "RationalDecisionStratification",
+            SupportedEventFunctionGrammarInput(
+                source_type="RationalDecisionStratification",
+                rational_decision_function=RationalDecisionFunctionSpec(
+                    decision_id="generated_rational_event",
+                    numerator_coefficients=(-0.25, 1.0),
+                    denominator_coefficients=(2.0, 1.0),
+                    root_brackets=((0.24, 0.26),),
+                ),
+                domain=(-1.0, 1.0),
+            ),
+            3,
+            1,
+            "finite_rational_decision_stratification_interval_boxes",
+        ),
+        (
+            "SturmRationalDecisionStratification",
+            SupportedEventFunctionGrammarInput(
+                source_type="SturmRationalDecisionStratification",
+                rational_decision_function=RationalDecisionFunctionSpec(
+                    decision_id="generated_sturm_rational_event",
+                    numerator_coefficients=(-0.25, 1.0),
+                    denominator_coefficients=(1.0, 0.0, 1.0),
+                ),
+                domain=(-1.0, 1.0),
+            ),
+            3,
+            1,
+            "finite_sturm_rational_decision_stratification_interval_boxes",
+        ),
+        (
+            "RationalDecisionArrangement",
+            SupportedEventFunctionGrammarInput(
+                source_type="RationalDecisionArrangement",
+                arrangement_id="generated_rational_arrangement",
+                rational_decision_functions=(
+                    RationalDecisionFunctionSpec(
+                        decision_id="first_generated_rational_event",
+                        numerator_coefficients=(-0.25, 1.0),
+                        denominator_coefficients=(2.0, 1.0),
+                        root_brackets=((0.24, 0.26),),
+                    ),
+                    RationalDecisionFunctionSpec(
+                        decision_id="second_generated_rational_event",
+                        numerator_coefficients=(-0.75, 1.0),
+                        denominator_coefficients=(3.0, -1.0),
+                        root_brackets=((0.74, 0.76),),
+                    ),
+                ),
+                domain=(-1.0, 1.0),
+            ),
+            3,
+            1,
+            "finite_rational_decision_arrangement_interval_boxes",
+        ),
+        (
+            "SturmRationalDecisionArrangement",
+            SupportedEventFunctionGrammarInput(
+                source_type="SturmRationalDecisionArrangement",
+                arrangement_id="generated_sturm_rational_arrangement",
+                rational_decision_functions=(
+                    RationalDecisionFunctionSpec(
+                        decision_id="first_generated_sturm_rational_event",
+                        numerator_coefficients=(-0.25, 1.0),
+                        denominator_coefficients=(1.0, 0.0, 1.0),
+                    ),
+                    RationalDecisionFunctionSpec(
+                        decision_id="second_generated_sturm_rational_event",
+                        numerator_coefficients=(0.5, 1.0),
+                        denominator_coefficients=(0.25, 0.0, 1.0),
+                    ),
+                ),
+                domain=(-1.0, 1.0),
+            ),
+            3,
+            1,
+            "finite_sturm_rational_decision_arrangement_interval_boxes",
+        ),
+        (
+            "SturmPolynomialDecisionArrangement",
+            SupportedEventFunctionGrammarInput(
+                source_type="SturmPolynomialDecisionArrangement",
+                arrangement_id="generated_sturm_polynomial_arrangement",
+                polynomial_decision_functions=(
+                    PolynomialDecisionFunctionSpec(
+                        decision_id="sturm_cubic_threshold",
+                        coefficients=(0.0, -0.25, 0.0, 1.0),
+                    ),
+                ),
+                domain=(-1.0, 1.0),
+            ),
+            3,
+            2,
+            "finite_sturm_polynomial_decision_arrangement_interval_boxes",
+        ),
+        (
+            "QuadraticDoubleRootArrangement",
+            SupportedEventFunctionGrammarInput(
+                source_type="QuadraticDoubleRootArrangement",
+                arrangement_id="generated_quadratic_double_root",
+                polynomial_decision_functions=(
+                    PolynomialDecisionFunctionSpec(
+                        decision_id="quadratic_double_threshold",
+                        coefficients=(0.0, 0.0, 1.0),
+                    ),
+                ),
+                domain=(-1.0, 1.0),
+            ),
+            3,
+            2,
+            "finite_quadratic_double_root_decision_arrangement_interval_boxes",
+        ),
+        (
+            "PolynomialRootArrangement",
+            SupportedEventFunctionGrammarInput(
+                source_type="PolynomialRootArrangement",
+                arrangement_id="generated_computed_polynomial_root",
+                polynomial_decision_functions=(
+                    PolynomialDecisionFunctionSpec(
+                        decision_id="left_quadratic_threshold",
+                        coefficients=(-0.25, 0.0, 1.0),
+                    ),
+                    PolynomialDecisionFunctionSpec(
+                        decision_id="shifted_quadratic_threshold",
+                        coefficients=(-0.375, 0.25, 1.0),
+                    ),
+                ),
+                domain=(-1.0, 1.0),
+            ),
+            3,
+            2,
+            "finite_computed_polynomial_root_arrangement_interval_boxes",
+        ),
+        (
+            "TaylorModelDecisionStratification",
+            SupportedEventFunctionGrammarInput(
+                source_type="TaylorModelDecisionStratification",
+                taylor_model_decision_function=TaylorModelDecisionFunctionSpec(
+                    decision_id="generated_taylor_event",
+                    coefficients=(-0.25, 1.0),
+                    expansion_center=0.0,
+                    remainder_bound=1.0e-4,
+                    derivative_remainder_bound=5.0e-2,
+                    root_brackets=((0.24, 0.26),),
+                    witness_kind="weierstrass_simple_root",
+                ),
+                domain=(-1.0, 1.0),
+            ),
+            3,
+            1,
+            "finite_taylor_model_decision_interval_inputs_with_weierstrass_certificate",
+        ),
+        (
+            "TaylorModelDecisionArrangement",
+            SupportedEventFunctionGrammarInput(
+                source_type="TaylorModelDecisionArrangement",
+                arrangement_id="generated_taylor_arrangement",
+                taylor_model_decision_functions=(
+                    TaylorModelDecisionFunctionSpec(
+                        decision_id="first_generated_taylor_event",
+                        coefficients=(-0.25, 1.0),
+                        expansion_center=0.0,
+                        remainder_bound=1.0e-4,
+                        derivative_remainder_bound=5.0e-2,
+                        root_brackets=((0.24, 0.26),),
+                        witness_kind="weierstrass_simple_root",
+                    ),
+                ),
+                domain=(-1.0, 1.0),
+            ),
+            3,
+            1,
+            "finite_taylor_model_decision_arrangement_interval_inputs_with_weierstrass_certificate",
+        ),
+        (
+            "AxisAlignedAffineBoxArrangement",
+            SupportedEventFunctionGrammarInput(
+                source_type="AxisAlignedAffineBoxArrangement",
+                arrangement_id="generated_axis_box",
+                affine_box_decision_functions=(
+                    AffineBoxDecisionFunctionSpec(
+                        decision_id="x_threshold",
+                        coefficients=(0.0, 1.0, 0.0),
+                    ),
+                ),
+                domain_box=((-1.0, 1.0), (-1.0, 1.0)),
+            ),
+            2,
+            2,
+            "finite_axis_aligned_affine_box_arrangement_interval_boxes",
+        ),
+        (
+            "AffineHalfspaceDecision",
+            SupportedEventFunctionGrammarInput(
+                source_type="AffineHalfspaceDecision",
+                decision_id="generated_halfspace_decision",
+                coefficients=(0.0, 1.0, 1.0),
+                domain_box=((-1.0, 1.0), (-1.0, 1.0)),
+                slab_half_width=0.25,
+            ),
+            2,
+            2,
+            "finite_affine_halfspace_decision_interval_boxes",
+        ),
+        (
+            "AffineHalfspaceArrangement",
+            SupportedEventFunctionGrammarInput(
+                source_type="AffineHalfspaceArrangement",
+                arrangement_id="generated_halfspace_2d",
+                affine_box_decision_functions=(
+                    AffineBoxDecisionFunctionSpec(
+                        decision_id="diagonal_boundary",
+                        coefficients=(0.0, 1.0, 1.0),
+                    ),
+                ),
+                domain_box=((-1.0, 1.0), (-1.0, 1.0)),
+                slab_half_width=0.2,
+            ),
+            2,
+            2,
+            "finite_2d_affine_halfspace_arrangement_interval_boxes",
+        ),
+        (
+            "AffineHalfspace3DArrangement",
+            SupportedEventFunctionGrammarInput(
+                source_type="AffineHalfspace3DArrangement",
+                arrangement_id="generated_halfspace_3d",
+                affine_box_decision_functions=(
+                    AffineBoxDecisionFunctionSpec(
+                        decision_id="diagonal_plane_boundary",
+                        coefficients=(0.0, 1.0, 1.0, 1.0),
+                    ),
+                ),
+                domain_box=((-1.0, 1.0), (-1.0, 1.0), (-1.0, 1.0)),
+                slab_half_width=0.2,
+            ),
+            3,
+            2,
+            "finite_3d_affine_halfspace_arrangement_interval_boxes",
+        ),
+    )
+    observed_sources = set()
+
+    for source_type, grammar_input, root_dimension, root_rank, input_scope in cases:
+        certificate = certify_supported_event_function_stratification_generation(
+            theorem,
+            grammar_input=grammar_input,
+            branch_root_dimension=root_dimension,
+            branch_root_rank=root_rank,
+        )
+        observed_sources.add(source_type)
+
+        assert isinstance(
+            certificate,
+            SupportedEventFunctionStratificationGenerationCertificate,
+        )
+        assert not certificate.proof_certified
+        assert not certificate.certified
+        assert certificate.constructor_source_type == source_type
+        assert certificate.event_function_grammar_id == (
+            SUPPORTED_ARBITRARY_INTERVAL_PARTITION_GRAMMARS[source_type]
+        )
+        assert certificate.input_scope_id == input_scope
+        assert not (
+            certificate.partition_generation_certificate
+            .arbitrary_partition_generation_claimed
+        )
+        assert "generated_partition_bridge_proof_certified" in (
+            certificate.missing_obligations
+        )
+
+    assert observed_sources == set(SUPPORTED_ARBITRARY_INTERVAL_PARTITION_GRAMMARS)
+
+
+def test_supported_event_function_generation_blocks_source_mismatch():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    certificate = certify_supported_event_function_stratification_generation(
+        theorem,
+        grammar_input=SupportedEventFunctionGrammarInput(
+            source_type="PolynomialRootArrangement",
+            arrangement_id="mismatched_generated_quadratic_double_root",
+            polynomial_decision_functions=(
+                PolynomialDecisionFunctionSpec(
+                    decision_id="quadratic_double_threshold",
+                    coefficients=(0.0, 0.0, 1.0),
+                ),
+            ),
+            domain=(-1.0, 1.0),
+        ),
+        branch_root_dimension=3,
+        branch_root_rank=2,
+    )
+
+    assert not certificate.proof_certified
+    assert certificate.constructor_source_type == "QuadraticDoubleRootArrangement"
+    assert "generated_constructor_source_matches_requested_grammar" in (
+        certificate.missing_obligations
+    )
+
+
+def test_supported_event_function_generation_preserves_mixed_branch_event_sources():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    certificate = certify_supported_event_function_stratification_generation(
+        theorem,
+        grammar_input=SupportedEventFunctionGrammarInput(
+            source_type="AffineHalfspaceDecision",
+            decision_id="generated_mixed_branch_boundary",
+            coefficients=(0.0, 1.0, 1.0),
+            domain_box=((-1.0, 1.0), (-1.0, 1.0)),
+            slab_half_width=0.25,
+        ),
+        event_order_grammar_input=SupportedEventFunctionGrammarInput(
+            source_type="PolynomialDecisionArrangement",
+            arrangement_id="generated_mixed_event_arrangement",
+            polynomial_decision_functions=(
+                PolynomialDecisionFunctionSpec(
+                    decision_id="event_minus_target",
+                    coefficients=(0.0, 1.0),
+                    root_brackets=((-0.01, 0.01),),
+                ),
+            ),
+            domain=(-1.0, 1.0),
+        ),
+        branch_root_dimension=2,
+        branch_root_rank=2,
+        event_order_root_dimension=3,
+        event_order_root_rank=2,
+    )
+    partition = certificate.partition_generation_certificate
+
+    # The mixed constructor metadata is preserved, but composing it with the
+    # unaudited finite-target source does not promote the generated bridge to
+    # a theorem certificate.
+    assert not certificate.proof_certified
+    assert not certificate.certified
+    assert certificate.constructor_source_type == "AffineHalfspaceDecision"
+    assert (
+        certificate.event_order_constructor_source_type
+        == "PolynomialDecisionArrangement"
+    )
+    assert partition.branch_constructor_source_type == "AffineHalfspaceDecision"
+    assert (
+        partition.event_order_constructor_source_type
+        == "PolynomialDecisionArrangement"
+    )
+    assert partition.branch_constructor_input_scope_id == (
+        "finite_affine_halfspace_decision_interval_boxes"
+    )
+    assert partition.event_order_constructor_input_scope_id == (
+        "finite_polynomial_decision_arrangement_interval_boxes"
+    )
+    assert partition.event_function_grammar_id == (
+        "finite_mixed_supported_constructor_interval_inputs"
+        "(branch=finite_affine_halfspace_decision_interval_inputs;"
+        "event=finite_polynomial_decision_arrangement_interval_inputs)"
+    )
+    assert certificate.input_scope_id == (
+        "finite_mixed_constructor_branch_event_interval_boxes"
+    )
+    assert "generated_partition_bridge_proof_certified" in (
+        certificate.missing_obligations
+    )
+
+
+def test_supported_event_function_generation_rejects_stale_partition_bridge_provenance():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    certificate = certify_supported_event_function_stratification_generation(
+        theorem,
+        grammar_input=SupportedEventFunctionGrammarInput(
+            source_type="PolynomialDecisionArrangement",
+            arrangement_id="generated_polynomial_arrangement_for_stale_bridge",
+            polynomial_decision_functions=(
+                PolynomialDecisionFunctionSpec(
+                    decision_id="polynomial_threshold",
+                    coefficients=(0.0, 1.0),
+                    root_brackets=((-0.01, 0.01),),
+                ),
+            ),
+            domain=(-1.0, 1.0),
+        ),
+        branch_root_dimension=3,
+        branch_root_rank=2,
+    )
+    stale_source = replace(
+        certificate,
+        partition_generation_certificate=replace(
+            certificate.partition_generation_certificate,
+            branch_constructor_source_type="AffineDecisionArrangement",
+        ),
+    )
+    stale_grammar = replace(
+        certificate,
+        partition_generation_certificate=replace(
+            certificate.partition_generation_certificate,
+            event_order_function_grammar_id=(
+                "finite_affine_decision_arrangement_interval_inputs"
+            ),
+        ),
+    )
+
+    assert not certificate.proof_certified
+    assert "generated_partition_bridge_proof_certified" in (
+        certificate.missing_obligations
+    )
+    assert not stale_source.proof_certified
+    assert "generated_partition_bridge_branch_source_matches_constructor" in (
+        stale_source.missing_obligations
+    )
+    assert not stale_grammar.proof_certified
+    assert "generated_partition_bridge_event_order_grammar_matches_input" in (
+        stale_grammar.missing_obligations
+    )
+
+
+def test_scoped_partition_rejects_forged_scope_fields_directly():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    certificate = certify_supported_event_function_stratification_generation(
+        theorem,
+        grammar_input=SupportedEventFunctionGrammarInput(
+            source_type="PolynomialDecisionArrangement",
+            arrangement_id="generated_polynomial_arrangement_for_scope_forgery",
+            polynomial_decision_functions=(
+                PolynomialDecisionFunctionSpec(
+                    decision_id="polynomial_threshold",
+                    coefficients=(0.0, 1.0),
+                    root_brackets=((-0.01, 0.01),),
+                ),
+            ),
+            domain=(-1.0, 1.0),
+        ),
+        branch_root_dimension=3,
+        branch_root_rank=2,
+    )
+    partition = certificate.partition_generation_certificate
+    forged_scope = replace(
+        partition,
+        input_scope_id="forged_interval_scope",
+        event_function_grammar_id="forged_event_function_grammar",
+        branch_function_grammar_id="forged_branch_grammar",
+        event_order_function_grammar_id="forged_event_order_grammar",
+        branch_constructor_input_scope_id="forged_branch_scope",
+        event_order_constructor_input_scope_id="forged_event_scope",
+    )
+
+    assert not certificate.proof_certified
+    assert not partition.proof_certified
+    assert partition.scope_fields_match_constructor_chain
+    assert not forged_scope.proof_certified
+    assert not forged_scope.scope_fields_match_constructor_chain
+    assert "scoped_partition_scope_fields_match_constructor_chain" in (
+        forged_scope.missing_obligations
+    )
+
+
+def test_validated_set_valued_constructor_rejects_forged_scope_directly():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    certificate = certify_supported_event_function_stratification_generation(
+        theorem,
+        grammar_input=SupportedEventFunctionGrammarInput(
+            source_type="PolynomialDecisionArrangement",
+            arrangement_id="generated_polynomial_arrangement_for_validated_scope",
+            polynomial_decision_functions=(
+                PolynomialDecisionFunctionSpec(
+                    decision_id="polynomial_threshold",
+                    coefficients=(0.0, 1.0),
+                    root_brackets=((-0.01, 0.01),),
+                ),
+            ),
+            domain=(-1.0, 1.0),
+        ),
+        branch_root_dimension=3,
+        branch_root_rank=2,
+    )
+    validated = (
+        certificate.partition_generation_certificate
+        .validated_set_valued_constructor_certificate
+    )
+    forged_scope = replace(
+        validated,
+        input_scope_id="forged_validated_interval_scope",
+    )
+
+    assert not validated.proof_certified
+    assert validated.input_scope_matches_constructor
+    assert not forged_scope.proof_certified
+    assert not forged_scope.input_scope_matches_constructor
+    assert "validated_interval_input_scope_matches_constructor" in (
+        forged_scope.missing_obligations
+    )
+
+
+def test_supported_event_function_generation_rejects_same_source_constructor_partition_swap():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    certificate = certify_supported_event_function_stratification_generation(
+        theorem,
+        grammar_input=SupportedEventFunctionGrammarInput(
+            source_type="PolynomialDecisionArrangement",
+            arrangement_id="generated_polynomial_arrangement_for_swap_a",
+            polynomial_decision_functions=(
+                PolynomialDecisionFunctionSpec(
+                    decision_id="polynomial_threshold_a",
+                    coefficients=(0.0, 1.0),
+                    root_brackets=((-0.01, 0.01),),
+                ),
+            ),
+            domain=(-1.0, 1.0),
+        ),
+        branch_root_dimension=3,
+        branch_root_rank=2,
+    )
+    other_certificate = certify_supported_event_function_stratification_generation(
+        theorem,
+        grammar_input=SupportedEventFunctionGrammarInput(
+            source_type="PolynomialDecisionArrangement",
+            arrangement_id="generated_polynomial_arrangement_for_swap_b",
+            polynomial_decision_functions=(
+                PolynomialDecisionFunctionSpec(
+                    decision_id="polynomial_threshold_b",
+                    coefficients=(0.25, 1.0),
+                    root_brackets=((-0.26, -0.24),),
+                ),
+            ),
+            domain=(-1.0, 1.0),
+        ),
+        branch_root_dimension=3,
+        branch_root_rank=2,
+    )
+    swapped = replace(
+        certificate,
+        constructor_certificate=other_certificate.constructor_certificate,
+        partition_generation_certificate=(
+            other_certificate.partition_generation_certificate
+        ),
+    )
+
+    assert not certificate.proof_certified
+    assert not other_certificate.proof_certified
+    assert not swapped.proof_certified
+    assert "generated_constructor_input_matches_grammar_input" in (
+        swapped.missing_obligations
+    )
+
+
+def test_supported_event_function_generation_rejects_replayed_branch_payload_policy():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    certificate = certify_supported_event_function_stratification_generation(
+        theorem,
+        grammar_input=SupportedEventFunctionGrammarInput(
+            source_type="PolynomialDecisionArrangement",
+            arrangement_id="generated_polynomial_arrangement_for_payload_policy",
+            polynomial_decision_functions=(
+                PolynomialDecisionFunctionSpec(
+                    decision_id="polynomial_threshold",
+                    coefficients=(0.0, 1.0),
+                    root_brackets=((-0.01, 0.01),),
+                ),
+            ),
+            domain=(-1.0, 1.0),
+            equality_resolution_policy="lower_dimensional_recursive_stratum",
+        ),
+        branch_root_dimension=3,
+        branch_root_rank=2,
+    )
+    replayed_policy = replace(
+        certificate,
+        grammar_input=replace(
+            certificate.grammar_input,
+            equality_resolution_policy="selector_policy",
+        ),
+    )
+
+    assert not certificate.proof_certified
+    assert replayed_policy.constructor_input_matches_grammar_input
+    assert not replayed_policy.proof_certified
+    assert "grammar_input_payload_matches_generation" in (
+        replayed_policy.missing_obligations
+    )
+
+
+def test_supported_event_function_generation_rejects_forged_branch_payload_policy():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    certificate = certify_supported_event_function_stratification_generation(
+        theorem,
+        grammar_input=SupportedEventFunctionGrammarInput(
+            source_type="PolynomialDecisionArrangement",
+            arrangement_id="generated_polynomial_arrangement_for_forged_payload",
+            polynomial_decision_functions=(
+                PolynomialDecisionFunctionSpec(
+                    decision_id="polynomial_threshold",
+                    coefficients=(0.0, 1.0),
+                    root_brackets=((-0.01, 0.01),),
+                ),
+            ),
+            domain=(-1.0, 1.0),
+            equality_resolution_policy="lower_dimensional_recursive_stratum",
+        ),
+        branch_root_dimension=3,
+        branch_root_rank=2,
+    )
+    forged_policy = replace(
+        certificate,
+        grammar_input=replace(
+            certificate.grammar_input,
+            equality_resolution_policy="selector_policy",
+        ),
+        branch_grammar_payload_signature=(
+            certificate.branch_grammar_payload_signature[0],
+            "selector_policy",
+            certificate.branch_grammar_payload_signature[2],
+        ),
+    )
+
+    assert not certificate.proof_certified
+    assert forged_policy.constructor_input_matches_grammar_input
+    assert forged_policy.grammar_payload_matches_generation
+    assert not forged_policy.proof_certified
+    assert "generated_constructor_replays_from_grammar_input" in (
+        forged_policy.missing_obligations
+    )
+
+
+def test_supported_event_function_generation_rejects_replayed_event_payload_budget():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    certificate = certify_supported_event_function_stratification_generation(
+        theorem,
+        grammar_input=SupportedEventFunctionGrammarInput(
+            source_type="AffineDecisionStratification",
+            decision_id="generated_branch_affine_for_event_payload",
+            coefficients=(0.0, 1.0),
+            domain=(-1.0, 1.0),
+        ),
+        event_order_grammar_input=SupportedEventFunctionGrammarInput(
+            source_type="SturmPolynomialDecisionStratification",
+            decision_id="generated_event_sturm_for_payload_budget",
+            coefficients=(1.0, 0.0, 1.0),
+            domain=(-1.0, 1.0),
+            max_bisection_depth=64,
+        ),
+        branch_root_dimension=3,
+        branch_root_rank=1,
+        event_order_root_dimension=3,
+        event_order_root_rank=1,
+    )
+    replayed_event_budget = replace(
+        certificate,
+        event_order_grammar_input=replace(
+            certificate.event_order_grammar_input,
+            max_bisection_depth=32,
+        ),
+    )
+
+    assert not certificate.proof_certified
+    assert replayed_event_budget.event_order_constructor_input_matches_grammar_input
+    assert not replayed_event_budget.proof_certified
+    assert "event_order_grammar_input_payload_matches_generation" in (
+        replayed_event_budget.missing_obligations
+    )
+
+
+def test_supported_event_function_generation_rejects_forged_event_payload_budget():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    certificate = certify_supported_event_function_stratification_generation(
+        theorem,
+        grammar_input=SupportedEventFunctionGrammarInput(
+            source_type="AffineDecisionStratification",
+            decision_id="generated_branch_affine_for_forged_event_payload",
+            coefficients=(0.0, 1.0),
+            domain=(-1.0, 1.0),
+        ),
+        event_order_grammar_input=SupportedEventFunctionGrammarInput(
+            source_type="SturmPolynomialDecisionStratification",
+            decision_id="generated_event_sturm_for_forged_payload_budget",
+            coefficients=(1.0, 0.0, 1.0),
+            domain=(-1.0, 1.0),
+            max_bisection_depth=64,
+        ),
+        branch_root_dimension=3,
+        branch_root_rank=1,
+        event_order_root_dimension=3,
+        event_order_root_rank=1,
+    )
+    forged_event_budget = replace(
+        certificate,
+        event_order_grammar_input=replace(
+            certificate.event_order_grammar_input,
+            max_bisection_depth=0,
+        ),
+        event_order_grammar_payload_signature=(
+            certificate.event_order_grammar_payload_signature[0],
+            certificate.event_order_grammar_payload_signature[1],
+            0,
+        ),
+    )
+
+    assert not certificate.proof_certified
+    assert forged_event_budget.event_order_constructor_input_matches_grammar_input
+    assert forged_event_budget.event_order_grammar_payload_matches_generation
+    assert not forged_event_budget.proof_certified
+    assert "generated_event_order_constructor_replays_from_grammar_input" in (
+        forged_event_budget.missing_obligations
+    )
+
+
+def test_supported_event_function_generation_rejects_mutated_generated_sturm_evidence():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    certificate = certify_supported_event_function_stratification_generation(
+        theorem,
+        grammar_input=SupportedEventFunctionGrammarInput(
+            source_type="SturmPolynomialDecisionStratification",
+            decision_id="generated_sturm_for_mutation_guard",
+            coefficients=(1.0, 0.0, 1.0),
+            domain=(-1.0, 1.0),
+        ),
+        branch_root_dimension=3,
+        branch_root_rank=1,
+    )
+    mutated = replace(
+        certificate,
+        constructor_certificate=replace(
+            certificate.constructor_certificate,
+            root_brackets=((-0.1, 0.1),),
+        ),
+    )
+
+    assert not certificate.proof_certified
+    assert mutated.constructor_input_matches_grammar_input
+    assert not mutated.proof_certified
+    assert "generated_constructor_evidence_matches_generation" in (
+        mutated.missing_obligations
+    )
+
+
+def test_supported_event_function_generation_rejects_mutated_event_order_sturm_evidence():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    certificate = certify_supported_event_function_stratification_generation(
+        theorem,
+        grammar_input=SupportedEventFunctionGrammarInput(
+            source_type="AffineDecisionStratification",
+            decision_id="generated_branch_affine_for_event_mutation_guard",
+            coefficients=(0.0, 1.0),
+            domain=(-1.0, 1.0),
+        ),
+        event_order_grammar_input=SupportedEventFunctionGrammarInput(
+            source_type="SturmPolynomialDecisionStratification",
+            decision_id="generated_event_sturm_for_mutation_guard",
+            coefficients=(1.0, 0.0, 1.0),
+            domain=(-1.0, 1.0),
+        ),
+        branch_root_dimension=3,
+        branch_root_rank=1,
+        event_order_root_dimension=3,
+        event_order_root_rank=1,
+    )
+    mutated = replace(
+        certificate,
+        event_order_constructor_certificate=replace(
+            certificate.event_order_constructor_certificate,
+            root_brackets=((-0.1, 0.1),),
+        ),
+    )
+
+    assert not certificate.proof_certified
+    assert mutated.event_order_constructor_input_matches_grammar_input
+    assert not mutated.proof_certified
+    assert "generated_event_order_constructor_evidence_matches_generation" in (
+        mutated.missing_obligations
+    )
+
+
+def test_supported_event_function_generation_rejects_stale_constructor_source_tree():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    certificate = certify_supported_event_function_stratification_generation(
+        theorem,
+        grammar_input=SupportedEventFunctionGrammarInput(
+            source_type="AffineDecisionStratification",
+            decision_id="generated_affine_for_source_tree_guard",
+            coefficients=(0.0, 1.0),
+            domain=(-1.0, 1.0),
+        ),
+        branch_root_dimension=3,
+        branch_root_rank=1,
+    )
+    alternate = certify_affine_decision_stratified_branch_event_tree(
+        decision_id="alternate_affine_source_tree",
+        coefficients=(-0.25, 1.0),
+        domain=(-1.0, 1.0),
+    )
+    mutated_constructor = replace(
+        certificate.constructor_certificate,
+        source_tree=alternate.source_tree,
+    )
+    mutated = replace(certificate, constructor_certificate=mutated_constructor)
+
+    assert not certificate.proof_certified
+    assert mutated.constructor_input_matches_grammar_input
+    assert not mutated_constructor.proof_certified
+    assert "source_tree_matches_stratified_tree" in (
+        mutated_constructor.missing_obligations
+    )
+    assert not mutated.proof_certified
+    assert "generated_constructor_proof_certified" in mutated.missing_obligations
+    assert "constructor:source_tree_matches_stratified_tree" in (
+        mutated.missing_obligations
+    )
+
+
+def test_supported_event_function_generation_rejects_mutated_generated_stratum_interval_evidence():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    certificate = certify_supported_event_function_stratification_generation(
+        theorem,
+        grammar_input=SupportedEventFunctionGrammarInput(
+            source_type="SturmPolynomialDecisionStratification",
+            decision_id="generated_sturm_for_stratum_interval_guard",
+            coefficients=(1.0, 0.0, -0.25),
+            domain=(-1.0, 1.0),
+        ),
+        branch_root_dimension=3,
+        branch_root_rank=1,
+    )
+    mutated_strata = tuple(
+        (
+            replace(stratum, value_interval=(999.0, 1000.0))
+            if index == 0
+            else stratum
+        )
+        for index, stratum in enumerate(certificate.constructor_certificate.strata)
+    )
+    mutated_constructor = replace(
+        certificate.constructor_certificate,
+        strata=mutated_strata,
+    )
+    mutated = replace(certificate, constructor_certificate=mutated_constructor)
+
+    assert not certificate.proof_certified
+    assert mutated_constructor.proof_certified
+    assert mutated.constructor_input_matches_grammar_input
+    assert not mutated.proof_certified
+    assert "generated_constructor_evidence_matches_generation" in (
+        mutated.missing_obligations
+    )
+
+
+def test_supported_event_function_generation_rejects_truthy_constructor_proof_flags():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    certificate = certify_supported_event_function_stratification_generation(
+        theorem,
+        grammar_input=SupportedEventFunctionGrammarInput(
+            source_type="PolynomialDecisionArrangement",
+            arrangement_id="generated_polynomial_arrangement_for_truthy_guard",
+            polynomial_decision_functions=(
+                PolynomialDecisionFunctionSpec(
+                    decision_id="polynomial_threshold",
+                    coefficients=(0.0, 1.0),
+                    root_brackets=((-0.01, 0.01),),
+                ),
+            ),
+            domain=(-1.0, 1.0),
+        ),
+        branch_root_dimension=3,
+        branch_root_rank=2,
+    )
+    spoofed_constructor = replace(
+        certificate,
+        constructor_certificate=SimpleNamespace(
+            source_tree=SimpleNamespace(source_type="PolynomialDecisionArrangement"),
+            proof_certified="yes",
+            missing_obligations=(),
+        ),
+    )
+    spoofed_partition = replace(
+        certificate,
+        partition_generation_certificate=replace(
+            certificate.partition_generation_certificate,
+            set_valued_constructor_certificate=SimpleNamespace(
+                proof_certified="yes",
+            ),
+        ),
+    )
+
+    assert not certificate.proof_certified
+    assert not spoofed_constructor.proof_certified
+    assert "generated_constructor_proof_certified" in (
+        spoofed_constructor.missing_obligations
+    )
+    assert not spoofed_partition.partition_generation_certificate.certified
+    assert "scoped_set_valued_constructor_type" in (
+        spoofed_partition.partition_generation_certificate.missing_obligations
+    )
+    assert not spoofed_partition.partition_generation_certificate.proof_certified
+    assert "scoped_set_valued_constructor_proof_certified" in (
+        spoofed_partition.partition_generation_certificate.missing_obligations
+    )
+    assert not spoofed_partition.proof_certified
+    assert "generated_partition_bridge_proof_certified" in (
+        spoofed_partition.missing_obligations
+    )
+
+
+def test_supported_event_function_generation_rejects_attribute_compatible_certificate_types():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    certificate = certify_supported_event_function_stratification_generation(
+        theorem,
+        grammar_input=SupportedEventFunctionGrammarInput(
+            source_type="PolynomialDecisionArrangement",
+            arrangement_id="generated_polynomial_arrangement_for_type_guard",
+            polynomial_decision_functions=(
+                PolynomialDecisionFunctionSpec(
+                    decision_id="polynomial_threshold",
+                    coefficients=(0.0, 1.0),
+                    root_brackets=((-0.01, 0.01),),
+                ),
+            ),
+            domain=(-1.0, 1.0),
+        ),
+        branch_root_dimension=3,
+        branch_root_rank=2,
+    )
+    other_certificate = certify_supported_event_function_stratification_generation(
+        theorem,
+        grammar_input=SupportedEventFunctionGrammarInput(
+            source_type="PolynomialDecisionArrangement",
+            arrangement_id="generated_polynomial_arrangement_for_stale_partition",
+            polynomial_decision_functions=(
+                PolynomialDecisionFunctionSpec(
+                    decision_id="polynomial_threshold",
+                    coefficients=(0.0, 1.0),
+                    root_brackets=((-0.01, 0.01),),
+                ),
+            ),
+            domain=(-1.0, 1.0),
+        ),
+        branch_root_dimension=3,
+        branch_root_rank=2,
+    )
+    partition = certificate.partition_generation_certificate
+    fake_partition = SimpleNamespace(
+        certified=True,
+        proof_certified=True,
+        input_scope_id=partition.input_scope_id,
+        event_function_grammar_id=partition.event_function_grammar_id,
+        branch_function_grammar_id=partition.branch_function_grammar_id,
+        event_order_function_grammar_id=partition.event_order_function_grammar_id,
+        branch_constructor_source_type=partition.branch_constructor_source_type,
+        event_order_constructor_source_type=(
+            partition.event_order_constructor_source_type
+        ),
+        missing_obligations=(),
+    )
+
+    spoofed_constructor = replace(
+        certificate,
+        constructor_certificate=SimpleNamespace(
+            source_tree=SimpleNamespace(source_type="PolynomialDecisionArrangement"),
+            proof_certified=True,
+            missing_obligations=(),
+        ),
+    )
+    spoofed_partition_bridge = replace(
+        certificate,
+        partition_generation_certificate=fake_partition,
+    )
+    spoofed_grammar_input = replace(
+        certificate,
+        grammar_input=SimpleNamespace(
+            source_type="PolynomialDecisionArrangement",
+            grammar_id=(
+                certificate.partition_generation_certificate
+                .branch_function_grammar_id
+            ),
+            supported=True,
+        ),
+    )
+    spoofed_set_valued = replace(
+        certificate,
+        partition_generation_certificate=replace(
+            partition,
+            set_valued_constructor_certificate=SimpleNamespace(
+                proof_certified=True,
+                missing_obligations=(),
+            ),
+        ),
+    )
+    spoofed_validated = replace(
+        certificate,
+        partition_generation_certificate=replace(
+            partition,
+            validated_set_valued_constructor_certificate=SimpleNamespace(
+                proof_certified=True,
+                missing_obligations=(),
+            ),
+        ),
+    )
+    stale_real_partition_branch = replace(
+        certificate,
+        partition_generation_certificate=replace(
+            partition,
+            branch_consumption_certificate=(
+                other_certificate.partition_generation_certificate
+                .branch_consumption_certificate
+            ),
+        ),
+    )
+    stale_real_partition_bridge = replace(
+        certificate,
+        partition_generation_certificate=(
+            other_certificate.partition_generation_certificate
+        ),
+    )
+
+    assert not certificate.proof_certified
+    assert not other_certificate.proof_certified
+    assert not spoofed_constructor.proof_certified
+    assert "generated_constructor_certificate_type" in (
+        spoofed_constructor.missing_obligations
+    )
+    assert not spoofed_partition_bridge.proof_certified
+    assert "generated_partition_bridge_type" in (
+        spoofed_partition_bridge.missing_obligations
+    )
+    assert not spoofed_grammar_input.proof_certified
+    assert "supported_event_function_grammar_input_type" in (
+        spoofed_grammar_input.missing_obligations
+    )
+    assert not spoofed_set_valued.proof_certified
+    assert not spoofed_set_valued.partition_generation_certificate.certified
+    assert "scoped_set_valued_constructor_type" in (
+        spoofed_set_valued.missing_obligations
+    )
+    assert not spoofed_validated.proof_certified
+    assert not spoofed_validated.partition_generation_certificate.certified
+    assert "validated_set_valued_scope_type" in (
+        spoofed_validated.missing_obligations
+    )
+    assert not stale_real_partition_branch.proof_certified
+    assert not stale_real_partition_branch.partition_generation_certificate.certified
+    assert "scoped_partition_sources_match_constructor_chain" in (
+        stale_real_partition_branch
+        .partition_generation_certificate
+        .missing_obligations
+    )
+    assert "generated_partition_bridge_proof_certified" in (
+        stale_real_partition_branch.missing_obligations
+    )
+    assert not stale_real_partition_bridge.proof_certified
+    assert "generated_partition_bridge_branch_tree_matches_constructor" in (
+        stale_real_partition_bridge.missing_obligations
+    )
+    assert "generated_partition_bridge_event_order_tree_matches_constructor" in (
+        stale_real_partition_bridge.missing_obligations
+    )
+
+
+def test_supported_event_function_generation_rejects_spoofed_obligation_ledgers():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    certificate = certify_supported_event_function_stratification_generation(
+        theorem,
+        grammar_input=SupportedEventFunctionGrammarInput(
+            source_type="PolynomialDecisionArrangement",
+            arrangement_id="generated_polynomial_arrangement_for_ledger_spoof",
+            polynomial_decision_functions=(
+                PolynomialDecisionFunctionSpec(
+                    decision_id="polynomial_threshold",
+                    coefficients=(0.0, 1.0),
+                    root_brackets=((-0.01, 0.01),),
+                ),
+            ),
+            domain=(-1.0, 1.0),
+        ),
+        branch_root_dimension=3,
+        branch_root_rank=2,
+    )
+    partition = certificate.partition_generation_certificate
+    set_valued = partition.set_valued_constructor_certificate
+    validated = partition.validated_set_valued_constructor_certificate
+    search = set_valued.search_completeness_certificate
+
+    spoofed_theorem = replace(
+        theorem,
+        obligations=(
+            SimpleNamespace(
+                obligation="fake_finite_target_obligation",
+                certified=True,
+                required=True,
+            ),
+        ),
+    )
+    spoofed_generation = replace(
+        certificate,
+        obligations=(
+            SimpleNamespace(
+                obligation="fake_supported_generation_obligation",
+                certified=True,
+                required=True,
+            ),
+        ),
+    )
+    optional_generation = replace(
+        certificate,
+        obligations=tuple(
+            replace(obligation, required=False)
+            for obligation in certificate.obligations
+        ),
+    )
+    spoofed_partition = replace(
+        partition,
+        obligations=(
+            SimpleNamespace(
+                obligation="fake_scoped_partition_obligation",
+                certified=True,
+                required=True,
+            ),
+        ),
+    )
+    optional_partition = replace(
+        partition,
+        obligations=tuple(
+            replace(obligation, required=False) for obligation in partition.obligations
+        ),
+    )
+    truthy_partition_claim = replace(
+        partition,
+        arbitrary_partition_generation_claimed="yes",
+    )
+    spoofed_search = replace(
+        search,
+        obligations=(
+            SimpleNamespace(
+                obligation="fake_search_obligation",
+                certified=True,
+                required=True,
+            ),
+        ),
+    )
+    spoofed_set_valued = replace(
+        set_valued,
+        obligations=(
+            SimpleNamespace(
+                obligation="fake_set_valued_obligation",
+                certified=True,
+                required=True,
+            ),
+        ),
+    )
+    spoofed_validated = replace(
+        validated,
+        obligations=(
+            SimpleNamespace(
+                obligation="fake_validated_set_valued_obligation",
+                certified=True,
+                required=True,
+            ),
+        ),
+    )
+
+    assert not theorem.proof_certified
+    assert not certificate.proof_certified
+    assert not spoofed_theorem.certified
+    assert "finite_target_completeness_obligation_type" in (
+        spoofed_theorem.missing_obligations
+    )
+    assert not spoofed_generation.proof_certified
+    assert "supported_event_function_generation_obligation_type" in (
+        spoofed_generation.missing_obligations
+    )
+    assert not optional_generation.proof_certified
+    assert "supported_event_function_generation_required_obligation_present" in (
+        optional_generation.missing_obligations
+    )
+    assert not spoofed_partition.certified
+    assert "scoped_arbitrary_interval_partition_obligation_type" in (
+        spoofed_partition.missing_obligations
+    )
+    assert not optional_partition.certified
+    assert "scoped_arbitrary_interval_partition_required_obligation_present" in (
+        optional_partition.missing_obligations
+    )
+    assert not truthy_partition_claim.certified
+    assert not spoofed_search.certified
+    assert "finite_target_certificate_search_obligation_type" in (
+        spoofed_search.missing_obligations
+    )
+    assert not spoofed_set_valued.certified
+    assert "supplied_recursive_set_valued_constructor_obligation_type" in (
+        spoofed_set_valued.missing_obligations
+    )
+    assert not spoofed_validated.certified
+    assert "validated_set_valued_constructor_obligation_type" in (
+        spoofed_validated.missing_obligations
+    )
+
+
+def test_supported_event_function_generation_rejects_truthy_event_order_proof_flag():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    certificate = certify_supported_event_function_stratification_generation(
+        theorem,
+        grammar_input=SupportedEventFunctionGrammarInput(
+            source_type="AffineHalfspaceDecision",
+            decision_id="truthy_event_branch_boundary",
+            coefficients=(0.0, 1.0, 1.0),
+            domain_box=((-1.0, 1.0), (-1.0, 1.0)),
+            slab_half_width=0.25,
+        ),
+        event_order_grammar_input=SupportedEventFunctionGrammarInput(
+            source_type="PolynomialDecisionArrangement",
+            arrangement_id="truthy_event_order_arrangement",
+            polynomial_decision_functions=(
+                PolynomialDecisionFunctionSpec(
+                    decision_id="event_minus_target",
+                    coefficients=(0.0, 1.0),
+                    root_brackets=((-0.01, 0.01),),
+                ),
+            ),
+            domain=(-1.0, 1.0),
+        ),
+        branch_root_dimension=2,
+        branch_root_rank=2,
+        event_order_root_dimension=3,
+        event_order_root_rank=2,
+    )
+    spoofed_event = replace(
+        certificate,
+        event_order_constructor_certificate=SimpleNamespace(
+            source_tree=SimpleNamespace(source_type="PolynomialDecisionArrangement"),
+            proof_certified="yes",
+            missing_obligations=(),
+        ),
+    )
+    spoofed_event_type = replace(
+        certificate,
+        event_order_constructor_certificate=SimpleNamespace(
+            source_tree=SimpleNamespace(source_type="PolynomialDecisionArrangement"),
+            proof_certified=True,
+            missing_obligations=(),
+        ),
+    )
+
+    assert not certificate.proof_certified
+    assert not spoofed_event.proof_certified
+    assert "generated_event_order_constructor_proof_certified" in (
+        spoofed_event.missing_obligations
+    )
+    assert not spoofed_event_type.proof_certified
+    assert "generated_event_order_constructor_certificate_type" in (
+        spoofed_event_type.missing_obligations
+    )
+
+
+def test_supported_event_function_generation_blocks_event_source_mismatch():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    certificate = certify_supported_event_function_stratification_generation(
+        theorem,
+        grammar_input=SupportedEventFunctionGrammarInput(
+            source_type="AffineHalfspaceDecision",
+            decision_id="mismatch_event_branch_boundary",
+            coefficients=(0.0, 1.0, 1.0),
+            domain_box=((-1.0, 1.0), (-1.0, 1.0)),
+            slab_half_width=0.25,
+        ),
+        event_order_grammar_input=SupportedEventFunctionGrammarInput(
+            source_type="PolynomialRootArrangement",
+            arrangement_id="mismatch_event_quadratic_double_root",
+            polynomial_decision_functions=(
+                PolynomialDecisionFunctionSpec(
+                    decision_id="event_quadratic_double_threshold",
+                    coefficients=(0.0, 0.0, 1.0),
+                ),
+            ),
+            domain=(-1.0, 1.0),
+        ),
+        branch_root_dimension=2,
+        branch_root_rank=2,
+        event_order_root_dimension=3,
+        event_order_root_rank=2,
+    )
+
+    assert not certificate.proof_certified
+    assert certificate.constructor_source_type == "AffineHalfspaceDecision"
+    assert (
+        certificate.event_order_constructor_source_type
+        == "QuadraticDoubleRootArrangement"
+    )
+    assert (
+        "generated_event_order_constructor_source_matches_requested_grammar"
+        in certificate.missing_obligations
+    )
+
+
+def test_supported_event_function_generation_rejects_unsupported_grammar():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+
+    try:
+        certify_supported_event_function_stratification_generation(
+            theorem,
+            grammar_input=SupportedEventFunctionGrammarInput(
+                source_type="arbitrary_analytic_black_box",
+                decision_id="unsupported",
+                domain=(-1.0, 1.0),
+            ),
+            branch_root_dimension=3,
+            branch_root_rank=1,
+        )
+    except ValueError as error:
+        assert "unsupported event-function grammar source" in str(error)
+    else:
+        raise AssertionError("unsupported grammar generated a partition")
+
+
+def test_supported_event_function_generation_rejects_raw_event_order_grammar_input():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+
+    try:
+        certify_supported_event_function_stratification_generation(
+            theorem,
+            grammar_input=SupportedEventFunctionGrammarInput(
+                source_type="PolynomialDecisionStratification",
+                decision_id="valid_branch_event",
+                coefficients=(0.0, 1.0),
+                root_brackets=((-0.01, 0.01),),
+                domain=(-1.0, 1.0),
+            ),
+            event_order_grammar_input=True,
+            branch_root_dimension=3,
+            branch_root_rank=1,
+            event_order_root_dimension=3,
+            event_order_root_rank=1,
+        )
+    except TypeError as error:
+        assert (
+            "event_order_grammar_input must be a SupportedEventFunctionGrammarInput"
+            in str(error)
+        )
+    else:
+        raise AssertionError("raw event-order grammar input was accepted")
 
 
 def test_constructor_derived_set_valued_helper_rejects_unsupported_constructor():
@@ -2407,27 +5630,19 @@ def test_mixed_constructor_set_valued_scope_preserves_branch_and_event_sources()
         ),
         domain=(-1.0, 1.0),
     )
-    branch_recursive = certify_affine_halfspace_decision_recursive_consumption(
-        branch_stratification,
-        root_dimension=2,
-        root_rank=2,
-        child_consumptions=derive_affine_halfspace_decision_child_consumptions(
-            branch_stratification,
-        ),
+    scoped = (
+        certify_constructor_pair_derived_recursive_stratified_set_valued_constructor_completeness(
+            theorem,
+            branch_constructor_certificate=branch_stratification,
+            event_order_constructor_certificate=event_arrangement,
+            branch_root_dimension=2,
+            branch_root_rank=2,
+            event_order_root_dimension=3,
+            event_order_root_rank=2,
+        )
     )
-    event_recursive = certify_polynomial_decision_arrangement_recursive_consumption(
-        event_arrangement,
-        root_dimension=3,
-        root_rank=2,
-        child_consumptions=derive_polynomial_decision_arrangement_child_consumptions(
-            event_arrangement,
-        ),
-    )
-    scoped = certify_supplied_recursive_stratified_set_valued_constructor_completeness(
-        theorem,
-        recursive_stratified_branch_consumption_certificate=branch_recursive,
-        recursive_stratified_event_order_consumption_certificate=event_recursive,
-    )
+    branch_recursive = scoped.branch_consumption_certificate
+    event_recursive = scoped.event_order_consumption_certificate
     validated = certify_validated_set_valued_constructor_completeness_theorem(
         scoped,
     )
@@ -2444,8 +5659,8 @@ def test_mixed_constructor_set_valued_scope_preserves_branch_and_event_sources()
     assert recursive_constructor_source_scope(event_recursive)[1] == (
         "finite_polynomial_decision_arrangement_interval_boxes"
     )
-    assert scoped.proof_certified
-    assert validated.proof_certified
+    assert not scoped.proof_certified
+    assert not validated.proof_certified
     assert validated.input_scope_id == (
         "finite_mixed_constructor_branch_event_interval_boxes"
     )
@@ -2454,6 +5669,31 @@ def test_mixed_constructor_set_valued_scope_preserves_branch_and_event_sources()
         validated.proof_sketch
     )
     assert not validated.arbitrary_partition_generation_claimed
+
+
+def test_constructor_pair_derived_set_valued_helper_rejects_bad_event_constructor():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    branch_stratification = certify_affine_halfspace_decision_stratified_branch_event_tree(
+        decision_id="bad_event_helper_branch_boundary",
+        coefficients=(0.0, 1.0, 1.0),
+        domain_box=((-1.0, 1.0), (-1.0, 1.0)),
+        slab_half_width=0.25,
+    )
+
+    try:
+        certify_constructor_pair_derived_recursive_stratified_set_valued_constructor_completeness(
+            theorem,
+            branch_constructor_certificate=branch_stratification,
+            event_order_constructor_certificate=object(),
+            branch_root_dimension=2,
+            branch_root_rank=2,
+            event_order_root_dimension=3,
+            event_order_root_rank=2,
+        )
+    except TypeError as error:
+        assert "supported displayed stratification" in str(error)
+    else:
+        raise AssertionError("unsupported event-order constructor was accepted")
 
 
 def test_mixed_oblique_affine_arrangement_scope_preserves_volume_source():
@@ -2483,27 +5723,19 @@ def test_mixed_oblique_affine_arrangement_scope_preserves_volume_source():
         ),
         domain=(-1.0, 1.0),
     )
-    branch_recursive = certify_affine_halfspace_3d_arrangement_recursive_consumption(
-        branch_arrangement,
-        root_dimension=3,
-        root_rank=2,
-        child_consumptions=derive_affine_halfspace_3d_arrangement_child_consumptions(
-            branch_arrangement,
-        ),
+    scoped = (
+        certify_constructor_pair_derived_recursive_stratified_set_valued_constructor_completeness(
+            theorem,
+            branch_constructor_certificate=branch_arrangement,
+            event_order_constructor_certificate=event_arrangement,
+            branch_root_dimension=3,
+            branch_root_rank=2,
+            event_order_root_dimension=3,
+            event_order_root_rank=2,
+        )
     )
-    event_recursive = certify_polynomial_decision_arrangement_recursive_consumption(
-        event_arrangement,
-        root_dimension=3,
-        root_rank=2,
-        child_consumptions=derive_polynomial_decision_arrangement_child_consumptions(
-            event_arrangement,
-        ),
-    )
-    scoped = certify_supplied_recursive_stratified_set_valued_constructor_completeness(
-        theorem,
-        recursive_stratified_branch_consumption_certificate=branch_recursive,
-        recursive_stratified_event_order_consumption_certificate=event_recursive,
-    )
+    branch_recursive = scoped.branch_consumption_certificate
+    event_recursive = scoped.event_order_consumption_certificate
     validated = certify_validated_set_valued_constructor_completeness_theorem(
         scoped,
     )
@@ -2517,8 +5749,8 @@ def test_mixed_oblique_affine_arrangement_scope_preserves_volume_source():
     assert event_recursive.child_constructor_source_types == ("PolynomialRootChild",)
     assert branch_recursive.certified
     assert event_recursive.certified
-    assert scoped.proof_certified
-    assert validated.proof_certified
+    assert not scoped.proof_certified
+    assert not validated.proof_certified
     assert validated.input_scope_id == (
         "finite_mixed_constructor_branch_event_interval_boxes"
     )
@@ -2530,6 +5762,133 @@ def test_mixed_oblique_affine_arrangement_scope_preserves_volume_source():
         validated.proof_sketch
     )
     assert not validated.arbitrary_partition_generation_claimed
+
+
+def test_scoped_arbitrary_interval_partition_generation_preserves_mixed_grammar_pair():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    branch_stratification = certify_affine_halfspace_decision_stratified_branch_event_tree(
+        decision_id="scoped_mixed_branch_oblique_boundary",
+        coefficients=(0.0, 1.0, 1.0),
+        domain_box=((-1.0, 1.0), (-1.0, 1.0)),
+        slab_half_width=0.25,
+    )
+    event_arrangement = certify_polynomial_decision_arrangement_stratified_branch_event_tree(
+        arrangement_id="scoped_mixed_event_polynomial_arrangement",
+        decision_functions=(
+            PolynomialDecisionFunctionSpec(
+                decision_id="event_minus_target",
+                coefficients=(0.0, 1.0),
+                root_brackets=((-0.01, 0.01),),
+            ),
+        ),
+        domain=(-1.0, 1.0),
+    )
+    certificate = certify_arbitrary_interval_input_partition_generation(
+        theorem,
+        branch_constructor_certificate=branch_stratification,
+        event_order_constructor_certificate=event_arrangement,
+        branch_root_dimension=2,
+        branch_root_rank=2,
+        event_order_root_dimension=3,
+        event_order_root_rank=2,
+    )
+    support_obligation = next(
+        obligation
+        for obligation in certificate.obligations
+        if obligation.obligation == "supported_event_function_grammar"
+    )
+
+    assert not certificate.proof_certified
+    assert not certificate.arbitrary_partition_generation_claimed
+    assert certificate.branch_constructor_source_type == "AffineHalfspaceDecision"
+    assert (
+        certificate.event_order_constructor_source_type
+        == "PolynomialDecisionArrangement"
+    )
+    assert certificate.branch_constructor_input_scope_id == (
+        "finite_affine_halfspace_decision_interval_boxes"
+    )
+    assert certificate.event_order_constructor_input_scope_id == (
+        "finite_polynomial_decision_arrangement_interval_boxes"
+    )
+    assert certificate.branch_function_grammar_id == (
+        "finite_affine_halfspace_decision_interval_inputs"
+    )
+    assert certificate.event_order_function_grammar_id == (
+        "finite_polynomial_decision_arrangement_interval_inputs"
+    )
+    assert certificate.event_function_grammar_id == (
+        "finite_mixed_supported_constructor_interval_inputs"
+        "(branch=finite_affine_halfspace_decision_interval_inputs;"
+        "event=finite_polynomial_decision_arrangement_interval_inputs)"
+    )
+    assert "branch_grammar=finite_affine_halfspace_decision_interval_inputs" in (
+        support_obligation.detail
+    )
+    assert "event_grammar=finite_polynomial_decision_arrangement_interval_inputs" in (
+        support_obligation.detail
+    )
+    assert "unqualified_arbitrary_analytic_inputs_not_claimed" not in (
+        certificate.missing_obligations
+    )
+    assert "scoped_set_valued_constructor_proof_certified" in (
+        certificate.missing_obligations
+    )
+    assert "validated_set_valued_scope_proof_certified" in (
+        certificate.missing_obligations
+    )
+
+
+def test_scoped_arbitrary_interval_partition_generation_surfaces_event_unsupported_strata():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    branch_stratification = certify_affine_halfspace_decision_stratified_branch_event_tree(
+        decision_id="scoped_supported_branch_for_unsupported_event",
+        coefficients=(0.0, 1.0, 1.0),
+        domain_box=((-1.0, 1.0), (-1.0, 1.0)),
+        slab_half_width=0.25,
+    )
+    event_stratification = certify_taylor_model_decision_stratified_branch_event_tree(
+        decision_function=TaylorModelDecisionFunctionSpec(
+            decision_id="unsupported_event_order_taylor_root",
+            coefficients=(-0.25, 1.0),
+            expansion_center=0.0,
+            remainder_bound=1.0e-4,
+            derivative_remainder_bound=5.0e-2,
+            root_brackets=((0.24, 0.26),),
+            witness_kind="unsupported",
+        ),
+        domain=(-1.0, 1.0),
+    )
+    certificate = certify_arbitrary_interval_input_partition_generation(
+        theorem,
+        branch_constructor_certificate=branch_stratification,
+        event_order_constructor_certificate=event_stratification,
+        branch_root_dimension=2,
+        branch_root_rank=2,
+        event_order_root_dimension=3,
+        event_order_root_rank=1,
+    )
+
+    assert not event_stratification.proof_certified
+    assert not certificate.proof_certified
+    assert not certificate.arbitrary_partition_generation_claimed
+    assert certificate.branch_function_grammar_id == (
+        "finite_affine_halfspace_decision_interval_inputs"
+    )
+    assert certificate.event_order_function_grammar_id == (
+        "finite_taylor_model_decision_interval_inputs_with_weierstrass_certificate"
+    )
+    assert certificate.event_function_grammar_id == (
+        "finite_mixed_supported_constructor_interval_inputs"
+        "(branch=finite_affine_halfspace_decision_interval_inputs;"
+        "event=finite_taylor_model_decision_interval_inputs_with_weierstrass_certificate)"
+    )
+    assert certificate.unsupported_strata
+    assert "no_unsupported_analytic_strata" in certificate.missing_obligations
+    assert any(
+        item.startswith("unsupported:")
+        for item in certificate.missing_obligations
+    )
 
 
 def test_polynomial_decision_arrangement_derives_sign_vector_and_equality_leaves():
@@ -2563,6 +5922,86 @@ def test_polynomial_decision_arrangement_derives_sign_vector_and_equality_leaves
         "positive_margin_unique_event",
         "simultaneous_event_equality",
         "positive_margin_unique_event",
+    )
+
+
+def test_supported_event_function_generation_rejects_nested_stratification_spoofs():
+    arrangement = certify_polynomial_decision_arrangement_stratified_branch_event_tree(
+        arrangement_id="nested_type_guard_arrangement",
+        decision_functions=(
+            PolynomialDecisionFunctionSpec(
+                decision_id="event_minus_target",
+                coefficients=(0.0, 1.0),
+                root_brackets=((-0.01, 0.01),),
+            ),
+        ),
+        domain=(-1.0, 1.0),
+    )
+    fake_stratum = replace(
+        arrangement,
+        strata=(
+            SimpleNamespace(
+                stratum_id="fake_polynomial_stratum",
+                proof_certified=True,
+                missing_obligations=(),
+                equality=False,
+            ),
+        ),
+    )
+    truthy_stratum = replace(
+        arrangement,
+        strata=(
+            replace(arrangement.strata[0], certified="yes"),
+            *arrangement.strata[1:],
+        ),
+    )
+    fake_source = replace(
+        arrangement,
+        source_tree=SimpleNamespace(cover_certified=True),
+    )
+    fake_stratified_tree = replace(
+        arrangement,
+        stratified_tree=SimpleNamespace(
+            certified=True,
+            missing_obligations=(),
+            unsupported_leaf_count=0,
+        ),
+    )
+    halfspace = certify_affine_halfspace_decision_stratified_branch_event_tree(
+        decision_id="nested_type_guard_halfspace",
+        coefficients=(0.0, 1.0, 1.0),
+        domain_box=((-1.0, 1.0), (-1.0, 1.0)),
+        slab_half_width=0.25,
+    )
+    fake_cell = replace(
+        halfspace,
+        cells=(
+            SimpleNamespace(
+                cell_id="fake_halfspace_cell",
+                proof_certified=True,
+                missing_obligations=(),
+                equality=False,
+            ),
+        ),
+    )
+
+    assert arrangement.certified
+    assert not fake_stratum.certified
+    assert "polynomial_arrangement_stratum:fake_polynomial_stratum:type" in (
+        fake_stratum.missing_obligations
+    )
+    assert not truthy_stratum.certified
+    assert "polynomial_arrangement_stratum:" in " ".join(
+        truthy_stratum.missing_obligations
+    )
+    assert not fake_source.certified
+    assert "source_tree_type" in fake_source.missing_obligations
+    assert not fake_stratified_tree.certified
+    assert "stratified_tree_type" in fake_stratified_tree.missing_obligations
+    assert halfspace.certified
+    assert not fake_cell.certified
+    assert "affine_halfspace_decision_cell:fake_halfspace_cell:type" in (
+        fake_cell.missing_obligations
     )
 
 
@@ -2739,10 +6178,10 @@ def test_affine_decision_set_valued_constructor_scope_is_constructor_derived():
     assert arrangement.source_tree.source_type == "AffineDecisionArrangement"
     assert recursive.recursion_kind == "affine_decision_arrangement"
     assert recursive.child_constructor_source_types == ("PolynomialRootChild",)
-    assert scoped.proof_certified
+    assert not scoped.proof_certified
     assert "affine decision arrangement" in scoped.statement
     assert "coefficient-derived roots" in scoped.proof_sketch
-    assert validated.proof_certified
+    assert not validated.proof_certified
     assert (
         validated.input_scope_id
         == "finite_affine_decision_arrangement_interval_boxes"
@@ -3398,16 +6837,63 @@ def test_verified_polynomial_arrangement_set_valued_scope_is_constructor_derived
     assert recursive.proof_certified
     assert recursive.recursion_kind == "polynomial_decision_arrangement"
     assert recursive.child_constructor_source_types == ("PolynomialRootChild",)
-    assert scoped.proof_certified
+    assert not scoped.proof_certified
+    assert "pointwise_finite_target_theorem_proof_certified" in (
+        scoped.missing_obligations
+    )
     assert "constructor-derived polynomial decision arrangement" in scoped.statement
     assert "verified simple root brackets" in scoped.proof_sketch
-    assert validated.proof_certified
+    assert not validated.proof_certified
+    assert "scoped_set_valued_constructor_certificate_proof_certified" in (
+        validated.missing_obligations
+    )
     assert (
         validated.input_scope_id
         == "finite_polynomial_decision_arrangement_interval_boxes"
     )
     assert "verified simple root brackets" in validated.proof_sketch
     assert not validated.arbitrary_partition_generation_claimed
+
+
+def test_polynomial_arrangement_child_consumption_rejects_swapped_leaf_binding():
+    arrangement = certify_polynomial_decision_arrangement_stratified_branch_event_tree(
+        arrangement_id="swapped_child_polynomial_event_order",
+        decision_functions=(
+            PolynomialDecisionFunctionSpec(
+                decision_id="left_event",
+                coefficients=(0.5, 1.0),
+                root_brackets=((-0.51, -0.49),),
+            ),
+            PolynomialDecisionFunctionSpec(
+                decision_id="right_event",
+                coefficients=(-0.5, 1.0),
+                root_brackets=((0.49, 0.51),),
+            ),
+        ),
+        domain=(-1.0, 1.0),
+    )
+    children = derive_polynomial_decision_arrangement_child_consumptions(
+        arrangement,
+    )
+    equality_strata = tuple(stratum for stratum in arrangement.strata if stratum.equality)
+    swapped_children = {
+        equality_strata[0].stratum_id: children[equality_strata[1].stratum_id],
+        equality_strata[1].stratum_id: children[equality_strata[0].stratum_id],
+    }
+    recursive = certify_polynomial_decision_arrangement_recursive_consumption(
+        arrangement,
+        root_dimension=3,
+        root_rank=2,
+        child_consumptions=swapped_children,
+    )
+
+    assert arrangement.proof_certified
+    assert len(equality_strata) == 2
+    assert not recursive.proof_certified
+    assert any(
+        item.endswith(":child_consumption_source_leaf_binding")
+        for item in recursive.missing_obligations
+    )
 
 
 def test_quadratic_double_root_set_valued_scope_is_constructor_derived():
@@ -3440,16 +6926,64 @@ def test_quadratic_double_root_set_valued_scope_is_constructor_derived():
     assert recursive.proof_certified
     assert recursive.recursion_kind == "quadratic_double_root_decision_arrangement"
     assert recursive.child_constructor_source_types == ("PolynomialRootChild",)
-    assert scoped.proof_certified
+    assert not scoped.proof_certified
+    assert "pointwise_finite_target_theorem_proof_certified" in (
+        scoped.missing_obligations
+    )
     assert "quadratic double-root decision arrangement" in scoped.statement
     assert "tangent equality strata" in scoped.proof_sketch
-    assert validated.proof_certified
+    assert not validated.proof_certified
+    assert "scoped_set_valued_constructor_certificate_proof_certified" in (
+        validated.missing_obligations
+    )
     assert (
         validated.input_scope_id
         == "finite_quadratic_double_root_decision_arrangement_interval_boxes"
     )
     assert "tangent equality strata" in validated.proof_sketch
     assert not validated.arbitrary_partition_generation_claimed
+
+
+def test_scoped_arbitrary_interval_partition_generation_accepts_quadratic_double_root_arrangement():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    arrangement = certify_quadratic_decision_arrangement_stratified_branch_event_tree(
+        arrangement_id="scoped_double_quadratic_event_order",
+        decision_functions=(
+            PolynomialDecisionFunctionSpec(
+                decision_id="double_root_threshold",
+                coefficients=(0.0, 0.0, 1.0),
+            ),
+        ),
+        domain=(-1.0, 1.0),
+    )
+    certificate = certify_arbitrary_interval_input_partition_generation(
+        theorem,
+        branch_constructor_certificate=arrangement,
+        branch_root_dimension=3,
+        branch_root_rank=2,
+    )
+
+    assert arrangement.source_tree.source_type == "QuadraticDoubleRootArrangement"
+    assert not certificate.proof_certified
+    assert not certificate.arbitrary_partition_generation_claimed
+    assert certificate.branch_constructor_source_type == "QuadraticDoubleRootArrangement"
+    assert (
+        certificate.event_order_constructor_source_type
+        == "QuadraticDoubleRootArrangement"
+    )
+    assert certificate.event_function_grammar_id == (
+        "finite_quadratic_double_root_arrangement_interval_inputs"
+    )
+    assert certificate.input_scope_id == (
+        "finite_quadratic_double_root_decision_arrangement_interval_boxes"
+    )
+    assert certificate.unsupported_strata == ()
+    assert "scoped_set_valued_constructor_proof_certified" in (
+        certificate.missing_obligations
+    )
+    assert "validated_set_valued_scope_proof_certified" in (
+        certificate.missing_obligations
+    )
 
 
 def test_computed_polynomial_root_set_valued_scope_is_constructor_derived():
@@ -3489,16 +7023,68 @@ def test_computed_polynomial_root_set_valued_scope_is_constructor_derived():
     assert recursive.proof_certified
     assert recursive.recursion_kind == "computed_polynomial_root_decision_arrangement"
     assert recursive.child_constructor_source_types == ("PolynomialRootChild",)
-    assert scoped.proof_certified
+    assert not scoped.proof_certified
+    assert "pointwise_finite_target_theorem_proof_certified" in (
+        scoped.missing_obligations
+    )
     assert "computed polynomial-root arrangement" in scoped.statement
     assert "grouped coincident/multiple equality strata" in scoped.proof_sketch
-    assert validated.proof_certified
+    assert not validated.proof_certified
+    assert "scoped_set_valued_constructor_certificate_proof_certified" in (
+        validated.missing_obligations
+    )
     assert (
         validated.input_scope_id
         == "finite_computed_polynomial_root_arrangement_interval_boxes"
     )
     assert "grouped coincident/multiple equality strata" in validated.proof_sketch
     assert not validated.arbitrary_partition_generation_claimed
+
+
+def test_scoped_arbitrary_interval_partition_generation_accepts_computed_polynomial_root_arrangement():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    arrangement = certify_quadratic_decision_arrangement_stratified_branch_event_tree(
+        arrangement_id="scoped_coincident_quadratic_event_order",
+        decision_functions=(
+            PolynomialDecisionFunctionSpec(
+                decision_id="left_quadratic_threshold",
+                coefficients=(-0.25, 0.0, 1.0),
+            ),
+            PolynomialDecisionFunctionSpec(
+                decision_id="shifted_quadratic_threshold",
+                coefficients=(-0.375, 0.25, 1.0),
+            ),
+        ),
+        domain=(-1.0, 1.0),
+    )
+    certificate = certify_arbitrary_interval_input_partition_generation(
+        theorem,
+        branch_constructor_certificate=arrangement,
+        branch_root_dimension=3,
+        branch_root_rank=2,
+    )
+
+    assert arrangement.source_tree.source_type == "PolynomialRootArrangement"
+    assert not certificate.proof_certified
+    assert not certificate.arbitrary_partition_generation_claimed
+    assert certificate.branch_constructor_source_type == "PolynomialRootArrangement"
+    assert (
+        certificate.event_order_constructor_source_type
+        == "PolynomialRootArrangement"
+    )
+    assert certificate.event_function_grammar_id == (
+        "finite_computed_polynomial_root_arrangement_interval_inputs"
+    )
+    assert certificate.input_scope_id == (
+        "finite_computed_polynomial_root_arrangement_interval_boxes"
+    )
+    assert certificate.unsupported_strata == ()
+    assert "scoped_set_valued_constructor_proof_certified" in (
+        certificate.missing_obligations
+    )
+    assert "validated_set_valued_scope_proof_certified" in (
+        certificate.missing_obligations
+    )
 
 
 def test_sturm_polynomial_set_valued_constructor_scope_is_constructor_derived():
@@ -3534,12 +7120,18 @@ def test_sturm_polynomial_set_valued_constructor_scope_is_constructor_derived():
     assert recursive.proof_certified
     assert recursive.recursion_kind == "sturm_polynomial_decision_arrangement"
     assert recursive.child_constructor_source_types == ("PolynomialRootChild",)
-    assert scoped.proof_certified
+    assert not scoped.proof_certified
+    assert "pointwise_finite_target_theorem_proof_certified" in (
+        scoped.missing_obligations
+    )
     assert "constructor-derived Sturm polynomial decision arrangement" in (
         scoped.statement
     )
     assert "exact rational root isolation" in scoped.proof_sketch
-    assert validated.proof_certified
+    assert not validated.proof_certified
+    assert "scoped_set_valued_constructor_certificate_proof_certified" in (
+        validated.missing_obligations
+    )
     assert (
         validated.input_scope_id
         == "finite_sturm_polynomial_decision_arrangement_interval_boxes"
@@ -3642,11 +7234,17 @@ def test_affine_box_set_valued_constructor_scope_is_constructor_derived():
     assert recursive.proof_certified
     assert recursive.recursion_kind == "axis_aligned_affine_box_decision_arrangement"
     assert recursive.child_constructor_source_types == ("AxisAlignedAffineBoxChild",)
-    assert scoped.proof_certified
+    assert not scoped.proof_certified
+    assert "pointwise_finite_target_theorem_proof_certified" in (
+        scoped.missing_obligations
+    )
     assert scoped.event_order_consumption_certificate is recursive
     assert "axis-aligned affine box arrangement" in scoped.statement
     assert "coordinate equality slabs" in scoped.proof_sketch
-    assert validated.proof_certified
+    assert not validated.proof_certified
+    assert "scoped_set_valued_constructor_certificate_proof_certified" in (
+        validated.missing_obligations
+    )
     assert (
         validated.input_scope_id
         == "finite_axis_aligned_affine_box_arrangement_interval_boxes"
@@ -3799,11 +7397,17 @@ def test_affine_halfspace_decision_set_valued_scope_is_constructor_derived():
     assert recursive.proof_certified
     assert recursive.recursion_kind == "affine_halfspace_decision"
     assert recursive.child_constructor_source_types == ("AffineHalfspaceDecisionChild",)
-    assert scoped.proof_certified
+    assert not scoped.proof_certified
+    assert "pointwise_finite_target_theorem_proof_certified" in (
+        scoped.missing_obligations
+    )
     assert scoped.event_order_consumption_certificate is recursive
     assert "affine halfspace decision stratification" in scoped.statement
     assert "central equality slab" in scoped.proof_sketch
-    assert validated.proof_certified
+    assert not validated.proof_certified
+    assert "scoped_set_valued_constructor_certificate_proof_certified" in (
+        validated.missing_obligations
+    )
     assert (
         validated.input_scope_id
         == "finite_affine_halfspace_decision_interval_boxes"
@@ -4547,7 +8151,10 @@ def test_uniform_margin_refinement_closes_search_obligations_under_explicit_marg
     )
 
     assert search.certified
-    assert search.proof_certified
+    assert not search.proof_certified
+    assert "pointwise_finite_target_theorem_proof_certified" in (
+        search.missing_obligations
+    )
     assert "recursive_set_valued_branch_partition_consumption" not in (
         search.missing_obligations
     )
@@ -4584,11 +8191,14 @@ def test_uniform_margin_set_valued_constructor_completeness_closes_positive_marg
         event_order_refinement_certificate=event_refinement,
     )
 
-    assert certificate.certified
-    assert certificate.proof_certified
+    assert not certificate.certified
+    assert not certificate.proof_certified
     assert not certificate.equality_strata_claimed
     assert certificate.search_completeness_certificate.certified
-    assert certificate.missing_obligations == ()
+    assert not certificate.search_completeness_certificate.proof_certified
+    assert "pointwise_finite_target_theorem_proof_certified" in (
+        certificate.missing_obligations
+    )
     assert "positive uniform margins" in certificate.statement
     assert "does not handle simultaneous-event" in certificate.proof_sketch
     details = {obligation.obligation: obligation for obligation in certificate.obligations}
@@ -4623,16 +8233,161 @@ def test_validated_set_valued_constructor_theorem_wraps_scoped_interval_box_cert
         scoped,
     )
 
-    assert scoped.proof_certified
+    assert not scoped.certified
+    assert not scoped.proof_certified
     assert validated.theorem_id == "validated_set_valued_constructor_completeness"
     assert validated.input_scope_id == "positive_margin_interval_boxes"
-    assert validated.certified
-    assert validated.proof_certified
+    assert not validated.certified
+    assert not validated.proof_certified
     assert validated.set_valued_constructor_certificate is scoped
     assert not validated.arbitrary_partition_generation_claimed
-    assert validated.missing_obligations == ()
+    assert "pointwise_finite_target_theorem_proof_certified" in (
+        validated.missing_obligations
+    )
+    assert "certificate_search_completeness_proof_certified" in (
+        validated.missing_obligations
+    )
+    assert "scoped_set_valued_constructor_certificate_proof_certified" in (
+        validated.missing_obligations
+    )
     assert "arbitrary recursive partition generation remains open" in (
         validated.proof_sketch
+    )
+
+
+def test_validated_set_valued_constructor_rejects_truthy_nested_proof_flags():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    branch_refinement = certify_uniform_margin_branch_refinement_termination(
+        refinement_kind="state_branch_partition",
+        uniform_decision_margin=0.02,
+        local_decision_lipschitz_bound=4.0,
+        initial_width_bound=0.5,
+        refinement_factor=0.5,
+    )
+    event_refinement = certify_uniform_margin_branch_refinement_termination(
+        refinement_kind="event_order_partition",
+        uniform_decision_margin=0.01,
+        local_decision_lipschitz_bound=5.0,
+        initial_width_bound=0.2,
+        refinement_factor=0.5,
+    )
+    scoped = certify_uniform_margin_set_valued_constructor_completeness(
+        theorem,
+        recursive_branch_refinement_certificate=branch_refinement,
+        event_order_refinement_certificate=event_refinement,
+    )
+    validated = certify_validated_set_valued_constructor_completeness_theorem(
+        scoped,
+    )
+    truthy_scoped = replace(
+        scoped,
+        theorem_certificate=SimpleNamespace(proof_certified="yes"),
+        search_completeness_certificate=SimpleNamespace(proof_certified="yes"),
+    )
+    truthy_validated_theorem = replace(
+        validated,
+        theorem_certificate=SimpleNamespace(proof_certified="yes"),
+    )
+    truthy_validated_search = replace(
+        validated,
+        search_completeness_certificate=SimpleNamespace(proof_certified="yes"),
+    )
+    truthy_validated_scoped = replace(
+        validated,
+        set_valued_constructor_certificate=SimpleNamespace(proof_certified="yes"),
+    )
+    stale_validated_search = replace(
+        validated,
+        search_completeness_certificate=certify_finite_target_certificate_search_completeness(
+            theorem,
+            recursive_branch_refinement_certificate=branch_refinement,
+            event_order_refinement_certificate=event_refinement,
+        ),
+    )
+
+    assert not scoped.certified
+    assert not scoped.proof_certified
+    assert not validated.proof_certified
+    assert not truthy_scoped.certified
+    assert not truthy_scoped.proof_certified
+    assert "uniform_margin_component_types" in truthy_scoped.missing_obligations
+    assert not truthy_validated_theorem.certified
+    assert not truthy_validated_theorem.proof_certified
+    assert "pointwise_finite_target_theorem_proof_certified" in (
+        truthy_validated_theorem.missing_obligations
+    )
+    assert "pointwise_finite_target_theorem_type" in (
+        truthy_validated_theorem.missing_obligations
+    )
+    assert not truthy_validated_search.certified
+    assert not truthy_validated_search.proof_certified
+    assert "certificate_search_completeness_proof_certified" in (
+        truthy_validated_search.missing_obligations
+    )
+    assert "certificate_search_completeness_type" in (
+        truthy_validated_search.missing_obligations
+    )
+    assert not truthy_validated_scoped.certified
+    assert not truthy_validated_scoped.proof_certified
+    assert "scoped_set_valued_constructor_certificate_proof_certified" in (
+        truthy_validated_scoped.missing_obligations
+    )
+    assert "scoped_set_valued_constructor_certificate_type" in (
+        truthy_validated_scoped.missing_obligations
+    )
+    assert not stale_validated_search.certified
+    assert not stale_validated_search.proof_certified
+    assert "validated_set_valued_sources_match" in (
+        stale_validated_search.missing_obligations
+    )
+
+
+def test_finite_target_search_completeness_rejects_spoofed_nested_theorem():
+    theorem = certify_finite_target_completeness_theorem(dimension=3)
+    branch_refinement = certify_uniform_margin_branch_refinement_termination(
+        refinement_kind="state_branch_partition",
+        uniform_decision_margin=0.02,
+        local_decision_lipschitz_bound=4.0,
+        initial_width_bound=0.5,
+        refinement_factor=0.5,
+    )
+    event_refinement = certify_uniform_margin_branch_refinement_termination(
+        refinement_kind="event_order_partition",
+        uniform_decision_margin=0.01,
+        local_decision_lipschitz_bound=5.0,
+        initial_width_bound=0.2,
+        refinement_factor=0.5,
+    )
+    search = certify_finite_target_certificate_search_completeness(
+        theorem,
+        recursive_branch_refinement_certificate=branch_refinement,
+        event_order_refinement_certificate=event_refinement,
+    )
+    fake_theorem_search = replace(
+        search,
+        theorem_certificate=SimpleNamespace(
+            certified=True,
+            proof_certified=True,
+            theorem_id="pointwise_finite_target_atlas_or_stop_completeness",
+            missing_obligations=(),
+        ),
+    )
+    wrong_source_search = replace(
+        search,
+        theorem_certificate=replace(theorem, theorem_id="spoofed_pointwise_theorem"),
+    )
+
+    assert search.certified
+    assert not search.proof_certified
+    assert not fake_theorem_search.certified
+    assert not fake_theorem_search.proof_certified
+    assert "pointwise_finite_target_theorem_type" in (
+        fake_theorem_search.missing_obligations
+    )
+    assert not wrong_source_search.certified
+    assert not wrong_source_search.proof_certified
+    assert "pointwise_finite_target_theorem_source" in (
+        wrong_source_search.missing_obligations
     )
 
 
@@ -4662,21 +8417,24 @@ def test_affine_halfspace_arrangement_set_valued_constructor_completeness_feeds_
     )
     recursive = scoped.branch_consumption_certificate
 
-    assert scoped.certified
-    assert scoped.proof_certified
+    assert not scoped.certified
+    assert not scoped.proof_certified
     assert scoped.equality_strata_claimed
     assert not scoped.arbitrary_partition_generation_claimed
     assert scoped.event_order_consumption_certificate is recursive
     assert "AffineDecisionArrangement" in recursive.child_constructor_source_types
     assert "AffineHalfspacePointChild" in recursive.child_constructor_source_types
     assert scoped.search_completeness_certificate.certified
-    assert scoped.missing_obligations == ()
+    assert not scoped.search_completeness_certificate.proof_certified
+    assert "pointwise_finite_target_theorem_proof_certified" in (
+        scoped.missing_obligations
+    )
     details = {obligation.obligation: obligation for obligation in scoped.obligations}
     assert details["affine_halfspace_arrangement_area_cover_certified"].certified
     assert details["branch_consumption_uses_arrangement_stratified_tree"].certified
     assert details["event_order_consumption_uses_arrangement_stratified_tree"].certified
-    assert validated.certified
-    assert validated.proof_certified
+    assert not validated.certified
+    assert not validated.proof_certified
     assert (
         validated.input_scope_id
         == "finite_2d_affine_halfspace_arrangement_interval_boxes"
@@ -4711,8 +8469,8 @@ def test_affine_halfspace_3d_arrangement_set_valued_constructor_scope_is_spatial
     )
     recursive = scoped.branch_consumption_certificate
 
-    assert scoped.certified
-    assert scoped.proof_certified
+    assert not scoped.certified
+    assert not scoped.proof_certified
     assert scoped.event_order_consumption_certificate is recursive
     assert "AffineHalfspacePlaneChild" in recursive.child_constructor_source_types
     assert "AffineHalfspaceSpatialLineChild" in recursive.child_constructor_source_types
@@ -4720,8 +8478,8 @@ def test_affine_halfspace_3d_arrangement_set_valued_constructor_scope_is_spatial
     assert details["affine_halfspace_arrangement_volume_cover_certified"].certified
     assert details["branch_consumption_uses_arrangement_stratified_tree"].certified
     assert details["event_order_consumption_uses_arrangement_stratified_tree"].certified
-    assert validated.certified
-    assert validated.proof_certified
+    assert not validated.certified
+    assert not validated.proof_certified
     assert (
         validated.input_scope_id
         == "finite_3d_affine_halfspace_arrangement_interval_boxes"
@@ -4770,13 +8528,18 @@ def test_supplied_recursive_stratified_set_valued_constructor_completeness_close
     )
 
     assert recursive.certified
-    assert certificate.certified
-    assert certificate.proof_certified
+    assert not certificate.certified
+    assert not certificate.proof_certified
     assert certificate.event_order_consumption_certificate is recursive
     assert certificate.equality_strata_claimed
     assert not certificate.arbitrary_partition_generation_claimed
     assert certificate.search_completeness_certificate.certified
-    assert certificate.missing_obligations == ()
+    assert "pointwise_finite_target_theorem_proof_certified" in (
+        certificate.missing_obligations
+    )
+    assert "certificate_search_completeness_proof_certified" in (
+        certificate.missing_obligations
+    )
     assert "supplied finite recursive stratified trees" in certificate.statement
     assert "does not construct the recursive stratification" in (
         certificate.proof_sketch

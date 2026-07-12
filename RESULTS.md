@@ -1,5 +1,3186 @@
 # Results
 
+Completion audit after theorem repair and local collision theorem
+=================================================================
+
+The current worktree collects 1,203 tests across 35 files. Because one serial
+run exceeds the practical automation window, the complete collection was run
+in disjoint file groups against the same shared worktree. The counts reconcile
+exactly to 1,203; every group exited zero and no test failed.
+
+The strongest positive mathematical result is the validated local planar
+binary-collision passage described in
+`docs/validated-planar-binary-collision-passage.md` and reproduced by
+`scripts/certify_planar_binary_collision_passage.py`. Its checker path includes
+directed negative half-integer force powers, exact rational Jacobian row sums,
+directed distance floors, exact serialized mass-ratio gates, an exact
+collision anchor, symbolic LC/Newton identities, and weighted ordinary
+endpoint tubes.
+
+The old universal closed-solution claim remains false. Finite-target,
+open-time, closed-form, LAST_PRO, and public-package tests now distinguish
+valid local/supplied certificates from theorem-facing compositions that still
+depend on unaudited analytic existence or arbitrary-input construction.
+
+Final reproduction and integrity checks:
+
+```text
+python scripts/certify_planar_binary_collision_passage.py
+python scripts/verify_lc_projection_identities.py
+python -m compileall -q three_body_symmetry tests scripts
+git diff --check
+pytest --collect-only
+```
+
+Collection reports 1,203 tests. File-group execution accounts for all 1,203
+with zero failures, including 165 finite-target, 84 open-time, 137 local
+checker/collision, 82 general-solution, 71 general-theorem, 180
+obstruction/zero-angular, and 94 public/final-package tests.
+
+Validated local planar binary-collision passage
+================================================
+
+The repaired certificate checker now proves a defensible local result that is
+strictly narrower than a general closed solution. A supplied planar
+Levi-Civita polynomial can be certified as an a-posteriori enclosure of the
+unique exact lifted IVP anchored at an exact constrained collision. Exact
+anchor checks prove `z=0`, nonzero `z'`, separated third body, isolated
+collision, and strict physical-time ordering. Seven LC/Newton projection
+identities are independently reduced to zero by exact SymPy algebra.
+
+A block-weighted ordinary Grönwall checker keeps position and velocity radii
+separate. This makes rigorous punctured endpoint projection possible near
+collision without allowing velocity uncertainty to contaminate the Newtonian
+collision-distance denominator. The two-sided passage checker then binds both
+ordinary Newton branches to the same collision-anchored exact LC solution.
+
+Current verification:
+
+```text
+python scripts/verify_lc_projection_identities.py
+pytest -q tests/test_certificate_checker.py tests/test_lc_projection_identities.py tests/test_binary_chart.py tests/test_binary_series.py
+python -m compileall -q three_body_symmetry tests scripts
+git diff --check
+```
+
+These checks pass. The result is a validated local generalized binary-collision
+continuation for a supplied planar IVP. It is not arbitrary-data collision
+detection, a spatial KS analogue, global atlas completeness, or a general
+closed solution. Older sections below describe historical implementation
+milestones; any claim there that the universal route was internally
+proof-certified is superseded by the proof-status audit in the README and
+`docs/research-direction-audit.md`.
+
+Latest checks after production final proof-package constructor
+=============================================================
+
+Added `three_body_symmetry/final_theorem_package.py` with
+`certify_final_regularized_atlas_proof_package(...)` and
+`FinalRegularizedAtlasProofPackage`. The package assembles the pointwise
+finite-target/open-time theorem route, checker-derived soundness, same-theorem
+enumeration, maximal-classical total-collision policy, canonical fast
+generalized Fuchsian total-stop chart, reusable TC4-TC6 audit evidence bundle,
+local review-ready audit, machine-checked public audit, default-open public
+route, and public manifests from production constructors only.
+
+Added `ReviewReadyTotalCollisionAuditEvidenceBundle` plus
+`build_review_ready_total_collision_audit_evidence_bundle(...)` and
+`certify_review_ready_total_collision_audit_package_from_evidence_bundle(...)`.
+The executable LAST_PRO path now computes TC6 evidence once and reuses the same
+typed evidence object for local, machine-checked public, and raw-string package
+variants. The canonical checked stop-chart builder was promoted into
+`three_body_symmetry.certificate_checker` as
+`build_fast_total_collision_generalized_fuchsian_stop_chart_certificate(...)`,
+so production final-package code imports no `tests.*` helpers.
+
+Verification:
+
+```text
+python -m py_compile three_body_symmetry/certificate_checker.py three_body_symmetry/public_proof_audit.py three_body_symmetry/final_theorem_package.py three_body_symmetry/__init__.py tests/test_last_pro_instructions.py tests/test_final_theorem_package.py scripts/fast_ci.py scripts/slow_certificate_checker.py
+pytest -q tests/test_final_theorem_package.py
+python -m compileall -q three_body_symmetry tests scripts
+pytest --collect-only -q
+pytest -q tests/test_last_pro_instructions.py
+pytest -q tests/test_final_theorem_package.py
+pytest -q tests/test_closed_form.py -k "regularized_locally_finite_atlas or pointwise or certificate_language or enumeration"
+pytest -q tests/test_public_proof_audit.py -k "public_review_artifact_resolution or closes_with_verified or keeps_tc4_tc6_open or public_review_resolver_rejects"
+pytest -q tests/test_finite_target_completeness.py -k "pointwise_finite_target_theorem or supported_event_function_generation or validated_set_valued"
+python scripts/fast_ci.py
+python scripts/slow_certificate_checker.py
+pytest -q
+```
+
+Result: all listed checks passed, including the full repository `pytest -q`.
+Collection reports 31 test files and 1167 tests. The slow CI script now keeps
+the primary TC6 checker `COMMAND` as the manifest-resolved coverage source
+while also running the full public-audit and certificate-checker files; stale
+primary slow-checker commands remain rejected by the resolver. The
+regularized-atlas route remains internally proof-certified for exact/computable
+point inputs; the repo-local machine-checked TC4-TC6 public-audit artifact
+resolver closes the public proof package under
+`artifact_kind="machine_checked_public_audit"`; independent external
+public-review artifacts remain a separate, stronger provenance standard; and
+arbitrary recursive partition generation remains open as the separate
+interval-box implementation theorem.
+
+Latest checks after LAST_PRO completion audit
+============================================
+
+Audited the `LAST_PRO_INSTRUCTIONS.md` definition of done against current
+production constructors, public-review artifacts, public route wrappers, and
+CI artifact coverage. The status probe exercised the internal pointwise route,
+the checker-kernel-derived soundness gate, the same-theorem computable
+enumeration gate, the production review-ready TC4-TC6 package, the typed
+machine-check public-audit resolver, the public total-collision audit, the
+public regularized-atlas wrapper, the public general closed-form target, the
+default-open public route, and the still-separate interval-box search blockers.
+
+Evidence checked:
+
+```text
+python3 - <<'PY'
+# LAST_PRO production-constructor status probe
+...
+PY
+find docs/public-review -maxdepth 1 -type f -print -exec sh -c 'echo --- $1; sed -n "1,90p" "$1"' sh {} \;
+rg -n "class PublicReviewArtifactEvidence|class PublicReviewArtifactResolutionCertificate|def certify_public_review_artifact_resolution|def certify_review_ready_total_collision_audit_package|def certify_public_total_collision_proof_audit|def build_public_tc4_tc6_audit_manifest" three_body_symmetry/public_proof_audit.py
+rg -n "public_review_artifact_resolution_rejects|public_total_collision_audit_closes|public_regularized_atlas_proof_closes|public_general_closed_form_solution_target_closes|keeps_tc4_tc6_open|fake_review|duplicate|digest|missing_proof|self_reference|placeholder|stale|missing_checked|mislabeled" tests/test_public_proof_audit.py
+sed -n '1,260p' scripts/fast_ci.py
+sed -n '1,220p' scripts/slow_certificate_checker.py
+```
+
+Result: the production-constructor probe passed. The three
+`docs/public-review/*-line-audit.md` artifacts exist, declare
+`artifact_kind: machine_checked_public_audit`, name TC4/TC5/TC6 proof
+references, list consumed local artifacts, declare verified line-item results,
+and are not labeled as independent external review. The public proof route
+closes only through typed `PublicReviewArtifactResolutionCertificate` evidence;
+raw artifact strings and the default no-resolver path remain open. The raw
+interval-box search still reports
+`recursive_set_valued_branch_partition_consumption` and
+`event_order_partition_consumption_theorem`. Fast and slow CI scripts import
+the required artifact manifest constants and cover TC4/TC5 and TC6 artifact
+ids through focused selections. This audit is in addition to the successful
+full repository `pytest -q` run recorded below.
+
+Latest checks after full-suite selector/checker regression fix
+==============================================================
+
+Fixed the two failures found by the full repository audit:
+
+- `FiniteJetSelectedBranchCertificate` now validates selector specs with either
+  row-shaped reference coefficients or full coefficient-array references,
+  matching what `_reference_row(...)` and the selected-branch constructor
+  already accept.
+- The generalized Fuchsian projected-residual checker now subdivides punctured
+  shells before applying the cubic-time projection factor and uses a structural
+  exact constant-shape bound for zero-remainder parabolic homothetic stop
+  charts. The generic generalized Fuchsian projected-residual gate remains
+  direct-interval gated.
+
+Verification:
+
+```text
+pytest -q tests/test_obstructions.py::test_zero_angular_finite_jet_entry_constructor_certifies_identity_branch
+pytest -q tests/test_obstructions.py::test_zero_angular_finite_jet_entry_constructor_certifies_identity_branch tests/test_open_time_atlas.py::test_independent_checker_serializes_homothetic_total_collision_stop_chain tests/test_certificate_checker.py::test_generalized_fuchsian_projected_residual_direct_interval_is_certification_gated tests/test_certificate_checker.py::test_generalized_fuchsian_projected_budget_does_not_weaken_lifted_gate tests/test_certificate_checker.py::test_fast_reduced_order_generalized_fuchsian_stop_checker_ci_fixture
+pytest -q tests/test_open_time_atlas.py tests/test_certificate_checker.py tests/test_obstructions.py
+python3 scripts/fast_ci.py
+python3 scripts/slow_certificate_checker.py
+pytest -q
+```
+
+Result: the targeted selector regression passed; the combined failure/gate
+slice passed with `5 passed`; the affected open-time/certificate-checker/
+obstruction files passed; `scripts/fast_ci.py` passed;
+`scripts/slow_certificate_checker.py` passed; and the full repository
+`pytest -q` run completed successfully with exit code 0.
+
+Latest checks after executable LAST_PRO definition-of-done audit
+================================================================
+
+Added a single high-level regression,
+`test_last_pro_definition_of_done_is_executable_from_current_constructors`, that
+walks the LAST_PRO finish-line requirements through current production
+constructors. The test builds the proof-certified internal pointwise route, the
+production review-ready TC4-TC6 package, the machine-check public-audit artifact
+resolver, the public total-collision package, the public regularized-atlas
+wrapper, and the public general closed-form facade. It also checks the default
+no-resolver route remains open, raw artifact strings do not close public proof,
+the interval-box constructor theorem remains separate, and the local public
+manifest resolver exposes fast/slow CI artifact coverage.
+
+Verification:
+
+```text
+python3 -m py_compile tests/test_last_pro_instructions.py
+pytest -q tests/test_last_pro_instructions.py -k definition_of_done
+pytest -q tests/test_last_pro_instructions.py
+python3 scripts/fast_ci.py
+```
+
+Result: py_compile passed; the new definition-of-done audit passed with
+`1 passed`; LAST_PRO passed with `7 passed`; and `scripts/fast_ci.py` passed.
+The full multi-minute repository suite was not rerun.
+
+Latest checks after review-ready package public-review aliases
+=============================================================
+
+`certify_review_ready_total_collision_audit_package(...)` now accepts neutral
+`public_review_artifact_ids` in addition to the legacy
+`external_public_review_artifact_ids`. If both forms are supplied with
+conflicting values, the package routes through the lower-level conflict checks
+and keeps public proof closure open. The package already used the neutral
+`public_review_resolution_certificate`; the artifact-id alias now matches that
+public API surface.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/public_proof_audit.py tests/test_public_proof_audit.py scripts/fast_ci.py tests/test_last_pro_instructions.py
+pytest -q tests/test_public_proof_audit.py -k "review_ready_total_collision_package_accepts_neutral_public_review_artifact_ids or review_ready_total_collision_package_rejects_conflicting_public_review_ids or neutral_public_review_aliases or conflicting_public_review_alias_ids or conflicting_public_review_resolver_aliases"
+pytest -q tests/test_last_pro_instructions.py
+python3 scripts/fast_ci.py
+```
+
+Result: py_compile passed; the focused package/lower-level alias slice passed
+with `5 passed`; LAST_PRO passed with `6 passed`; and `scripts/fast_ci.py`
+passed, including the expanded public-audit hardening slice with `19 passed`.
+The full multi-minute repository suite was not rerun.
+
+Latest checks after neutral public-review constructor aliases
+============================================================
+
+`certify_public_total_collision_proof_audit(...)` now accepts neutral
+`public_review_artifact_ids` and `public_review_resolution_certificate`
+aliases in addition to the legacy `external_public_review_*` keywords. When
+both legacy and neutral names are supplied with conflicting values, the
+constructor refuses public closure instead of silently choosing one. The fast
+public-audit hardening slice now covers neutral alias closure and both
+conflict cases.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/public_proof_audit.py tests/test_public_proof_audit.py scripts/fast_ci.py tests/test_last_pro_instructions.py
+pytest -q tests/test_public_proof_audit.py -k "neutral_public_review_aliases or conflicting_public_review_alias_ids or conflicting_public_review_resolver_aliases or public_total_collision_audit_closes_with_verified_public_review_artifacts"
+pytest -q tests/test_last_pro_instructions.py
+python3 scripts/fast_ci.py
+```
+
+Result: py_compile passed; the focused constructor alias/conflict slice passed
+with `4 passed`; LAST_PRO passed with `6 passed`; and `scripts/fast_ci.py`
+passed, including the expanded public-audit hardening slice with `17 passed`.
+The full multi-minute repository suite was not rerun.
+
+Latest checks after neutral public-review certificate accessors
+===============================================================
+
+`PublicTotalCollisionProofAuditCertificate` now exposes neutral
+`public_review_artifact_manifest_supplied`,
+`public_review_artifact_manifest_certified`,
+`public_review_resolution_is_external`, and
+`machine_checked_public_audit_resolved` accessors alongside the legacy
+`external_public_review_*` compatibility fields. Its own public proof and
+blocker logic now uses the neutral accessors. This keeps machine-checked local
+public-audit artifacts distinct from genuine external-review artifacts at the
+aggregate certificate boundary, not only in the exported manifest.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/public_proof_audit.py tests/test_public_proof_audit.py tests/test_last_pro_instructions.py
+pytest -q tests/test_public_proof_audit.py -k "review_ready_total_collision_package_constructor_builds_local_package or external_public_review_strings_do_not_close_without_verified_artifact_resolver or public_total_collision_audit_closes_with_verified_public_review_artifacts"
+pytest -q tests/test_last_pro_instructions.py
+python3 scripts/fast_ci.py
+```
+
+Result: py_compile passed; the focused public-review alias slice passed with
+`3 passed`; LAST_PRO passed with `6 passed`; and `scripts/fast_ci.py` passed.
+The full multi-minute repository suite was not rerun.
+
+Latest checks after public-review resolver/evidence binding hardening
+====================================================================
+
+`PublicReviewArtifactResolutionCertificate.resolves(...)` now requires the
+exact TC4-TC6 public proof-reference manifest and proof-certified TC4/TC5/TC6
+local audit evidence before a valid artifact resolver can certify the public
+artifact manifest. This closes the weaker boundary where a valid machine-check
+artifact resolver could be paired with stale local audit evidence that happened
+to retain the expected artifact-id fields. The fast public-review hardening
+slice now includes stale local evidence and stale top-level proof-reference
+manifest regressions.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/public_proof_audit.py tests/test_public_proof_audit.py scripts/fast_ci.py tests/test_last_pro_instructions.py
+pytest -q tests/test_public_proof_audit.py -k "closes_with_verified_public_review_artifacts or fake_review_resolver or stale_local_audit_evidence or stale_top_level_proof_reference_manifest or public_review_artifact_resolution_certifies_required_tc4_tc6_artifacts"
+pytest -q tests/test_public_proof_audit.py -k "public_review_artifact_resolution_certifies_required_tc4_tc6_artifacts or public_review_artifact_resolution_rejects_missing_artifact_object or public_review_artifact_resolution_rejects_duplicate_artifact_reuse or public_review_artifact_resolution_rejects_missing_proof_reference or public_review_artifact_resolution_rejects_stale_proof_note_reference or public_review_artifact_resolution_rejects_repo_artifacts_labeled_external_review or public_review_artifact_resolution_rejects_missing_checked_artifacts or public_review_resolver_rejects_stale_local_audit_evidence or public_review_resolver_rejects_stale_top_level_proof_reference_manifest"
+pytest -q tests/test_last_pro_instructions.py
+python3 scripts/fast_ci.py
+pytest -q tests/test_public_proof_audit.py
+```
+
+Result: py_compile passed; the focused positive/fake/stale resolver slice
+passed with `6 passed`; the expanded public-review hardening slice passed with
+`9 passed`; LAST_PRO passed with `6 passed`; `scripts/fast_ci.py` passed with
+the expanded public-audit slice included; and the full public-audit test file
+passed. The full multi-minute repository suite was not rerun.
+
+Latest checks after neutral public-review manifest aliases
+=========================================================
+
+`build_public_tc4_tc6_audit_manifest(...)` now emits neutral
+`public_review_artifact_ids`, `public_review_artifact_kind`,
+`public_review_resolved_by_artifact_resolution`,
+`public_review_resolution_status`, and `public_review_resolution_is_external`
+fields alongside the legacy `external_public_review_*` compatibility keys.
+Machine-checked repo-local public-audit artifacts now surface as
+`public_review_artifact_kind="machine_checked_public_audit"` with
+`public_review_resolution_is_external=False`, while failed or mislabeled
+artifact resolvers leave the neutral resolution flag false.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/public_proof_audit.py tests/test_public_proof_audit.py
+pytest -q tests/test_public_proof_audit.py -k "public_review_artifact_resolution_certifies_required_tc4_tc6_artifacts or public_review_artifact_resolution_rejects_repo_artifacts_labeled_external_review or public_audit_manifest_includes_all_tc4_tc6_artifact_ids or public_tc4_tc6_audit_manifest_is_deterministic_json_payload"
+pytest -q tests/test_public_proof_audit.py
+pytest -q tests/test_last_pro_instructions.py
+python3 scripts/fast_ci.py
+git diff --check -- README.md LAST_PRO_INSTRUCTIONS.md tests/test_last_pro_instructions.py
+```
+
+Result: py_compile passed; the focused manifest/resolver slice passed with
+`3 passed`; the full public-audit test file passed; LAST_PRO passed with
+`6 passed`; `scripts/fast_ci.py` passed, including the public-audit hardening
+slice with `12 passed`; and the scoped tracked-doc diff check was clean.
+
+Latest checks after focused public-audit fast CI split
+=====================================================
+
+`scripts/fast_ci.py` now runs `tests/test_public_proof_audit.py` through a
+focused `PUBLIC_AUDIT_FAST_K` expression instead of the full public-audit test
+file.  The fast public-audit slice covers the default public route-open state,
+the local TC4-TC6 package staying externally open, the public general facade
+staying externally open, local manifest resolution, and the test that proves
+required public-audit artifacts are covered by the fast/slow CI selections.
+`certify_public_audit_manifest_resolution(...)` now rejects both an unfocused
+full public-audit command and stale fast public-audit selections, so the faster
+split remains tied to the artifact manifest.
+
+Verification:
+
+```text
+python3 -m py_compile scripts/fast_ci.py scripts/slow_certificate_checker.py three_body_symmetry/public_proof_audit.py tests/test_public_proof_audit.py tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_public_proof_audit.py -k "public_audit_required_artifacts_are_covered_by_ci_targets or unfocused_fast_public_audit_command or stale_fast_public_audit_selection or public_audit_manifest_resolver_certifies_local_artifact_manifest or public_general_closed_form_target_keeps_external_review_open_after_local_public_audit_package"
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_public_proof_audit.py -k "stale_fast_ci_command_selection or substring_fast_ci_selection or comment_only_fast_manifest_imports or stale_fast_checker_command_selection or stale_slow_checker_command or comment_only_slow_manifest_import or unfocused_fast_public_audit_command or stale_fast_public_audit_selection"
+python3 scripts/fast_ci.py
+python3 scripts/slow_certificate_checker.py
+```
+
+Result: py_compile passed; the focused public-audit fast-selection/manifest
+slice passed with `5 passed`; LAST_PRO passed with `6 passed`; the resolver
+mutation slice passed with `8 passed`; `scripts/fast_ci.py` passed, including
+the focused public-audit slice with `5 passed`, open-time checked-prefix slice
+with `14 passed`, TC4/TC5 obstruction artifact slice with `15 passed`, and the
+non-slow certificate-checker suite with `65 passed`; and
+`scripts/slow_certificate_checker.py` passed with `4 passed`.
+
+Latest checks after exact-type independent-verifier provenance hardening
+=======================================================================
+
+`IndependentChartVerifierCertificate` and the open-time/closed-form handoff
+now require exact constructor-emitted verifier and checker-result dataclasses.
+Subclassed result objects can no longer override `certified` to enter the
+finite-atlas bundle, subclassed independent verifier certificates cannot be
+attached, and manually spliced subclassed verifier evidence does not remove
+the theorem-facing `independent_chart_verifier` blocker.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/certificate_checker.py three_body_symmetry/open_time_atlas.py three_body_symmetry/closed_form.py tests/test_certificate_checker.py tests/test_open_time_atlas.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_certificate_checker.py -k "spoofed_result_objects or subclassed_result_objects or verifier_certificate_attaches or subclassed_verifier"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "fake_verifier or subclassed_fake_verifier or checked_prefix"
+python3 -m pytest -q tests/test_closed_form.py -k "constructor_checked_prefix or subclassed_independent_verifier_gate or independent_chart_verifier or regularized_locally_finite_atlas"
+python3 -m pytest -q tests/test_last_pro_instructions.py
+```
+
+Result: py_compile passed; the certificate-checker subclass/fake verifier
+slice passed with `4 passed`; the open-time checked-prefix/fake verifier slice
+passed with `8 passed`; the focused closed-form route slice passed with
+`3 passed`; and the LAST_PRO regression passed with `6 passed`.
+
+Latest checks after finite-atlas verifier bundle hardening
+=========================================================
+
+`IndependentChartVerifierCertificate` now distinguishes a local
+proof-grade arithmetic bundle from a finite-atlas bundle.  A chart-only
+verifier can still certify local chart arithmetic, but it no longer removes
+the open-time/closed-form `independent_chart_verifier` blocker.  The
+theorem-facing route now requires proof-grade chart-chain or branch-union
+coverage through `proof_grade_finite_atlas_bundle_certified`.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/certificate_checker.py three_body_symmetry/open_time_atlas.py three_body_symmetry/closed_form.py tests/test_certificate_checker.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_certificate_checker.py -k "chart_only_exact_rational_bundle or serialized_chart_chain_coverage or verifier_certificate_attaches_to_open_time_audit"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "checked_prefix or independent_chart_verifier or branch_union_checked_prefix"
+python3 -m pytest -q tests/test_closed_form.py -k "independent_chart_verifier or regularized_locally_finite_atlas or pointwise"
+python3 -m pytest -q tests/test_last_pro_instructions.py
+```
+
+Result: py_compile passed; the certificate-checker finite-atlas verifier slice
+passed with `3 passed`; the open-time checked-prefix slice passed with
+`5 passed`; the focused closed-form route slice passed with `22 passed`; and
+the LAST_PRO regression passed with `6 passed`.
+
+Latest checks after branch-union checked-prefix verifier handoff
+===============================================================
+
+`OpenTimeLocallyFiniteAtlasTheoremCertificate` now separates the strict
+compact-prefix theorem obligation ledger from independently checked finite
+prefix evidence.  A supplied finite branch-union atlas whose leaves and
+aggregate `BranchUnionCertificate` pass the independent verifier now sets
+`independent_checked_prefix_certified` and `checked_prefix_certified`, while
+`certified` still depends on the original compact-prefix obligations and the
+arbitrary finite-target completeness reduction.  Attribute-compatible fake
+verifiers do not satisfy the checked-prefix handoff.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/open_time_atlas.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_open_time_atlas.py -k "branch_union_checked_prefix or serializes_validated_branch_union or stratified_branch_union"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "checked_prefix or independent_chart_verifier or open_time_theorem_surfaces_reject"
+```
+
+Result: py_compile passed; the branch-union checked-prefix/verifier slice
+passed with `5 passed`; and the broader checked-prefix/independent-verifier
+slice passed with `6 passed`.
+
+Latest checks after public total-collision audit exact-type hardening
+====================================================================
+
+The aggregate public total-collision audit now requires exact TC4, TC5, and
+TC6 evidence certificate classes, and an exact
+`PublicAuditManifestResolutionCertificate`, before it can mark
+`local_audit_package_certified`.  Subclassed evidence objects or a subclassed
+manifest resolver that override `proof_certified` no longer close the local
+package; the blockers now name `tc4:evidence_type`, `tc5:evidence_type`,
+`tc6:evidence_type`, `public_audit_local_manifest_resolution`, and
+`public_audit_local_manifest_matches_current_fields` as appropriate.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/public_proof_audit.py tests/test_public_proof_audit.py
+python3 -m pytest -q tests/test_public_proof_audit.py -k "subclassed_nested_evidence or subclassed_manifest_resolution or truthy_fake_nested_evidence or stale_local_manifest_replay"
+python3 -m pytest -q tests/test_public_proof_audit.py -k "public_total_collision_audit or public_general_closed_form or public_regularized_atlas or manifest_resolution"
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -c "... LAST_PRO status probe plus public manifest resolution ..."
+git diff --check
+```
+
+Result: py_compile passed; the exact-type regression slice passed with
+`4 passed`; the broader public-audit manifest/facade slice passed with
+`23 passed`; the LAST_PRO regression passed with `6 passed`; the status probe
+passed, including the internally certified `regularized_locally_finite_atlas`
+route and local public-audit manifest resolution with `external_review_open`;
+and `git diff --check` passed.
+
+Latest checks after top-level closed-form requirement-ledger hardening
+=====================================================================
+
+The top-level `GeneralClosedFormSolutionCertificate` now requires exact
+`GeneralSolutionRequirementStatus` instances in its requirement ledger.  A
+subclassed requirement-status object with all fields set to certified can no
+longer stand in for the constructor-produced requirement ledger and preserve
+`proof_certified`.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/closed_form.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_closed_form.py -k "pointwise_closed_form_theorem_rejects or general_closed_form_solution_rejects_spoofed_requirement_statuses"
+python3 -m pytest -q tests/test_closed_form.py -k "regularized_locally_finite_atlas or pointwise or certificate_language or enumeration"
+python3 -m pytest -q tests/test_public_proof_audit.py -k "public_general_closed_form or public_regularized_atlas or subclassed"
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -c "... LAST_PRO status probe plus public manifest resolution ..."
+git diff --check
+```
+
+Result: py_compile passed; the closed-form spoof regression slice passed with
+`4 passed`; the broader closed-form route slice passed with `27 passed`; the
+public facade slice passed with `13 passed`; the LAST_PRO regression passed
+with `6 passed`; the status probe passed, including the internally certified
+`regularized_locally_finite_atlas` route and local public-audit manifest
+resolution with `external_review_open`; and `git diff --check` passed.
+
+Latest checks after internal pointwise closed-form manifest hardening
+====================================================================
+
+The internal `PointwiseRegularizedAtlasClosedFormTheoremCertificate` now binds
+its theorem id, exact nested gate types, and exact constructor-emitted
+obligation manifest.  A forged single `TheoremPipelineObligation` can no
+longer replace the pointwise closed-form obligation ledger, and subclassed
+soundness/enumeration/policy stand-ins cannot ride through the internal route
+by overriding `proof_certified` properties.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/closed_form.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_closed_form.py -k "pointwise_closed_form_theorem_rejects or pointwise_regularized_atlas_closed_form_theorem_feeds_audit_directly or pointwise_regularized_atlas_closed_form_theorem_requires_declared_scope"
+python3 -m pytest -q tests/test_closed_form.py -k "regularized_locally_finite_atlas or pointwise or certificate_language or enumeration"
+python3 -m pytest -q tests/test_public_proof_audit.py -k "public_general_closed_form or public_regularized_atlas or subclassed"
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -c "... LAST_PRO status probe plus public manifest resolution ..."
+git diff --check
+```
+
+Result: py_compile passed; the pointwise closed-form bypass slice passed with
+`5 passed`; the broader closed-form route slice passed with `27 passed`; the
+public facade slice passed with `13 passed`; the LAST_PRO regression passed
+with `6 passed`; the status probe passed, including the internally certified
+`regularized_locally_finite_atlas` route and local public-audit manifest
+resolution with `external_review_open`; and `git diff --check` passed.
+
+Latest checks after public-facade subclass/ledger hardening
+===========================================================
+
+The public regularized-atlas and public general closed-form facades now require
+exact certificate classes at the trust boundary and exact constructor-emitted
+obligation manifests.  A subclassed public total-collision audit or subclassed
+regularized route can no longer be combined with a forged all-true
+`TheoremPipelineObligation` tuple to promote the public route.  The blockers
+now name `public_regularized_total_collision_audit_field`,
+`public_regularized_obligation_manifest`,
+`public_regularized_atlas_proof_type`,
+`public_regularized_atlas_proof_source_matches_pointwise`, or
+`public_general_obligation_manifest` as appropriate.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/public_proof_audit.py tests/test_public_proof_audit.py
+python3 -m pytest -q tests/test_public_proof_audit.py -k "subclassed or forged_ledger or raw_scaffold_gates or keeps_total_collision_audit_separate"
+python3 -m pytest -q tests/test_public_proof_audit.py -k "public_general_closed_form or public_regularized_atlas or public_total_collision_audit or forged_theorem_id"
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -c "... LAST_PRO status probe plus public manifest resolution ..."
+git diff --check
+```
+
+Result: py_compile passed; the facade-bypass regression slice passed with
+`5 passed`; the broader public facade/audit slice passed with `19 passed`;
+the LAST_PRO regression passed with `6 passed`; the status probe passed,
+including the internally certified `regularized_locally_finite_atlas` route
+and local public-audit manifest resolution with `external_review_open`; and
+`git diff --check` passed.
+
+Latest checks after public-audit theorem-id diagnostics hardening
+================================================================
+
+The public TC4, TC5, TC6, local manifest-resolution, and aggregate
+total-collision audit certificates now report forged theorem ids as explicit
+named obligations.  Replacing a constructor-produced public audit certificate
+with a stale `theorem_id` already dropped certification; the missing-obligation
+ledger now names the failing id instead of returning an empty diagnostic list.
+The aggregate total-collision audit also drops `local_audit_package_certified`
+with `public_total_collision_proof_audit_theorem_id` when its id is replaced.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/public_proof_audit.py tests/test_public_proof_audit.py
+python3 -m pytest -q tests/test_public_proof_audit.py -k "forged_theorem_id or evidence_constructors_are_typed or manifest_resolver_certifies or stale_local_manifest_replay"
+python3 -m pytest -q tests/test_public_proof_audit.py -k "public_total_collision_audit or public_general_closed_form or public_regularized_atlas or manifest_resolution"
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -c "... LAST_PRO status probe plus public manifest resolution ..."
+git diff --check
+```
+
+Result: py_compile passed; the forged-id/public-audit regression slice passed
+with `6 passed`; the broader public-audit manifest/gating slice passed with
+`21 passed`; the LAST_PRO regression passed with `6 passed`; the status probe
+passed, including the internally certified `regularized_locally_finite_atlas`
+route and local public-audit manifest resolution with
+`external_review_open`; and `git diff --check` passed.
+
+Latest checks after theorem-scope parameter hardening
+====================================================
+
+The pointwise finite-target and open-time theorem certificates now bind their
+public theorem-scope parameters at certification time.  Replacing the
+finite-target theorem's dimension, input model, total-collision policy, or
+theorem id now drops certification with a named obligation.  Replacing the
+pointwise open-time theorem id or flipping the explicit
+`endpoint_regime_partition_required=False` semantics likewise drops
+certification instead of preserving a stale proof flag.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py three_body_symmetry/open_time_atlas.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "pointwise_finite_target_theorem or certificate_search_completeness_keeps_search_gap_separate or finite_target_analytic_lemma_registry"
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "supported_event_function_generation or scoped_partition or validated_set_valued"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "pointwise_open_time and (theorem or forged or maximal_classical_policy or attribute_compatible)"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "checked_prefix or independent_chart_verifier or pointwise_open_time"
+python3 -m pytest -q tests/test_closed_form.py -k "regularized_locally_finite_atlas or pointwise or independent_chart_verifier or generalized_fuchsian or certificate_language or enumeration"
+python3 -m pytest -q tests/test_certificate_checker.py -m "not slow" --maxfail=1
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -c "... LAST_PRO status probe ..."
+git diff --check
+```
+
+Result: py_compile passed; the finite-target pointwise slice passed with
+`4 passed`; the supported-generation/scoped-constructor slice passed with
+`24 passed`; the pointwise open-time spoofing slice passed with `5 passed`;
+the open-time checker handoff slice passed with `9 passed`; the focused
+closed-form route slice passed with `25 passed`; the non-slow certificate
+checker slice passed with `63 passed`; and the LAST_PRO regression passed with
+`6 passed`.  The status probe passed, confirming the internally certified
+`regularized_locally_finite_atlas` pointwise route still closes while the
+separate interval-box implementation theorem remains out of that route.
+
+Latest checks after scoped interval-input scope-label hardening
+==============================================================
+
+The validated set-valued constructor wrapper and the scoped arbitrary
+interval-input partition certificate no longer trust editable scope labels as
+proof evidence.  `ValidatedSetValuedConstructorCompletenessTheoremCertificate`
+now derives its expected `input_scope_id` from the actual scoped constructor
+certificate type and recursive consumption chain.  The scoped partition bridge
+now recomputes its branch/event source types, branch/event grammar ids,
+constructor input-scope ids, aggregate grammar id, and aggregate input scope
+from the recursive branch/event consumption certificates plus the validated
+wrapper.  Directly rewriting those public fields is now a named blocker rather
+than a proof-certified scoped interval theorem.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py tests/test_finite_target_completeness.py tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "scope_fields or forged_scope or supported_event_function_generation"
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "validated_set_valued or scoped_arbitrary_interval or scoped_partition or supported_event_function_generation"
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 - <<'PY'
+from three_body_symmetry.open_time_atlas import certify_pointwise_open_time_locally_finite_atlas_theorem
+from three_body_symmetry.certificate_checker import certify_rational_interval_arithmetic_backend_soundness, certify_certificate_checker_kernel_support
+from three_body_symmetry.closed_form import derive_certificate_language_soundness_from_checker_kernel, derive_computable_atlas_certificate_enumeration_from_pointwise_theorem, certify_general_closed_form_solution_target
+from three_body_symmetry.finite_target_completeness import certify_finite_target_completeness_theorem, certify_finite_target_certificate_search_completeness
+from three_body_symmetry.public_proof_audit import certify_public_audit_manifest_resolution, build_public_tc4_tc6_audit_manifest
+finite_target = certify_finite_target_completeness_theorem(dimension=3)
+raw_search = certify_finite_target_certificate_search_completeness(finite_target)
+pointwise = certify_pointwise_open_time_locally_finite_atlas_theorem(dimension=3, compact_time_rate=1.3, total_collision_policy_id='maximal_classical_stop')
+arithmetic = certify_rational_interval_arithmetic_backend_soundness()
+kernel = certify_certificate_checker_kernel_support(proof_grade_arithmetic_backend_certificate=arithmetic)
+soundness = derive_certificate_language_soundness_from_checker_kernel(kernel)
+enumeration = derive_computable_atlas_certificate_enumeration_from_pointwise_theorem(pointwise)
+audit = certify_general_closed_form_solution_target('regularized locally finite atlas', general_theorem_certificate=pointwise, certificate_language_soundness_certificate=soundness, computable_atlas_enumeration_certificate=enumeration)
+public_resolution = certify_public_audit_manifest_resolution()
+public_manifest = build_public_tc4_tc6_audit_manifest()
+print({'finite_target': (finite_target.certified, finite_target.proof_certified, finite_target.missing_obligations), 'search': (raw_search.certified, raw_search.missing_obligations), 'pointwise': (pointwise.certified, pointwise.proof_certified), 'closed_form': (audit.closed_form_certificate.status, audit.certified, audit.proof_certified, audit.blocking_obligations), 'public_manifest': (public_resolution.proof_certified, public_resolution.missing_obligations, public_manifest['public_closure_status'])})
+PY
+```
+
+Result: py_compile passed, the focused scope-forgery/supported-generation
+slice passed with `22 passed`, the broader scoped interval-input slice passed
+with `38 passed`, and the LAST_PRO regression passed with `6 passed`.  The
+theorem probe remains stable: the pointwise regularized-atlas route is
+proof-certified; raw interval search remains blocked only on
+`recursive_set_valued_branch_partition_consumption` and
+`event_order_partition_consumption_theorem`; the public manifest remains
+locally resolved with `external_review_open`.
+
+Latest checks after supported grammar constructor-replay hardening
+=================================================================
+
+The supported event-function grammar generator no longer relies only on stored
+payload signatures when proving that a generated branch/event constructor came
+from the current raw grammar input.  Proof certification now regenerates the
+supported constructor from the current branch and event-order grammar inputs
+and compares the replayed source type, constructor input signature, generated
+root/stratum/cell evidence, rational denominator evidence, and emitted
+equality-resolution policies against the stored constructor.  A forged payload
+tuple can therefore no longer make a stale constructor certify a changed
+policy or invalid Sturm bisection budget.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py tests/test_finite_target_completeness.py tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "supported_event_function_generation"
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 - <<'PY'
+from three_body_symmetry.open_time_atlas import certify_pointwise_open_time_locally_finite_atlas_theorem
+from three_body_symmetry.certificate_checker import certify_rational_interval_arithmetic_backend_soundness, certify_certificate_checker_kernel_support
+from three_body_symmetry.closed_form import derive_certificate_language_soundness_from_checker_kernel, derive_computable_atlas_certificate_enumeration_from_pointwise_theorem, certify_general_closed_form_solution_target
+from three_body_symmetry.finite_target_completeness import certify_finite_target_completeness_theorem, certify_finite_target_certificate_search_completeness
+from three_body_symmetry.public_proof_audit import certify_public_audit_manifest_resolution, build_public_tc4_tc6_audit_manifest
+finite_target = certify_finite_target_completeness_theorem(dimension=3)
+raw_search = certify_finite_target_certificate_search_completeness(finite_target)
+pointwise = certify_pointwise_open_time_locally_finite_atlas_theorem(dimension=3, compact_time_rate=1.3, total_collision_policy_id='maximal_classical_stop')
+arithmetic = certify_rational_interval_arithmetic_backend_soundness()
+kernel = certify_certificate_checker_kernel_support(proof_grade_arithmetic_backend_certificate=arithmetic)
+soundness = derive_certificate_language_soundness_from_checker_kernel(kernel)
+enumeration = derive_computable_atlas_certificate_enumeration_from_pointwise_theorem(pointwise)
+audit = certify_general_closed_form_solution_target('regularized locally finite atlas', general_theorem_certificate=pointwise, certificate_language_soundness_certificate=soundness, computable_atlas_enumeration_certificate=enumeration)
+public_resolution = certify_public_audit_manifest_resolution()
+public_manifest = build_public_tc4_tc6_audit_manifest()
+print({'finite_target': (finite_target.certified, finite_target.proof_certified, finite_target.missing_obligations), 'search': (raw_search.certified, raw_search.missing_obligations), 'pointwise': (pointwise.certified, pointwise.proof_certified), 'closed_form': (audit.closed_form_certificate.status, audit.certified, audit.proof_certified, audit.blocking_obligations), 'public_manifest': (public_resolution.proof_certified, public_resolution.missing_obligations, public_manifest['public_closure_status'])})
+PY
+git diff --check
+```
+
+Result: py_compile passed, the supported-event-generation slice passed with
+`20 passed`, and the LAST_PRO regression passed with `6 passed`.  The theorem
+probe still reports the pointwise regularized-atlas closed-form route as
+proof-certified while raw interval search remains blocked only on
+`recursive_set_valued_branch_partition_consumption` and
+`event_order_partition_consumption_theorem`; the public manifest remains
+locally resolved with `external_review_open`.  `git diff --check` reported no
+whitespace errors.
+
+Latest checks after supported grammar payload provenance hardening
+=================================================================
+
+The supported event-function grammar generator now stores the raw generation
+payload signatures for the branch and event-order inputs it actually consumed.
+Those payload signatures include the equality-resolution policy and Sturm
+bisection budget in addition to the constructor-visible discriminator data.
+Replaying an otherwise identical polynomial/affine/rational grammar with a
+different policy or event-order search budget is now a named blocker instead of
+silently reusing the old generated constructor evidence.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "replayed_branch_payload_policy or replayed_event_payload_budget or supported_event_function_generation_rejects_same_source_constructor_partition_swap or supported_event_function_stratification_generation_covers_declared_grammars"
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "supported_event_function_generation"
+python3 -m pytest -q tests/test_last_pro_instructions.py
+```
+
+Result: py_compile passed, the focused payload replay slice passed with
+`4 passed`, the full supported-event-generation slice passed with `18 passed`,
+and the LAST_PRO regression passed with `6 passed`.
+
+Latest checks after structural public-audit manifest resolution
+==============================================================
+
+The public TC4-TC6 audit manifest resolver now resolves pytest artifact ids by
+parsing the target test file's Python AST rather than searching for
+`def test_name(` text.  A commented-out or string-only artifact name can no
+longer satisfy the local public-review manifest.  It also resolves proof-note
+section references against actual level-2 Markdown headings outside fenced code
+blocks, so a paragraph or code block containing `## TC4.` cannot stand in for
+the TC4 public-audit section.  The TC6 fast/slow split now reads real pytest
+decorators when classifying slow checker artifacts.  CI `-k` coverage checks
+now require exact pytest test-name tokens, so a longer fake token containing a
+required artifact name as a substring cannot satisfy the public-audit fast/slow
+coverage manifest.  The fast and slow CI scripts must also actually import the
+public-audit manifest constants they claim to derive from; leaving those
+constant names in comments while using literal `-k` selections is now a local
+manifest blocker.  The top-level total-stop checker artifacts must resolve to
+the exact exported checker class/function objects, so a same-name object cannot
+stand in for the generalized Fuchsian stop certificate class or checker.  The
+public manifest resolver also now requires exact deterministic manifest tuples;
+duplicate or replayed proof-reference and checker-artifact entries no longer
+certify as harmless supersets.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/public_proof_audit.py tests/test_public_proof_audit.py tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_public_proof_audit.py -k "name_spoofed_checker_artifacts or stale_local_artifacts or manifest_resolver_certifies_local_artifact_manifest"
+python3 -m pytest -q tests/test_public_proof_audit.py -k "duplicate_manifest_fields or stale_replaced_manifest_fields or name_spoofed_checker_artifacts or manifest_resolver_certifies_local_artifact_manifest"
+python3 -m pytest -q tests/test_public_proof_audit.py -k "requires_real_markdown_heading_anchors or requires_real_pytest_function_defs or manifest_resolver_certifies_local_artifact_manifest or required_proof_references_resolve_to_proof_note_sections"
+python3 -m pytest -q tests/test_public_proof_audit.py -k "substring_fast_ci_selection or stale_fast_ci_command_selection or stale_fast_checker_command_selection or stale_slow_checker_command or manifest_resolver_certifies_local_artifact_manifest"
+python3 -m pytest -q tests/test_public_proof_audit.py -k "comment_only_fast_manifest_imports or comment_only_slow_manifest_import or substring_fast_ci_selection or stale_fast_ci_command_selection or stale_fast_checker_command_selection or stale_slow_checker_command or manifest_resolver_certifies_local_artifact_manifest"
+python3 -m pytest -q tests/test_public_proof_audit.py -k "manifest_resolver or audit_manifest or public_tc4_tc6_audit_manifest or public_tc4_tc5_required_artifacts or proof_references_resolve"
+python3 -m pytest -q tests/test_public_proof_audit.py -m "not slow"
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 - <<'PY'
+from three_body_symmetry.open_time_atlas import certify_pointwise_open_time_locally_finite_atlas_theorem
+from three_body_symmetry.certificate_checker import certify_rational_interval_arithmetic_backend_soundness, certify_certificate_checker_kernel_support
+from three_body_symmetry.closed_form import derive_certificate_language_soundness_from_checker_kernel, derive_computable_atlas_certificate_enumeration_from_pointwise_theorem, certify_general_closed_form_solution_target
+from three_body_symmetry.finite_target_completeness import certify_finite_target_completeness_theorem, certify_finite_target_certificate_search_completeness
+from three_body_symmetry.public_proof_audit import certify_public_audit_manifest_resolution, build_public_tc4_tc6_audit_manifest
+finite_target = certify_finite_target_completeness_theorem(dimension=3)
+raw_search = certify_finite_target_certificate_search_completeness(finite_target)
+pointwise = certify_pointwise_open_time_locally_finite_atlas_theorem(dimension=3, compact_time_rate=1.3, total_collision_policy_id='maximal_classical_stop')
+arithmetic = certify_rational_interval_arithmetic_backend_soundness()
+kernel = certify_certificate_checker_kernel_support(proof_grade_arithmetic_backend_certificate=arithmetic)
+soundness = derive_certificate_language_soundness_from_checker_kernel(kernel)
+enumeration = derive_computable_atlas_certificate_enumeration_from_pointwise_theorem(pointwise)
+audit = certify_general_closed_form_solution_target('regularized locally finite atlas', general_theorem_certificate=pointwise, certificate_language_soundness_certificate=soundness, computable_atlas_enumeration_certificate=enumeration)
+public_resolution = certify_public_audit_manifest_resolution()
+public_manifest = build_public_tc4_tc6_audit_manifest()
+print({'finite_target': (finite_target.certified, finite_target.proof_certified, finite_target.missing_obligations), 'search': (raw_search.certified, raw_search.missing_obligations), 'pointwise': (pointwise.certified, pointwise.proof_certified), 'closed_form': (audit.closed_form_certificate.status, audit.certified, audit.proof_certified, audit.blocking_obligations), 'public_manifest': (public_resolution.proof_certified, public_resolution.missing_obligations, public_manifest['public_closure_status'])})
+PY
+git diff --check
+```
+
+Result: py_compile passed, the focused checker-artifact identity spoof slice
+passed with `3 passed`, the focused exact-manifest/identity spoof slice passed
+with `4 passed`, the focused structural spoof regression slice passed with
+`4 passed`, the focused CI-selection spoof slice passed with `5 passed`, the
+focused manifest-import/CI-selection spoof slice passed with `7 passed`, and
+the focused public-audit resolver/manifest slice passed with `13 passed`.
+The non-slow public-audit suite passed, the LAST_PRO
+regression passed with `6 passed`, the theorem probe still reports the
+pointwise closed-form route as proof-certified while raw interval search
+remains blocked only on `recursive_set_valued_branch_partition_consumption` and
+`event_order_partition_consumption_theorem`, the public manifest remains
+locally resolved with `external_review_open`, and `git diff --check` reported
+no whitespace errors.
+
+Latest checks after recursive child source-binding hardening
+============================================================
+
+Recursive stratified consumption now requires a supplied constructor-derived
+lower-dimensional child certificate that claims parent-stratum/cell/slab
+provenance to be source-bound to the equality stratum or cell it consumes.
+Generic lower-dimensional child certificates remain admissible, but a child
+derived from one equality leaf can no longer be remapped onto another equality
+leaf merely because it is certified and lower-dimensional.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py tests/test_finite_target_completeness.py tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "polynomial_arrangement_child_consumption_rejects_swapped_leaf_binding or recursive_stratified_consumption_closes_lower_dimensional_equality_tree or polynomial_decision_stratifier_feeds_recursive_consumption_with_child_stratum or polynomial_decision_arrangement_recursive_consumes_equality_children or affine_halfspace_arrangement_derives_intersecting_oblique_polygon_cells or supplied_recursive_stratified_set_valued_constructor_completeness_closes_displayed_equality_tree"
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m compileall -q three_body_symmetry tests/test_finite_target_completeness.py tests/test_last_pro_instructions.py
+python3 - <<'PY'
+from three_body_symmetry.open_time_atlas import certify_pointwise_open_time_locally_finite_atlas_theorem
+from three_body_symmetry.certificate_checker import certify_rational_interval_arithmetic_backend_soundness, certify_certificate_checker_kernel_support
+from three_body_symmetry.closed_form import derive_certificate_language_soundness_from_checker_kernel, derive_computable_atlas_certificate_enumeration_from_pointwise_theorem, certify_general_closed_form_solution_target
+from three_body_symmetry.finite_target_completeness import certify_finite_target_completeness_theorem, certify_finite_target_certificate_search_completeness
+finite_target = certify_finite_target_completeness_theorem(dimension=3)
+raw_search = certify_finite_target_certificate_search_completeness(finite_target)
+pointwise = certify_pointwise_open_time_locally_finite_atlas_theorem(dimension=3, compact_time_rate=1.3, total_collision_policy_id='maximal_classical_stop')
+arithmetic = certify_rational_interval_arithmetic_backend_soundness()
+kernel = certify_certificate_checker_kernel_support(proof_grade_arithmetic_backend_certificate=arithmetic)
+soundness = derive_certificate_language_soundness_from_checker_kernel(kernel)
+enumeration = derive_computable_atlas_certificate_enumeration_from_pointwise_theorem(pointwise)
+audit = certify_general_closed_form_solution_target('regularized locally finite atlas', general_theorem_certificate=pointwise, certificate_language_soundness_certificate=soundness, computable_atlas_enumeration_certificate=enumeration)
+print({'finite_target': (finite_target.certified, finite_target.proof_certified, finite_target.missing_obligations), 'search': (raw_search.certified, raw_search.missing_obligations), 'pointwise': (pointwise.certified, pointwise.proof_certified), 'closed_form': (audit.closed_form_certificate.status, audit.certified, audit.proof_certified, audit.blocking_obligations)})
+PY
+git diff --check
+```
+
+Result: py_compile passed, the focused recursive child-consumption regression
+slice passed with `6 passed`, the full finite-target suite passed, collect-only
+reports `158` finite-target tests, the LAST_PRO regression passed with
+`6 passed`, compileall passed, the theorem probe still reports the pointwise
+closed-form route as proof-certified while raw interval search remains blocked
+only on `recursive_set_valued_branch_partition_consumption` and
+`event_order_partition_consumption_theorem`, and `git diff --check` reported no
+whitespace errors.
+
+Latest checks after arrangement grammar-id hardening
+====================================================
+
+The supported event-function grammar manifest now distinguishes finite
+arrangements from single-decision grammars for affine, polynomial, and
+Sturm-polynomial inputs.  `AffineDecisionArrangement`,
+`PolynomialDecisionArrangement`, and `SturmPolynomialDecisionArrangement` now
+emit arrangement-specific grammar ids, so mixed branch/event certificates keep
+their exact arrangement scope instead of collapsing to the corresponding
+single-decision grammar name.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py tests/test_finite_target_completeness.py tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "scoped_arbitrary_interval_partition_manifest_names_supported_grammars or supported_event_function_stratification_generation_covers_declared_grammars or scoped_arbitrary_interval_partition_generation_preserves_mixed_grammar_pair or supported_event_function_generation_preserves_mixed_grammar_pair or supported_event_function_generation_rejects_stale_partition_bridge_provenance"
+python3 -m pytest -q tests/test_last_pro_instructions.py -k "supported or finite or last_pro"
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py
+python3 -m compileall -q three_body_symmetry tests/test_finite_target_completeness.py tests/test_last_pro_instructions.py
+python3 - <<'PY'
+from three_body_symmetry.open_time_atlas import certify_pointwise_open_time_locally_finite_atlas_theorem
+from three_body_symmetry.certificate_checker import certify_rational_interval_arithmetic_backend_soundness, certify_certificate_checker_kernel_support
+from three_body_symmetry.closed_form import derive_certificate_language_soundness_from_checker_kernel, derive_computable_atlas_certificate_enumeration_from_pointwise_theorem, certify_general_closed_form_solution_target
+from three_body_symmetry.finite_target_completeness import certify_finite_target_completeness_theorem, certify_finite_target_certificate_search_completeness
+finite_target = certify_finite_target_completeness_theorem(dimension=3)
+raw_search = certify_finite_target_certificate_search_completeness(finite_target)
+pointwise = certify_pointwise_open_time_locally_finite_atlas_theorem(dimension=3, compact_time_rate=1.3, total_collision_policy_id='maximal_classical_stop')
+arithmetic = certify_rational_interval_arithmetic_backend_soundness()
+kernel = certify_certificate_checker_kernel_support(proof_grade_arithmetic_backend_certificate=arithmetic)
+soundness = derive_certificate_language_soundness_from_checker_kernel(kernel)
+enumeration = derive_computable_atlas_certificate_enumeration_from_pointwise_theorem(pointwise)
+audit = certify_general_closed_form_solution_target('regularized locally finite atlas', general_theorem_certificate=pointwise, certificate_language_soundness_certificate=soundness, computable_atlas_enumeration_certificate=enumeration)
+print({'finite_target': (finite_target.certified, finite_target.proof_certified, finite_target.missing_obligations), 'search': (raw_search.certified, raw_search.missing_obligations), 'pointwise': (pointwise.certified, pointwise.proof_certified), 'closed_form': (audit.closed_form_certificate.status, audit.certified, audit.proof_certified, audit.blocking_obligations)})
+PY
+git diff --check
+```
+
+Result: py_compile passed, the focused finite-target grammar/provenance slice
+passed with `4 passed`, and the focused LAST_PRO supported-scope slice passed
+with `6 passed`; the full LAST_PRO regression also passed with `6 passed`.
+The full finite-target suite passed, collect-only still reports `157`
+finite-target tests, compileall passed, the theorem probe still reports the
+pointwise closed-form route as proof-certified while raw interval search remains
+blocked only on `recursive_set_valued_branch_partition_consumption` and
+`event_order_partition_consumption_theorem`, and `git diff --check` reported no
+whitespace errors.
+
+Latest checks after checker-derived TC6 evidence and generated-evidence provenance
+=================================================================================
+
+`PublicCauchyMajorantAuditEvidence` now has a checker-derived constructor:
+`certify_public_cauchy_majorant_audit_evidence_from_checked_stop_chart(...)`
+extracts the Banach defect/right-inverse/Lipschitz/radius constants, checker
+id, checked certificate id, certified checker obligations, and required
+majorant component ids from an independently checked
+`TotalCollisionGeneralizedFuchsianStopChartCertificate`.  A local TC6 package
+can no longer certify from free-floating majorant constants alone.  Corrupting
+the serialized majorant or removing the `physical_residual` component now
+blocks the public TC6 evidence through the checker-obligation and component
+manifests, while public proof closure remains correctly blocked on external
+TC4-TC6 review.
+
+The supported event-function generator was also tightened at the grammar
+frontier.  `AffineDecisionStratification` is now a supported raw grammar for a
+single one-dimensional affine decision, and the generator records signatures
+for constructor-generated evidence such as root brackets, full stratum and
+cell interval payloads, rational denominator interval/sign evidence, and
+decision ids.  Mutating generated Sturm evidence or generated stratum interval
+evidence after construction now blocks the supported grammar certificate even
+when the raw input signature still matches.  Constructor certificates also now
+require their top-level
+`source_tree` to be the same tree embedded in the generated
+`stratified_tree`, so a stale same-source branch tree cannot be spliced into a
+proof-certified generated grammar package.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py three_body_symmetry/finite_target_completeness.py three_body_symmetry/public_proof_audit.py three_body_symmetry/__init__.py tests/test_finite_target_completeness.py tests/test_public_proof_audit.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "scoped_arbitrary_interval_partition_manifest_names_supported_grammars or scoped_arbitrary_interval_partition_generation_covers_declared_grammars or supported_event_function_stratification_generation_covers_declared_grammars or supported_event_function_generation_rejects_mutated_generated_sturm_evidence or supported_event_function_generation_rejects_mutated_event_order_sturm_evidence or supported_event_function_generation_rejects_same_source_constructor_partition_swap"
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "supported_event_function_generation_rejects_stale_constructor_source_tree or constructor_source_scope_manifest_covers_emitted_stratified_sources or supported_event_function_generation_rejects_spoofed_obligation_ledgers"
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "supported_event_function_generation_rejects_mutated_generated_stratum_interval_evidence or supported_event_function_generation_rejects_mutated_generated_sturm_evidence or supported_event_function_generation_rejects_stale_constructor_source_tree"
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_public_proof_audit.py tests/test_certificate_checker.py -m "not slow" -k "tc6 or fast_reduced_order_generalized_fuchsian_stop_checker_ci_fixture or generalized_fuchsian_remainder_majorant_picard_tail_formula_is_explicit or independent_checker_recomputes_generalized_fuchsian_primitive_tail_bounds"
+python3 -m pytest -q tests/test_public_proof_audit.py -m "not slow"
+python3 -m compileall -q three_body_symmetry tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_last_pro_instructions.py -k "readme or last_pro or supported or finite"
+git diff --check
+```
+
+Result: py_compile passed, the focused finite-target grammar/provenance slice
+passed with `6 passed`, the constructor source-tree hardening slice passed
+with `4 passed`, the generated stratum/Sturm/source-tree mutation slice passed
+with `3 passed`, the full finite-target completeness suite passed
+(`157` collected tests), the focused non-slow TC6 public-audit/checker slice
+passed with `18 passed`, the non-slow public proof-audit suite passed with
+`49 passed`, `compileall` passed for `three_body_symmetry` and the
+finite-target regressions, the focused LAST_PRO documentation slice passed
+with `6 passed`, and `git diff --check` reported no whitespace errors.  The
+LAST_PRO theorem status probe still reports the pointwise
+closed-form audit as proof-certified and the raw interval-box search as blocked
+only on `recursive_set_valued_branch_partition_consumption` and
+`event_order_partition_consumption_theorem`.
+
+Latest checks after public CI-command and grammar-input provenance hardening
+============================================================================
+
+`PublicAuditManifestResolutionCertificate` now verifies the actual command
+tuples exposed by `scripts/fast_ci.py` and `scripts/slow_certificate_checker.py`.
+The fast audit requires the real `tests/test_obstructions.py` command to select
+the required TC4/TC5 artifacts and the real non-slow
+`tests/test_certificate_checker.py` command to cover the fast TC6 artifacts.
+The slow checker target now exposes a module-level `COMMAND`, and the audit
+requires it to select the slow TC6 checker artifacts with `-m slow` and `-k`.
+
+`SupportedEventFunctionStratificationGenerationCertificate` now also compares
+the generated constructor input signature with the raw branch/event grammar
+payload.  A proof-certified same-source constructor plus scoped partition from
+input `B` can no longer certify input `A`.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/public_proof_audit.py three_body_symmetry/finite_target_completeness.py scripts/slow_certificate_checker.py tests/test_public_proof_audit.py tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_public_proof_audit.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "supported_event_function_stratification_generation_covers_declared_grammars or supported_event_function_generation_rejects_stale_partition_bridge_provenance or supported_event_function_generation_rejects_same_source_constructor_partition_swap"
+python3 scripts/fast_ci.py
+python3 scripts/slow_certificate_checker.py
+git diff --check
+```
+
+Result: py_compile passed, the full public proof-audit suite passed with
+`46 passed`, the focused supported-grammar provenance slice passed with
+`3 passed`, the full fast-CI target passed, the slow generalized-Fuchsian
+checker target passed with `4 passed`, and `git diff --check` reported no
+whitespace errors.
+
+Latest checks after TC6 projected-budget split
+==============================================
+
+The generalized total-collision stop certificate now separates the lifted
+residual tolerance from the projected physical Newton residual tolerance.
+`projected_residual_tolerance` is optional for backward compatibility; omitted
+serialized certificates still fall back to `residual_tolerance`.  When present,
+the checker keeps interval lifted-residual slabs gated by `residual_tolerance`
+and gates the direct projected Newton residual interval plus the
+`physical_residual` Cauchy tail by `projected_residual_tolerance`.
+
+This also fixes the open-time homothetic stop-chain verifier bridge: acceptance
+fixtures can now keep a tight lifted residual budget while declaring a separate
+projected physical residual budget, and the stale-verifier/source-mismatch
+regressions once again test the intended source binding rather than failing
+early on an unpropagated projected budget.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/certificate_language.py three_body_symmetry/certificate_checker.py three_body_symmetry/open_time_atlas.py tests/test_open_time_atlas.py tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_open_time_atlas.py -k "independent_checker_serializes_nonzero_energy_homothetic_stop_chain or homothetic_stop_adapter_accepts_independent_checker_without_sample_gate or independent_checker_bridge_rejects_stale_real_verifier_for_different_atlas"
+python3 -m pytest -q tests/test_certificate_checker.py -k "fast_reduced_order_generalized_fuchsian_stop_checker_ci_fixture or generalized_fuchsian_projected_residual_direct_interval_is_certification_gated or generalized_fuchsian_projected_budget_does_not_weaken_lifted_gate or generalized_fuchsian_projected_residual_weight_shift_is_cubic_time_exact"
+python3 -m pytest -q tests/test_public_proof_audit.py -k "artifact_manifest or proof_note_contains_line_item_audit_map or checker_artifact or manifest"
+python3 scripts/fast_ci.py
+python3 scripts/slow_certificate_checker.py
+```
+
+Result: the targeted open-time bridge slice passed with `3 passed`, the
+focused TC6 checker slice passed with `4 passed`, the public-audit manifest
+slice passed with `17 passed`, the fast CI target passed, and the slow
+generalized-Fuchsian checker target passed with `4 passed`.
+
+Latest checks after TC6 direct projected-residual checker gate
+==============================================================
+
+`check_total_collision_generalized_fuchsian_stop_chart(...)` now certifies the
+TC6 projected residual obligation only when the directly computed interval
+physical Newton residual on punctured shells, plus the serialized
+`physical_residual` Cauchy tail, fits inside the chart residual tolerance.  The
+previous behavior reported this direct projected residual as diagnostic detail
+while allowing the physical-residual tail component alone to close the gate.
+
+The public TC6 checker-artifact manifest now also requires
+`tests/test_certificate_checker.py::test_generalized_fuchsian_projected_residual_direct_interval_is_certification_gated`.
+That regression uses the tight fast generalized-Fuchsian fixture to prove the
+checker rejects a chart whose lifted residual and serialized physical tail pass
+but whose cubic-time projected residual interval is far outside tolerance.
+Acceptance fixtures now loosen their declared residual tolerance explicitly
+when they are meant to exercise the positive checker path.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/certificate_checker.py three_body_symmetry/public_proof_audit.py tests/test_certificate_checker.py tests/test_public_proof_audit.py tests/test_obstructions.py
+python3 -m pytest -q tests/test_certificate_checker.py -k "fast_reduced_order_generalized_fuchsian_stop_checker_ci_fixture or generalized_fuchsian_projected_residual_direct_interval_is_certification_gated or generalized_fuchsian_projected_residual_weight_shift_is_cubic_time_exact"
+python3 -m pytest -q tests/test_public_proof_audit.py -k "artifact_manifest or proof_note_contains_line_item_audit_map or checker_artifact or manifest"
+python3 -m pytest -q tests/test_certificate_checker.py -m "not slow" --maxfail=1
+python3 scripts/slow_certificate_checker.py
+python3 -m pytest -q tests/test_public_proof_audit.py
+```
+
+Result: the focused TC6 projected-residual checker slice passed with
+`3 passed`, the public-audit manifest slice passed with `17 passed`, the
+non-slow checker suite passed with `62 passed`, the slow generalized-Fuchsian
+checker target passed with `4 passed`, and the full public proof audit suite
+passed with `43 passed`.
+
+Latest checks after exact TC5 projector/right-inverse audit artifact
+====================================================================
+
+The public TC5 constructor-artifact manifest now requires
+`tests/test_obstructions.py::test_fuchsian_log_resonant_projector_right_inverse_identities_are_exact`.
+That regression checks the resonant-row projector algebra with exact
+`Fraction` arithmetic:
+
+```text
+Pi_j^2 = Pi_j,
+M_j Pi_j = 0,
+Pi_j M_j = 0,
+M_j Q_j = I - Pi_j,
+Pi_j Q_j = Q_j Pi_j = 0.
+```
+
+It also checks the exact resonant log-lift row equation
+`M_j H_0 + gamma H_1 = F`, with the range part solved by `Q_j`, the kernel
+part solved by raising log degree once, and the selector stored only in
+`Pi_j H_0`.  This strengthens TC5's public-review package without introducing
+a new proof-certificate layer.
+
+Verification:
+
+```text
+python3 -m py_compile tests/test_obstructions.py three_body_symmetry/public_proof_audit.py tests/test_public_proof_audit.py
+python3 -m pytest -q tests/test_obstructions.py -k "test_fuchsian_log_resonant_projector_right_inverse_identities_are_exact"
+python3 -m pytest -q tests/test_public_proof_audit.py -k "artifact_manifest or proof_note_contains_line_item_audit_map or required_artifacts_exist or manifest"
+python3 -m pytest -q tests/test_obstructions.py -k "test_stable_log_selector_chain_constructor_recovers_coupled_log_selectors or test_stable_log_selector_chain_log_degree_bound_is_finite_and_triangular or test_fuchsian_log_resonant_projector_right_inverse_identities_are_exact or test_stable_log_selector_chain_projects_to_finite_fuchsian_log_branch or test_fuchsian_log_row_constructor_builds_resonant_selector_branch or test_finite_fuchsian_log_branch_composes_selector_rows_and_projects"
+python3 -m pytest -q tests/test_public_proof_audit.py
+```
+
+Result: the exact projector/right-inverse artifact passed with `1 passed`, the
+focused public-audit manifest slice passed with `15 passed`, the expanded TC5
+constructor-artifact slice passed with `6 passed`, and the full public proof
+audit suite passed with `43 passed`.
+
+Latest checks after public TC4-TC6 audit manifest export
+========================================================
+
+`three_body_symmetry/public_proof_audit.py` now exposes
+`build_public_tc4_tc6_audit_manifest(...)`, a deterministic JSON-serializable
+review manifest for the TC4-TC6 public audit package.  The manifest is tied to
+the existing proof-reference, regression-artifact, checker-artifact, fast/slow
+CI, and external-review constants.  It reports local manifest resolution, but
+keeps `public_closure_status` at `external_review_open`; this is review-support
+material, not a new public-proof certificate.
+
+`scripts/export_public_audit_manifest.py` prints that manifest as stable
+sorted JSON.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/public_proof_audit.py three_body_symmetry/__init__.py tests/test_public_proof_audit.py scripts/export_public_audit_manifest.py
+python3 scripts/export_public_audit_manifest.py
+python3 -m pytest -q tests/test_public_proof_audit.py -k "manifest"
+python3 -m pytest -q tests/test_public_proof_audit.py
+python3 scripts/fast_ci.py
+python3 -c "<LAST_PRO status probe>"
+git diff --check
+```
+
+Result: the exporter emitted the expected JSON manifest, the focused manifest
+slice passed with `13 passed`, and the full public proof audit suite passed
+with `43 passed`.  The full fast-CI target passed, the LAST_PRO status probe
+passed, and `git diff --check` reported no whitespace errors.
+
+Latest checks after TC6 residual weight-transfer audit artifact
+===============================================================
+
+The TC6 public checker-artifact manifest now includes
+`tests/test_certificate_checker.py::test_generalized_fuchsian_projected_residual_weight_shift_is_cubic_time_exact`.
+That regression checks the cubic-time projection formula with exact
+`Fraction` arithmetic:
+
+```text
+projected_residual
+  = lifted_residual_numerator / (9 tau^4),
+
+tau^omega -> (1/9) tau^(omega-4).
+```
+
+It also verifies the monomial row identity behind the lifted operator:
+
+```text
+tau^2 S'' + 2 tau S' - 2 S
+  = (n+2)(n-1)c tau^n
+```
+
+for monomial rows `S=c tau^n`.  The TC6 audit map now names this artifact under
+the projected-residual transfer row.  The public audit manifest was also
+refactored to define explicit fast and slow TC6 checker artifact groups before
+combining them into the full required checker-artifact manifest.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/public_proof_audit.py tests/test_certificate_checker.py tests/test_public_proof_audit.py
+python3 -m pytest -q tests/test_certificate_checker.py -k "generalized_fuchsian_projected_residual_weight_shift_is_cubic_time_exact"
+python3 -m pytest -q tests/test_public_proof_audit.py -k "artifact_manifest or proof_note_contains_line_item_audit_map or required_proof_references_resolve or checker_artifact or covered_by_ci_targets"
+python3 -m pytest -q tests/test_certificate_checker.py -k "fast_reduced_order_generalized_fuchsian_stop_checker_ci_fixture or generalized_fuchsian_remainder_majorant_picard_tail_formula_is_explicit or independent_checker_recomputes_generalized_fuchsian_primitive_tail_bounds or generalized_fuchsian_projected_residual_weight_shift_is_cubic_time_exact"
+python3 -m pytest -q tests/test_public_proof_audit.py
+python3 -m pytest -q tests/test_certificate_checker.py -m "not slow" --maxfail=1
+python3 scripts/fast_ci.py
+```
+
+Result: the exact residual-transfer regression passed with `1 passed`, the
+public-audit manifest slice passed with `10 passed`, the fast TC6 checker
+artifact slice passed with `4 passed`, the full public proof audit suite passed
+with `40 passed`, the non-slow checker suite passed with `61 passed`, and the
+full fast-CI target passed.
+
+Latest checks after TC6 Picard and primitive-tail audit artifacts
+=================================================================
+
+`GeneralizedFuchsianRemainderMajorantCertificate` now exposes the Picard
+majorant quantities used in the proof note:
+
+```text
+first_step = B D,
+q = B L_N,
+tail_N = q^N B D / (1-q).
+```
+
+The TC6 public checker-artifact manifest now also requires two fast checker
+regressions:
+
+```text
+tests/test_certificate_checker.py::test_generalized_fuchsian_remainder_majorant_picard_tail_formula_is_explicit
+tests/test_certificate_checker.py::test_independent_checker_recomputes_generalized_fuchsian_primitive_tail_bounds
+```
+
+The first test checks the Picard self-map, contraction, slack, margin, and tail
+formulas directly on the serialized generalized-Fuchsian majorant.  The second
+test recomputes each primitive Cauchy first-shell tail and shell ratio from its
+stored primitive constants, then verifies that corrupting the physical residual
+tail field prevents the independent checker from certifying the generalized
+Fuchsian stop chart.
+
+The public audit manifest now separates required fast TC6 checker artifacts
+from slow TC6 checker artifacts, so adding fast TC6 evidence no longer weakens
+the slow-checker coverage gate.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/certificate_language.py three_body_symmetry/public_proof_audit.py tests/test_certificate_checker.py tests/test_public_proof_audit.py
+python3 -m pytest -q tests/test_certificate_checker.py -k "generalized_fuchsian_remainder_majorant_picard_tail_formula_is_explicit or independent_checker_recomputes_generalized_fuchsian_primitive_tail_bounds"
+python3 -m pytest -q tests/test_public_proof_audit.py -k "artifact_manifest or proof_note_contains_line_item_audit_map or required_proof_references_resolve or checker_artifact"
+python3 -m pytest -q tests/test_certificate_checker.py -k "fast_reduced_order_generalized_fuchsian_stop_checker_ci_fixture or generalized_fuchsian_remainder_majorant_picard_tail_formula_is_explicit or independent_checker_recomputes_generalized_fuchsian_primitive_tail_bounds"
+python3 -m pytest -q tests/test_public_proof_audit.py
+python3 -m pytest -q tests/test_certificate_checker.py -m "not slow" --maxfail=1
+python3 scripts/fast_ci.py
+```
+
+Result: the focused TC6 Picard/primitive-tail slice passed with `2 passed`, the
+public-audit manifest/checker-artifact slice passed with `9 passed`, the fast
+generalized-Fuchsian checker artifact slice passed with `3 passed`, the full
+public proof audit suite passed with `40 passed`, the non-slow checker suite
+passed with `60 passed`, and the full fast-CI target passed.
+
+Latest checks after TC5 finite log-degree audit artifact
+=========================================================
+
+The public TC5 constructor-artifact manifest now requires
+`tests/test_obstructions.py::test_stable_log_selector_chain_log_degree_bound_is_finite_and_triangular`.
+That regression exercises the finite triangular log-degree rule on a resonant
+stable chain where one resonant row is forced quadratically by a previously
+resonant row.  The test computes the finite dependency bound from the
+triangular resonance rows and checks that the constructed log-polynomial
+degrees match it exactly, including the top coefficient generated by
+integrating the forcing row.
+
+The TC5 audit map in
+`docs/total-collision-generalized-fuchsian-stop-proof.md` now lists that
+artifact next to the existing selector-chain and finite-branch projection
+artifacts.  This strengthens the public-review package without adding a new
+top-level theorem witness.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/public_proof_audit.py tests/test_obstructions.py tests/test_public_proof_audit.py
+python3 -m pytest -q tests/test_public_proof_audit.py -k "artifact_manifest or proof_note_contains_line_item_audit_map or required_artifacts_exist or required_proof_references_resolve"
+python3 -m pytest -q tests/test_obstructions.py -k "test_stable_log_selector_chain_constructor_recovers_coupled_log_selectors or test_stable_log_selector_chain_log_degree_bound_is_finite_and_triangular or test_stable_log_selector_chain_projects_to_finite_fuchsian_log_branch or test_fuchsian_log_row_constructor_builds_resonant_selector_branch or test_finite_fuchsian_log_branch_composes_selector_rows_and_projects"
+python3 -m pytest -q tests/test_public_proof_audit.py
+python3 -m pytest -q tests/test_obstructions.py -k "test_arbitrary_mass_equilateral_linearized_spectrum_matches_beta_formula or test_ordered_euler_linearized_spectrum_has_single_horizontal_shape_parameter or test_ordered_euler_shape_eigenvalue_bounds_limit_higher_resonance_orders or test_ordered_euler_shape_gap_public_audit_polynomial_identities_are_exact or test_stable_log_selector_chain_constructor_recovers_coupled_log_selectors or test_stable_log_selector_chain_log_degree_bound_is_finite_and_triangular or test_stable_log_selector_chain_projects_to_finite_fuchsian_log_branch or test_fuchsian_log_row_constructor_builds_resonant_selector_branch or test_finite_fuchsian_log_branch_composes_selector_rows_and_projects"
+python3 scripts/fast_ci.py
+```
+
+Result: the focused public-audit manifest slice passed with `7 passed`, the
+focused TC5 obstruction slice passed with `5 passed`, the full public proof
+audit suite passed with `40 passed`, the combined TC4/TC5 public artifact slice
+passed with `12 passed`, and the full fast-CI target passed.
+
+Latest checks after exact TC4 Euler gap audit artifact
+======================================================
+
+The public TC4 audit manifest now requires
+`tests/test_obstructions.py::test_ordered_euler_shape_gap_public_audit_polynomial_identities_are_exact`.
+That regression checks the displayed Euler-shape gap algebra with exact
+`Fraction` polynomial arithmetic: the upper-gap factorization, the lower-gap
+positivity after substituting `r=1+u` for the `r>=1` branch, and the exact
+identity
+
+```text
+r * lower_gap_bracket
+  = m3_numerator + m2(1-r)(1+r)(r^2+r+1)
+```
+
+used by the `0<r<1` branch of the proof.  The audit note now lists this exact
+artifact alongside the numerical spectrum regressions, and the fast CI target
+selects it through the public-audit manifest constant.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/public_proof_audit.py tests/test_obstructions.py tests/test_public_proof_audit.py
+python3 -m pytest -q tests/test_public_proof_audit.py -k "artifact_manifest or proof_note_contains_line_item_audit_map or required_artifacts_exist or required_proof_references_resolve"
+python3 -m pytest -q tests/test_obstructions.py -k "test_ordered_euler_shape_gap_public_audit_polynomial_identities_are_exact or test_ordered_euler_shape_eigenvalue_bounds_limit_higher_resonance_orders or test_ordered_euler_linearized_spectrum_has_single_horizontal_shape_parameter"
+python3 -m pytest -q tests/test_public_proof_audit.py
+python3 -m pytest -q tests/test_obstructions.py -k "test_arbitrary_mass_equilateral_linearized_spectrum_matches_beta_formula or test_ordered_euler_linearized_spectrum_has_single_horizontal_shape_parameter or test_ordered_euler_shape_eigenvalue_bounds_limit_higher_resonance_orders or test_ordered_euler_shape_gap_public_audit_polynomial_identities_are_exact"
+python3 scripts/fast_ci.py
+```
+
+Result: the focused public-audit manifest slice passed with `7 passed`, the
+focused TC4 obstruction slice passed with `3 passed`, the full public proof
+audit suite passed with `40 passed`, the required TC4 artifact slice passed with
+`7 passed`, and the full fast-CI target passed.
+
+Latest checks after TC4-TC6 public audit map
+============================================
+
+`docs/total-collision-generalized-fuchsian-stop-proof.md` now has a dedicated
+public TC4-TC6 audit line-item map.  It names the reduced-hyperbolicity,
+generalized-entry, resonance/projector, Banach-majorant, and projected-residual
+claims that external reviewers must check, and maps them to the local
+proof-note formulas, test artifacts, checker artifacts, and external review
+artifact ids.
+
+This is proof-audit substance, not a new theorem witness.  The local package can
+now assert that the TC4-TC6 review checklist resolves to concrete repo
+artifacts, while the public proof route remains blocked on the external
+TC4-TC6 line-audit artifacts.
+
+Verification:
+
+```text
+python3 -m py_compile tests/test_public_proof_audit.py
+python3 -m pytest -q tests/test_public_proof_audit.py -k "proof_note_contains_line_item_audit_map or required_proof_references_resolve"
+python3 -m pytest -q tests/test_public_proof_audit.py
+python3 scripts/fast_ci.py
+```
+
+Result: the focused proof-note audit-map slice passed with `2 passed`, the full
+public proof audit suite passed with `40 passed`, and the full fast-CI target
+passed.
+
+Latest checks after supported grammar partition provenance hardening
+====================================================================
+
+`SupportedEventFunctionStratificationGenerationCertificate` now verifies that
+the scoped partition bridge consumes the same generated branch and event-order
+stratification trees as the raw supported grammar constructors.  Previously a
+real proof-certified partition bridge from another constructor with the same
+source type and grammar could satisfy the wrapper's string-level source checks.
+
+The scoped arbitrary interval-input theorem remains limited to represented
+finite grammars.  This change tightens the implemented grammar-generator path;
+it does not claim arbitrary smooth or analytic interval-input partition
+generation.
+
+Verification:
+
+```text
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "supported_event_function_generation_rejects_attribute_compatible_certificate_types or supported_event_function_generation or scoped_arbitrary_interval_partition_generation_preserves_mixed_grammar_pair"
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "<fast finite-target hardening slice>"
+python3 scripts/fast_ci.py
+python3 -c "<LAST_PRO status probe>"
+git diff --check
+```
+
+Result: the supported-event provenance slice passed with `12 passed`, the
+broader finite-target fast slice passed with `21 passed`, the full fast-CI
+target passed, the LAST_PRO status probe printed `LAST_PRO status probe passed`,
+and `git diff --check` reported no whitespace errors.
+
+Latest checks after public route source-match hardening
+=======================================================
+
+`PublicGeneralClosedFormSolutionCertificate` now records the pointwise
+regularized-atlas theorem used to build its public route wrapper and verifies
+that `public_regularized_atlas_proof.internal_closed_form_theorem` is the same
+object.  This prevents a real public regularized-atlas proof wrapper from a
+different pointwise theorem from being swapped into the top-level public
+closed-form certificate by marking its obligations true.
+
+The public proof status is still correctly blocked on external TC4-TC6 review:
+this change only tightens wrapper provenance for the internal/public bridge and
+does not add a new certificate layer or close the public audit.
+
+Verification:
+
+```text
+python3 -m pytest -q tests/test_public_proof_audit.py -k "public_route_wrappers_recompute_stale_replaced_field_blockers or public_general_closed_form_target_rejects_fake_public_route_wrapper or public_route_wrappers_report_malformed_obligation_ledgers"
+python3 -m pytest -q tests/test_public_proof_audit.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "supported_event_function_generation or finite_target_search_completeness_rejects_spoofed_nested_theorem or validated_set_valued_constructor_rejects_truthy_nested_proof_flags"
+python3 scripts/fast_ci.py
+python3 -c "<LAST_PRO status probe>"
+git diff --check
+```
+
+Result: the focused public-wrapper provenance slice passed with `3 passed`, the
+full public proof audit suite passed with `39 passed`, the finite-target slice
+passed with `13 passed`, the full fast-CI target passed, the LAST_PRO status
+probe printed `LAST_PRO status probe passed`, and `git diff --check` reported
+no whitespace errors.
+
+Latest checks after finite-target search/source type hardening
+==============================================================
+
+`FiniteTargetCertificateSearchCompletenessCertificate` now requires a real
+`FiniteTargetCompletenessTheoremCertificate` and rejects attribute-compatible
+stand-ins or wrong-source theorem replacements.  The scoped set-valued
+constructor certificates now also require real nested theorem/search/refinement
+or recursive-consumption certificate types before their proof status can
+propagate.
+
+`ValidatedSetValuedConstructorCompletenessTheoremCertificate` now source-matches
+its theorem, search certificate, and scoped constructor certificate as one
+constructor-derived chain.  A fresh or fake search certificate can no longer be
+swapped into an otherwise real validated set-valued theorem.
+
+The scoped arbitrary interval-input partition bridge now also verifies that
+its branch and event-order consumption certificates are the same certificates
+consumed by the scoped set-valued constructor and the validated wrapper.  Mixed
+branch/event grammars remain supported, but a real stale branch-consumption
+certificate from a different partition no longer closes the bridge.
+
+Verification:
+
+```text
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "validated_set_valued_constructor_rejects_truthy_nested_proof_flags or finite_target_search_completeness_rejects_spoofed_nested_theorem"
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "supported_event_function_generation or scoped_arbitrary_interval_partition_generation_preserves_mixed_grammar_pair"
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "<fast finite-target hardening slice>"
+python3 scripts/fast_ci.py
+python3 -c "<LAST_PRO status probe>"
+git diff --check
+```
+
+Result: the focused finite-target hardening tests passed with `2 passed`, the
+supported-event partition provenance slice passed with `13 passed`, the broader
+finite-target fast slice passed with `21 passed`, the full fast-CI target
+passed, the LAST_PRO status probe printed `LAST_PRO status probe passed`, and
+`git diff --check` reported no whitespace errors.
+
+Latest checks after finite-target completeness reduction hardening
+==================================================================
+
+`FiniteTargetCompletenessReductionCertificate` now rejects attribute-compatible
+nested proof objects and stale source evidence.  It requires an actual
+`FiniteTargetAtlasOrStopCertificate`, actual optional compact/exhaustion
+certificates, an actual `FiniteTargetCompletenessTheoremCertificate`, and an
+actual `FiniteTargetCertificateSearchCompletenessCertificate`; if scoped
+set-valued constructor evidence is present, it must be one of the real scoped
+constructor certificate classes.
+
+The reduction also source-matches the nested pointwise theorem and search
+certificate back to the finite-target response: the theorem dimension must
+match the input-domain dimension, the total-collision policy must match, and
+the search certificate must be derived from the same pointwise theorem object.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/open_time_atlas.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_open_time_atlas.py -k "finite_target_completeness_reduction_rejects_spoofed_nested_theorems or open_time_child_certificates_reject_attribute_compatible_nested_components"
+python3 scripts/fast_ci.py
+python3 -c "<LAST_PRO status probe>"
+git diff --check
+```
+
+Result: py_compile passed, the focused finite-target reduction hardening slice
+passed with `2 passed`, the full fast-CI target passed, the LAST_PRO status
+probe printed `LAST_PRO status probe passed`, and `git diff --check` reported
+no whitespace errors.
+
+Latest checks after open-time child certificate type hardening
+=============================================================
+
+The open-time child certificates now reject attribute-compatible nested proof
+objects before proof status can propagate upward.  `CompactIntervalAtlasOrStopCertificate`
+requires real finite-target and stop certificates, `CompactIntervalExhaustionFamilyCertificate`
+requires real compact-interval prefixes plus real analytic reduction/local
+finiteness certificates, and `CountableCompactExhaustionCertificate` requires
+real finite-target, compact-interval, and exhaustion-family certificates.
+
+This closes the next layer beneath the top-level open-time theorem: a real
+open-time certificate can no longer hide fake nested `proof_certified=True`
+objects inside its real child certificate containers.  The exact/computable
+pointwise route remains unchanged and still closes through the LAST_PRO status
+probe.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/open_time_atlas.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_open_time_atlas.py -k "open_time_child_certificates_reject_attribute_compatible_nested_components or compact_interval_rejects_attribute_compatible_finite_target_certificates"
+python3 scripts/fast_ci.py
+python3 -c "<LAST_PRO status probe>"
+git diff --check
+```
+
+Result: py_compile passed, the focused child-certificate type regression
+passed with `2 passed`, the full fast-CI target passed, the LAST_PRO status
+probe printed `LAST_PRO status probe passed`, and `git diff --check` reported
+no whitespace errors.
+
+Latest checks after open-time theorem component type hardening
+==============================================================
+
+`OpenTimeLocallyFiniteAtlasTheoremCertificate` now requires its nested
+finite-target, compact-interval, exhaustion-family, countable-exhaustion, and
+finite-target-completeness certificates to be actual constructor dataclasses
+before `certified` or `proof_certified` can close.  If independent verifier
+evidence is attached, that verifier must also be an actual
+`IndependentChartVerifierCertificate`.
+
+This prevents a manually assembled open-time theorem with
+attribute-compatible `proof_certified=True` scaffolds from feeding the
+regularized-atlas closed-form route or the scoped set-valued constructor route.
+The exact/computable pointwise route remains separate and still closes through
+the LAST_PRO status probe.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/open_time_atlas.py tests/test_open_time_atlas.py tests/test_closed_form.py scripts/fast_ci.py
+python3 -m pytest -q tests/test_open_time_atlas.py -k open_time_theorem_surfaces_reject_spoofed_obligation_ledgers
+python3 -m pytest -q tests/test_closed_form.py -k "set_valued_constructor_regularized_atlas_route_rejects_fake_verifier or scoped_set_valued_constructor_route_does_not_promote_to_arbitrary_interval_boxes"
+python3 scripts/fast_ci.py
+python3 -c "<LAST_PRO status probe>"
+git diff --check
+```
+
+Result: py_compile passed, the focused open-time spoofing regression passed
+with `1 passed`, the focused closed-form scoped/fake route slice passed with
+`2 passed`, the full fast-CI target passed, the LAST_PRO status probe printed
+`LAST_PRO status probe passed`, and `git diff --check` reported no whitespace
+errors.
+
+Latest checks after independent-checker and pointwise source hardening
+=====================================================================
+
+The independent-checker route now has three additional constructor-boundary
+guards.  Closed-form acceptance for an `OpenTimeLocallyFiniteAtlasTheoremCertificate`
+requires a real `IndependentChartVerifierCertificate` with a certified
+proof-grade arithmetic bundle, not just an all-true verifier flag or
+attribute-compatible object.  Independently constructed verifier certificates
+are also bound to the validated-atlas surface they checked, and the adapter now
+rejects a stale real verifier if it is replayed onto a modified same-count
+atlas.  The atlas binding token now includes chart certification flags, so a
+residual-blocked atlas is not identified with the proof-certified atlas from
+which it was derived.
+
+The pointwise open-time theorem now source-matches its nested finite-target
+theorem to the outer theorem's dimension, input model, and total-collision
+policy.  Replacing only the outer `input_model` or splicing in a real
+finite-target theorem for another dimension now clears `certified` and
+`proof_certified` instead of relying on stale nested proof evidence.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/open_time_atlas.py three_body_symmetry/closed_form.py three_body_symmetry/certificate_checker.py three_body_symmetry/validated_atlas.py tests/test_open_time_atlas.py tests/test_closed_form.py scripts/fast_ci.py
+python3 -m pytest -q tests/test_open_time_atlas.py -k "independent_checker_bridge_rejects_stale_real_verifier_for_different_atlas or homothetic_stop_adapter_accepts_independent_checker_without_sample_gate or independent_checker_bridge_rejects_attribute_compatible_fake_verifier"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "pointwise_open_time_theorem_rejects_attribute_compatible_nested_components or pointwise_open_time_theorem_rejects_stale_finite_target_theorem_source"
+python3 -m pytest -q tests/test_closed_form.py -k "set_valued_constructor_regularized_atlas_route_rejects_fake_verifier or pointwise_regularized_atlas_closed_form_route_certifies_when_derived"
+python3 -m pytest -q tests/test_closed_form.py -k computable_atlas_enumeration_derivation_requires_exact_computable_input
+python3 scripts/fast_ci.py
+python3 -c "<LAST_PRO status probe>"
+git diff --check
+```
+
+Result: py_compile passed, the stale-verifier bridge slice passed with
+`3 passed`, the pointwise nested/source-match slice passed with `2 passed`, the
+closed-form fake-verifier slice passed, the computable-enumeration input-model
+regression passed, the full fast-CI target passed, the LAST_PRO status probe
+printed `LAST_PRO status probe passed`, and `git diff --check` reported no
+whitespace errors.
+
+Latest checks after pointwise open-time component type hardening
+===============================================================
+
+`PointwiseOpenTimeLocallyFiniteAtlasTheoremCertificate` now requires its
+compact-time coverage, finite-target theorem, finite-target reduction, and
+local-finiteness certificates to be the actual constructor certificate types
+before `certified` or `proof_certified` can close.  Attribute-compatible nested
+objects with `certified=True` and `proof_certified=True` no longer promote the
+internal exact/computable pointwise theorem.
+
+The LAST_PRO status probe still passes after this hardening: finite-target
+completeness is proof-certified, the pointwise open-time theorem is
+proof-certified without endpoint-regime or interval-box prerequisites, derived
+checker-language soundness and same-theorem computable enumeration certify, and
+the `regularized_locally_finite_atlas` closed-form audit closes internally with
+no blockers.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/open_time_atlas.py tests/test_open_time_atlas.py scripts/fast_ci.py
+python3 -m pytest -q tests/test_open_time_atlas.py -k pointwise_open_time_theorem_rejects_attribute_compatible_nested_components
+python3 -m pytest -q tests/test_open_time_atlas.py -k "pointwise_open_time_theorem_rejects_attribute_compatible_nested_components or open_time_theorem_surfaces_reject_spoofed_obligation_ledgers"
+python3 scripts/fast_ci.py
+git diff --check
+python3 -c "<LAST_PRO status probe>"
+```
+
+Result: py_compile passed, the focused pointwise nested-component regression
+passed with `1 passed`, the two-test open-time spoofing slice passed with
+`2 passed`, the full fast-CI target passed, `git diff --check` reported no
+whitespace errors, and the LAST_PRO status probe printed
+`LAST_PRO status probe passed`.
+
+Latest checks after full-theorem exhaustion non-spoofability hardening
+======================================================================
+
+`GeneralSolutionTheoremCertificate` now treats the optional endpoint-compression
+theorem as incomplete unless a typed `GlobalRegimeExhaustionCertificate`
+certifies.  `GlobalRegimeExhaustionCertificate` also keeps
+`arbitrary_initial_data_partition_theorem` unclosed in the current schema even
+if a manually constructed all-true obligation row is spliced into the ledger.
+
+This keeps a certified scoped regime atlas from being promoted into the full
+arbitrary-data endpoint theorem without an executable global partition theorem.
+The central pointwise `regularized_locally_finite_atlas` route remains separate
+from this optional endpoint-regime exhaustion object.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/general_solution_theorem.py tests/test_general_solution.py
+python3 -m pytest -q tests/test_general_solution.py -k general_solution_theorem_assembly_rejects_spoofed_obligation_ledgers
+python3 scripts/fast_ci.py
+git diff --check
+```
+
+Result: py_compile passed, the focused full-theorem non-spoofability regression
+passed with `1 passed`, the full fast-CI target passed, and `git diff --check`
+reported no whitespace errors.
+
+Latest checks after global-exhaustion field replay hardening
+============================================================
+
+`GlobalRegimeExhaustionCertificate` now recomputes its current field
+consistency instead of relying only on a stored obligation ledger.  Certification
+requires the current input scope, unique candidate regime ids, candidate input
+domains, required-regime coverage, candidate theorem certification, and the
+presence of the explicit `arbitrary_initial_data_partition_theorem` obligation.
+
+This keeps the optional endpoint-compression theorem from being replayed after
+candidate regimes, required ids, or scope fields are swapped, and keeps the
+arbitrary-data partition theorem gap visible even for manually constructed
+exhaustion objects.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/general_solution_theorem.py tests/test_general_solution.py
+python3 -m pytest -q tests/test_general_solution.py -k "general_solution_theorem_assembly_rejects_spoofed_obligation_ledgers"
+python3 scripts/fast_ci.py
+git diff --check
+```
+
+Result: py_compile passed, the focused global-exhaustion replay regression
+passed with `1 passed`, the full fast-CI target passed, and `git diff --check`
+reported no whitespace errors.
+
+Latest checks after top-level theorem assembly type hardening
+=============================================================
+
+The top-level theorem assembly now rejects attribute-compatible nested theorem
+objects at the structural boundary.  `RegimeClassificationCertificate` requires
+actual input-domain and compact-time certificates; `GlobalAtlasCertificate`
+requires an actual `RegimeClassificationCertificate`;
+`GeneralSolutionTheoremCertificate` requires an actual `GlobalAtlasCertificate`;
+and `GlobalRegimeExhaustionCertificate` requires its candidate regimes to be
+actual `GlobalAtlasCertificate` objects.
+
+This prevents a stale certified obligation ledger from being replayed around a
+fake classification, fake global atlas, fake exhaustion candidate, or replaced
+input/compact-time domain object.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/general_solution_theorem.py tests/test_general_solution.py tests/test_general_solution_theorem.py
+python3 -m pytest -q tests/test_general_solution.py -k "general_solution_theorem_assembly_rejects_spoofed_obligation_ledgers"
+python3 scripts/fast_ci.py
+git diff --check
+```
+
+Result: py_compile passed, the focused top-level theorem assembly regression
+passed with `1 passed`, the full fast-CI target passed, and `git diff --check`
+reported no whitespace errors.
+
+Latest checks after regime-certificate ledger hardening
+=======================================================
+
+The regime-specific theorem certificates in `general_solution_theorem.py` now
+use the shared typed `TheoremPipelineObligation` ledger verifier instead of
+locally iterating over `obligation.certified`.  This covers compact finite
+atlases, nonzero-angular middle/event-tail certificates, zero-angular selector
+atlases, maximal-classical stop certificates, prescribed scattering,
+positive-energy homothetic escape, and uniformly noncollision bounded-tail
+certificates.
+
+Replacing one of these certificates' obligation ledgers with an
+attribute-compatible object, an empty ledger, or an optional-only ledger no
+longer certifies the scoped theorem object.  The focused regression exercises
+the positive-energy homothetic escape certificate because that path is already
+part of the fast theorem hardening slice.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/general_solution_theorem.py tests/test_general_solution_theorem.py
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "positive_energy_homothetic_escape_rejects_fake_majorant_and_selector_entry or required_constructor_obligations_reject_truthy_attribute_fields or compact_finite_atlas_rejects_attribute_compatible_validated_atlas"
+python3 scripts/fast_ci.py
+git diff --check
+```
+
+Result: py_compile passed, the focused theorem-ledger hardening slice passed
+with `3 passed`, the full fast-CI target passed, and `git diff --check`
+reported no whitespace errors.
+
+Latest checks after homothetic escape gluing type hardening
+===========================================================
+
+`PositiveEnergyHomotheticAllRealGluingCertificate` now requires its endpoint
+recurrences, total-collision atlas, finite middle recurrence, branch
+certificate, and projection-invariant certificate to be the actual constructor
+certificate types used by the homothetic escape pipeline.  Attribute-compatible
+objects with `certified=True`, `proof_certified=True`,
+`tail_budget_certified=True`, or `newton_residual_certified=True` no longer
+certify the all-real gluing bridge.
+
+This closes a real constructor-boundary gap in the scoped positive-energy
+homothetic escape theorem without broadening the global theorem claim or adding
+a new top-level witness class.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/escape_endpoint.py three_body_symmetry/general_solution_theorem.py tests/test_general_solution_theorem.py
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "positive_energy_homothetic_escape_rejects_fake_majorant_and_selector_entry or positive_energy_homothetic_escape_feeds_global_atlas_from_initial_data"
+python3 scripts/fast_ci.py
+git diff --check
+```
+
+Result: py_compile passed, the focused homothetic escape gluing slice passed
+with `2 passed`, the full fast-CI target passed, and `git diff --check`
+reported no whitespace errors.
+
+Latest checks after public proof wrapper and manifest replay hardening
+=====================================================================
+
+`PublicRegularizedAtlasClosedFormProofCertificate` and
+`PublicGeneralClosedFormSolutionCertificate` now recompute field-consistency
+blockers from their stored fields.  Replacing the internal pointwise theorem,
+the total-collision audit, the requested public closed-form class, or the
+derived-gate requirement while preserving a stale obligation ledger now clears
+public proof certification and reports the specific changed field.
+
+`PublicTotalCollisionProofAuditCertificate` now also requires its local
+manifest resolution to match the audit's current proof-reference, TC4/TC5/TC6
+evidence-artifact, and checker-artifact fields.  Replaying a previously
+certified manifest after those fields are changed now blocks the local public
+audit package at `public_audit_local_manifest_matches_current_fields`.
+
+This keeps the public route wrappers aligned with the current Pro steering:
+the public proof target remains the regularized locally finite atlas route with
+derived gates and a typed public TC audit, not an old obligation ledger or
+manifest replayed onto a different target.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/public_proof_audit.py tests/test_public_proof_audit.py
+python3 -m pytest -q tests/test_public_proof_audit.py -k "public_route_wrappers_recompute_stale_replaced_field_blockers or public_general_closed_form_target_rejects_fake_public_route_wrapper or public_route_wrappers_report_malformed_obligation_ledgers"
+python3 -m pytest -q tests/test_public_proof_audit.py -k "public_total_collision_audit_rejects_stale_local_manifest_replay or public_audit_manifest_resolution_rejects_stale_replaced_manifest_fields or public_route_wrappers_recompute_stale_replaced_field_blockers"
+python3 scripts/fast_ci.py
+git diff --check
+```
+
+Result: py_compile passed, both focused public proof replay hardening slices
+passed with `3 passed` each, the full fast-CI target passed, and
+`git diff --check` reported no whitespace errors.
+
+Latest checks after public audit manifest replay hardening
+=========================================================
+
+`PublicAuditManifestResolutionCertificate.proof_certified` now recomputes
+basic manifest-field consistency from its stored fields instead of trusting
+only the original constructor obligation ledger.  Replacing a resolved manifest
+certificate's proof references, TC4/TC5/TC6 artifact ids, checker-artifact ids,
+or fast/slow CI artifact split now clears `proof_certified` and reports the
+specific stale manifest field.
+
+This keeps the local public-audit package from being replayed with stale
+TC4-TC6 references while retaining a previously valid obligation ledger.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/public_proof_audit.py tests/test_public_proof_audit.py
+python3 -m pytest -q tests/test_public_proof_audit.py -k "public_audit_manifest_resolution_rejects_stale_replaced_manifest_fields or public_audit_manifest_resolution_rejects_spoofed_obligation_ledgers or public_audit_manifest_resolver_certifies_local_artifact_manifest or public_audit_manifest_resolver_rejects_stale_local_artifacts"
+python3 scripts/fast_ci.py
+git diff --check
+```
+
+Result: py_compile passed, the focused public-audit manifest hardening slice
+passed with `4 passed`, the full fast-CI target passed, and `git diff --check`
+reported no whitespace errors.
+
+Latest checks after stratified-constructor nested proof hardening
+================================================================
+
+Supported stratification constructor certificates now require typed nested
+proof objects instead of attribute-compatible stand-ins.  Polynomial/rational/
+Taylor, affine-box, 2D affine-halfspace, and 3D affine-halfspace constructor
+certificates now check that their strata/cells are the corresponding
+constructor dataclasses and that their source and stratified trees are the real
+`BranchEventTreeCertificate` and `StratifiedBranchTreeCertificate` objects.
+
+Truthiness in stratum and affine cell `certified` fields no longer promotes to
+`proof_certified`, and malformed nested trees now surface `source_tree_type`,
+`source_tree_cover`, or `stratified_tree_type` blockers.  The new regression is
+included in the normal fast-CI finite-target selector via the
+`supported_event_function_generation` substring.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "supported_event_function_generation_rejects_nested_stratification_spoofs or supported_event_function_generation"
+python3 scripts/fast_ci.py
+git diff --check
+```
+
+Result: py_compile passed, the focused supported-stratification hardening slice
+passed with `11 passed`, the full fast-CI target passed, and `git diff --check`
+reported no whitespace errors.
+
+Latest checks after scoped partition structural type hardening
+=============================================================
+
+`ArbitraryIntervalInputPartitionGenerationCertificate.certified` now requires
+the nested recursive consumption certificates and supplied/validated
+set-valued constructor theorem certificates to be real constructor dataclasses,
+not just attribute-compatible objects.  The supported event-function generator
+therefore cannot keep the scoped partition structurally certified after a fake
+nested proof-theorem object is spliced in.
+
+The regression coverage now also checks that replacing the raw grammar input
+with an attribute-compatible object fails the supported-generator boundary, and
+that fake nested set-valued or validated-scope theorem objects clear neither
+`certified` nor `proof_certified`.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "supported_event_function_generation_rejects_attribute_compatible_certificate_types or supported_event_function_generation_rejects_truthy_constructor_proof_flags or supported_event_function_generation_rejects_spoofed_obligation_ledgers"
+python3 scripts/fast_ci.py
+git diff --check
+```
+
+Result: py_compile passed, the focused scoped-partition structural hardening
+slice passed with `3 passed`, the full fast-CI target passed, and
+`git diff --check` reported no whitespace errors.
+
+Latest checks after supported grammar generator type hardening
+=============================================================
+
+The supported event-function stratification generator now requires its emitted
+constructor and scoped partition proof objects to be actual constructor
+dataclasses, not attribute-compatible objects with `proof_certified=True`.
+`SupportedEventFunctionStratificationGenerationCertificate` type-checks the
+raw grammar input, optional event-order input, generated constructor, generated
+event-order constructor, and `ArbitraryIntervalInputPartitionGenerationCertificate`.
+
+The scoped partition certificate now also type-checks its recursive branch and
+event-order consumption certificates plus the supplied/validated set-valued
+constructor theorem objects before `proof_certified` can close.  This keeps the
+validated-numerics implementation theorem tied to real supported grammars and
+constructor-derived stratifications.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "supported_event_function_generation_rejects_attribute_compatible_certificate_types or supported_event_function_generation_rejects_truthy_constructor_proof_flags or supported_event_function_generation_rejects_truthy_event_order_proof_flag or supported_event_function_generation or validated_set_valued_constructor_rejects_truthy_nested_proof_flags"
+python3 scripts/fast_ci.py
+git diff --check
+```
+
+Result: py_compile passed, the focused supported-generator hardening slice
+passed with `11 passed`, the full fast-CI target passed, and
+`git diff --check` reported no whitespace errors.
+
+Latest checks after validated-atlas nested object type hardening
+================================================================
+
+`ValidatedAtlasSolution.proof_certified` now requires the nested proof object
+tree to use the actual constructor dataclasses: `ProofLedger`,
+`ValidatedChart`, `ValidatedTransition`, `GlobalInvariantLedger`,
+`TailBudgetLedger`, `NewtonResidualLedger`, `CollisionPolicyWitness`, and the
+optional `FiniteTimeChartSelectorTrace`.  Attribute-compatible nested objects
+with `certified=True` no longer satisfy the validated-atlas proof boundary, and
+`missing_certification_obligations` now reports the corresponding `*_type`
+blocker.
+
+The fast CI validated-atlas selector now includes
+`validated_atlas_rejects_attribute_compatible_nested_proof_objects`, covering
+fake proof ledgers, charts, transitions, invariant ledgers, tail budgets,
+residual budgets, collision policies, and selector traces.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/validated_atlas.py tests/test_general_solution.py scripts/fast_ci.py tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_general_solution.py -k "validated_atlas_rejects_attribute_compatible_nested_proof_objects or validated_atlas_rejects_truthy_component_certification_flags or validated_atlas_proof_ledger_rejects_truthy_fake_and_optional_only_entries"
+python3 -m pytest -q tests/test_last_pro_instructions.py -k "total_collision_proof_note_and_checker_hygiene_are_locked_down"
+python3 scripts/fast_ci.py
+git diff --check
+```
+
+Result: py_compile passed, the focused validated-atlas nested-object hardening
+slice passed with `3 passed`, the focused LAST_PRO fast-CI guard passed with
+`1 passed`, and the full fast-CI target passed.  `git diff --check` is recorded
+with this entry after the RESULTS update.
+
+Latest checks after finite-atlas theorem constructor type hardening
+===================================================================
+
+The finite-atlas theorem constructors now require an actual
+`ValidatedAtlasSolution` at the theorem boundary.  An attribute-compatible
+object with `proof_certified=True`, chart ledgers, residual/invariant/tail
+fields, and target-time fields no longer satisfies the
+`validated_atlas_solution` obligation in compact ordinary/binary,
+nonzero-angular compact, zero-angular selector, or global-atlas assembly paths.
+
+The finite-atlas collision-policy, target-time, proof-ledger, and selector
+policy obligations were also tightened to literal `True` checks.  The fast CI
+constructor-obligation selector now includes
+`compact_finite_atlas_rejects_attribute_compatible_validated_atlas`.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/general_solution_theorem.py tests/test_general_solution_theorem.py scripts/fast_ci.py tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "compact_finite_atlas_rejects_attribute_compatible_validated_atlas or required_constructor_obligations_reject_truthy_attribute_fields or zero_angular_compact_finite_atlas_requires_constructor_selector_entry"
+python3 -m pytest -q tests/test_last_pro_instructions.py -k "total_collision_proof_note_and_checker_hygiene_are_locked_down"
+python3 scripts/fast_ci.py
+git diff --check
+```
+
+Result: py_compile passed, the focused theorem-constructor hardening slice
+passed with `3 passed`, the focused LAST_PRO fast-CI guard passed with
+`1 passed`, the full fast-CI target passed, and `git diff --check` reported no
+whitespace errors.
+
+Latest checks after validated-atlas component exactness hardening
+=================================================================
+
+Validated-atlas component certification now requires literal boolean evidence
+instead of truthy stand-ins.  `ValidatedChart`, `GlobalInvariantLedger`,
+`NewtonResidualLedger`, `FiniteTimeChartSelectorAttempt`, selector traces, and
+validated-atlas proof aggregation no longer promote strings such as `"yes"` to
+proof status.  Proof-ledger coverage lookup also now accepts only typed
+`ProofLedgerEntry` rows with literal `True` certification.
+
+The fast CI general-solution selector now includes
+`validated_atlas_rejects_truthy_component_certification_flags`, which exercises
+the chart, invariant, residual, tail-budget, collision-policy, selector-trace,
+and proof-ledger exactness boundary directly.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/validated_atlas.py tests/test_general_solution.py scripts/fast_ci.py tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_general_solution.py -k "validated_atlas_rejects_truthy_component_certification_flags or validated_atlas_proof_ledger_rejects_truthy_fake_and_optional_only_entries or finite_time_regime_classifier_ignores_fake_proof_ledger_entries"
+python3 scripts/fast_ci.py
+git diff --check
+```
+
+Result: py_compile passed, the focused validated-atlas hardening slice passed
+with `3 passed`, the full fast-CI target passed, and `git diff --check`
+reported no whitespace errors.
+
+Latest checks after compact-interval endpoint type hardening
+============================================================
+
+Compact-interval atlas/stop assembly now accepts only actual
+`FiniteTargetAtlasOrStopCertificate` endpoint objects as certified finite-target
+inputs.  Attribute-compatible endpoint fakes such as
+`SimpleNamespace(certified="yes", outcome_id="finite_atlas_reaches_target", ...)`
+no longer certify the two-sided compact interval, and the certificate's
+`finite_target_certificates` property filters out non-certificate objects so
+downstream open-time audits cannot consume them accidentally.
+
+The endpoint policy/input-domain consistency checks now require typed endpoint
+and policy certificates with literal certification, and compact total-collision
+stop extraction requires an actual `TotalCollisionStopCertificate`.  The fast
+CI open-time selector now includes
+`compact_interval_rejects_attribute_compatible_finite_target_certificates`.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/open_time_atlas.py tests/test_open_time_atlas.py scripts/fast_ci.py tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_open_time_atlas.py -k "compact_interval_rejects_attribute_compatible_finite_target_certificates or independent_finite_target_checker_rejects_truthy_atlas_proof_flag or open_time_theorem_surfaces_reject_spoofed_obligation_ledgers"
+python3 -m pytest -q tests/test_last_pro_instructions.py -k "total_collision_proof_note_and_checker_hygiene_are_locked_down"
+python3 scripts/fast_ci.py
+git diff --check
+```
+
+Result: py_compile passed, the focused open-time hardening slice passed with
+`3 passed`, the focused LAST_PRO fast-CI guard passed with `1 passed`, the full
+fast-CI target passed, and `git diff --check` reported no whitespace errors.
+
+Latest checks after finite Fuchsian-log constructor-input hardening
+==================================================================
+
+The supplied finite Fuchsian-log total-collision stop constructor now requires
+the actual constructor certificate classes for the branch, punctured isolation,
+primitive Cauchy inputs, and optional compact-time isolation.  Attribute-
+compatible `SimpleNamespace(certified=True, ...)` inputs no longer pass the
+local stop-chart theorem boundary.  Checker-obligation lookup for the
+finite/generalized stop constructors also now accepts only typed checker
+obligations with literal `True` certification.
+
+The fast CI finite-target selector now includes
+`supplied_finite_fuchsian_log_stop_chart_rejects_fake_constructor_inputs`
+alongside the spoof-ledger checks, so the local total-collision supplied-entry
+boundary remains covered by the normal LAST_PRO target.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py tests/test_finite_target_completeness.py scripts/fast_ci.py tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "supplied_finite_fuchsian_log_stop_chart_rejects_fake_constructor_inputs or supplied_finite_fuchsian_log_stop_chart_rejects_spoofed_obligation_ledger or supplied_finite_fuchsian_log_stop_chart_consumes_constructor_inputs_only"
+python3 -m pytest -q tests/test_last_pro_instructions.py -k "total_collision_proof_note_and_checker_hygiene_are_locked_down"
+python3 scripts/fast_ci.py
+git diff --check
+```
+
+Result: py_compile passed, the focused finite Fuchsian-log stop slice passed
+with `3 passed`, the LAST_PRO fast-CI guard passed with `1 passed`, the full
+fast-CI target passed, and `git diff --check` reported no whitespace errors.
+
+Latest checks after supplied Fuchsian stop-ledger hardening
+==========================================================
+
+Supplied finite Fuchsian-log and generalized Fuchsian entry/finite-row/
+majorant/stop certificates now use typed `TheoremPipelineObligation` ledgers
+instead of accepting attribute-compatible obligation fakes.  Replacing those
+ledgers with `SimpleNamespace(obligation=..., certified=True, required=True)`
+now leaves the supplied local total-collision certificates uncertified and
+surfaces the corresponding `*_obligation_type` blocker.  The generalized stop
+chart's independent checker claim also now requires a literal `True` checker
+result.
+
+The fast CI target now includes the two spoof-ledger regressions through
+`FINITE_TARGET_FUCHSIAN_STOP_LEDGER_HARDENING_K`, keeping this local
+total-collision boundary under the normal LAST_PRO proof-gate checks.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "supplied_generalized_fuchsian_certificates_reject_spoofed_obligation_ledgers or supplied_finite_fuchsian_log_stop_chart_rejects_spoofed_obligation_ledger or supplied_generalized_fuchsian_stop_chart_consumes_remainder_majorant or supplied_finite_fuchsian_log_stop_chart_consumes_constructor_inputs_only"
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "supported_event_function_generation or validated_set_valued_constructor_rejects_truthy_nested_proof_flags or recursive_stratified_consumption_rejects_truthy_child_consumption"
+python3 -m py_compile scripts/fast_ci.py tests/test_last_pro_instructions.py three_body_symmetry/finite_target_completeness.py tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_last_pro_instructions.py -k "total_collision_proof_note_and_checker_hygiene_are_locked_down or pointwise or finish_line"
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "supplied_generalized_fuchsian_certificates_reject_spoofed_obligation_ledgers or supplied_finite_fuchsian_log_stop_chart_rejects_spoofed_obligation_ledger"
+python3 scripts/fast_ci.py
+git diff --check
+```
+
+Result: py_compile passed, the focused supplied-Fuchsian stop slice passed with
+`4 passed`, the supporting finite-target proof-gate slice passed with
+`11 passed`, the focused LAST_PRO guard slice passed with `4 passed`, the new
+fast selector passed with `2 passed`, the full fast-CI target passed, and
+`git diff --check` reported no whitespace errors.
+
+Latest checks after public proof wrapper type hardening
+======================================================
+
+The public top-level closed-form audit now requires its nested public
+regularized-atlas proof wrapper to be the actual
+`PublicRegularizedAtlasClosedFormProofCertificate`, and its proof flag must be
+literal `True`.  Replacing that wrapper with an attribute-compatible object
+such as `public_proof_certified="yes"` no longer promotes the public route; the
+audit now surfaces `public_regularized_atlas_proof_type` as a blocker.
+
+The same path now uses literal-`True` checks for the internal general-solution
+certificate, derived soundness gate, derived-enumeration route obligation, and
+`require_derived_gates` audit obligation.  This keeps the public route aligned
+with the LAST_PRO boundary: local TC4-TC6 manifests can certify only local
+audit readiness, never public proof closure.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/public_proof_audit.py tests/test_public_proof_audit.py
+python3 -m pytest -q tests/test_public_proof_audit.py -k "public_route_wrappers_report_malformed_obligation_ledgers or public_general_closed_form_target_rejects_fake_public_route_wrapper or public_general_closed_form_target_rejects_raw_scaffold_gates or public_general_closed_form_target_rejects_raw_total_collision_audit_gate or public_general_closed_form_target_rejects_truthy_require_derived_gate"
+python3 -m pytest -q tests/test_public_proof_audit.py -k "external_public_review_strings_do_not_close_without_verified_artifact_resolver or public_general_closed_form_target_keeps_external_review_open_after_local_public_audit_package or public_regularized_atlas_audit_keeps_external_review_open_after_local_tc4_tc6_package"
+python3 -m pytest -q tests/test_public_proof_audit.py
+python3 -m pytest -q tests/test_last_pro_instructions.py -k "total_collision_proof_note_and_checker_hygiene_are_locked_down or pointwise or finish_line"
+python3 scripts/fast_ci.py
+```
+
+Result: py_compile passed, the focused wrapper/derived-gate hardening slice
+passed with `5 passed`, the external-review boundary slice passed with
+`3 passed`, the full public-audit suite passed with `36 passed`, the focused
+LAST_PRO guard slice passed with `4 passed`, and the full fast-CI target
+passed.
+
+Latest checks after Sundman witness exactness hardening
+======================================================
+
+Closed-form and Sundman route witness handling now treats only literal `True`
+as certification evidence.  Generic witness fields such as
+`global_series_certified`, `collision_continuation_obligations_certified`, and
+scope flags no longer certify when supplied as truthy strings or other
+attribute-compatible values.  Untyped scope-like objects are now rejected
+cleanly through missing requirement statuses instead of crashing on a missing
+`requirement_statuses` attribute.
+
+The public scope and Sundman theorem witness constructors now use strict bool
+validation for their manual flags.  Replacing a typed
+`GeneralSolutionScopeWitnessCertificate` with a truthy non-bool field also
+breaks `general_solution_scope_certified` and surfaces the corresponding scope
+requirement.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/closed_form.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_closed_form.py -k "sundman_route_rejects_truthy_global_series_and_scope_flags or scope_and_sundman_witness_constructors_reject_truthy_flags or sundman_route_certifies_series_but_not_general_scope_without_scope_witness or general_solution_target_can_certify_closed_form_with_typed_sundman_class"
+python3 -m pytest -q tests/test_closed_form.py -k "internal_route_rejects_truthy_replaced_gate_flags or maximal_classical_policy_constructor_rejects_truthy_flags or general_closed_form_solution_rejects_spoofed_requirement_statuses"
+python3 -m py_compile scripts/fast_ci.py tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_last_pro_instructions.py -k "total_collision_proof_note_and_checker_hygiene_are_locked_down or pointwise or finish_line"
+python3 scripts/fast_ci.py
+git diff --check
+```
+
+Result: py_compile passed, the new closed-form/Sundman exactness slice passed
+with `4 passed`, the existing closed-form spoof/truthy slice passed with
+`3 passed`, the focused LAST_PRO guard slice passed with `4 passed`, the full
+fast-CI target passed, and `git diff --check` reported no whitespace errors.
+
+Latest checks after constructor-obligation exact field hardening
+===============================================================
+
+The generic theorem/regime constructor-obligation helper now accepts only
+literal `True` certification fields from supplied constructor certificates.
+Truthy strings, integers, NumPy booleans, and attribute-compatible fakes no
+longer satisfy `_required_constructor_obligation(...)`; they remain visible as
+missing obligations on both `RegimeClassificationCertificate` and
+`GlobalAtlasCertificate`.
+
+The fast theorem CI now carries this as its own
+`CONSTRUCTOR_OBLIGATION_HARDENING_K` selector, separate from the zero-angular
+selector-entry checks.  This keeps the regression tied to the theorem assembly
+gate rather than treating it as another collision-selector special case.
+
+Verification:
+
+```text
+python3 -m py_compile scripts/fast_ci.py tests/test_last_pro_instructions.py three_body_symmetry/general_solution_theorem.py tests/test_general_solution_theorem.py
+python3 -m pytest -q tests/test_general_solution_theorem.py -k "required_constructor_obligations_reject_truthy_attribute_fields or zero_angular_compact_finite_atlas_requires_constructor_selector_entry or positive_energy_homothetic_escape_rejects_fake_majorant_and_selector_entry"
+python3 -m pytest -q tests/test_last_pro_instructions.py -k "fast_ci or finish_line_theorem_note or pointwise"
+python3 scripts/fast_ci.py
+git diff --check
+```
+
+Result: py_compile passed, the focused theorem hardening slice passed with
+`3 passed`, the focused LAST_PRO guard slice passed with `3 passed`, the full
+fast-CI target passed, and `git diff --check` reported no whitespace errors.
+
+Latest checks after supported grammar-input stratification generation
+====================================================================
+
+Added `SupportedEventFunctionGrammarInput`,
+`SupportedEventFunctionStratificationGenerationCertificate`, and
+`certify_supported_event_function_stratification_generation(...)`.  This moves
+the scoped interval-input theorem one step upstream: instead of requiring a
+caller to hand in an already-built constructor certificate, the generator takes
+raw finite grammar data for every source type in
+`SUPPORTED_ARBITRARY_INTERVAL_PARTITION_GRAMMARS`, invokes the matching
+constructor, verifies that the emitted `source_type` matches the requested
+grammar, and then feeds the constructor result through
+`certify_arbitrary_interval_input_partition_generation(...)`.  It also accepts
+a separate raw event-order grammar input, so mixed branch/event grammar pairs
+are generated from data on both sides before they reach the existing mixed
+constructor bridge.
+
+The generator covers affine, supplied-root polynomial, single Sturm polynomial,
+polynomial arrangement, Sturm polynomial arrangement, rational, Sturm-rational,
+quadratic double-root, computed polynomial-root, Taylor-model, axis-aligned
+box, and 2D/3D affine-halfspace grammars.  It also blocks source drift: for
+example, asking for a `PolynomialRootArrangement` with data that actually
+generates a `QuadraticDoubleRootArrangement` leaves the generated certificate
+uncertified rather than silently using the wrong scoped theorem.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py three_body_symmetry/__init__.py tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "supported_event_function_generation or scoped_arbitrary_interval_partition_generation_covers_declared_grammars or scoped_arbitrary_interval_partition_manifest_names_supported_grammars"
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "supported_event_function_generation or scoped_arbitrary_interval_partition_generation_preserves_mixed_grammar_pair or mixed_constructor_set_valued_scope"
+python3 -m pytest -q tests/test_finite_target_completeness.py
+```
+
+Latest checks after single Sturm polynomial decision stratification support
+=========================================================================
+
+Added `certify_sturm_polynomial_decision_stratified_branch_event_tree(...)`.
+This constructor is the single-discriminator version of the exact Sturm
+polynomial arrangement route: it derives root-free sign cells and isolated
+equality roots directly from rationalized coefficients, records multiplicity
+data for tangent roots, preserves equality roots as recursive strata, and emits
+the distinct source type `SturmPolynomialDecisionStratification`.
+
+The scoped arbitrary interval-input bridge now recognizes
+`SturmPolynomialDecisionStratification` with input scope
+`finite_sturm_polynomial_decision_stratification_interval_boxes` and grammar id
+`finite_sturm_polynomial_decision_interval_inputs`.  This closes the gap where a
+single decision such as `1+x^2` on `[-1,1]` needed to be wrapped as a
+multi-function arrangement before exact Sturm evidence could overcome interval
+dependency.  Identically zero polynomial discriminators remain uncertified and
+surface `sturm_polynomial_identically_zero_on_cell` rather than becoming a
+silent equality stratum.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py three_body_symmetry/finite_target_completeness.py three_body_symmetry/__init__.py tests/test_finite_target_completeness.py tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "sturm_polynomial_decision_stratification or sturm_rational or scoped_arbitrary_interval_partition_manifest_names_supported_grammars or scoped_arbitrary_interval_partition_generation_covers_declared_grammars"
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 scripts/fast_ci.py
+```
+
+Latest checks after Sturm rational arrangement support
+======================================================
+
+Added `certify_sturm_rational_decision_stratified_branch_event_tree(...)` and
+`certify_sturm_rational_decision_arrangement_stratified_branch_event_tree(...)`.
+These constructors handle one-dimensional rational event functions `N(x)/D(x)`
+when whole-domain interval evaluation of `D` is too wide to prove a fixed
+nonzero sign.  Numerator roots are isolated by the exact Sturm polynomial
+constructor, and each denominator is certified zero-free on the closed compact
+interval by endpoint checks plus Sturm variation before rational sign cells and
+numerator-root equality strata are admitted.
+
+The scoped arbitrary interval-input bridge now recognizes
+`SturmRationalDecisionStratification` and `SturmRationalDecisionArrangement`
+with input scopes
+`finite_sturm_rational_decision_stratification_interval_boxes` and
+`finite_sturm_rational_decision_arrangement_interval_boxes` and grammar id
+`finite_sturm_rational_decision_interval_inputs_with_denominator_exclusion`
+or
+`finite_sturm_rational_decision_arrangement_interval_inputs_with_denominator_exclusion`.
+The older interval-denominator rational arrangement still blocks denominator
+intervals containing zero, while the Sturm-backed route can certify examples
+such as `1+x^2` and `1/4+x^2` denominators on `[-1,1]` without hiding possible
+poles.  Tangent numerator roots now also project their leading
+second-derivative interval through the rational quotient rule, so multiple-root
+equality evidence belongs to the rational discriminator `N/D` rather than only
+to the numerator `N`.  Identically zero numerator discriminators are now named
+with `sturm_polynomial_identically_zero_on_cell` instead of failing through an
+opaque nonroot-split error; they remain uncertified because an everywhere-zero
+decision boundary is not a finite root stratification.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py three_body_symmetry/finite_target_completeness.py three_body_symmetry/__init__.py tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "sturm_rational or rational_decision or scoped_arbitrary_interval_partition_manifest_names_supported_grammars or scoped_arbitrary_interval_partition_generation_covers_declared_grammars"
+```
+
+Result: py_compile passed and the focused finite-target slice passed with
+`15` tests.
+
+Latest checks after rational decision stratification support
+============================================================
+
+Added a constructor-derived rational decision grammar for one-dimensional
+interval inputs.  `certify_rational_decision_stratified_branch_event_tree(...)`
+requires interval arithmetic to prove the denominator has a fixed nonzero sign
+on the compact domain, then reduces signs and equality roots of `N(x)/D(x)` to
+the numerator polynomial stratification.  Denominator intervals containing zero
+remain blockers, so the constructor does not hide poles as generic analytic
+strata.
+
+The scoped arbitrary interval-input bridge now recognizes
+`RationalDecisionStratification` and `RationalDecisionArrangement` as
+denominator-excluded rational grammars, carries the input scopes
+`finite_rational_decision_stratification_interval_boxes` and
+`finite_rational_decision_arrangement_interval_boxes`, and derives recursive
+equality-root children through the same descent theorem used for polynomial
+roots.  Finite rational arrangements require every denominator to have a fixed
+interval sign before any rational sign-vector cell can certify.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/stratified_branch_tree.py three_body_symmetry/finite_target_completeness.py three_body_symmetry/__init__.py tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "rational_decision or scoped_arbitrary_interval_partition_manifest_names_supported_grammars or scoped_arbitrary_interval_partition_generation_covers_declared_grammars"
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 scripts/fast_ci.py
+git diff --check
+```
+
+Result: py_compile passed and the focused finite-target slice passed with
+`6` tests.  The LAST_PRO suite passed with `6` tests, the full
+finite-target completeness suite passed, `scripts/fast_ci.py` passed, and
+`git diff --check` passed.
+
+Latest checks after scoped partition source-scope hardening
+===========================================================
+
+`ArbitraryIntervalInputPartitionGenerationCertificate` now records the
+constructor-derived branch and event-order input scope ids resolved from the
+actual recursive consumption certificates.  The scoped grammar claim is no
+longer backed only by the constructor source-type string; it also has to line
+up with `CONSTRUCTOR_DERIVED_RECURSIVE_SOURCE_SCOPES` through the consumed
+recursive branch/event certificates.  Mixed branch/event constructor pairs now
+retain both their grammar ids and their set-valued input-scope provenance.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "scoped_arbitrary_interval_partition_generation_covers_declared_grammars or scoped_arbitrary_interval_partition_generation_preserves_mixed_grammar_pair or scoped_arbitrary_interval_partition_manifest_names_supported_grammars or unsupported_taylor"
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 scripts/fast_ci.py
+```
+
+Result: py_compile passed and the focused scoped-partition provenance slice
+passed with `4` tests.  The LAST_PRO suite passed with `6` tests, the full
+finite-target completeness suite passed, and `scripts/fast_ci.py` passed.
+Inside fast CI, compileall passed, the LAST_PRO suite passed with `6` tests,
+the focused closed-form route slice passed with `23` tests, the full
+public-audit suite passed with `23` tests, the focused open-time checked-prefix
+slice passed with `3` tests, the TC4/TC5 public-audit obstruction artifact
+slice passed with `10` tests, and the non-slow certificate-checker slice passed
+with `54` tests.
+
+Latest checks after manifest-derived CI selections
+==================================================
+
+The fast and slow CI scripts now consume the public TC4-TC6 audit manifests
+directly instead of duplicating the required artifact test names.  The fast
+target derives its TC4/TC5 obstruction `-k` expression from
+`PUBLIC_TC4_REQUIRED_SPECTRUM_AUDIT_REFERENCE_IDS` and
+`PUBLIC_TC5_REQUIRED_CONSTRUCTOR_ARTIFACT_IDS`; the slow checker target derives
+its TC6 slow checker `-k` expression from
+`PUBLIC_TC6_REQUIRED_CHECKER_ARTIFACT_IDS`.  This keeps the public-audit
+manifest as the source of truth for evidence coverage.  The fast CI target also
+now runs a focused open-time checked-prefix slice to keep the independent
+chart-verifier handoff covered by the default theorem/checker target.
+
+Verification:
+
+```text
+python3 -m py_compile scripts/fast_ci.py scripts/slow_certificate_checker.py tests/test_public_proof_audit.py tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_public_proof_audit.py -k "required_artifacts_are_covered_by_ci_targets or required_checker_artifacts_exist or required_artifacts_exist"
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_open_time_atlas.py -k "open_time_accepts_supplied_branch_union_checked_prefix or open_time_accepts_stratified_branch_union_checked_prefix or proof_certified_properties_do_not_raise_or_promote_scaffolds"
+python3 scripts/fast_ci.py
+python3 scripts/slow_certificate_checker.py
+git diff --check
+```
+
+Result: py_compile passed, the public-audit CI-coverage subset passed with
+`3` selected tests, the LAST_PRO suite passed with `6` tests, the focused
+open-time checked-prefix slice passed with `3` tests, `scripts/fast_ci.py`
+passed, `scripts/slow_certificate_checker.py` passed with `4` slow checker
+tests, and `git diff --check` passed.  Inside fast CI, compileall passed, the
+LAST_PRO suite passed with `6` tests, the focused closed-form route slice
+passed with `23` tests, the full public-audit suite passed with `23` tests, the
+focused open-time checked-prefix slice passed with `3` tests, the TC4/TC5
+public-audit obstruction artifact slice passed with `10` tests, and the
+non-slow certificate-checker slice passed with `54` tests.
+
+Latest checks after strengthening TC1-TC7 total-collision proof steps
+====================================================================
+
+`docs/total-collision-generalized-fuchsian-stop-proof.md` now gives TC1 as a
+single explicit estimate instead of mixing a compressed shape-energy argument
+with a later refinement.  In centered coordinates the exterior-product
+Cauchy-Schwarz/Sundman inequality gives `|L|^2 <= 2 I K`; finite energy gives
+`K = H + U`; TC2 is used only to supply the normalized non-binary pair-distance
+floor `|q_i-q_j| >= d_* sqrt(I)`; hence `U <= C_U/sqrt(I)` and
+`I K <= |H| I + C_U sqrt(I) -> 0`.  Because centered angular momentum is
+conserved on the incoming punctured branch, the total-collision branch has
+`L=0`.
+
+TC2 now derives that pair-distance floor instead of only naming it.  A
+binary-degenerate Jacobi assumption `|x|/|y| -> 0` yields perturbed Kepler
+equations with `R_x=o(|x|^-2)` and `R_y=o(|y|^-2)`.  The finite-energy
+perturbed-Kepler collision law
+`|z(t)|=(9mu/2)^(1/3)(t_c-t)^(2/3)(1+o(1))` applies to both Jacobi
+coordinates, forcing
+`|x(t)|/|y(t)| -> ((m_1+m_2)/M)^(1/3) > 0`, which contradicts normalized binary
+degeneration.
+
+TC3 now records the McGehee-variable central-configuration limit proof.  The
+homogeneity identities, kinetic split, scaled variables
+`v=rho^(1/2)rho_dot` and `w=rho^(3/2)s_dot`, and finite-energy identity
+`(1/2)(v^2+||w||_m^2)-U(s)=rho H` give the parabolic radial law.  The
+McGehee/Lyapunov estimate makes `w` square-integrable in collision time, so
+omega-limit points have `w=0`; invariance forces the tangential equation
+`Pi_s grad_m U(s)=0`, equivalently `A(s_*)=-U(s_*)s_*`.  Thus the limiting
+shape is one of the Euler/Lagrange central targets handled by TC4.
+
+TC4 now also derives the indicial equation instead of only displaying it.  With
+`t_c-t=tau^3` and `q=tau^2S`, Newton's equation is equivalent to
+`tau^2S''+2tauS'-2S=9A(S)`.  Substituting `S=C+tau^kV+...` and
+`DA(C)V=mu V` cancels the constant term through `-2C=9A(C)` and gives
+`(k^2+k-2)V=9DA(C)V`, hence `(k+2)(k-1)=9mu`.
+
+TC5 now makes the selector Cauchy limit explicit at the scalar row level.  A
+retained row after earlier rows have been subtracted has
+`dY/ds+alpha_jY=exp(-omega s)P_omega(s)+O(exp(-(omega+epsilon)s)s^m)`.  With
+`Y_part=exp(-omega s)B(s)`, nonresonant rows solve
+`B'+(alpha_j-omega)B=P_omega` by denominator division, while resonant rows
+solve `B'=P_alpha_j` and raise log degree exactly once.  After the forced row
+is removed, the remainder satisfies
+`|e^(alpha_j s)R(s)-e^(alpha_j S)R(S)| <= C'e^(-epsilon S)S^m`, proving the
+selector limit is Cauchy rather than assumed.
+
+TC6 now turns the Banach contraction into an explicit constructive remainder
+series.  With `R^(0)=0` and `R^(n+1)=Phi(R^(n))`, the first increment is bounded
+by `BD`, later increments satisfy `||R^(n+1)-R^(n)|| <= q^nBD` with
+`q=BL_N`, and the checker-visible Picard tail is
+`||R-R^(N)|| <= q^NBD/(1-q)`.  This ties the analytic remainder directly to the
+finite majorant constants already recorded by the proof-grade backend.
+
+TC7 now expands the finite-energy invariant check in lifted variables.  The
+projected energy is written as
+`tau^-2[(2/9)||S||_m^2-U(S)]+tau^-1(2/9)<S,S'>_m+(1/18)||S'||_m^2`; Euler
+homogeneity cancels the central singular row, retained Puiseux/log rows cancel
+all remaining negative powers, and denominator-excluded shape boxes give finite
+Lipschitz/derivative bounds for the TC6 tail contribution.  This makes the
+energy ledger an interval consequence of the lifted chart rather than a sampled
+diagnostic.
+
+`LAST_PRO_INSTRUCTIONS.md` now has a completion audit rather than a stale
+implementation todo list.  The old missing-item/task scaffolding has been
+reconciled against the current worktree: public-proof audit objects, derived
+public gates, README framing, fast/slow CI split, scoped Taylor-model grammar,
+and the `GeneralClosedFormSolutionCertificate.certified` alias are recorded as
+implemented.  The remaining items are explicitly research/public-review fronts:
+TC4-TC6 public proof references/checker artifacts and arbitrary interval-input
+partition generation beyond supported grammars.
+
+The public TC4-TC6 audit evidence now requires concrete proof-note references
+rather than placeholder strings.  Complete TC4, TC5, and TC6 evidence must
+include the section references
+`docs/total-collision-generalized-fuchsian-stop-proof.md#TC4`, `#TC5`, and
+`#TC6` respectively; placeholder references such as `public-review:tc4` leave
+the corresponding `*_public_proof_reference_manifest` obligation open.  The
+top-level audit now requires the same TC4-TC6 section-reference manifest, not
+just a nonempty public-review placeholder, plus the expected total-stop checker
+artifact manifest before public proof closure.
+
+The public audit now distinguishes a complete local TC4-TC6 package from
+public proof closure.  When all local proof-note references, evidence objects,
+checker artifacts, and in-repo regression manifests are present,
+`local_audit_package_certified` can be true, but `public_proof_certified` still
+requires verified external public-review artifacts.  Supplying the required
+external-review artifact id strings by itself now leaves
+`external_public_review_artifact_verification` open.  This keeps the current
+package review-ready without treating local evidence or placeholder external
+ids as completed public review.
+
+TC4 public evidence now also requires concrete spectrum-regression artifact ids
+instead of accepting a vague `tc4-spectrum:*` label.  Complete TC4 evidence must
+name the arbitrary-mass equilateral spectrum regression, the ordered-Euler
+paired-spectrum regression, and the ordered-Euler shape-eigenvalue bounds
+regression from `tests/test_obstructions.py`; otherwise
+`tc4_spectrum_audit_reference_manifest` remains open.
+
+TC5 public evidence now also requires constructor-backed stable-selector and
+Fuchsian-log artifact ids.  Complete TC5 evidence must name the coupled stable
+log-selector chain constructor, its projection to a finite Fuchsian-log branch,
+the resonant Fuchsian-log row constructor, and finite branch composition /
+projection regressions from `tests/test_obstructions.py`; otherwise
+`tc5_constructor_artifact_manifest` remains open.
+
+TC6 public evidence now also treats the existing Cauchy-polydisc, majorant-norm,
+proof-grade backend id, and checker-artifact fields as concrete manifests.
+Complete TC6 evidence must use `tc6-polydisc:P(r)`,
+`tc6-norm:sup-polydisc`, `certify_rational_interval_arithmetic_backend_soundness`,
+and the required generalized-Fuchsian checker regression artifact ids for the
+fast accepted fixture, interval-not-sample-gated certification,
+corrupted-majorant rejection, and missing projected-tail rejection; arbitrary
+nonempty ids now leave the existing `tc6_*_id_supplied` and
+`tc6_checker_artifact_manifest` obligations open.
+The public-audit regressions also resolve the required TC4-TC6 proof-reference
+strings to the current proof-note sections and the TC4/TC5/TC6 artifact ids to
+actual pytest functions, so stale proof or artifact manifests fail directly.
+
+Verification:
+
+```text
+python3 -m pytest -q tests/test_last_pro_instructions.py tests/test_public_proof_audit.py
+python3 -m pytest -q tests/test_public_proof_audit.py
+python3 -m pytest -q tests/test_obstructions.py -k "arbitrary_mass_equilateral_linearized_spectrum_matches_beta_formula or ordered_euler_linearized_spectrum_has_single_horizontal_shape_parameter or ordered_euler_shape_eigenvalue_bounds_limit_higher_resonance_orders"
+python3 -m pytest -q tests/test_obstructions.py -k "stable_log_selector_chain_constructor_recovers_coupled_log_selectors or stable_log_selector_chain_projects_to_finite_fuchsian_log_branch or fuchsian_log_row_constructor_builds_resonant_selector_branch or finite_fuchsian_log_branch_composes_selector_rows_and_projects"
+python3 -m compileall -q three_body_symmetry tests scripts
+git diff --check
+python3 scripts/fast_ci.py
+```
+
+Result: the steering/public-audit slice passed with `27` tests, the
+manifest-resolving public-audit suite passed with `21` tests, the TC4
+spectrum-regression artifact slice passed with `6` tests, the TC5 constructor
+artifact slice passed with `4` tests, compileall passed, `git diff --check` passed, and
+`scripts/fast_ci.py` passed.  Inside fast CI, the LAST_PRO suite passed with
+`6` tests, the focused closed-form route slice passed with `23` tests, and the
+non-slow certificate-checker slice passed with `54` tests.  I did not rerun the
+full long suite for this TC1-TC7 proof note update.
+
+Latest checks after Taylor-model arrangement partition bridge
+============================================================
+
+The scoped interval-box constructor line now includes finite Taylor-model
+decision arrangements, not only a single Taylor-model discriminator.
+`TaylorModelDecisionFunctionSpec` carries a finite Taylor polynomial,
+expansion center, value/derivative remainder bounds, root brackets, and an
+explicit monotone or Weierstrass simple-root witness.  The single-discriminator
+constructor and the new arrangement constructor produce positive-margin sign
+cells, sign-vector cells, and recursive equality-root leaves when the witness
+is supported, and return unsupported Taylor-model equality roots as named
+`unsupported_analytic_stratum` leaves instead of hulling them into boxes.
+Matching Taylor-model root brackets across several discriminants are now
+grouped into one simultaneous equality stratum with all defining function ids
+recorded.  Overlapping nonmatching Taylor root brackets are rejected because no
+common-root certificate has been supplied.
+`certify_constructor_derived_recursive_stratified_set_valued_constructor_completeness(...)`
+can now consume this scoped grammar, yielding the explicit input scope
+`finite_taylor_model_decision_interval_inputs_with_weierstrass_certificate`
+for single decisions or
+`finite_taylor_model_decision_arrangement_interval_inputs_with_weierstrass_certificate`
+for finite arrangements, without claiming arbitrary analytic interval-input
+partition generation.
+`ArbitraryIntervalInputPartitionGenerationCertificate` now provides the named
+scoped bridge requested by the latest steering: for supported finite
+event-function grammars it derives branch and event-order recursive consumption
+from constructor certificates, feeds the scoped validated set-valued theorem,
+and records the exact branch grammar, event-order grammar, constructor source
+types, and combined `event_function_grammar_id`.  Mixed supported branch/event
+constructors therefore expose the two finite grammar ids rather than a generic
+mixed label, and unsupported event-side analytic strata, such as Taylor-model
+equality roots without a monotone or Weierstrass witness, remain blocking
+`unsupported:*` obligations instead of being hidden by a supported branch
+grammar.
+
+The pointwise regularized-atlas closed-form route now requires the computable
+certificate enumeration gate to be derived from the proof-certified
+`PointwiseOpenTimeLocallyFiniteAtlasTheoremCertificate` and its finite-target
+chart/outcome grammar.  It also requires the certificate-language soundness
+gate to be derived from the checker-kernel manifest.  Both gates must be the
+actual constructor certificate classes, not generic objects with matching
+attributes.  The pointwise open-time theorem itself must likewise be the real
+`PointwiseOpenTimeLocallyFiniteAtlasTheoremCertificate`; an attribute-compatible
+object with the right theorem id, proof flag, finite-target grammar, and policy
+id is rejected by direct theorem assembly, fair-enumeration derivation, and the
+top-level audit.  The maximal-classical total-collision policy gate now also
+records the source theorem id and only certifies when derived from the real
+proof-certified pointwise open-time theorem with matching policy id.  The
+computable-enumeration and maximal-classical policy gates must now match the
+same theorem source on theorem id, proof flag, dimension, exact/computable input
+model, and total-collision policy id, so gates derived from a different
+pointwise theorem cannot be spliced into this theorem route.  Source-less
+`CertificateLanguageSoundnessCertificate` and
+`ComputableAtlasCertificateEnumerationCertificate` bundles can still record
+their own local obligations, but they no longer certify the
+exact/computable-input closed-form theorem.  The pointwise finite-target and
+open-time theorem constructors now also expose the maximal-classical
+total-collision policy as an explicit proof obligation, so selector-style
+continuation policies cannot certify the maximal-classical pointwise theorem
+surface.  The top-level audit now reports
+`pointwise_open_time_atlas_constructor_certificate`,
+`certificate_language_soundness_constructor_certificate`,
+`certificate_language_soundness_checker_kernel_derived`,
+`computable_atlas_certificate_enumeration_constructor_certificate`, or
+`computable_atlas_certificate_enumeration_pointwise_theorem_derived`, plus
+`computable_atlas_certificate_enumeration_source_matches_theorem` when an
+enumeration gate comes from the wrong theorem.  The direct pointwise theorem
+reports `maximal_classical_total_collision_policy_source_matches_theorem` when
+the policy is not derived from the same pointwise theorem.
+
+The public proof route is now split from the internal theorem route.
+`PublicRegularizedAtlasClosedFormProofCertificate` consumes the internally
+proof-certified `PointwiseRegularizedAtlasClosedFormTheoremCertificate`, keeps
+checker-derived soundness and same-theorem enumeration as public proof
+obligations, and refuses public certification until
+`PublicTotalCollisionProofAuditCertificate` closes the TC4 reduced
+hyperbolicity, TC5 generalized Fuchsian entry, and TC6 Cauchy-majorant
+constant audit blockers.  Those three blockers now require standalone typed
+public-audit evidence objects, not just true booleans.  The top-level TC1-TC7
+audit also now requires public proof references and the expected generalized
+total-stop checker artifact manifest, so the documented TC1-TC3/TC7 defaults
+cannot close public review by themselves.  The TC4 proof note itself has also
+been strengthened.  TC1 now records the exact centered Sundman inequality
+`|L|^2 <= 2 I K`, the finite-energy identity `K = H + U`, TC2's normalized
+pair-distance floor `|q_i-q_j| >= d_* sqrt(I)`, and the estimate
+`I K <= |H| I + C_U sqrt(I) -> 0`, so the conserved centered angular momentum
+vanishes at total collision without treating TC2 as part of the algebraic
+inequality.  TC4 now records the regular-singular indicial equation
+`(k+2)(k-1)=9mu`, identifies `mu=-2/9` as the only possible center root,
+lists the removed quotient modes, and gives the positive-mass Lagrange and
+ordered-Euler spectra/bounds showing that the remaining `mu=-2/9` direction is
+only rotation.  The Lagrange part now shows the finite mass-metric shape-block
+calculation: the shape block has characteristic polynomial
+`chi_Lag(mu)=mu^2-(2/9)mu+(27 beta-8)/81`, and `0<beta<=1/3` follows from
+the elementary positive-mass square identity.  The ordered-Euler bound is now
+expanded into the explicit
+public-audit calculation: Euler's quintic eliminates the third mass, the
+scaled horizontal trace gives `sigma`, and the displayed rational gaps
+`32/9-sigma` and `sigma-4/9` are positive on the full positive-mass ordered
+Euler family.  The TC5 note now includes the finite incoming-germ selector
+extraction bridge: in triangular Poincare-Dulac stable coordinates, lower
+weight forcing is subtracted, resonant rows are solved by finite
+log-polynomial particular solutions, and the remaining selector coordinates
+are recovered as Cauchy limits by variation of constants.  It now also spells
+out the asymptotic-completeness bridge into the chosen normal-form chart:
+after TC4 hyperbolicity, an incoming branch has an eventual entry time `S_0`,
+its unstable coordinate vanishes by a variation-of-constants contradiction
+equivalently captured by the Lyapunov-Perron stable-manifold fixed point, and
+the finite-order Poincare-Dulac normalizing map removes all retained
+nonresonant monomials by homological denominators while leaving resonant rows
+in the finite normal form.  The finite log-degree rule is now a displayed
+proof: the retained `(weight,row)` dependency graph is acyclic by the
+triangular order, and the longest path length `rho(omega,j)` bounds
+`deg_log H_j(omega)`, so no infinite logarithmic tower can appear below
+`W_*`.  The McGehee-time to cubic-time bridge is now explicit too:
+`lambda=c tau^2(1+eta)` turns `exp(-omega s)s^ell` into a finite Puiseux/log
+row in `tau`, with analytic unit factors deferred to the TC6 Cauchy majorant.
+The denominator/projector audit is now explicit as well: retained
+nonresonant rows require a positive `delta_*(W_*)` denominator margin, while
+resonant rows record finite projector/right-inverse identities for `Pi_j` and
+`Q_j`, so the row solve has no hidden complement choice.
+The selector extraction is now written as a finite algorithm: topologically
+order the retained graph, subtract earlier particular rows, solve range
+components with `Q_j`, raise log degree only for projected resonant forcing,
+and record the remaining constant kernel limits as selector constants.
+The TC6 note now
+spells out finite proof-grade constant extraction: rational interval
+enclosures bound the retained defect `D`, the omitted-row inverse `B`, the
+Cauchy derivative/Lipschitz constant `L_N`, and the primitive tail constants
+`(C_0, Lambda, sigma, p_0, d)` used by the checker.  It now also makes the
+projection-tail transfer explicit: the chain rules for `q=tau^2S` and
+`t_c-t=tau^3` convert lifted value/jet/residual tails into physical position,
+velocity, acceleration, and projected Newton residual bounds, including the
+`omega -> omega-4` residual weight shift.  The backend proof obligation is
+also explicit: every bound is a finite rational interval
+expression-DAG inclusion proof with denominator-exclusion certificates,
+residual/Neumann inverse certificates, rational shell enclosures for `log tau`
+and `tau^alpha`, and exact endpoint comparisons for the Banach inequalities.
+The TC7 invariant ledgers are now also reduced to finite interval formulas:
+endpoint collapse, center-of-mass, linear momentum, zero angular momentum, and
+energy matching are derived from the same projected tails and expression-DAG
+interval arithmetic rather than sampled diagnostics.
+The TC7 physical-time and stop-policy rows are now explicit too:
+`t=t_c-tau^3` gives monotone containment in `[t_c-tau_0^3,t_c)`, target
+membership is checked by rational endpoints, and `maximal_classical_stop`
+records that no outgoing selector constants or outgoing chart are supplied.
+TC4 consumes reduced
+hyperbolicity evidence for the quotient coordinates, central-target coverage,
+mass-metric Hessian spectrum, zero-mode removal, and stable/unstable
+splitting, and now requires named Euler/Lagrange target-family coverage,
+quotient modes, and spectrum-audit reference ids.  TC5 consumes generalized
+Fuchsian entry evidence for normal-form coordinates, resonance/log-degree
+rules, denominator/projector handling, triangular solve order, and finite
+selector/exponent extraction from arbitrary incoming germs, and now requires
+named normal-form coordinate ids, resonance rule ids, triangular order keys,
+and selector-data fields.  TC6 consumes Cauchy-majorant evidence, checks finite
+constants, `B L < 1`, and `B D + B L R <= R`, and now requires a Cauchy
+polydisc id, primitive constant names `(C0, Lambda, sigma, p0, d)`, a majorant
+norm id, and a proof-grade backend id before the public audit can close.  Each
+TC4-TC6 evidence object must also carry explicit public proof references.  Raw
+TC4-TC6 booleans, anonymous true-field evidence, missing checker artifacts,
+and unreferenced evidence remain blockers.
+`PublicGeneralClosedFormSolutionCertificate` and
+`certify_public_general_closed_form_solution_target(...)` are now the public
+top-level route.  They compose the internal `GeneralClosedFormSolutionCertificate`
+with the public regularized-atlas audit, require checker-kernel-derived
+soundness and same-pointwise-theorem computable enumeration, and keep raw
+all-true scaffold gates out of public proof closure.  This records the current
+state precisely: the exact/computable pointwise theorem is internally closed,
+while the public proof package still needs TC4-TC6 review evidence.  The top-level
+`GeneralClosedFormSolutionCertificate` also now exposes `certified` as an alias
+for `proof_certified`, matching the rest of the certificate API vocabulary.
+The implementation-side interval theorem now also has a named scoped partition
+generation object:
+`ArbitraryIntervalInputPartitionGenerationCertificate`.  It derives branch and
+event-order recursive consumption from supported finite event-function
+grammars, feeds the existing scoped set-valued theorem, and claims partition
+generation only for that grammar id.  Unsupported Taylor-model equality roots
+in either a single discriminator or a finite Taylor-model arrangement, and
+other unsupported analytic strata, stay visible as blockers instead of being
+hulled into ambient interval boxes.  Matching Taylor root brackets are grouped
+as simultaneous event equality; overlapping nonmatching brackets are rejected
+instead of being certified without a common-root proof.
+The fast CI target requested by LAST_PRO is now executable as
+`python3 scripts/fast_ci.py`; it runs compileall, the LAST_PRO steering
+regressions, the focused closed-form route slice, and the non-slow certificate
+checker suite.  The slow generalized-Fuchsian checker paths remain split out
+as `python3 scripts/slow_certificate_checker.py`.
+
+Verification:
+
+```text
+python3 -m pytest -q tests/test_closed_form.py -k "pointwise_closed_form_route or certificate_language_soundness or computable_atlas_enumeration or pointwise_regularized_atlas_closed_form"
+python3 -m pytest -q tests/test_closed_form.py -k "incomplete_enumeration_grammar or different_pointwise or non_maximal_policy or pointwise_closed_form_route_certifies"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "pointwise_open_time_theorem"
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "maximal_classical_policy or pointwise_finite_target_atlas_or_stop"
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "scoped_arbitrary_interval_partition or taylor_model or constructor_source_scope_manifest"
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "scoped_arbitrary_interval_partition"
+python3 -m pytest -q tests/test_public_proof_audit.py
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_certificate_checker.py -m "not slow" --maxfail=1
+python3 -m compileall -q three_body_symmetry tests
+python3 scripts/fast_ci.py
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_public_proof_audit.py tests/test_last_pro_instructions.py tests/test_certificate_checker.py
+python3 -m pytest -q tests/test_closed_form.py
+python3 -m pytest -q tests/test_open_time_atlas.py
+python3 -m pytest --collect-only -q tests/test_open_time_atlas.py tests/test_closed_form.py tests/test_finite_target_completeness.py tests/test_public_proof_audit.py tests/test_last_pro_instructions.py tests/test_certificate_checker.py
+git diff --check
+```
+
+Result: the scoped arbitrary interval-partition/Taylor/manifest slice passed
+with `10` tests, including the new finite Taylor-model arrangement constructor,
+grouped simultaneous-root handling, overlapping-root rejection, and
+unsupported-witness blocker regressions.  The LAST_PRO steering suite
+passed with `6` tests, the public-proof audit suite passed with `13` tests,
+compileall passed, and `git diff --check` passed.  The fast CI runner passed;
+inside it the focused closed-form route slice passed with `23` tests and the
+non-slow checker suite passed with `54` tests.  Collect-only reports `103`
+finite-target tests, `13` public-proof audit tests, `6` LAST_PRO tests, and
+`58` certificate-checker tests.  I did not rerun the full finite-target,
+closed-form, or open-time suites for this Taylor-model arrangement update.
+
+Latest checks after set-valued provenance hardening
+===================================================
+
+Normalized branch/event trees now require unique leaf ids through the required
+`finite_branch_event_tree_leaf_ids_unique` obligation.  On top of that,
+`certify_terminal_policy_stratified_branch_event_tree(...)` verifies that
+terminal selector and total-collision cluster certificates are attached to
+actual source leaves in the supplied branch/event tree and that the existing
+source leaf taxonomy already matches the claimed terminal policy.  It rejects
+duplicate selector certificates, duplicate total-collision cluster
+certificates, duplicate source-tree leaf ids, stale certificates for unknown
+leaves, selector/total-cluster evidence attached to the same source leaf, and
+attempts to relabel ordinary positive-margin leaves as selector or
+total-collision terminals.  Recursive child-consumption normalization now also
+rejects duplicate raw child ids and arrangement aliases that collapse to the
+same equality leaf, so displayed lower-dimensional child evidence cannot be
+silently overwritten during alias normalization.  This closes stale-evidence
+holes in the scoped set-valued terminal-stratum and recursive-consumption paths
+without promoting the represented interval-box scope to arbitrary
+interval-input partition generation.
+
+Verification:
+
+```text
+python3 -m pytest -q tests/test_open_time_atlas.py -k "recursive_child_consumption_rejects_duplicate or branch_event_tree_rejects_duplicate_leaf_ids or terminal_policy_stratification"
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_closed_form.py
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m pytest --collect-only -q tests/test_open_time_atlas.py tests/test_closed_form.py tests/test_finite_target_completeness.py tests/test_last_pro_instructions.py
+git diff --check
+```
+
+Result: the provenance hardening slice passed with `4` tests.  Compileall
+passed.  The full open-time suite passed with `69` tests, the full closed-form
+suite passed with `64` tests, the full finite-target-completeness suite passed
+with `92` tests, and the LAST_PRO steering suite passed with `6` tests.
+Collect-only reports `69` open-time tests, `64` closed-form tests, `92`
+finite-target tests, and `6` LAST_PRO tests.  `git diff --check` passed.
+
+Latest checks after scoped set-valued audit hardening
+====================================================
+
+Added explicit scope introspection for set-valued constructor evidence flowing
+through `FiniteTargetCompletenessReductionCertificate` and
+`OpenTimeLocallyFiniteAtlasTheoremCertificate`.  A represented constructor
+scope such as positive-margin boxes or a displayed recursive stratification can
+still certify that scoped input class, but `OpenTimeLocallyFiniteAtlasTheoremCertificate.proof_certified`
+now remains false for scoped-only set-valued evidence, the open-time route
+summary says so directly, and the closed-form audit adds
+`arbitrary_interval_input_partition_generation` if such scoped evidence is the
+only set-valued theorem available.  This prevents a scoped interval-box
+constructor result from being promoted to the full arbitrary interval-box
+implementation theorem.
+The open-time reduction also now has a regression for terminal total-collision
+cluster strata, parallel to the selector-policy terminal stratum path: a
+supplied recursive tree with a proof-certified total-collision stop cluster is
+consumed by the scoped set-valued constructor theorem, but the open-time proof
+still does not promote to arbitrary interval-input coverage.
+
+Verification:
+
+```text
+python3 -m pytest -q tests/test_open_time_atlas.py -k "uniform_margin_set_valued_subset or named_validated_set_valued_theorem"
+python3 -m pytest -q tests/test_closed_form.py -k "scoped_set_valued_constructor_route or set_valued_constructor_regularized_atlas_route"
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_closed_form.py -k "regularized_locally_finite_atlas or pointwise_regularized_atlas or set_valued_constructor_regularized or scoped_set_valued_constructor_route"
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_closed_form.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "constructor_pair_derived or supplied_generalized_fuchsian_cached_inputs_are_reused"
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "scoped_arbitrary_interval_partition_generation"
+git diff --check
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m pytest --collect-only -q tests/test_open_time_atlas.py tests/test_closed_form.py tests/test_finite_target_completeness.py tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_open_time_atlas.py -k "terminal_total_collision_cluster_strata or terminal_selector_policy_strata"
+```
+
+Result: compileall and `git diff --check` passed.  The scoped open-time slice
+passed with `2` tests, the scoped closed-form slice passed with `2` tests, the
+full open-time suite passed with `64` tests, the focused closed-form
+regularized-atlas route slice passed with `6` tests, the LAST_PRO steering
+suite passed with `6` tests, the full closed-form suite passed, and the
+focused finite-target constructor/cache slice passed with `2` tests.  The
+scoped arbitrary interval partition-generation slice passed with `5` tests,
+including the mixed grammar-pair and unsupported event-side stratum
+regressions.  The full finite-target-completeness suite passed with `105`
+tests after updating the Taylor-model arrangement manifest assertion.  The
+terminal selector/total-cluster open-time slice passed with `2` tests, and
+latest collect-only reports `70` open-time tests, `72` closed-form tests,
+`105` finite-target tests, and `6` LAST_PRO tests.
+
+Latest checks after quadratic/polynomial-root scoped grammar bridge
+==================================================================
+
+The scoped arbitrary interval-input partition bridge now also accepts two
+constructor-derived root grammars that were previously only visible through the
+displayed set-valued wrapper:
+
+- `QuadraticDoubleRootArrangement` maps to
+  `finite_quadratic_double_root_arrangement_interval_inputs`.
+- `PolynomialRootArrangement` maps to
+  `finite_computed_polynomial_root_arrangement_interval_inputs`.
+
+Both routes still require constructor-derived recursive equality-child
+consumption and the scoped validated set-valued theorem before
+`ArbitraryIntervalInputPartitionGenerationCertificate` can claim partition
+generation.  The generic validated set-valued wrapper still reports
+`arbitrary_partition_generation_claimed=False`; only the explicit scoped bridge
+claims the represented finite grammar.
+
+Verification:
+
+```text
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "quadratic_double_root or computed_polynomial_root or scoped_arbitrary_interval_partition_manifest"
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 scripts/fast_ci.py
+git diff --check
+```
+
+Result: the focused finite-target grammar slice passed with `5` tests.
+Collect-only reports `107` finite-target tests and `6` LAST_PRO tests.  The
+full finite-target-completeness suite passed, `git diff --check` passed, and
+the fast CI target passed, including compileall, the LAST_PRO steering suite,
+the focused closed-form route slice, and the non-slow certificate-checker
+suite.
+
+Latest checks after public-audit manifest resolver joined fast CI
+================================================================
+
+The public-audit manifest resolver now also verifies the aggregate
+`PUBLIC_TOTAL_COLLISION_REQUIRED_CHECKER_ARTIFACTS` entries against exported
+`three_body_symmetry.certificate_checker` module attributes.  This closes the
+remaining manifest-resolution gap where the TC4/TC5/TC6 pytest artifact ids
+and proof-note references were checked, but the top-level total-stop checker
+artifact strings were only compared literally.
+
+`scripts/fast_ci.py` now runs `tests/test_public_proof_audit.py` between the
+focused closed-form route slice and the non-slow certificate-checker suite, so
+the public proof manifest resolver is part of the fast LAST_PRO gate rather
+than a separate manual command.
+
+Verification:
+
+```text
+python3 -m pytest -q tests/test_public_proof_audit.py
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 scripts/fast_ci.py
+```
+
+Result: the public-audit manifest suite passed with `23` tests, and the
+LAST_PRO steering suite passed with `6` tests.  The updated fast CI target also
+passed, including compileall, LAST_PRO, the focused closed-form slice, the
+public-audit manifest suite, and the non-slow certificate-checker suite.
+
+Latest checks after all declared scoped grammars received bridge coverage
+========================================================================
+
+`tests/test_finite_target_completeness.py` now contains a single regression
+that constructs a proof-certified
+`ArbitraryIntervalInputPartitionGenerationCertificate` for every source type
+declared in `SUPPORTED_ARBITRARY_INTERVAL_PARTITION_GRAMMARS`.  The coverage
+now includes affine decision arrangements, polynomial decisions and
+arrangements, Sturm polynomial arrangements, quadratic double-root
+arrangements, grouped computed polynomial-root arrangements, Taylor-model
+stratifications and arrangements with root witnesses, axis-aligned affine box
+arrangements, affine halfspace decisions, and 2D/3D affine halfspace
+arrangements.
+
+The test asserts exact source-type preservation, exact branch/event grammar
+ids, exact scoped input ids, no unsupported strata, and an empty missing
+obligation list for each declared grammar.  This does not promote arbitrary
+smooth/analytic interval inputs; it proves that the declared supported grammar
+manifest has constructor-backed scoped examples.
+
+Verification:
+
+```text
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "scoped_arbitrary_interval_partition_generation_covers_declared_grammars or scoped_arbitrary_interval_partition_manifest"
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_last_pro_instructions.py
+python3 scripts/fast_ci.py
+git diff --check
+```
+
+Result: the focused scoped-grammar slice passed with `2` tests, the LAST_PRO
+steering suite passed with `6` tests, the full finite-target-completeness suite
+passed, and collect-only reports `108` finite-target tests plus `6` LAST_PRO
+tests.  `git diff --check` passed, and the fast CI target passed with
+compileall, LAST_PRO, the focused closed-form slice, the public-audit manifest
+suite, and the non-slow certificate-checker suite.
+
+Latest checks after TC4/TC5 artifact execution joined fast CI
+============================================================
+
+The TC4/TC5 public-audit manifests already required concrete pytest artifact
+ids in `tests/test_obstructions.py`.  The fast CI target now executes the exact
+fast obstruction slice containing those required public-audit artifacts:
+
+- the arbitrary-mass equilateral linearized spectrum beta-formula regression,
+  including its parameterized mass cases;
+- the ordered-Euler horizontal shape parameter regression;
+- the ordered-Euler eigenvalue-bound regression;
+- the stable log-selector chain constructor regression;
+- the finite Fuchsian-log branch projection/composition regressions; and
+- the resonant Fuchsian-log row constructor regression.
+
+This is not a new certificate layer.  It makes the existing public-audit
+artifact manifest executable in the fast LAST_PRO gate instead of merely
+resolvable by name.
+
+Verification:
+
+```text
+python3 -m pytest -q tests/test_obstructions.py -k "arbitrary_mass_equilateral_linearized_spectrum_matches_beta_formula or ordered_euler_linearized_spectrum_has_single_horizontal_shape_parameter or ordered_euler_shape_eigenvalue_bounds_limit_higher_resonance_orders or stable_log_selector_chain_constructor_recovers_coupled_log_selectors or stable_log_selector_chain_projects_to_finite_fuchsian_log_branch or fuchsian_log_row_constructor_builds_resonant_selector_branch or finite_fuchsian_log_branch_composes_selector_rows_and_projects"
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 scripts/fast_ci.py
+```
+
+Result: the focused TC4/TC5 obstruction artifact slice passed with `10` tests
+and the LAST_PRO steering suite passed with `6` tests.  The updated fast CI
+target passed with compileall, LAST_PRO, the focused closed-form slice, the
+public-audit manifest suite, the TC4/TC5 obstruction artifact slice, and the
+non-slow certificate-checker suite.
+
+Latest checks after TC6 slow public-audit artifacts became explicit
+==================================================================
+
+`scripts/slow_certificate_checker.py` now names the slow generalized-Fuchsian
+checker paths that matter to the public TC6 audit instead of relying only on a
+broad `-m slow` selection.  The target runs the serialized generalized
+total-stop acceptance path plus the three slow TC6 public-audit checker
+artifacts: interval-not-sample gating, corrupted-majorant rejection, and
+missing-projected-tail rejection.
+
+This keeps the fast CI path free of expensive generalized-Fuchsian stress tests
+while making the slow public-audit evidence path auditable and bounded.
+
+Verification:
+
+```text
+python3 -m py_compile scripts/slow_certificate_checker.py scripts/fast_ci.py
+python3 -m pytest --collect-only -q tests/test_certificate_checker.py -m slow -k "independent_checker_accepts_serialized_generalized_fuchsian_stop_chart or generalized_fuchsian_stop_checker_certification_is_interval_not_sample_gated or independent_checker_rejects_corrupted_generalized_fuchsian_majorant or independent_checker_rejects_generalized_fuchsian_without_projected_tail"
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 scripts/slow_certificate_checker.py
+python3 scripts/fast_ci.py
+git diff --check
+```
+
+Result: script compilation passed, collect-only reports `4` selected slow
+checker tests, the LAST_PRO steering suite passed with `6` tests, and the slow
+checker target passed with `4` tests.  `git diff --check` passed, and the fast
+CI target still passed with compileall, LAST_PRO, the focused closed-form
+slice, the public-audit manifest suite, the TC4/TC5 obstruction artifact slice,
+and the non-slow certificate-checker suite.
+
+Latest checks after public-audit manifests were tied to CI selections
+====================================================================
+
+The public-audit regression suite now checks that the artifact manifests are
+not only resolvable, but also covered by the project CI targets:
+
+- every TC4 spectrum and TC5 constructor artifact id is selected by the fast
+  `tests/test_obstructions.py` slice;
+- the non-slow TC6 checker artifact is covered by the fast checker target; and
+- the three slow TC6 checker artifacts are selected by
+  `scripts/slow_certificate_checker.py`.
+
+This keeps public-audit evidence tied to executable harness coverage without
+adding another theorem/certificate layer.
+
+Verification:
+
+```text
+python3 -m pytest -q tests/test_public_proof_audit.py -k "required_artifacts_are_covered_by_ci_targets or required_checker_artifacts_exist or required_artifacts_exist"
+python3 -m pytest -q tests/test_public_proof_audit.py
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 scripts/fast_ci.py
+python3 -m pytest --collect-only -q tests/test_public_proof_audit.py tests/test_last_pro_instructions.py
+git diff --check
+```
+
+Result: the focused public-audit CI-coverage slice passed with `3` tests, the
+full public-audit suite passed with `23` tests, the LAST_PRO steering suite
+passed with `6` tests, the fast CI target passed, collect-only reports `23`
+public-audit tests and `6` LAST_PRO tests, and `git diff --check` passed.
+
+Latest checks after reducer-level set-valued evidence extraction
+================================================================
+
+`certify_finite_target_completeness_reduction(...)` now unpacks a validated
+set-valued constructor theorem and pulls out its recursive branch-refinement,
+event-order refinement, branch-consumption, and event-order-consumption
+certificates before running finite-target certificate-search completeness.
+This lets the reduction consume one validated theorem object directly instead
+of requiring callers to pass the same recursive evidence a second time.  The
+change preserves the intended boundary: constructor-derived represented
+stratifications can close the displayed scope, while arbitrary interval-input
+recursive branch/event partition generation remains the separate
+`set_valued_constructor_branch_event_completeness` theorem obligation.
+
+Verification:
+
+```text
+python3 -m pytest -q tests/test_open_time_atlas.py -k "finite_target_reduction_extracts_recursive_evidence_from_validated_set_valued_certificate"
+python3 -m pytest -q tests/test_open_time_atlas.py
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_closed_form.py -k "regularized_locally_finite_atlas or pointwise_regularized_atlas or set_valued_constructor_regularized"
+python3 -m pytest --collect-only -q tests/test_open_time_atlas.py tests/test_finite_target_completeness.py tests/test_closed_form.py
+python3 -m pytest -q tests/test_last_pro_instructions.py
+```
+
+Result: the direct reducer regression passed, the full open-time suite passed
+with `64` tests, compileall passed, the full finite-target-completeness suite
+passed, and the focused closed-form regularized-atlas route slice passed with
+`5` tests. Collect-only reports `64` open-time tests, `92` finite-target tests,
+and `63` closed-form tests. The LAST_PRO steering regression file passed with
+`6` tests.
+
+Latest checks after generalized Fuchsian fixture caching
+========================================================
+
+Factored the repeated valid generalized Fuchsian supplied-entry path in
+`tests/test_finite_target_completeness.py` into cached helpers for the branch,
+entry certificate, finite-row tail budgets, and analytic remainder majorant.
+The negative tests still construct their own bad-radius, bad-contraction, and
+bad-self-map variants; the cached path only removes repeated construction of
+the same proof-certified valid inputs.  A regression now asserts the cached
+entry, finite-row, and remainder-majorant helpers are actually reused.
+
+Verification:
+
+```text
+python3 -m py_compile tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "supplied_generalized_fuchsian"
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_last_pro_instructions.py -k "checker_hygiene"
+python3 -m pytest -q tests/test_certificate_checker.py -k "fast_reduced_order_generalized_fuchsian_stop_checker_ci_fixture"
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest --collect-only -q tests/test_finite_target_completeness.py tests/test_open_time_atlas.py tests/test_last_pro_instructions.py
+```
+
+Result: py_compile and compileall passed.  The generalized Fuchsian
+finite-target slice passed with `11 passed`; the full finite-target
+completeness suite passed; the LAST_PRO checker-hygiene regression passed; and
+the fast reduced-order generalized Fuchsian checker fixture passed. Collect-only
+reports `92` finite-target tests, `63` open-time tests, and `6` LAST_PRO tests.
+
+Latest checks after open-time constructor-derived search evidence
+=================================================================
+
+`construct_open_time_locally_finite_atlas_theorem(...)` can now accept
+displayed set-valued search constructors directly through
+`certificate_search_constructor_certificate` for a shared branch/event
+constructor, or through separate
+`certificate_search_branch_constructor_certificate` and
+`certificate_search_event_order_constructor_certificate` options.  The
+open-time constructor derives the recursive branch/event consumption
+certificates and the scoped supplied-recursive set-valued theorem internally,
+then feeds those constructor-derived certificates into
+`FiniteTargetCompletenessReductionCertificate`.  This removes another layer of
+caller-supplied proof plumbing without claiming arbitrary interval-input
+recursive partition generation.
+
+Verification:
+
+```text
+python3 -m compileall -q three_body_symmetry tests
+python3 -m pytest -q tests/test_open_time_atlas.py -k "constructor_search_scope_internally or mixed_constructor_branch_event_scope"
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "constructor_pair_derived_set_valued_helper_rejects_bad_event_constructor or mixed_constructor_set_valued_scope or mixed_oblique_affine_arrangement_scope"
+python3 -m pytest -q tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py
+python3 -m pytest --collect-only -q tests/test_open_time_atlas.py tests/test_finite_target_completeness.py
+python3 -m pytest -q tests/test_last_pro_instructions.py
+python3 -m pytest -q tests/test_closed_form.py -k "regularized_locally_finite_atlas or independent_chart_verifier or generalized_fuchsian"
+```
+
+Result: compileall passed.  The focused open-time constructor-search slice
+passed with `2 passed`, the focused finite-target mixed-constructor slice
+passed with `3 passed`, the full open-time suite passed, the full
+finite-target completeness suite passed, and collect-only reports `63`
+open-time tests plus `91` finite-target completeness tests.  The LAST_PRO
+regression file passed with `6 passed`, and the focused closed-form
+atlas/verifier slice passed with `2 passed`.
+
+Latest checks after constructor-pair supplied-recursive adapter
+===============================================================
+
+Added `certify_constructor_pair_derived_recursive_stratified_set_valued_constructor_completeness(...)`,
+which derives recursive branch and event-order consumption certificates from
+two supported displayed stratifications and then returns the existing
+`SuppliedRecursiveStratifiedSetValuedConstructorCompletenessCertificate`.
+Representative mixed branch/event tests now pass displayed constructors
+directly instead of manually deriving both recursive certificates.  This
+reduces supplied proof evidence in mixed constructor-derived interval-box
+scopes while preserving the boundary: the displayed branch/event constructors
+are still inputs, and arbitrary interval-input recursive partition generation
+is not claimed.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/finite_target_completeness.py three_body_symmetry/__init__.py tests/test_finite_target_completeness.py tests/test_open_time_atlas.py
+python3 -m pytest -q tests/test_finite_target_completeness.py -k "mixed_constructor_set_valued_scope or constructor_pair_derived_set_valued_helper_rejects_bad_event_constructor or mixed_oblique_affine_arrangement_scope"
+python3 -m pytest -q tests/test_open_time_atlas.py -k "mixed_constructor_branch_event_scope or mixed_oblique_affine_arrangement_scope"
+```
+
+Result: py_compile passed, the focused finite-target mixed-constructor adapter
+slice passed with `3 passed`, and the focused open-time mixed-constructor
+adapter slice passed with `2 passed`.  The full
+`tests/test_finite_target_completeness.py` file exited successfully with `91`
+collected tests, the full `tests/test_open_time_atlas.py` file exited
+successfully with `62` collected tests, the LAST_PRO milestone suite passed
+with `6 passed`, the focused closed-form atlas/verifier slice passed with
+`2 passed`, collect-only reported `91` finite-target tests and `62` open-time
+tests, and compileall passed.
+
 Latest checks after constructor-derived supplied-recursive adapter
 ==================================================================
 
@@ -23,9 +3204,14 @@ python3 -m pytest -q tests/test_finite_target_completeness.py -k "polynomial_dec
 python3 -m pytest -q tests/test_open_time_atlas.py -k "polynomial_decision_scope"
 ```
 
-Initial result: py_compile passed, the focused finite-target constructor-derived
+Result: py_compile passed, the focused finite-target constructor-derived
 adapter slice passed with `4 passed`, and the focused open-time adapter slice
-passed with `1 passed`.
+passed with `1 passed`.  The full `tests/test_finite_target_completeness.py`
+file exited successfully with `90` collected tests, the full
+`tests/test_open_time_atlas.py` file exited successfully with `62` collected
+tests, the LAST_PRO milestone suite passed with `6 passed`, the focused
+closed-form atlas/verifier slice passed with `2 passed`, collect-only reported
+`90` finite-target tests and `62` open-time tests, and compileall passed.
 
 Latest checks after supplied-recursive wrapper event-order default
 ==================================================================
@@ -13130,6 +16316,254 @@ Result: py_compile passed, the selected finite-target registry slice passed
 with `1 passed`, the selected closed-form audit slice passed with `1 passed`,
 the full affected finite-target/closed-form/open-time run passed, compileall
 passed, and collect-only saw `106` tests across the affected files.
+
+## 2026-06-01 machine-checked public-audit closure path
+
+- Added typed public artifact evidence and a
+  `PublicReviewArtifactResolutionCertificate` for the TC4, TC5, and TC6
+  public line-audit artifacts under `docs/public-review/`.
+- The explicit resolver path verifies artifact ids, SHA-256 digests, proof
+  references, consumed local checker/constructor artifacts, verifier id,
+  accepted verdicts, and absence of unresolved placeholder text. It reports
+  `artifact_kind="machine_checked_public_audit"` and
+  `public_closure_status="machine_checked_public_audit_verified"` rather than
+  claiming independent external review.
+- Added production local package constructors:
+  `certify_public_reduced_hyperbolicity_audit_evidence_from_manifest(...)`,
+  `certify_public_generalized_fuchsian_entry_audit_evidence_from_manifest(...)`,
+  and `certify_review_ready_total_collision_audit_package(...)`. The local
+  package remains public-open without a typed artifact resolver.
+- Positive regressions now close the public total-collision, public
+  regularized-atlas, and public general closed-form facades with the typed
+  machine-check resolver. Negative regressions reject fake resolvers, wrong
+  artifact ids, digest mismatches, proof-note self-references, and placeholder
+  artifact text. A focused fast-CI slice also covers missing artifact objects,
+  duplicate artifact reuse, missing proof references, stale proof-note
+  references, repo-local artifacts mislabeled as external review, and missing
+  checker/constructor artifact coverage.
+- The user-facing public-audit blockers now use truthful
+  `public_review_artifact_manifest` and `public_review_artifact_verification`
+  names instead of the legacy `external_public_review_*` wording. The legacy
+  constructor fields remain for compatibility, but the proof blocker surface no
+  longer describes repo-local machine-check artifacts as external review.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/public_proof_audit.py three_body_symmetry/__init__.py tests/test_public_proof_audit.py
+pytest -q tests/test_public_proof_audit.py -k "public_review_artifact_resolution or review_ready_total_collision_package or closes_with_verified or fake_review_resolver or wrong_artifact_id or digest_mismatch or proof_note_self_reference or placeholder_text"
+pytest -q tests/test_public_proof_audit.py
+pytest -q tests/test_last_pro_instructions.py
+python3 scripts/fast_ci.py
+python3 scripts/slow_certificate_checker.py
+```
+
+Result: py_compile passed, the focused public-review artifact slice passed
+with `10 passed`, the full public-audit suite passed, the LAST_PRO regression
+passed with `6 passed`, fast CI passed, and the slow certificate-checker split
+passed. The fast public-audit target now includes
+`PUBLIC_REVIEW_ARTIFACT_HARDENING_K`. Full multi-minute suite was not rerun for
+this entry.
+
+## 2026-06-01 open-time theorem proof-gate hardening
+
+- Routed the open-time theorem surface through the same exact
+  `TheoremPipelineObligation` ledger checks used by the lower-level theorem
+  modules. `FiniteTargetAtlasOrStopCertificate`,
+  `TotalCollisionStopCertificate`, compact-interval/exhaustion certificates,
+  the finite-target completeness reduction, the open-time checked prefix, and
+  the pointwise open-time theorem now reject attribute-compatible fake
+  obligations and optional-only ledgers.
+- Tightened `TotalCollisionPolicyCertificate` so policy flags must exactly
+  match the declared maximal-classical or selected-continuation policy; truthy
+  strings or mismatched stop/selector flags no longer certify.
+- Added regressions for the top-level open-time/pointwise spoof paths and put
+  them into `scripts/fast_ci.py`.
+
+Verification:
+
+```text
+python3 -m pytest -q tests/test_open_time_atlas.py -k 'open_time_theorem_surfaces_reject_spoofed_obligation_ledgers or total_collision_policy_certificate_requires_exact_policy_flags'
+python3 -m pytest -q tests/test_last_pro_instructions.py -k 'total_collision_proof_note_and_checker_hygiene_are_locked_down or last_pro'
+python3 scripts/fast_ci.py
+python3 -m pytest -q tests/test_open_time_atlas.py
+git diff --check
+```
+
+Result: the focused open-time proof-gate regressions passed with `2 passed`,
+the LAST_PRO focused slice passed with `6 passed`, fast CI passed, the full
+`tests/test_open_time_atlas.py` file passed, and `git diff --check` passed.
+
+## 2026-06-01 zero-angular finite-jet entry proof-gate hardening
+
+- Tightened `CubicTimeEntryObligation` so `certified` must be exactly `True`
+  and `required` must be a real boolean.
+- Added exact obligation-ledger checks to the cubic-time leading-jet and
+  cubic-jet-kernel certificates. Fake attribute-compatible obligations,
+  optional-only ledgers, and truthy non-boolean proof rows no longer certify.
+- The cubic-jet-kernel certificate now also requires the supplied leading
+  certificate to be an actual `CubicTimeLeadingJetEntryCertificate`, not a
+  source-less object with `certified=True`.
+- Tightened the finite-jet identity-selector composition as well:
+  coordinate certificates, selected-branch certificates, selector specs, and
+  derived identity-entry inputs must now be the actual constructor dataclasses
+  rather than attribute-compatible true-field objects.
+- Added focused zero-angular entry regressions and included them in fast CI.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/zero_angular_entry.py tests/test_zero_angular_entry.py
+python3 -m pytest -q tests/test_zero_angular_entry.py
+python3 -m pytest -q tests/test_last_pro_instructions.py -k 'total_collision_proof_note_and_checker_hygiene_are_locked_down or last_pro'
+python3 -m pytest -q tests/test_obstructions.py -k 'cubic_time_total_collision_branch_forces_second_shape or analytic_cubic_time_total_collision_branch_forces_cubic_jet_kernel_condition or finite_cubic_asymptotic_forces_cubic_jet_kernel_condition'
+python3 scripts/fast_ci.py
+git diff --check
+```
+
+Result: the new zero-angular entry tests passed with `4 passed`, the focused
+LAST_PRO slice passed with `6 passed`, the cubic-time obstruction slice passed
+with `3 passed`, fast CI passed, and `git diff --check` passed.
+
+## 2026-06-01 theorem-level zero-angular selector-envelope hardening
+
+- Tightened the zero-angular finite selector theorem assembler so
+  `certify_compact_zero_angular_finite_selector_atlas(...)` only accepts
+  actual `FiniteJetIdentitySelectorEntryCertificate` or
+  `FiniteJetDerivedIdentitySelectorEntryCertificate` selector envelopes.
+- Added a theorem-level regression using a fully attribute-compatible fake
+  selector envelope with matching masses, energy, central coefficient, sample
+  taus, and true-looking proof flags; it now fails the selector coverage
+  obligation instead of certifying.
+- Added that focused theorem-level selector check to fast CI.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/general_solution_theorem.py tests/test_general_solution_theorem.py
+python3 -m pytest -q tests/test_general_solution_theorem.py -k 'zero_angular_compact_finite_atlas_requires_constructor_selector_entry or parabolic_homothetic_total_collision_constructor_derives_selector_pipeline or zero_angular_compact_finite_atlas_rejects_nonselector_collision_policy'
+python3 -m pytest -q tests/test_general_solution_theorem.py -k 'zero_angular_compact_finite_atlas_requires_constructor_selector_entry'
+python3 -m pytest -q tests/test_last_pro_instructions.py -k 'total_collision_proof_note_and_checker_hygiene_are_locked_down or last_pro'
+python3 scripts/fast_ci.py
+git diff --check
+```
+
+Result: the focused theorem-level zero-angular selector slice passed with
+`3 passed`, the fast-CI selector slice passed with `1 passed`, the focused
+LAST_PRO slice passed with `6 passed`, fast CI passed, and `git diff --check`
+passed.
+
+## 2026-06-01 homothetic escape gluing constructor-proof hardening
+
+- Tightened the positive-energy homothetic escape endpoint recurrence so a
+  supplied majorant certificate must be an actual
+  `HomotheticEscapeImplicitCauchyMajorantCertificate` derived for the same
+  endpoint. A source-less object with `certified=True` no longer closes the
+  recurrence path.
+- Tightened the all-real homothetic escape gluing certificate so the
+  total-collision selector entry must be an actual finite-jet selector-entry
+  dataclass, matching the zero-angular theorem assembler gate.
+- Added a focused regression with fake majorant and selector-entry objects that
+  expose matching numeric fields and true-looking proof flags; both now fail at
+  constructor/property level. The regression is part of fast CI.
+
+Verification:
+
+```text
+python3 -m py_compile three_body_symmetry/escape_endpoint.py tests/test_general_solution_theorem.py
+python3 -m pytest -q tests/test_general_solution_theorem.py -k 'positive_energy_homothetic_escape_feeds_global_atlas_from_initial_data or positive_energy_homothetic_escape_rejects_fake_majorant_and_selector_entry or positive_energy_homothetic_escape_rejects_manual_endpoint_majorant_in_theorem'
+python3 -m pytest -q tests/test_general_solution_theorem.py -k 'zero_angular_compact_finite_atlas_requires_constructor_selector_entry or positive_energy_homothetic_escape_rejects_fake_majorant_and_selector_entry'
+python3 -m pytest -q tests/test_last_pro_instructions.py -k 'total_collision_proof_note_and_checker_hygiene_are_locked_down or last_pro'
+python3 scripts/fast_ci.py
+git diff --check
+```
+
+Result: the focused positive-energy homothetic escape slice passed with
+`3 passed`, the fast-CI selector/escape hardening slice passed with `2 passed`,
+the focused LAST_PRO slice passed with `6 passed`, fast CI passed, and
+`git diff --check` passed.
+
+## 2026-06-01 finite-time proof-ledger spoof hardening
+
+- Hardened `ProofLedgerEntry` and `ProofLedger` so proof-ledger certification
+  requires real ledger entries, exact `certified is True`, and at least one
+  real required entry. Attribute-compatible fake entries are reported as
+  `proof_ledger_entry_type`.
+- Hardened the finite-time regime classifier so its certified status is
+  derived only from real `TheoremPipelineObligation` rows and exact
+  constructor-certified fields. Fake obligation ledgers, optional-only ledgers,
+  fake selector traces, fake validated atlases, and fake proof-ledger rows no
+  longer close the finite-time route.
+- Added explicit invalid finite-target-time handling so malformed target times
+  become named theorem obligations instead of raising before the classifier can
+  return a diagnostic certificate.
+
+Verification:
+
+```text
+python3 -m pytest -q tests/test_general_solution.py -k 'finite_time_regime_classifier_rejects_spoofed_obligation_ledgers or finite_time_regime_classifier_ignores_fake_proof_ledger_entries or validated_atlas_proof_ledger_rejects_truthy_fake_and_optional_only_entries'
+python3 -m pytest -q tests/test_general_solution.py -k 'finite_time_regime_classifier'
+python3 scripts/fast_ci.py
+git diff --check
+```
+
+Result: the three new spoofing regressions passed, the full finite-time
+classifier slice passed with `12 passed`, the fast CI target passed, and
+`git diff --check` produced no output.
+
+## 2026-06-01 fast CI covers finite-time proof-gate hardening
+
+- Added the finite-time atlas hardening regressions to `scripts/fast_ci.py` so
+  the normal fast target now covers the shared `ProofLedger` exact-boolean
+  checks and the finite-time regime classifier's spoofed-obligation rejection.
+- Updated the LAST_PRO regression to assert that the fast target continues to
+  select those finite-time proof-gate tests, along with the existing public
+  audit and checked-prefix slices.
+- Inspected the public TC4-TC6 external-review gate and left it deliberately
+  open: local strings and in-repo artifacts still cannot certify external
+  public review, so adding another local wrapper would not advance the proof.
+
+Verification:
+
+```text
+python3 -m pytest -q tests/test_last_pro_instructions.py -k 'fast or last_pro'
+python3 -m pytest -q tests/test_general_solution.py -k 'validated_atlas_proof_ledger_rejects_truthy_fake_and_optional_only_entries or finite_time_regime_classifier_rejects_spoofed_obligation_ledgers or finite_time_regime_classifier_ignores_fake_proof_ledger_entries'
+python3 scripts/fast_ci.py
+```
+
+Result: the focused LAST_PRO slice passed with `6 passed`, the finite-time
+hardening slice passed with `3 passed`, and the fast CI target passed.
+
+## 2026-06-01 scoped interval-input obligation-ledger hardening
+
+- Hardened finite-target and scoped interval-input theorem certificates so
+  their certified status requires real `TheoremPipelineObligation` rows, at
+  least one required row, and exact `certified is True` evidence.
+- Applied the strict ledger check to the pointwise finite-target theorem, the
+  point-search certificate, uniform-margin/supplied-recursive/affine-halfspace
+  set-valued constructor theorems, the validated set-valued wrapper, the
+  scoped arbitrary interval-input partition bridge, the supported
+  event-function grammar generator, finite supplied branch-tree consumption,
+  and uniform-margin branch refinement.
+- Tightened the scoped partition bridge so `arbitrary_partition_generation_claimed`
+  must be exactly `True`; truthy non-bool values no longer certify the
+  implementation theorem boundary.
+- Added a regression proving fake, empty, optional-only, and truthy ledgers do
+  not certify the supported grammar generator or its nested scoped partition,
+  point-search, set-valued constructor, and validated-wrapper certificates.
+
+Verification:
+
+```text
+python3 -m pytest -q tests/test_finite_target_completeness.py -k 'supported_event_function_generation_rejects_spoofed_obligation_ledgers or supported_event_function_generation_rejects_truthy_constructor_proof_flags or scoped_arbitrary_interval_partition_generation_covers_declared_grammars'
+python3 scripts/fast_ci.py
+python3 -m pytest -q tests/test_finite_target_completeness.py
+```
+
+Result: the focused finite-target slice passed with `3 passed`, and the fast
+CI target passed with the finite-target hardening slice now selecting `15`
+tests.  The full finite-target completeness suite also passed with `146`
+tests.
 
 ## 2026-05-31 polynomial arrangement recursive consumption
 

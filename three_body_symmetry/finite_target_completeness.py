@@ -19,22 +19,52 @@ from .branch_event_tree import (
     certify_supplied_branch_event_tree,
 )
 from .stratified_branch_tree import (
+    AffineBoxDecisionFunctionSpec,
     AffineBoxDecisionArrangementStratificationCertificate,
     AffineHalfspaceArrangement3DStratificationCertificate,
     AffineHalfspaceArrangementStratificationCertificate,
     AffineHalfspaceDecisionStratificationCertificate,
+    PolynomialDecisionFunctionSpec,
     PolynomialDecisionArrangementStratificationCertificate,
     PolynomialDecisionStratificationCertificate,
+    RationalDecisionFunctionSpec,
+    RationalDecisionArrangementStratificationCertificate,
+    RationalDecisionStratificationCertificate,
     RecursiveStratifiedBranchEventConsumptionCertificate,
     StratifiedBranchTreeCertificate,
+    TaylorModelDecisionFunctionSpec,
+    TaylorModelDecisionArrangementStratificationCertificate,
+    TaylorModelDecisionStratificationCertificate,
+    certify_affine_box_decision_arrangement_stratified_branch_event_tree,
+    certify_affine_decision_arrangement_stratified_branch_event_tree,
+    certify_affine_decision_stratified_branch_event_tree,
+    certify_affine_halfspace_3d_arrangement_stratified_branch_event_tree,
     certify_affine_box_decision_arrangement_recursive_consumption,
     certify_affine_halfspace_3d_arrangement_recursive_consumption,
+    certify_affine_halfspace_arrangement_stratified_branch_event_tree,
     certify_affine_halfspace_arrangement_recursive_consumption,
+    certify_affine_halfspace_decision_stratified_branch_event_tree,
     certify_affine_halfspace_decision_recursive_consumption,
+    certify_polynomial_decision_arrangement_stratified_branch_event_tree,
     certify_polynomial_decision_arrangement_recursive_consumption,
+    certify_polynomial_decision_stratified_branch_event_tree,
     certify_polynomial_decision_recursive_consumption,
+    certify_quadratic_decision_arrangement_stratified_branch_event_tree,
+    certify_rational_decision_arrangement_stratified_branch_event_tree,
+    certify_rational_decision_arrangement_recursive_consumption,
+    certify_rational_decision_stratified_branch_event_tree,
+    certify_rational_decision_recursive_consumption,
+    certify_sturm_polynomial_decision_arrangement_stratified_branch_event_tree,
+    certify_sturm_polynomial_decision_stratified_branch_event_tree,
+    certify_sturm_rational_decision_arrangement_stratified_branch_event_tree,
+    certify_sturm_rational_decision_stratified_branch_event_tree,
+    certify_taylor_model_decision_arrangement_stratified_branch_event_tree,
+    certify_taylor_model_decision_arrangement_recursive_consumption,
+    certify_taylor_model_decision_stratified_branch_event_tree,
+    certify_taylor_model_decision_recursive_consumption,
 )
 from .certificate_checker import (
+    CertificateCheckObligation,
     check_total_collision_fuchsian_stop_chart,
     check_total_collision_generalized_fuchsian_stop_chart,
 )
@@ -72,6 +102,18 @@ FINITE_TARGET_COMPLETENESS_OUTCOMES = (
     "unselected_total_collision_before_target",
 )
 
+FINITE_TARGET_SUPPORTED_DIMENSIONS = (2, 3)
+
+FINITE_TARGET_POINT_INPUT_MODELS = (
+    "exact_point_positive_mass_noncollision",
+    "computable_point_positive_mass_noncollision",
+)
+
+FINITE_TARGET_MAXIMAL_CLASSICAL_POLICIES = (
+    "maximal_classical_stop",
+    "maximal_classical_stop_at_total_collision",
+)
+
 FINITE_TARGET_TIER_A_ANALYTIC_LEMMA_IDS = (
     "three_body_painleve_no_noncollision_singularities",
     "all_pair_binary_regularization",
@@ -105,6 +147,16 @@ FINITE_TARGET_ANALYTIC_LEMMA_TIER_BY_ID = {
 }
 
 CONSTRUCTOR_DERIVED_RECURSIVE_SOURCE_SCOPES = {
+    "SturmPolynomialDecisionStratification": (
+        "finite_sturm_polynomial_decision_stratification_interval_boxes",
+        (
+            "constructor-derived single Sturm polynomial decision "
+            "stratification with exact rational root isolation, "
+            "multiplicity-preserving equality strata, strict sign cells, and "
+            "recursive equality children"
+        ),
+        "single Sturm polynomial decision stratification",
+    ),
     "SturmPolynomialDecisionArrangement": (
         "finite_sturm_polynomial_decision_arrangement_interval_boxes",
         (
@@ -113,6 +165,15 @@ CONSTRUCTOR_DERIVED_RECURSIVE_SOURCE_SCOPES = {
             "children"
         ),
         "Sturm polynomial decision arrangement",
+    ),
+    "AffineDecisionStratification": (
+        "finite_affine_decision_stratification_interval_boxes",
+        (
+            "constructor-derived one-dimensional affine decision "
+            "stratification with coefficient-derived root brackets, strict "
+            "sign cells, and recursive equality children"
+        ),
+        "single affine decision stratification",
     ),
     "AffineDecisionArrangement": (
         "finite_affine_decision_arrangement_interval_boxes",
@@ -148,6 +209,66 @@ CONSTRUCTOR_DERIVED_RECURSIVE_SOURCE_SCOPES = {
             "recursive equality children"
         ),
         "single-polynomial decision stratification",
+    ),
+    "RationalDecisionStratification": (
+        "finite_rational_decision_stratification_interval_boxes",
+        (
+            "constructor-derived one-dimensional rational decision "
+            "stratification with denominator exclusion, numerator-root "
+            "sign cells, and recursive equality children"
+        ),
+        "rational decision stratification",
+    ),
+    "SturmRationalDecisionStratification": (
+        "finite_sturm_rational_decision_stratification_interval_boxes",
+        (
+            "constructor-derived one-dimensional rational decision "
+            "stratification with exact Sturm numerator-root isolation, "
+            "closed-interval Sturm denominator exclusion, rational sign "
+            "cells, and recursive numerator-root equality children"
+        ),
+        "Sturm rational decision stratification",
+    ),
+    "RationalDecisionArrangement": (
+        "finite_rational_decision_arrangement_interval_boxes",
+        (
+            "constructor-derived one-dimensional rational decision "
+            "arrangement with denominator exclusion for every discriminator, "
+            "rational sign-vector cells, and recursive numerator-root "
+            "equality children"
+        ),
+        "rational decision arrangement",
+    ),
+    "SturmRationalDecisionArrangement": (
+        "finite_sturm_rational_decision_arrangement_interval_boxes",
+        (
+            "constructor-derived one-dimensional rational decision "
+            "arrangement with exact Sturm numerator-root isolation, "
+            "closed-interval Sturm denominator exclusion for every "
+            "discriminator, rational sign-vector cells, and recursive "
+            "numerator-root equality children"
+        ),
+        "Sturm rational decision arrangement",
+    ),
+    "TaylorModelDecisionStratification": (
+        "finite_taylor_model_decision_interval_inputs_with_weierstrass_certificate",
+        (
+            "constructor-derived finite Taylor-model decision stratification "
+            "with explicit value and derivative remainder bounds, supported "
+            "monotone or Weierstrass equality-root witnesses, and recursive "
+            "equality children"
+        ),
+        "finite Taylor-model decision stratification",
+    ),
+    "TaylorModelDecisionArrangement": (
+        "finite_taylor_model_decision_arrangement_interval_inputs_with_weierstrass_certificate",
+        (
+            "constructor-derived finite Taylor-model decision arrangement "
+            "with explicit value and derivative remainder bounds, supported "
+            "monotone or Weierstrass equality-root witnesses for each "
+            "discriminator, sign-vector cells, and recursive equality children"
+        ),
+        "finite Taylor-model decision arrangement",
     ),
     "PolynomialRootChild": (
         "finite_polynomial_root_child_interval_boxes",
@@ -262,6 +383,115 @@ CONSTRUCTOR_DERIVED_RECURSIVE_SOURCE_SCOPES = {
     ),
 }
 
+SUPPORTED_ARBITRARY_INTERVAL_PARTITION_GRAMMARS = {
+    "AffineDecisionStratification": "finite_affine_decision_interval_inputs",
+    "AffineDecisionArrangement": "finite_affine_decision_arrangement_interval_inputs",
+    "PolynomialDecisionStratification": "finite_polynomial_decision_interval_inputs",
+    "SturmPolynomialDecisionStratification": (
+        "finite_sturm_polynomial_decision_interval_inputs"
+    ),
+    "RationalDecisionStratification": (
+        "finite_rational_decision_interval_inputs_with_denominator_exclusion"
+    ),
+    "SturmRationalDecisionStratification": (
+        "finite_sturm_rational_decision_interval_inputs_with_denominator_exclusion"
+    ),
+    "RationalDecisionArrangement": (
+        "finite_rational_decision_arrangement_interval_inputs_with_denominator_exclusion"
+    ),
+    "SturmRationalDecisionArrangement": (
+        "finite_sturm_rational_decision_arrangement_interval_inputs_with_denominator_exclusion"
+    ),
+    "PolynomialDecisionArrangement": (
+        "finite_polynomial_decision_arrangement_interval_inputs"
+    ),
+    "SturmPolynomialDecisionArrangement": (
+        "finite_sturm_polynomial_decision_arrangement_interval_inputs"
+    ),
+    "QuadraticDoubleRootArrangement": (
+        "finite_quadratic_double_root_arrangement_interval_inputs"
+    ),
+    "PolynomialRootArrangement": (
+        "finite_computed_polynomial_root_arrangement_interval_inputs"
+    ),
+    "TaylorModelDecisionStratification": (
+        "finite_taylor_model_decision_interval_inputs_with_weierstrass_certificate"
+    ),
+    "TaylorModelDecisionArrangement": (
+        "finite_taylor_model_decision_arrangement_interval_inputs_with_weierstrass_certificate"
+    ),
+    "AxisAlignedAffineBoxArrangement": (
+        "finite_axis_aligned_affine_box_arrangement_interval_inputs"
+    ),
+    "AffineHalfspaceDecision": "finite_affine_halfspace_decision_interval_inputs",
+    "AffineHalfspaceArrangement": (
+        "finite_2d_affine_halfspace_arrangement_interval_inputs"
+    ),
+    "AffineHalfspace3DArrangement": (
+        "finite_3d_affine_halfspace_arrangement_interval_inputs"
+    ),
+}
+
+
+SUPPORTED_EVENT_FUNCTION_STRATIFICATION_CONSTRUCTOR_TYPES = (
+    PolynomialDecisionStratificationCertificate,
+    PolynomialDecisionArrangementStratificationCertificate,
+    RationalDecisionStratificationCertificate,
+    RationalDecisionArrangementStratificationCertificate,
+    TaylorModelDecisionStratificationCertificate,
+    TaylorModelDecisionArrangementStratificationCertificate,
+    AffineBoxDecisionArrangementStratificationCertificate,
+    AffineHalfspaceDecisionStratificationCertificate,
+    AffineHalfspaceArrangementStratificationCertificate,
+    AffineHalfspaceArrangement3DStratificationCertificate,
+)
+
+
+def _theorem_obligation_ledger_certified(
+    obligations: tuple[object, ...],
+) -> bool:
+    return bool(
+        obligations
+        and any(
+            isinstance(obligation, TheoremPipelineObligation)
+            and obligation.required is True
+            for obligation in obligations
+        )
+        and all(
+            isinstance(obligation, TheoremPipelineObligation)
+            for obligation in obligations
+        )
+        and all(
+            obligation.certified is True
+            for obligation in obligations
+            if isinstance(obligation, TheoremPipelineObligation)
+            and obligation.required is True
+        )
+    )
+
+
+def _theorem_obligation_ledger_missing(
+    obligations: tuple[object, ...],
+    *,
+    ledger_name: str,
+) -> tuple[str, ...]:
+    missing: list[str] = []
+    if not obligations:
+        missing.append(f"{ledger_name}_obligations_present")
+    if obligations and not any(
+        isinstance(obligation, TheoremPipelineObligation)
+        and obligation.required is True
+        for obligation in obligations
+    ):
+        missing.append(f"{ledger_name}_required_obligation_present")
+    for obligation in obligations:
+        if not isinstance(obligation, TheoremPipelineObligation):
+            missing.append(f"{ledger_name}_obligation_type")
+            continue
+        if obligation.required is True and obligation.certified is not True:
+            missing.append(obligation.obligation)
+    return tuple(dict.fromkeys(missing))
+
 
 @dataclass(frozen=True)
 class FiniteTargetAnalyticLemmaCertificate:
@@ -279,6 +509,7 @@ class FiniteTargetAnalyticLemmaCertificate:
     proof_mode: str = "declared_prose"
     externally_audited: bool = False
     machine_checkable: bool = False
+    machine_checked: bool = False
     internally_proven: bool = False
 
     @property
@@ -287,10 +518,25 @@ class FiniteTargetAnalyticLemmaCertificate:
 
     @property
     def audited(self) -> bool:
+        """Whether independent evidence closes this analytic lemma.
+
+        ``internally_proven`` records that the repository contains a proposed
+        proof sketch.  ``machine_checkable`` records that supplied finite data
+        can be checked.  Neither establishes the universal analytic statement.
+        Only an external audit or an actually completed machine proof closes
+        the theorem-facing obligation.
+        """
+
+        return bool(self.externally_audited or self.machine_checked)
+
+    @property
+    def internally_supported(self) -> bool:
+        """Whether a nontrivial first-party proof argument is recorded."""
+
         return bool(
-            self.externally_audited
-            or self.machine_checkable
-            or self.internally_proven
+            self.declared
+            and self.internally_proven
+            and self.proof_mode != "declared_prose"
         )
 
     @property
@@ -326,8 +572,11 @@ class AnalyticLemmaAuditRecord:
         return self.status in {
             "externally_audited",
             "machine_checked",
-            "internally_proven",
         }
+
+    @property
+    def internally_supported(self) -> bool:
+        return self.status == "internally_proven"
 
 
 @dataclass(frozen=True)
@@ -489,9 +738,30 @@ class FiniteTargetCompletenessTheoremCertificate:
         return all(lemma.proof_certified for lemma in self.analytic_lemmas)
 
     @property
+    def dimension_supported(self) -> bool:
+        return self.dimension in FINITE_TARGET_SUPPORTED_DIMENSIONS
+
+    @property
+    def input_model_supported(self) -> bool:
+        return self.input_model in FINITE_TARGET_POINT_INPUT_MODELS
+
+    @property
+    def maximal_classical_policy_supported(self) -> bool:
+        return self.total_collision_policy_id in FINITE_TARGET_MAXIMAL_CLASSICAL_POLICIES
+
+    @property
+    def theorem_scope_parameters_certified(self) -> bool:
+        return bool(
+            self.theorem_id == "pointwise_finite_target_atlas_or_stop_completeness"
+            and self.dimension_supported
+            and self.input_model_supported
+            and self.maximal_classical_policy_supported
+        )
+
+    @property
     def statement_certified(self) -> bool:
         return bool(
-            self.theorem_id
+            self.theorem_scope_parameters_certified
             and self.statement
             and self.proof_sketch
             and self.analytic_lemma_statements_declared
@@ -511,12 +781,7 @@ class FiniteTargetCompletenessTheoremCertificate:
     def certified(self) -> bool:
         return bool(
             self.statement_certified
-            and self.obligations
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
-            )
+            and _theorem_obligation_ledger_certified(self.obligations)
         )
 
     @property
@@ -588,11 +853,21 @@ class FiniteTargetCompletenessTheoremCertificate:
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+        missing = list(
+            _theorem_obligation_ledger_missing(
+                self.obligations,
+                ledger_name="finite_target_completeness",
+            )
         )
+        if self.theorem_id != "pointwise_finite_target_atlas_or_stop_completeness":
+            missing.append("pointwise_finite_target_theorem_id")
+        if not self.dimension_supported:
+            missing.append("finite_target_dimension_supported")
+        if not self.input_model_supported:
+            missing.append("point_input_model_or_computable_name")
+        if not self.maximal_classical_policy_supported:
+            missing.append("maximal_classical_total_collision_policy")
+        return tuple(dict.fromkeys(missing))
 
 
 @dataclass(frozen=True)
@@ -605,30 +880,53 @@ class FiniteTargetCertificateSearchCompletenessCertificate:
     theorem_id: str = "certificate_search_completeness_for_point_inputs"
 
     @property
+    def component_types_certified(self) -> bool:
+        return isinstance(
+            self.theorem_certificate,
+            FiniteTargetCompletenessTheoremCertificate,
+        )
+
+    @property
+    def source_matches_theorem(self) -> bool:
+        return bool(
+            self.component_types_certified
+            and self.theorem_certificate.theorem_id
+            == "pointwise_finite_target_atlas_or_stop_completeness"
+        )
+
+    @property
     def certified(self) -> bool:
         return bool(
-            self.theorem_certificate.certified
-            and self.obligations
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
-            )
+            self.component_types_certified
+            and self.source_matches_theorem
+            and self.theorem_certificate.certified
+            and _theorem_obligation_ledger_certified(self.obligations)
         )
 
     @property
     def proof_certified(self) -> bool:
         return bool(
-            self.certified and self.theorem_certificate.proof_certified
+            self.certified and self.theorem_certificate.proof_certified is True
         )
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+        missing = list(
+            _theorem_obligation_ledger_missing(
+                self.obligations,
+                ledger_name="finite_target_certificate_search",
+            )
         )
+        if not self.component_types_certified:
+            missing.append("pointwise_finite_target_theorem_type")
+        if not self.source_matches_theorem:
+            missing.append("pointwise_finite_target_theorem_source")
+        if not (
+            self.component_types_certified
+            and self.theorem_certificate.proof_certified is True
+        ):
+            missing.append("pointwise_finite_target_theorem_proof_certified")
+        return tuple(dict.fromkeys(missing))
 
 
 @dataclass(frozen=True)
@@ -651,29 +949,99 @@ class UniformMarginSetValuedConstructorCompletenessCertificate:
     theorem_id: str = "uniform_margin_set_valued_constructor_branch_event_completeness"
 
     @property
-    def certified(self) -> bool:
+    def component_types_certified(self) -> bool:
         return bool(
-            self.statement
-            and self.proof_sketch
-            and self.obligations
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
+            isinstance(
+                self.theorem_certificate,
+                FiniteTargetCompletenessTheoremCertificate,
+            )
+            and isinstance(
+                self.search_completeness_certificate,
+                FiniteTargetCertificateSearchCompletenessCertificate,
+            )
+            and isinstance(
+                self.branch_refinement_certificate,
+                UniformMarginBranchRefinementTerminationCertificate,
+            )
+            and isinstance(
+                self.event_order_refinement_certificate,
+                UniformMarginBranchRefinementTerminationCertificate,
             )
         )
 
     @property
+    def source_matches_theorem(self) -> bool:
+        return bool(
+            self.component_types_certified
+            and self.search_completeness_certificate.theorem_certificate
+            is self.theorem_certificate
+        )
+
+    @property
+    def certified(self) -> bool:
+        return bool(
+            self.statement
+            and self.proof_sketch
+            and self.component_types_certified
+            and self.source_matches_theorem
+            and _theorem_obligation_ledger_certified(self.obligations)
+        )
+
+    @property
     def proof_certified(self) -> bool:
-        return bool(self.certified and self.theorem_certificate.proof_certified)
+        return bool(
+            self.certified
+            and self.theorem_certificate.proof_certified is True
+            and self.search_completeness_certificate.proof_certified is True
+            and self.branch_refinement_certificate.certified is True
+            and self.event_order_refinement_certificate.certified is True
+        )
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+        missing = list(
+            _theorem_obligation_ledger_missing(
+                self.obligations,
+                ledger_name="uniform_margin_set_valued_constructor",
+            )
         )
+        if not self.component_types_certified:
+            missing.append("uniform_margin_component_types")
+        if not self.source_matches_theorem:
+            missing.append("uniform_margin_search_source_matches_theorem")
+        if not (
+            isinstance(
+                self.theorem_certificate,
+                FiniteTargetCompletenessTheoremCertificate,
+            )
+            and self.theorem_certificate.proof_certified is True
+        ):
+            missing.append("pointwise_finite_target_theorem_proof_certified")
+        if not (
+            isinstance(
+                self.search_completeness_certificate,
+                FiniteTargetCertificateSearchCompletenessCertificate,
+            )
+            and self.search_completeness_certificate.proof_certified is True
+        ):
+            missing.append("certificate_search_completeness_proof_certified")
+        if not (
+            isinstance(
+                self.branch_refinement_certificate,
+                UniformMarginBranchRefinementTerminationCertificate,
+            )
+            and self.branch_refinement_certificate.certified is True
+        ):
+            missing.append("uniform_margin_branch_refinement_certified")
+        if not (
+            isinstance(
+                self.event_order_refinement_certificate,
+                UniformMarginBranchRefinementTerminationCertificate,
+            )
+            and self.event_order_refinement_certificate.certified is True
+        ):
+            missing.append("uniform_margin_event_order_refinement_certified")
+        return tuple(dict.fromkeys(missing))
 
     @property
     def equality_strata_claimed(self) -> bool:
@@ -702,29 +1070,99 @@ class SuppliedRecursiveStratifiedSetValuedConstructorCompletenessCertificate:
     theorem_id: str = "supplied_recursive_stratified_set_valued_constructor_branch_event_completeness"
 
     @property
-    def certified(self) -> bool:
+    def component_types_certified(self) -> bool:
         return bool(
-            self.statement
-            and self.proof_sketch
-            and self.obligations
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
+            isinstance(
+                self.theorem_certificate,
+                FiniteTargetCompletenessTheoremCertificate,
+            )
+            and isinstance(
+                self.search_completeness_certificate,
+                FiniteTargetCertificateSearchCompletenessCertificate,
+            )
+            and isinstance(
+                self.branch_consumption_certificate,
+                RecursiveStratifiedBranchEventConsumptionCertificate,
+            )
+            and isinstance(
+                self.event_order_consumption_certificate,
+                RecursiveStratifiedBranchEventConsumptionCertificate,
             )
         )
 
     @property
+    def source_matches_theorem(self) -> bool:
+        return bool(
+            self.component_types_certified
+            and self.search_completeness_certificate.theorem_certificate
+            is self.theorem_certificate
+        )
+
+    @property
+    def certified(self) -> bool:
+        return bool(
+            self.statement
+            and self.proof_sketch
+            and self.component_types_certified
+            and self.source_matches_theorem
+            and _theorem_obligation_ledger_certified(self.obligations)
+        )
+
+    @property
     def proof_certified(self) -> bool:
-        return bool(self.certified and self.theorem_certificate.proof_certified)
+        return bool(
+            self.certified
+            and self.theorem_certificate.proof_certified is True
+            and self.search_completeness_certificate.proof_certified is True
+            and self.branch_consumption_certificate.proof_certified is True
+            and self.event_order_consumption_certificate.proof_certified is True
+        )
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+        missing = list(
+            _theorem_obligation_ledger_missing(
+                self.obligations,
+                ledger_name="supplied_recursive_set_valued_constructor",
+            )
         )
+        if not self.component_types_certified:
+            missing.append("supplied_recursive_component_types")
+        if not self.source_matches_theorem:
+            missing.append("supplied_recursive_search_source_matches_theorem")
+        if not (
+            isinstance(
+                self.theorem_certificate,
+                FiniteTargetCompletenessTheoremCertificate,
+            )
+            and self.theorem_certificate.proof_certified is True
+        ):
+            missing.append("pointwise_finite_target_theorem_proof_certified")
+        if not (
+            isinstance(
+                self.search_completeness_certificate,
+                FiniteTargetCertificateSearchCompletenessCertificate,
+            )
+            and self.search_completeness_certificate.proof_certified is True
+        ):
+            missing.append("certificate_search_completeness_proof_certified")
+        if not (
+            isinstance(
+                self.branch_consumption_certificate,
+                RecursiveStratifiedBranchEventConsumptionCertificate,
+            )
+            and self.branch_consumption_certificate.proof_certified is True
+        ):
+            missing.append("branch_partition_consumption_proof_certified")
+        if not (
+            isinstance(
+                self.event_order_consumption_certificate,
+                RecursiveStratifiedBranchEventConsumptionCertificate,
+            )
+            and self.event_order_consumption_certificate.proof_certified is True
+        ):
+            missing.append("event_order_partition_consumption_proof_certified")
+        return tuple(dict.fromkeys(missing))
 
     @property
     def equality_strata_claimed(self) -> bool:
@@ -760,36 +1198,118 @@ class AffineHalfspaceArrangementSetValuedConstructorCompletenessCertificate:
     theorem_id: str = "affine_halfspace_arrangement_set_valued_constructor_branch_event_completeness"
 
     @property
+    def component_types_certified(self) -> bool:
+        return bool(
+            isinstance(
+                self.theorem_certificate,
+                FiniteTargetCompletenessTheoremCertificate,
+            )
+            and isinstance(
+                self.search_completeness_certificate,
+                FiniteTargetCertificateSearchCompletenessCertificate,
+            )
+            and isinstance(
+                self.arrangement_certificate,
+                (
+                    AffineHalfspaceArrangementStratificationCertificate,
+                    AffineHalfspaceArrangement3DStratificationCertificate,
+                ),
+            )
+            and isinstance(
+                self.branch_consumption_certificate,
+                RecursiveStratifiedBranchEventConsumptionCertificate,
+            )
+            and isinstance(
+                self.event_order_consumption_certificate,
+                RecursiveStratifiedBranchEventConsumptionCertificate,
+            )
+        )
+
+    @property
+    def source_matches_theorem(self) -> bool:
+        return bool(
+            self.component_types_certified
+            and self.search_completeness_certificate.theorem_certificate
+            is self.theorem_certificate
+        )
+
+    @property
     def certified(self) -> bool:
         return bool(
             self.statement
             and self.proof_sketch
-            and self.obligations
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
-            )
+            and self.component_types_certified
+            and self.source_matches_theorem
+            and _theorem_obligation_ledger_certified(self.obligations)
         )
 
     @property
     def proof_certified(self) -> bool:
         return bool(
             self.certified
-            and self.theorem_certificate.proof_certified
-            and self.search_completeness_certificate.proof_certified
-            and self.arrangement_certificate.proof_certified
-            and self.branch_consumption_certificate.proof_certified
-            and self.event_order_consumption_certificate.proof_certified
+            and self.theorem_certificate.proof_certified is True
+            and self.search_completeness_certificate.proof_certified is True
+            and self.arrangement_certificate.proof_certified is True
+            and self.branch_consumption_certificate.proof_certified is True
+            and self.event_order_consumption_certificate.proof_certified is True
         )
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+        missing = list(
+            _theorem_obligation_ledger_missing(
+                self.obligations,
+                ledger_name="affine_halfspace_arrangement_set_valued_constructor",
+            )
         )
+        if not self.component_types_certified:
+            missing.append("affine_halfspace_arrangement_component_types")
+        if not self.source_matches_theorem:
+            missing.append("affine_halfspace_arrangement_search_source_matches_theorem")
+        if not (
+            isinstance(
+                self.theorem_certificate,
+                FiniteTargetCompletenessTheoremCertificate,
+            )
+            and self.theorem_certificate.proof_certified is True
+        ):
+            missing.append("pointwise_finite_target_theorem_proof_certified")
+        if not (
+            isinstance(
+                self.search_completeness_certificate,
+                FiniteTargetCertificateSearchCompletenessCertificate,
+            )
+            and self.search_completeness_certificate.proof_certified is True
+        ):
+            missing.append("certificate_search_completeness_proof_certified")
+        if not (
+            isinstance(
+                self.arrangement_certificate,
+                (
+                    AffineHalfspaceArrangementStratificationCertificate,
+                    AffineHalfspaceArrangement3DStratificationCertificate,
+                ),
+            )
+            and self.arrangement_certificate.proof_certified is True
+        ):
+            missing.append("affine_halfspace_arrangement_proof_certified")
+        if not (
+            isinstance(
+                self.branch_consumption_certificate,
+                RecursiveStratifiedBranchEventConsumptionCertificate,
+            )
+            and self.branch_consumption_certificate.proof_certified is True
+        ):
+            missing.append("branch_partition_consumption_proof_certified")
+        if not (
+            isinstance(
+                self.event_order_consumption_certificate,
+                RecursiveStratifiedBranchEventConsumptionCertificate,
+            )
+            and self.event_order_consumption_certificate.proof_certified is True
+        ):
+            missing.append("event_order_partition_consumption_proof_certified")
+        return tuple(dict.fromkeys(missing))
 
     @property
     def equality_strata_claimed(self) -> bool:
@@ -798,6 +1318,53 @@ class AffineHalfspaceArrangementSetValuedConstructorCompletenessCertificate:
     @property
     def arbitrary_partition_generation_claimed(self) -> bool:
         return False
+
+
+def _validated_set_valued_constructor_scope(
+    certificate: object,
+) -> tuple[str, str]:
+    """Scope label derived from the actual scoped constructor certificate."""
+
+    if isinstance(certificate, UniformMarginSetValuedConstructorCompletenessCertificate):
+        return (
+            "positive_margin_interval_boxes",
+            "explicit branch and event-order margins exclude equality strata",
+        )
+    if isinstance(
+        certificate,
+        SuppliedRecursiveStratifiedSetValuedConstructorCompletenessCertificate,
+    ):
+        constructor_scope = _shared_recursive_constructor_scope_detail(
+            certificate.branch_consumption_certificate,
+            certificate.event_order_consumption_certificate,
+        )
+        if constructor_scope is None:
+            return (
+                "supplied_recursive_stratified_interval_boxes",
+                "a finite recursive equality tree is supplied and consumed by "
+                "strict descent",
+            )
+        return constructor_scope
+    if isinstance(
+        certificate,
+        AffineHalfspaceArrangementSetValuedConstructorCompletenessCertificate,
+    ):
+        arrangement = certificate.arrangement_certificate
+        if isinstance(arrangement, AffineHalfspaceArrangement3DStratificationCertificate):
+            return (
+                "finite_3d_affine_halfspace_arrangement_interval_boxes",
+                "a constructor-derived convex-polyhedron affine halfspace "
+                "arrangement is volume-cover certified and recursively consumed",
+            )
+        return (
+            "finite_2d_affine_halfspace_arrangement_interval_boxes",
+            "a constructor-derived convex-polygon affine halfspace arrangement "
+            "is area-cover certified and recursively consumed",
+        )
+    return (
+        "",
+        "unsupported scoped set-valued constructor certificate",
+    )
 
 
 @dataclass(frozen=True)
@@ -825,39 +1392,1355 @@ class ValidatedSetValuedConstructorCompletenessTheoremCertificate:
     theorem_id: str = "validated_set_valued_constructor_completeness"
 
     @property
+    def component_types_certified(self) -> bool:
+        return bool(
+            isinstance(
+                self.theorem_certificate,
+                FiniteTargetCompletenessTheoremCertificate,
+            )
+            and isinstance(
+                self.search_completeness_certificate,
+                FiniteTargetCertificateSearchCompletenessCertificate,
+            )
+            and isinstance(
+                self.set_valued_constructor_certificate,
+                (
+                    UniformMarginSetValuedConstructorCompletenessCertificate,
+                    SuppliedRecursiveStratifiedSetValuedConstructorCompletenessCertificate,
+                    AffineHalfspaceArrangementSetValuedConstructorCompletenessCertificate,
+                ),
+            )
+        )
+
+    @property
+    def source_matches_theorem(self) -> bool:
+        return bool(
+            self.component_types_certified
+            and self.search_completeness_certificate.theorem_certificate
+            is self.theorem_certificate
+            and self.set_valued_constructor_certificate.theorem_certificate
+            is self.theorem_certificate
+            and (
+                self.set_valued_constructor_certificate.search_completeness_certificate
+                is self.search_completeness_certificate
+            )
+        )
+
+    @property
+    def expected_input_scope_id(self) -> str:
+        if not self.component_types_certified:
+            return ""
+        return _validated_set_valued_constructor_scope(
+            self.set_valued_constructor_certificate,
+        )[0]
+
+    @property
+    def input_scope_matches_constructor(self) -> bool:
+        return bool(
+            self.component_types_certified
+            and self.expected_input_scope_id
+            and self.input_scope_id == self.expected_input_scope_id
+        )
+
+    @property
     def certified(self) -> bool:
         return bool(
             self.statement
             and self.proof_sketch
             and self.input_scope_id
-            and self.obligations
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
-            )
+            and self.component_types_certified
+            and self.source_matches_theorem
+            and self.input_scope_matches_constructor
+            and _theorem_obligation_ledger_certified(self.obligations)
         )
 
     @property
     def proof_certified(self) -> bool:
         return bool(
             self.certified
-            and self.theorem_certificate.proof_certified
-            and self.search_completeness_certificate.proof_certified
-            and self.set_valued_constructor_certificate.proof_certified
+            and self.theorem_certificate.proof_certified is True
+            and self.search_completeness_certificate.proof_certified is True
+            and self.set_valued_constructor_certificate.proof_certified is True
         )
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+        missing = list(
+            _theorem_obligation_ledger_missing(
+                self.obligations,
+                ledger_name="validated_set_valued_constructor",
+            )
         )
+        if not isinstance(
+            self.theorem_certificate,
+            FiniteTargetCompletenessTheoremCertificate,
+        ):
+            missing.append("pointwise_finite_target_theorem_type")
+        if not (
+            isinstance(
+                self.theorem_certificate,
+                FiniteTargetCompletenessTheoremCertificate,
+            )
+            and self.theorem_certificate.proof_certified is True
+        ):
+            missing.append("pointwise_finite_target_theorem_proof_certified")
+        if not isinstance(
+            self.search_completeness_certificate,
+            FiniteTargetCertificateSearchCompletenessCertificate,
+        ):
+            missing.append("certificate_search_completeness_type")
+        if not isinstance(
+            self.set_valued_constructor_certificate,
+            (
+                UniformMarginSetValuedConstructorCompletenessCertificate,
+                SuppliedRecursiveStratifiedSetValuedConstructorCompletenessCertificate,
+                AffineHalfspaceArrangementSetValuedConstructorCompletenessCertificate,
+            ),
+        ):
+            missing.append("scoped_set_valued_constructor_certificate_type")
+        if not self.source_matches_theorem:
+            missing.append("validated_set_valued_sources_match")
+        if not self.input_scope_matches_constructor:
+            missing.append("validated_interval_input_scope_matches_constructor")
+        if not (
+            isinstance(
+                self.search_completeness_certificate,
+                FiniteTargetCertificateSearchCompletenessCertificate,
+            )
+            and self.search_completeness_certificate.proof_certified is True
+        ):
+            missing.append("certificate_search_completeness_proof_certified")
+        if not (
+            isinstance(
+                self.set_valued_constructor_certificate,
+                (
+                    UniformMarginSetValuedConstructorCompletenessCertificate,
+                    SuppliedRecursiveStratifiedSetValuedConstructorCompletenessCertificate,
+                    AffineHalfspaceArrangementSetValuedConstructorCompletenessCertificate,
+                ),
+            )
+            and self.set_valued_constructor_certificate.proof_certified is True
+        ):
+            missing.append("scoped_set_valued_constructor_certificate_proof_certified")
+        return tuple(dict.fromkeys(missing))
 
     @property
     def arbitrary_partition_generation_claimed(self) -> bool:
         return False
+
+
+@dataclass(frozen=True)
+class SupportedEventFunctionGrammarInput:
+    """Raw finite event-function data for a supported stratification grammar.
+
+    This is the implementation-side input that the interval-box milestone
+    needs: it contains discriminator data, not an already-built constructor
+    certificate.  The generator below dispatches this data through the
+    existing proof-producing constructors and then through the scoped
+    arbitrary interval-input bridge.
+    """
+
+    source_type: str
+    decision_id: str = ""
+    arrangement_id: str = ""
+    coefficients: tuple[float, ...] = ()
+    root_brackets: tuple[tuple[float, float], ...] = ()
+    domain: tuple[float, float] | None = None
+    domain_box: tuple[tuple[float, float], ...] = ()
+    polynomial_decision_functions: tuple[PolynomialDecisionFunctionSpec, ...] = ()
+    rational_decision_function: RationalDecisionFunctionSpec | None = None
+    rational_decision_functions: tuple[RationalDecisionFunctionSpec, ...] = ()
+    taylor_model_decision_function: TaylorModelDecisionFunctionSpec | None = None
+    taylor_model_decision_functions: tuple[
+        TaylorModelDecisionFunctionSpec, ...
+    ] = ()
+    affine_box_decision_functions: tuple[AffineBoxDecisionFunctionSpec, ...] = ()
+    slab_half_width: float | None = None
+    equality_resolution_policy: str = "lower_dimensional_recursive_stratum"
+    max_bisection_depth: int = 96
+
+    @property
+    def grammar_id(self) -> str:
+        return SUPPORTED_ARBITRARY_INTERVAL_PARTITION_GRAMMARS.get(
+            self.source_type,
+            "",
+        )
+
+    @property
+    def supported(self) -> bool:
+        return bool(self.grammar_id)
+
+
+def _signature_value(value: object) -> object:
+    if value is None:
+        return None
+    if isinstance(value, (str, int, float, bool)):
+        return value
+    if isinstance(value, tuple):
+        return tuple(_signature_value(item) for item in value)
+    if isinstance(value, list):
+        return tuple(_signature_value(item) for item in value)
+    if hasattr(value, "__dataclass_fields__"):
+        return (
+            type(value).__name__,
+            tuple(
+                (field_name, _signature_value(getattr(value, field_name)))
+                for field_name in value.__dataclass_fields__
+            ),
+        )
+    return repr(value)
+
+
+def _polynomial_decision_function_signature(
+    decision_function: PolynomialDecisionFunctionSpec,
+    *,
+    include_root_brackets: bool,
+) -> tuple[object, ...]:
+    signature: tuple[object, ...] = (
+        decision_function.decision_id,
+        _signature_value(decision_function.coefficients),
+    )
+    if include_root_brackets:
+        signature = signature + (_signature_value(decision_function.root_brackets),)
+    return signature
+
+
+def _polynomial_decision_functions_signature(
+    decision_functions: tuple[PolynomialDecisionFunctionSpec, ...],
+    *,
+    include_root_brackets: bool,
+) -> tuple[tuple[object, ...], ...]:
+    return tuple(
+        _polynomial_decision_function_signature(
+            decision_function,
+            include_root_brackets=include_root_brackets,
+        )
+        for decision_function in decision_functions
+    )
+
+
+def _rational_decision_function_signature(
+    decision_function: RationalDecisionFunctionSpec,
+    *,
+    include_root_brackets: bool,
+) -> tuple[object, ...]:
+    signature: tuple[object, ...] = (
+        decision_function.decision_id,
+        _signature_value(decision_function.numerator_coefficients),
+        _signature_value(decision_function.denominator_coefficients),
+    )
+    if include_root_brackets:
+        signature = signature + (_signature_value(decision_function.root_brackets),)
+    return signature
+
+
+def _rational_decision_functions_signature(
+    decision_functions: tuple[RationalDecisionFunctionSpec, ...],
+    *,
+    include_root_brackets: bool,
+) -> tuple[tuple[object, ...], ...]:
+    return tuple(
+        _rational_decision_function_signature(
+            decision_function,
+            include_root_brackets=include_root_brackets,
+        )
+        for decision_function in decision_functions
+    )
+
+
+def _supported_grammar_input_signature(
+    grammar_input: SupportedEventFunctionGrammarInput,
+) -> tuple[object, ...]:
+    source_type = str(grammar_input.source_type)
+    if source_type in {
+        "AffineDecisionStratification",
+        "PolynomialDecisionStratification",
+        "SturmPolynomialDecisionStratification",
+    }:
+        values: tuple[object, ...] = (
+            source_type,
+            grammar_input.decision_id,
+            _signature_value(grammar_input.coefficients),
+            _signature_value(grammar_input.domain),
+        )
+        if source_type == "PolynomialDecisionStratification":
+            values = values + (_signature_value(grammar_input.root_brackets),)
+        return values
+    if source_type in {
+        "AffineDecisionArrangement",
+        "PolynomialDecisionArrangement",
+        "SturmPolynomialDecisionArrangement",
+        "QuadraticDoubleRootArrangement",
+        "PolynomialRootArrangement",
+    }:
+        include_root_brackets = source_type == "PolynomialDecisionArrangement"
+        return (
+            source_type,
+            grammar_input.arrangement_id,
+            _polynomial_decision_functions_signature(
+                grammar_input.polynomial_decision_functions,
+                include_root_brackets=include_root_brackets,
+            ),
+            _signature_value(grammar_input.domain),
+        )
+    if source_type in {
+        "RationalDecisionStratification",
+        "SturmRationalDecisionStratification",
+    }:
+        include_root_brackets = source_type == "RationalDecisionStratification"
+        return (
+            source_type,
+            (
+                _rational_decision_function_signature(
+                    grammar_input.rational_decision_function,
+                    include_root_brackets=include_root_brackets,
+                )
+                if grammar_input.rational_decision_function is not None
+                else None
+            ),
+            _signature_value(grammar_input.domain),
+        )
+    if source_type in {
+        "RationalDecisionArrangement",
+        "SturmRationalDecisionArrangement",
+    }:
+        include_root_brackets = source_type == "RationalDecisionArrangement"
+        return (
+            source_type,
+            grammar_input.arrangement_id,
+            _rational_decision_functions_signature(
+                grammar_input.rational_decision_functions,
+                include_root_brackets=include_root_brackets,
+            ),
+            _signature_value(grammar_input.domain),
+        )
+    if source_type == "TaylorModelDecisionStratification":
+        return (
+            source_type,
+            _signature_value(grammar_input.taylor_model_decision_function),
+            _signature_value(grammar_input.domain),
+        )
+    if source_type == "TaylorModelDecisionArrangement":
+        return (
+            source_type,
+            grammar_input.arrangement_id,
+            _signature_value(grammar_input.taylor_model_decision_functions),
+            _signature_value(grammar_input.domain),
+        )
+    if source_type == "AxisAlignedAffineBoxArrangement":
+        return (
+            source_type,
+            grammar_input.arrangement_id,
+            _signature_value(grammar_input.affine_box_decision_functions),
+            _signature_value(grammar_input.domain_box),
+        )
+    if source_type == "AffineHalfspaceDecision":
+        return (
+            source_type,
+            grammar_input.decision_id,
+            _signature_value(grammar_input.coefficients),
+            _signature_value(grammar_input.domain_box),
+            _signature_value(grammar_input.slab_half_width),
+        )
+    if source_type in {
+        "AffineHalfspaceArrangement",
+        "AffineHalfspace3DArrangement",
+    }:
+        return (
+            source_type,
+            grammar_input.arrangement_id,
+            _signature_value(grammar_input.affine_box_decision_functions),
+            _signature_value(grammar_input.domain_box),
+            _signature_value(grammar_input.slab_half_width),
+        )
+    return (source_type,)
+
+
+def _supported_grammar_payload_signature(
+    grammar_input: SupportedEventFunctionGrammarInput,
+) -> tuple[object, ...]:
+    return (
+        _supported_grammar_input_signature(grammar_input),
+        str(grammar_input.equality_resolution_policy),
+        int(grammar_input.max_bisection_depth),
+    )
+
+
+def _constructor_input_signature(constructor_certificate: object) -> tuple[object, ...]:
+    source_type = str(
+        getattr(
+            getattr(constructor_certificate, "source_tree", None),
+            "source_type",
+            "",
+        )
+    )
+    if source_type in {
+        "AffineDecisionStratification",
+        "PolynomialDecisionStratification",
+        "SturmPolynomialDecisionStratification",
+    }:
+        values: tuple[object, ...] = (
+            source_type,
+            getattr(constructor_certificate, "decision_id", ""),
+            _signature_value(getattr(constructor_certificate, "coefficients", ())),
+            _signature_value(getattr(constructor_certificate, "domain", None)),
+        )
+        if source_type == "PolynomialDecisionStratification":
+            values = values + (
+                _signature_value(
+                    getattr(constructor_certificate, "root_brackets", ()),
+                ),
+            )
+        return values
+    if source_type in {
+        "AffineDecisionArrangement",
+        "PolynomialDecisionArrangement",
+        "SturmPolynomialDecisionArrangement",
+        "QuadraticDoubleRootArrangement",
+        "PolynomialRootArrangement",
+    }:
+        include_root_brackets = source_type == "PolynomialDecisionArrangement"
+        return (
+            source_type,
+            getattr(constructor_certificate, "arrangement_id", ""),
+            _polynomial_decision_functions_signature(
+                getattr(constructor_certificate, "decision_functions", ()),
+                include_root_brackets=include_root_brackets,
+            ),
+            _signature_value(getattr(constructor_certificate, "domain", None)),
+        )
+    if source_type in {
+        "RationalDecisionStratification",
+        "SturmRationalDecisionStratification",
+    }:
+        include_root_brackets = source_type == "RationalDecisionStratification"
+        decision_function = getattr(constructor_certificate, "decision_function", None)
+        return (
+            source_type,
+            (
+                _rational_decision_function_signature(
+                    decision_function,
+                    include_root_brackets=include_root_brackets,
+                )
+                if decision_function is not None
+                else None
+            ),
+            _signature_value(getattr(constructor_certificate, "domain", None)),
+        )
+    if source_type in {
+        "RationalDecisionArrangement",
+        "SturmRationalDecisionArrangement",
+    }:
+        include_root_brackets = source_type == "RationalDecisionArrangement"
+        return (
+            source_type,
+            getattr(constructor_certificate, "arrangement_id", ""),
+            _rational_decision_functions_signature(
+                getattr(constructor_certificate, "decision_functions", ()),
+                include_root_brackets=include_root_brackets,
+            ),
+            _signature_value(getattr(constructor_certificate, "domain", None)),
+        )
+    if source_type == "TaylorModelDecisionStratification":
+        return (
+            source_type,
+            _signature_value(
+                getattr(constructor_certificate, "decision_function", None),
+            ),
+            _signature_value(getattr(constructor_certificate, "domain", None)),
+        )
+    if source_type == "TaylorModelDecisionArrangement":
+        return (
+            source_type,
+            getattr(constructor_certificate, "arrangement_id", ""),
+            _signature_value(
+                getattr(constructor_certificate, "decision_functions", ()),
+            ),
+            _signature_value(getattr(constructor_certificate, "domain", None)),
+        )
+    if source_type == "AxisAlignedAffineBoxArrangement":
+        return (
+            source_type,
+            getattr(constructor_certificate, "arrangement_id", ""),
+            _signature_value(
+                getattr(constructor_certificate, "decision_functions", ()),
+            ),
+            _signature_value(getattr(constructor_certificate, "domain_box", ())),
+        )
+    if source_type == "AffineHalfspaceDecision":
+        return (
+            source_type,
+            getattr(constructor_certificate, "decision_id", ""),
+            _signature_value(getattr(constructor_certificate, "coefficients", ())),
+            _signature_value(getattr(constructor_certificate, "domain_box", ())),
+            _signature_value(
+                getattr(constructor_certificate, "slab_half_width", None),
+            ),
+        )
+    if source_type in {
+        "AffineHalfspaceArrangement",
+        "AffineHalfspace3DArrangement",
+    }:
+        return (
+            source_type,
+            getattr(constructor_certificate, "arrangement_id", ""),
+            _signature_value(
+                getattr(constructor_certificate, "decision_functions", ()),
+            ),
+            _signature_value(getattr(constructor_certificate, "domain_box", ())),
+            _signature_value(
+                getattr(constructor_certificate, "slab_half_width", None),
+            ),
+        )
+    return (source_type,)
+
+
+def _constructor_generated_evidence_signature(
+    constructor_certificate: object,
+) -> tuple[object, ...]:
+    source_type = str(
+        getattr(
+            getattr(constructor_certificate, "source_tree", None),
+            "source_type",
+            "",
+        )
+    )
+    decision_functions = tuple(
+        (
+            getattr(decision_function, "decision_id", ""),
+            _signature_value(getattr(decision_function, "root_brackets", ())),
+        )
+        for decision_function in tuple(
+            getattr(constructor_certificate, "decision_functions", ()) or ()
+        )
+    )
+    strata = tuple(
+        _signature_value(stratum)
+        for stratum in tuple(getattr(constructor_certificate, "strata", ()) or ())
+    )
+    cells = tuple(
+        _signature_value(cell)
+        for cell in tuple(getattr(constructor_certificate, "cells", ()) or ())
+    )
+    return (
+        source_type,
+        _signature_value(getattr(constructor_certificate, "root_brackets", ())),
+        _signature_value(getattr(constructor_certificate, "denominator_interval", ())),
+        _signature_value(getattr(constructor_certificate, "denominator_sign", None)),
+        _signature_value(getattr(constructor_certificate, "denominator_intervals", ())),
+        _signature_value(getattr(constructor_certificate, "denominator_signs", ())),
+        decision_functions,
+        strata,
+        cells,
+    )
+
+
+def _constructor_resolution_policy_signature(
+    constructor_certificate: object,
+) -> tuple[tuple[object, ...], ...]:
+    """Policies actually emitted on equality/selector strata by a constructor."""
+
+    stratified_tree = getattr(constructor_certificate, "stratified_tree", None)
+    rows: list[tuple[object, ...]] = []
+    for leaf in tuple(getattr(stratified_tree, "leaf_certificates", ()) or ()):
+        equality_strata = [
+            getattr(leaf, "equality_stratum", None),
+            getattr(getattr(leaf, "event_order_tie", None), "equality_stratum", None),
+        ]
+        for equality in equality_strata:
+            policy = str(getattr(equality, "resolution_policy", ""))
+            if not policy:
+                continue
+            rows.append(
+                (
+                    str(getattr(leaf, "leaf_id", "")),
+                    str(getattr(equality, "stratum_id", "")),
+                    _signature_value(
+                        getattr(equality, "defining_function_ids", ()),
+                    ),
+                    policy,
+                )
+            )
+    return tuple(rows)
+
+
+def _supported_constructor_replay_matches_grammar_input(
+    *,
+    grammar_input: object,
+    constructor_certificate: object,
+) -> bool:
+    """Regenerate the supported constructor from raw grammar input.
+
+    Stored payload tuples are useful diagnostics, but they are certificate
+    fields and can be replaced.  Proof certification therefore also requires
+    the current raw grammar input to replay the same constructor evidence,
+    including equality-resolution policies and Sturm root-isolation outcomes.
+    """
+
+    if not (
+        isinstance(grammar_input, SupportedEventFunctionGrammarInput)
+        and isinstance(
+            constructor_certificate,
+            SUPPORTED_EVENT_FUNCTION_STRATIFICATION_CONSTRUCTOR_TYPES,
+        )
+    ):
+        return False
+    try:
+        replayed_constructor = _construct_supported_event_function_stratification(
+            grammar_input,
+        )
+    except (TypeError, ValueError, ArithmeticError, FloatingPointError):
+        return False
+    return bool(
+        str(
+            getattr(
+                getattr(replayed_constructor, "source_tree", None),
+                "source_type",
+                "",
+            )
+        )
+        == str(
+            getattr(
+                getattr(constructor_certificate, "source_tree", None),
+                "source_type",
+                "",
+            )
+        )
+        and _constructor_input_signature(replayed_constructor)
+        == _constructor_input_signature(constructor_certificate)
+        and _constructor_generated_evidence_signature(replayed_constructor)
+        == _constructor_generated_evidence_signature(constructor_certificate)
+        and _constructor_resolution_policy_signature(replayed_constructor)
+        == _constructor_resolution_policy_signature(constructor_certificate)
+    )
+
+
+def _consumption_source_tree_matches_generated(
+    consumption: RecursiveStratifiedBranchEventConsumptionCertificate,
+    generated_stratified_tree: object,
+) -> bool:
+    generated_trees = (
+        tuple(generated_stratified_tree)
+        if isinstance(generated_stratified_tree, tuple)
+        else (generated_stratified_tree,)
+    )
+    return any(consumption.source_tree == tree for tree in generated_trees)
+
+
+@dataclass(frozen=True)
+class ArbitraryIntervalInputPartitionGenerationCertificate:
+    """Scoped interval-input partition generation for explicit grammars.
+
+    This is not an arbitrary analytic partition theorem.  It certifies only
+    finite interval inputs whose event discriminants are already represented in
+    one of the supported constructor grammars listed by
+    ``event_function_grammar_id``.  Unsupported analytic strata are surfaced as
+    blockers rather than hulled back into ambient interval boxes.
+    """
+
+    input_scope_id: str
+    event_function_grammar_id: str
+    branch_function_grammar_id: str
+    event_order_function_grammar_id: str
+    branch_constructor_source_type: str
+    event_order_constructor_source_type: str
+    branch_constructor_input_scope_id: str
+    event_order_constructor_input_scope_id: str
+    generated_stratified_tree: object
+    branch_consumption_certificate: (
+        RecursiveStratifiedBranchEventConsumptionCertificate
+    )
+    event_order_consumption_certificate: (
+        RecursiveStratifiedBranchEventConsumptionCertificate
+    )
+    unsupported_strata: tuple[str, ...]
+    arbitrary_partition_generation_claimed: bool
+    set_valued_constructor_certificate: (
+        SuppliedRecursiveStratifiedSetValuedConstructorCompletenessCertificate
+    )
+    validated_set_valued_constructor_certificate: (
+        ValidatedSetValuedConstructorCompletenessTheoremCertificate
+    )
+    obligations: tuple[TheoremPipelineObligation, ...]
+    theorem_id: str = "scoped_arbitrary_interval_input_partition_generation"
+
+    @property
+    def component_types_certified(self) -> bool:
+        return bool(
+            isinstance(
+                self.branch_consumption_certificate,
+                RecursiveStratifiedBranchEventConsumptionCertificate,
+            )
+            and isinstance(
+                self.event_order_consumption_certificate,
+                RecursiveStratifiedBranchEventConsumptionCertificate,
+            )
+            and isinstance(
+                self.set_valued_constructor_certificate,
+                SuppliedRecursiveStratifiedSetValuedConstructorCompletenessCertificate,
+            )
+            and isinstance(
+                self.validated_set_valued_constructor_certificate,
+                ValidatedSetValuedConstructorCompletenessTheoremCertificate,
+            )
+        )
+
+    @property
+    def source_matches_constructor_chain(self) -> bool:
+        return bool(
+            self.component_types_certified
+            and (
+                self.set_valued_constructor_certificate.branch_consumption_certificate
+                is self.branch_consumption_certificate
+            )
+            and (
+                self.set_valued_constructor_certificate.event_order_consumption_certificate
+                is self.event_order_consumption_certificate
+            )
+            and (
+                self.validated_set_valued_constructor_certificate
+                .set_valued_constructor_certificate
+                is self.set_valued_constructor_certificate
+            )
+            and _consumption_source_tree_matches_generated(
+                self.branch_consumption_certificate,
+                self.generated_stratified_tree,
+            )
+            and _consumption_source_tree_matches_generated(
+                self.event_order_consumption_certificate,
+                self.generated_stratified_tree,
+            )
+        )
+
+    @property
+    def expected_branch_constructor_source_type(self) -> str:
+        if not self.component_types_certified:
+            return ""
+        return recursive_constructor_source_type(self.branch_consumption_certificate)
+
+    @property
+    def expected_event_order_constructor_source_type(self) -> str:
+        if not self.component_types_certified:
+            return ""
+        return recursive_constructor_source_type(
+            self.event_order_consumption_certificate,
+        )
+
+    @property
+    def expected_branch_constructor_input_scope_id(self) -> str:
+        if not self.component_types_certified:
+            return ""
+        scope = recursive_constructor_source_scope(
+            self.branch_consumption_certificate,
+        )
+        return scope[1] if scope is not None else ""
+
+    @property
+    def expected_event_order_constructor_input_scope_id(self) -> str:
+        if not self.component_types_certified:
+            return ""
+        scope = recursive_constructor_source_scope(
+            self.event_order_consumption_certificate,
+        )
+        return scope[1] if scope is not None else ""
+
+    @property
+    def expected_branch_function_grammar_id(self) -> str:
+        return SUPPORTED_ARBITRARY_INTERVAL_PARTITION_GRAMMARS.get(
+            self.expected_branch_constructor_source_type,
+            "",
+        )
+
+    @property
+    def expected_event_order_function_grammar_id(self) -> str:
+        return SUPPORTED_ARBITRARY_INTERVAL_PARTITION_GRAMMARS.get(
+            self.expected_event_order_constructor_source_type,
+            "",
+        )
+
+    @property
+    def expected_event_function_grammar_id(self) -> str:
+        return _scoped_partition_grammar_id(
+            self.expected_branch_function_grammar_id,
+            self.expected_event_order_function_grammar_id,
+        )
+
+    @property
+    def expected_input_scope_id(self) -> str:
+        if not isinstance(
+            self.validated_set_valued_constructor_certificate,
+            ValidatedSetValuedConstructorCompletenessTheoremCertificate,
+        ):
+            return ""
+        return self.validated_set_valued_constructor_certificate.input_scope_id
+
+    @property
+    def scope_fields_match_constructor_chain(self) -> bool:
+        return bool(
+            self.component_types_certified
+            and self.expected_event_function_grammar_id
+            and self.expected_branch_function_grammar_id
+            and self.expected_event_order_function_grammar_id
+            and self.expected_branch_constructor_input_scope_id
+            and self.expected_event_order_constructor_input_scope_id
+            and self.expected_input_scope_id
+            and self.branch_constructor_source_type
+            == self.expected_branch_constructor_source_type
+            and self.event_order_constructor_source_type
+            == self.expected_event_order_constructor_source_type
+            and self.branch_constructor_input_scope_id
+            == self.expected_branch_constructor_input_scope_id
+            and self.event_order_constructor_input_scope_id
+            == self.expected_event_order_constructor_input_scope_id
+            and self.branch_function_grammar_id
+            == self.expected_branch_function_grammar_id
+            and self.event_order_function_grammar_id
+            == self.expected_event_order_function_grammar_id
+            and self.event_function_grammar_id
+            == self.expected_event_function_grammar_id
+            and self.input_scope_id == self.expected_input_scope_id
+        )
+
+    @property
+    def certified(self) -> bool:
+        return bool(
+            self.input_scope_id
+            and self.event_function_grammar_id
+            and self.branch_function_grammar_id
+            and self.event_order_function_grammar_id
+            and self.branch_constructor_source_type
+            and self.event_order_constructor_source_type
+            and self.branch_constructor_input_scope_id
+            and self.event_order_constructor_input_scope_id
+            and self.arbitrary_partition_generation_claimed is True
+            and not self.unsupported_strata
+            and self.component_types_certified is True
+            and self.source_matches_constructor_chain is True
+            and self.scope_fields_match_constructor_chain is True
+            and _theorem_obligation_ledger_certified(self.obligations)
+        )
+
+    @property
+    def proof_certified(self) -> bool:
+        return bool(
+            self.certified
+            and self.set_valued_constructor_certificate.proof_certified is True
+            and (
+                self.validated_set_valued_constructor_certificate.proof_certified
+                is True
+            )
+        )
+
+    @property
+    def missing_obligations(self) -> tuple[str, ...]:
+        missing = list(
+            _theorem_obligation_ledger_missing(
+                self.obligations,
+                ledger_name="scoped_arbitrary_interval_partition",
+            )
+        )
+        if not isinstance(
+            self.branch_consumption_certificate,
+            RecursiveStratifiedBranchEventConsumptionCertificate,
+        ):
+            missing.append("branch_partition_consumption_type")
+        if not isinstance(
+            self.event_order_consumption_certificate,
+            RecursiveStratifiedBranchEventConsumptionCertificate,
+        ):
+            missing.append("event_order_partition_consumption_type")
+        if not isinstance(
+            self.set_valued_constructor_certificate,
+            SuppliedRecursiveStratifiedSetValuedConstructorCompletenessCertificate,
+        ):
+            missing.append("scoped_set_valued_constructor_type")
+        if not isinstance(
+            self.validated_set_valued_constructor_certificate,
+            ValidatedSetValuedConstructorCompletenessTheoremCertificate,
+        ):
+            missing.append("validated_set_valued_scope_type")
+        if not self.source_matches_constructor_chain:
+            missing.append("scoped_partition_sources_match_constructor_chain")
+        if not self.scope_fields_match_constructor_chain:
+            missing.append("scoped_partition_scope_fields_match_constructor_chain")
+        if not (
+            isinstance(
+                self.set_valued_constructor_certificate,
+                SuppliedRecursiveStratifiedSetValuedConstructorCompletenessCertificate,
+            )
+            and self.set_valued_constructor_certificate.proof_certified is True
+        ):
+            missing.append("scoped_set_valued_constructor_proof_certified")
+        if not (
+            isinstance(
+                self.validated_set_valued_constructor_certificate,
+                ValidatedSetValuedConstructorCompletenessTheoremCertificate,
+            )
+            and (
+                self.validated_set_valued_constructor_certificate.proof_certified
+                is True
+            )
+        ):
+            missing.append("validated_set_valued_scope_proof_certified")
+        missing.extend(f"unsupported:{item}" for item in self.unsupported_strata)
+        return tuple(dict.fromkeys(missing))
+
+
+@dataclass(frozen=True)
+class SupportedEventFunctionStratificationGenerationCertificate:
+    """Generated stratification plus scoped partition theorem for one grammar."""
+
+    grammar_input: SupportedEventFunctionGrammarInput
+    constructor_certificate: object
+    partition_generation_certificate: (
+        ArbitraryIntervalInputPartitionGenerationCertificate
+    )
+    obligations: tuple[TheoremPipelineObligation, ...]
+    event_order_grammar_input: SupportedEventFunctionGrammarInput | None = None
+    event_order_constructor_certificate: object | None = None
+    branch_generated_evidence_signature: tuple[object, ...] = ()
+    event_order_generated_evidence_signature: tuple[object, ...] = ()
+    branch_grammar_payload_signature: tuple[object, ...] = ()
+    event_order_grammar_payload_signature: tuple[object, ...] = ()
+    theorem_id: str = "supported_event_function_stratification_generation"
+
+    @property
+    def grammar_inputs_typed(self) -> bool:
+        return bool(
+            isinstance(self.grammar_input, SupportedEventFunctionGrammarInput)
+            and (
+                self.event_order_grammar_input is None
+                or isinstance(
+                    self.event_order_grammar_input,
+                    SupportedEventFunctionGrammarInput,
+                )
+            )
+        )
+
+    @property
+    def constructor_certificate_type_certified(self) -> bool:
+        return isinstance(
+            self.constructor_certificate,
+            SUPPORTED_EVENT_FUNCTION_STRATIFICATION_CONSTRUCTOR_TYPES,
+        )
+
+    @property
+    def event_order_constructor_certificate_type_certified(self) -> bool:
+        return bool(
+            self.event_order_constructor_certificate is None
+            or isinstance(
+                self.event_order_constructor_certificate,
+                SUPPORTED_EVENT_FUNCTION_STRATIFICATION_CONSTRUCTOR_TYPES,
+            )
+        )
+
+    @property
+    def partition_generation_certificate_type_certified(self) -> bool:
+        return isinstance(
+            self.partition_generation_certificate,
+            ArbitraryIntervalInputPartitionGenerationCertificate,
+        )
+
+    @property
+    def constructor_source_type(self) -> str:
+        return str(
+            getattr(
+                getattr(self.constructor_certificate, "source_tree", None),
+                "source_type",
+                "",
+            )
+        )
+
+    @property
+    def event_order_constructor_source_type(self) -> str:
+        constructor = (
+            self.event_order_constructor_certificate
+            if self.event_order_constructor_certificate is not None
+            else self.constructor_certificate
+        )
+        return str(
+            getattr(
+                getattr(constructor, "source_tree", None),
+                "source_type",
+                "",
+            )
+        )
+
+    @property
+    def input_scope_id(self) -> str:
+        return str(
+            getattr(
+                self.partition_generation_certificate,
+                "input_scope_id",
+                "",
+            )
+        )
+
+    @property
+    def event_function_grammar_id(self) -> str:
+        return str(
+            getattr(
+                self.partition_generation_certificate,
+                "event_function_grammar_id",
+                "",
+            )
+        )
+
+    @property
+    def expected_branch_grammar_id(self) -> str:
+        if not isinstance(self.grammar_input, SupportedEventFunctionGrammarInput):
+            return ""
+        return self.grammar_input.grammar_id
+
+    @property
+    def expected_event_order_grammar_id(self) -> str:
+        if not isinstance(self.grammar_input, SupportedEventFunctionGrammarInput):
+            return ""
+        if self.event_order_grammar_input is None:
+            return self.grammar_input.grammar_id
+        if not isinstance(
+            self.event_order_grammar_input,
+            SupportedEventFunctionGrammarInput,
+        ):
+            return ""
+        return self.event_order_grammar_input.grammar_id
+
+    @property
+    def partition_bridge_branch_source_matches_constructor(self) -> bool:
+        return bool(
+            self.partition_generation_certificate_type_certified
+            and (
+                self.partition_generation_certificate.branch_constructor_source_type
+                == self.constructor_source_type
+            )
+        )
+
+    @property
+    def partition_bridge_event_order_source_matches_constructor(self) -> bool:
+        return bool(
+            self.partition_generation_certificate_type_certified
+            and (
+                self.partition_generation_certificate.event_order_constructor_source_type
+                == self.event_order_constructor_source_type
+            )
+        )
+
+    @property
+    def partition_bridge_branch_grammar_matches_input(self) -> bool:
+        return bool(
+            self.partition_generation_certificate_type_certified
+            and (
+                self.partition_generation_certificate.branch_function_grammar_id
+                == self.expected_branch_grammar_id
+            )
+        )
+
+    @property
+    def partition_bridge_event_order_grammar_matches_input(self) -> bool:
+        return bool(
+            self.partition_generation_certificate_type_certified
+            and (
+                self.partition_generation_certificate.event_order_function_grammar_id
+                == self.expected_event_order_grammar_id
+            )
+        )
+
+    @property
+    def constructor_input_matches_grammar_input(self) -> bool:
+        if not (
+            isinstance(self.grammar_input, SupportedEventFunctionGrammarInput)
+            and self.constructor_certificate_type_certified
+        ):
+            return False
+        return bool(
+            _constructor_input_signature(self.constructor_certificate)
+            == _supported_grammar_input_signature(self.grammar_input)
+        )
+
+    @property
+    def event_order_constructor_input_matches_grammar_input(self) -> bool:
+        if not self.grammar_inputs_typed:
+            return False
+        if self.event_order_grammar_input is None:
+            event_order_input = self.grammar_input
+            event_order_constructor = self.constructor_certificate
+        else:
+            event_order_input = self.event_order_grammar_input
+            event_order_constructor = self.event_order_constructor_certificate
+        if not (
+            isinstance(event_order_input, SupportedEventFunctionGrammarInput)
+            and isinstance(
+                event_order_constructor,
+                SUPPORTED_EVENT_FUNCTION_STRATIFICATION_CONSTRUCTOR_TYPES,
+            )
+        ):
+            return False
+        return bool(
+            _constructor_input_signature(event_order_constructor)
+            == _supported_grammar_input_signature(event_order_input)
+        )
+
+    @property
+    def grammar_payload_matches_generation(self) -> bool:
+        return bool(
+            isinstance(self.grammar_input, SupportedEventFunctionGrammarInput)
+            and self.branch_grammar_payload_signature
+            and _supported_grammar_payload_signature(self.grammar_input)
+            == tuple(self.branch_grammar_payload_signature)
+        )
+
+    @property
+    def event_order_grammar_payload_matches_generation(self) -> bool:
+        if self.event_order_grammar_input is None:
+            return True
+        return bool(
+            isinstance(
+                self.event_order_grammar_input,
+                SupportedEventFunctionGrammarInput,
+            )
+            and self.event_order_grammar_payload_signature
+            and _supported_grammar_payload_signature(self.event_order_grammar_input)
+            == tuple(self.event_order_grammar_payload_signature)
+        )
+
+    @property
+    def constructor_generated_evidence_matches_generation(self) -> bool:
+        return bool(
+            self.constructor_certificate_type_certified
+            and self.branch_generated_evidence_signature
+            and _constructor_generated_evidence_signature(self.constructor_certificate)
+            == tuple(self.branch_generated_evidence_signature)
+        )
+
+    @property
+    def constructor_replays_from_grammar_input(self) -> bool:
+        return _supported_constructor_replay_matches_grammar_input(
+            grammar_input=self.grammar_input,
+            constructor_certificate=self.constructor_certificate,
+        )
+
+    @property
+    def event_order_constructor_generated_evidence_matches_generation(self) -> bool:
+        if self.event_order_grammar_input is None:
+            return True
+        if not self.event_order_constructor_certificate_type_certified:
+            return False
+        constructor = self.event_order_constructor_certificate
+        return bool(
+            self.event_order_generated_evidence_signature
+            and _constructor_generated_evidence_signature(constructor)
+            == tuple(self.event_order_generated_evidence_signature)
+        )
+
+    @property
+    def event_order_constructor_replays_from_grammar_input(self) -> bool:
+        if self.event_order_grammar_input is None:
+            return True
+        constructor = self.event_order_constructor_certificate
+        return _supported_constructor_replay_matches_grammar_input(
+            grammar_input=self.event_order_grammar_input,
+            constructor_certificate=constructor,
+        )
+
+    @property
+    def partition_bridge_branch_tree_matches_constructor(self) -> bool:
+        if not (
+            self.partition_generation_certificate_type_certified
+            and self.constructor_certificate_type_certified
+        ):
+            return False
+        return bool(
+            self.partition_generation_certificate
+            .branch_consumption_certificate
+            .source_tree
+            == getattr(self.constructor_certificate, "stratified_tree", None)
+        )
+
+    @property
+    def partition_bridge_event_order_tree_matches_constructor(self) -> bool:
+        if not (
+            self.partition_generation_certificate_type_certified
+            and self.event_order_constructor_certificate_type_certified
+        ):
+            return False
+        constructor = (
+            self.event_order_constructor_certificate
+            if self.event_order_constructor_certificate is not None
+            else self.constructor_certificate
+        )
+        return bool(
+            self.partition_generation_certificate
+            .event_order_consumption_certificate
+            .source_tree
+            == getattr(constructor, "stratified_tree", None)
+        )
+
+    @property
+    def certified(self) -> bool:
+        event_order_matches = bool(
+            (
+                self.grammar_inputs_typed
+                and self.event_order_grammar_input is None
+            )
+            or (
+                isinstance(
+                    self.event_order_grammar_input,
+                    SupportedEventFunctionGrammarInput,
+                )
+                and self.event_order_grammar_input.supported
+                and self.event_order_constructor_certificate_type_certified
+                and self.event_order_constructor_source_type
+                == self.event_order_grammar_input.source_type
+                and _object_proof_certified(
+                    self.event_order_constructor_certificate,
+                )
+            )
+        )
+        return bool(
+            self.grammar_inputs_typed
+            and self.constructor_certificate_type_certified
+            and self.partition_generation_certificate_type_certified
+            and self.grammar_input.supported
+            and self.constructor_source_type == self.grammar_input.source_type
+            and self.constructor_input_matches_grammar_input
+            and self.grammar_payload_matches_generation
+            and self.constructor_generated_evidence_matches_generation
+            and self.constructor_replays_from_grammar_input
+            and _object_proof_certified(self.constructor_certificate)
+            and event_order_matches
+            and self.event_order_constructor_input_matches_grammar_input
+            and self.event_order_grammar_payload_matches_generation
+            and self.event_order_constructor_generated_evidence_matches_generation
+            and self.event_order_constructor_replays_from_grammar_input
+            and self.partition_generation_certificate.certified is True
+            and self.partition_bridge_branch_source_matches_constructor
+            and self.partition_bridge_event_order_source_matches_constructor
+            and self.partition_bridge_branch_grammar_matches_input
+            and self.partition_bridge_event_order_grammar_matches_input
+            and self.partition_bridge_branch_tree_matches_constructor
+            and self.partition_bridge_event_order_tree_matches_constructor
+            and _theorem_obligation_ledger_certified(self.obligations)
+        )
+
+    @property
+    def proof_certified(self) -> bool:
+        return bool(
+            self.certified
+            and self.partition_generation_certificate.proof_certified is True
+        )
+
+    @property
+    def missing_obligations(self) -> tuple[str, ...]:
+        missing = list(
+            _theorem_obligation_ledger_missing(
+                self.obligations,
+                ledger_name="supported_event_function_generation",
+            )
+        )
+        if not isinstance(self.grammar_input, SupportedEventFunctionGrammarInput):
+            missing.append("supported_event_function_grammar_input_type")
+        if self.event_order_grammar_input is not None and not isinstance(
+            self.event_order_grammar_input,
+            SupportedEventFunctionGrammarInput,
+        ):
+            missing.append("supported_event_order_grammar_input_type")
+        if not self.constructor_certificate_type_certified:
+            missing.append("generated_constructor_certificate_type")
+        if not self.event_order_constructor_certificate_type_certified:
+            missing.append("generated_event_order_constructor_certificate_type")
+        if not self.partition_generation_certificate_type_certified:
+            missing.append("generated_partition_bridge_type")
+        if not self.partition_bridge_branch_source_matches_constructor:
+            missing.append("generated_partition_bridge_branch_source_matches_constructor")
+        if not self.partition_bridge_event_order_source_matches_constructor:
+            missing.append(
+                "generated_partition_bridge_event_order_source_matches_constructor"
+            )
+        if not self.partition_bridge_branch_grammar_matches_input:
+            missing.append("generated_partition_bridge_branch_grammar_matches_input")
+        if not self.partition_bridge_event_order_grammar_matches_input:
+            missing.append(
+                "generated_partition_bridge_event_order_grammar_matches_input"
+            )
+        if not self.constructor_input_matches_grammar_input:
+            missing.append("generated_constructor_input_matches_grammar_input")
+        if not self.grammar_payload_matches_generation:
+            missing.append("grammar_input_payload_matches_generation")
+        if not self.constructor_generated_evidence_matches_generation:
+            missing.append(
+                "generated_constructor_evidence_matches_generation"
+            )
+        if not self.constructor_replays_from_grammar_input:
+            missing.append("generated_constructor_replays_from_grammar_input")
+        if (
+            self.event_order_grammar_input is not None
+            and not self.event_order_constructor_input_matches_grammar_input
+        ):
+            missing.append(
+                "generated_event_order_constructor_input_matches_grammar_input"
+            )
+        if (
+            self.event_order_grammar_input is not None
+            and not self.event_order_grammar_payload_matches_generation
+        ):
+            missing.append(
+                "event_order_grammar_input_payload_matches_generation"
+            )
+        if (
+            self.event_order_grammar_input is not None
+            and not self.event_order_constructor_generated_evidence_matches_generation
+        ):
+            missing.append(
+                "generated_event_order_constructor_evidence_matches_generation"
+            )
+        if (
+            self.event_order_grammar_input is not None
+            and not self.event_order_constructor_replays_from_grammar_input
+        ):
+            missing.append(
+                "generated_event_order_constructor_replays_from_grammar_input"
+            )
+        if not self.partition_bridge_branch_tree_matches_constructor:
+            missing.append("generated_partition_bridge_branch_tree_matches_constructor")
+        if not self.partition_bridge_event_order_tree_matches_constructor:
+            missing.append(
+                "generated_partition_bridge_event_order_tree_matches_constructor"
+            )
+        if not _object_proof_certified(self.constructor_certificate):
+            missing.append("generated_constructor_proof_certified")
+            missing.extend(
+                f"constructor:{item}"
+                for item in getattr(
+                    self.constructor_certificate,
+                    "missing_obligations",
+                    (),
+                )
+            )
+        if (
+            self.event_order_constructor_certificate is not None
+            and not _object_proof_certified(
+                self.event_order_constructor_certificate,
+            )
+        ):
+            missing.append("generated_event_order_constructor_proof_certified")
+            missing.extend(
+                f"event_order_constructor:{item}"
+                for item in getattr(
+                    self.event_order_constructor_certificate,
+                    "missing_obligations",
+                    (),
+                )
+            )
+        if not (
+            self.partition_generation_certificate_type_certified
+            and self.partition_generation_certificate.proof_certified is True
+        ):
+            missing.append("generated_partition_bridge_proof_certified")
+            if self.partition_generation_certificate_type_certified:
+                missing.extend(
+                    self.partition_generation_certificate.missing_obligations
+                )
+        return tuple(dict.fromkeys(str(item) for item in missing))
 
 
 @dataclass(frozen=True)
@@ -886,11 +2769,7 @@ class FiniteSuppliedBranchTreeConsumptionCertificate:
             and self.proof_sketch
             and self.branch_count > 0
             and self.certified_leaf_count >= self.branch_count
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
-            )
+            and _theorem_obligation_ledger_certified(self.obligations)
         )
 
     @property
@@ -899,10 +2778,9 @@ class FiniteSuppliedBranchTreeConsumptionCertificate:
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+        return _theorem_obligation_ledger_missing(
+            self.obligations,
+            ledger_name="finite_supplied_branch_tree_consumption",
         )
 
 
@@ -933,11 +2811,7 @@ class UniformMarginBranchRefinementTerminationCertificate:
         return bool(
             self.statement
             and self.proof_sketch
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
-            )
+            and _theorem_obligation_ledger_certified(self.obligations)
         )
 
     @property
@@ -946,10 +2820,9 @@ class UniformMarginBranchRefinementTerminationCertificate:
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+        return _theorem_obligation_ledger_missing(
+            self.obligations,
+            ledger_name="uniform_margin_branch_refinement",
         )
 
 
@@ -981,11 +2854,7 @@ class SuppliedFiniteFuchsianLogStopChartCertificate:
     def certified(self) -> bool:
         return bool(
             self.theorem_id
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
-            )
+            and _theorem_obligation_ledger_certified(self.obligations)
         )
 
     @property
@@ -994,10 +2863,9 @@ class SuppliedFiniteFuchsianLogStopChartCertificate:
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+        return _theorem_obligation_ledger_missing(
+            self.obligations,
+            ledger_name="supplied_finite_fuchsian_log_stop_chart",
         )
 
     @property
@@ -1035,11 +2903,7 @@ class SuppliedGeneralizedFuchsianEntryCertificate:
         return bool(
             self.theorem_id
             and self.shape_pair_distance_floor > 0.0
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
-            )
+            and _theorem_obligation_ledger_certified(self.obligations)
         )
 
     @property
@@ -1048,10 +2912,9 @@ class SuppliedGeneralizedFuchsianEntryCertificate:
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+        return _theorem_obligation_ledger_missing(
+            self.obligations,
+            ledger_name="supplied_generalized_fuchsian_entry_data",
         )
 
     @property
@@ -1097,11 +2960,7 @@ class SuppliedGeneralizedFuchsianFiniteRowTailBudgetCertificate:
             )
             and np.isfinite(self.max_finite_row_tail_bound)
             and self.max_finite_row_tail_bound >= 0.0
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
-            )
+            and _theorem_obligation_ledger_certified(self.obligations)
         )
 
     @property
@@ -1110,10 +2969,9 @@ class SuppliedGeneralizedFuchsianFiniteRowTailBudgetCertificate:
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+        return _theorem_obligation_ledger_missing(
+            self.obligations,
+            ledger_name="supplied_generalized_fuchsian_finite_row_tail_budget",
         )
 
     @property
@@ -1195,12 +3053,11 @@ class SuppliedGeneralizedFuchsianAnalyticRemainderMajorantCertificate:
             and self.polydisc_source_scope == "pointwise_supplied_entry"
             and not self.uniform_interval_box_constants_claimed
             and self.component_inputs
-            and all(input_.certified for input_ in self.component_inputs.values())
             and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
+                getattr(input_, "certified", False) is True
+                for input_ in self.component_inputs.values()
             )
+            and _theorem_obligation_ledger_certified(self.obligations)
         )
 
     @property
@@ -1209,10 +3066,9 @@ class SuppliedGeneralizedFuchsianAnalyticRemainderMajorantCertificate:
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+        return _theorem_obligation_ledger_missing(
+            self.obligations,
+            ledger_name="supplied_generalized_fuchsian_analytic_remainder_majorant",
         )
 
     @property
@@ -1285,11 +3141,7 @@ class SuppliedGeneralizedFuchsianStopChartCertificate:
             and self.endpoint_position_tail_bound >= 0.0
             and np.isfinite(self.residual_tail_bound)
             and self.residual_tail_bound >= 0.0
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
-            )
+            and _theorem_obligation_ledger_certified(self.obligations)
         )
 
     @property
@@ -1298,10 +3150,9 @@ class SuppliedGeneralizedFuchsianStopChartCertificate:
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+        return _theorem_obligation_ledger_missing(
+            self.obligations,
+            ledger_name="supplied_generalized_fuchsian_stop_chart",
         )
 
     @property
@@ -1310,7 +3161,7 @@ class SuppliedGeneralizedFuchsianStopChartCertificate:
 
     @property
     def independent_serialized_checker_claimed(self) -> bool:
-        return bool(getattr(self.independent_checker_result, "certified", False))
+        return getattr(self.independent_checker_result, "certified", False) is True
 
     @property
     def stop_chart_theorem_claimed(self) -> bool:
@@ -2234,7 +4085,7 @@ def certify_supplied_generalized_fuchsian_stop_chart_for_admissible_entry_data(
         ),
         TheoremPipelineObligation(
             obligation="independent_generalized_total_collision_stop_chart_checker",
-            certified=bool(getattr(checker_result, "certified", False)),
+            certified=getattr(checker_result, "certified", False) is True,
             source=type(checker_result).__name__ if checker_result is not None else "missing",
             detail=(
                 "missing="
@@ -2297,6 +4148,21 @@ def certify_supplied_finite_fuchsian_log_stop_chart_for_admissible_entry_data(
         raise TypeError("isolation must be a constructor-derived certificate")
     if isinstance(cauchy_inputs, (bool, np.bool_)):
         raise TypeError("cauchy_inputs must be a constructor-derived certificate")
+    if not isinstance(branch, FiniteFuchsianLogBranch):
+        raise TypeError("branch must be a FiniteFuchsianLogBranch")
+    if not isinstance(isolation, FiniteFuchsianLogTotalCollisionIsolationCertificate):
+        raise TypeError(
+            "isolation must be a FiniteFuchsianLogTotalCollisionIsolationCertificate"
+        )
+    if not isinstance(cauchy_inputs, FiniteFuchsianLogPrimitiveCauchyInputs):
+        raise TypeError("cauchy_inputs must be FiniteFuchsianLogPrimitiveCauchyInputs")
+    if compact_isolation is not None and not isinstance(
+        compact_isolation,
+        FiniteFuchsianLogCompactTimeIsolationCertificate,
+    ):
+        raise TypeError(
+            "compact_isolation must be a FiniteFuchsianLogCompactTimeIsolationCertificate"
+        )
     tolerance = float(tolerance)
     if not np.isfinite(tolerance) or tolerance <= 0.0:
         raise ValueError("tolerance must be positive and finite")
@@ -2369,8 +4235,8 @@ def certify_supplied_finite_fuchsian_log_stop_chart_for_admissible_entry_data(
         ),
         TheoremPipelineObligation(
             obligation="punctured_total_collision_isolation",
-            certified=bool(
-                getattr(isolation, "certified", False)
+            certified=(
+                isolation.certified is True
                 and recomputed_isolation is not None
                 and _fuchsian_log_isolation_matches(
                     isolation,
@@ -2386,7 +4252,7 @@ def certify_supplied_finite_fuchsian_log_stop_chart_for_admissible_entry_data(
         ),
         TheoremPipelineObligation(
             obligation="primitive_cauchy_inputs",
-            certified=bool(getattr(cauchy_inputs, "certified", False)),
+            certified=cauchy_inputs.certified is True,
             source=type(cauchy_inputs).__name__,
             detail="finite shell Cauchy inputs bound the supplied Fuchsian-log rows",
         ),
@@ -2404,11 +4270,11 @@ def certify_supplied_finite_fuchsian_log_stop_chart_for_admissible_entry_data(
         ),
         TheoremPipelineObligation(
             obligation="compact_isolation_matches_tau_isolation",
-            certified=bool(
+            certified=(
                 compact_isolation is None
                 or (
-                    getattr(compact_isolation, "certified", False)
-                    and getattr(compact_isolation, "tau_isolation", None) == isolation
+                    compact_isolation.certified is True
+                    and compact_isolation.tau_isolation == isolation
                 )
             ),
             source=(
@@ -2467,7 +4333,7 @@ def certify_supplied_finite_fuchsian_log_stop_chart_for_admissible_entry_data(
         ),
         TheoremPipelineObligation(
             obligation="independent_total_collision_stop_chart_checker",
-            certified=bool(getattr(checker_result, "certified", False)),
+            certified=getattr(checker_result, "certified", False) is True,
             source=type(checker_result).__name__ if checker_result is not None else "missing",
             detail=(
                 "missing="
@@ -2670,7 +4536,9 @@ def certify_finite_supplied_branch_tree_consumption(
     partition_kind, branches = _branch_tree_partition_kind_and_branches(normalized_tree)
     branch_count = len(branches)
     proof_entry_name = _branch_tree_consumption_proof_entry_name(consumption_kind)
-    atlas_proof_certified = bool(getattr(branch_union_atlas, "proof_certified", False))
+    atlas_proof_certified = (
+        getattr(branch_union_atlas, "proof_certified", False) is True
+    )
     atlas_consumption_entry_certified = bool(
         branch_union_atlas is not None
         and _object_has_certified_proof_entry(branch_union_atlas, proof_entry_name)
@@ -2810,6 +4678,9 @@ def certify_finite_target_completeness_theorem(
     dimension = int(dimension)
     input_model = str(input_model)
     total_collision_policy_id = str(total_collision_policy_id)
+    maximal_classical_policy = total_collision_policy_id in {
+        *FINITE_TARGET_MAXIMAL_CLASSICAL_POLICIES,
+    }
     painleve = _lemma(
         "three_body_painleve_no_noncollision_singularities",
         "For N=3, every finite-time singularity is a collision singularity.",
@@ -3326,12 +5197,23 @@ def certify_finite_target_completeness_theorem(
     )
     obligations = (
         TheoremPipelineObligation(
+            obligation="finite_target_dimension_supported",
+            certified=dimension in FINITE_TARGET_SUPPORTED_DIMENSIONS,
+            source="finite_target_completeness_theorem",
+            detail=f"dimension={dimension}",
+        ),
+        TheoremPipelineObligation(
+            obligation="maximal_classical_total_collision_policy",
+            certified=maximal_classical_policy,
+            source="finite_target_completeness_theorem",
+            detail=(
+                "finite-target theorem is stated for the maximal-classical "
+                f"total-collision stop policy; policy={total_collision_policy_id!r}"
+            ),
+        ),
+        TheoremPipelineObligation(
             obligation="point_input_model_or_computable_name",
-            certified=input_model
-            in {
-                "exact_point_positive_mass_noncollision",
-                "computable_point_positive_mass_noncollision",
-            },
+            certified=input_model in FINITE_TARGET_POINT_INPUT_MODELS,
             source="finite_target_completeness_theorem",
             detail=input_model,
         ),
@@ -4064,6 +5946,948 @@ def certify_constructor_derived_recursive_stratified_set_valued_constructor_comp
     )
 
 
+def certify_constructor_pair_derived_recursive_stratified_set_valued_constructor_completeness(
+    theorem_certificate: FiniteTargetCompletenessTheoremCertificate,
+    *,
+    branch_constructor_certificate: object,
+    event_order_constructor_certificate: object,
+    branch_root_dimension: int | None = None,
+    branch_root_rank: int | None = None,
+    event_order_root_dimension: int | None = None,
+    event_order_root_rank: int | None = None,
+    observed_prefix_failures: tuple[str, ...] = (),
+) -> SuppliedRecursiveStratifiedSetValuedConstructorCompletenessCertificate:
+    """Close the supplied-recursive theorem from branch/event constructors."""
+
+    branch_recursive = _derive_recursive_consumption_from_displayed_constructor(
+        branch_constructor_certificate,
+        root_dimension=branch_root_dimension,
+        root_rank=branch_root_rank,
+    )
+    event_recursive = _derive_recursive_consumption_from_displayed_constructor(
+        event_order_constructor_certificate,
+        root_dimension=event_order_root_dimension,
+        root_rank=event_order_root_rank,
+    )
+    return certify_supplied_recursive_stratified_set_valued_constructor_completeness(
+        theorem_certificate,
+        recursive_stratified_branch_consumption_certificate=branch_recursive,
+        recursive_stratified_event_order_consumption_certificate=event_recursive,
+        observed_prefix_failures=observed_prefix_failures,
+    )
+
+
+def _scoped_partition_grammar_id(
+    branch_grammar: str,
+    event_grammar: str,
+) -> str:
+    if not branch_grammar or not event_grammar:
+        return ""
+    if branch_grammar == event_grammar:
+        return branch_grammar
+    return (
+        "finite_mixed_supported_constructor_interval_inputs"
+        f"(branch={branch_grammar};event={event_grammar})"
+    )
+
+
+def certify_arbitrary_interval_input_partition_generation(
+    theorem_certificate: FiniteTargetCompletenessTheoremCertificate,
+    *,
+    branch_constructor_certificate: object,
+    event_order_constructor_certificate: object | None = None,
+    branch_root_dimension: int | None = None,
+    branch_root_rank: int | None = None,
+    event_order_root_dimension: int | None = None,
+    event_order_root_rank: int | None = None,
+    observed_prefix_failures: tuple[str, ...] = (),
+) -> ArbitraryIntervalInputPartitionGenerationCertificate:
+    """Certify scoped interval-input partition generation for supported grammars.
+
+    The word "arbitrary" here is scoped by ``event_function_grammar_id``: the
+    constructor may refine any interval input represented in that finite
+    grammar.  It deliberately refuses to promote unsupported analytic strata or
+    nonlisted grammars to the full arbitrary interval-box theorem.
+    """
+
+    event_constructor = (
+        event_order_constructor_certificate
+        if event_order_constructor_certificate is not None
+        else branch_constructor_certificate
+    )
+    if isinstance(branch_constructor_certificate, (bool, np.bool_)):
+        raise TypeError("branch_constructor_certificate must be a constructor certificate")
+    if isinstance(event_constructor, (bool, np.bool_)):
+        raise TypeError("event_order_constructor_certificate must be a constructor certificate")
+    if event_order_constructor_certificate is None:
+        scoped_constructor = (
+            certify_constructor_derived_recursive_stratified_set_valued_constructor_completeness(
+                theorem_certificate,
+                constructor_certificate=branch_constructor_certificate,
+                root_dimension=branch_root_dimension,
+                root_rank=branch_root_rank,
+                observed_prefix_failures=observed_prefix_failures,
+            )
+        )
+        generated_tree: object = getattr(
+            branch_constructor_certificate,
+            "stratified_tree",
+            None,
+        )
+    else:
+        scoped_constructor = (
+            certify_constructor_pair_derived_recursive_stratified_set_valued_constructor_completeness(
+                theorem_certificate,
+                branch_constructor_certificate=branch_constructor_certificate,
+                event_order_constructor_certificate=event_constructor,
+                branch_root_dimension=branch_root_dimension,
+                branch_root_rank=branch_root_rank,
+                event_order_root_dimension=event_order_root_dimension,
+                event_order_root_rank=event_order_root_rank,
+                observed_prefix_failures=observed_prefix_failures,
+            )
+        )
+        generated_tree = (
+            getattr(branch_constructor_certificate, "stratified_tree", None),
+            getattr(event_constructor, "stratified_tree", None),
+        )
+    validated = certify_validated_set_valued_constructor_completeness_theorem(
+        scoped_constructor,
+    )
+    branch_consumption = scoped_constructor.branch_consumption_certificate
+    event_consumption = scoped_constructor.event_order_consumption_certificate
+    branch_source = recursive_constructor_source_type(branch_consumption)
+    event_source = recursive_constructor_source_type(event_consumption)
+    branch_scope = recursive_constructor_source_scope(branch_consumption)
+    event_scope = recursive_constructor_source_scope(event_consumption)
+    branch_scope_id = branch_scope[1] if branch_scope is not None else ""
+    event_scope_id = event_scope[1] if event_scope is not None else ""
+    branch_grammar = SUPPORTED_ARBITRARY_INTERVAL_PARTITION_GRAMMARS.get(
+        branch_source,
+        "",
+    )
+    event_grammar = SUPPORTED_ARBITRARY_INTERVAL_PARTITION_GRAMMARS.get(
+        event_source,
+        "",
+    )
+    grammar_id = _scoped_partition_grammar_id(branch_grammar, event_grammar)
+    unsupported_strata = tuple(
+        dict.fromkeys(
+            (
+                *_constructor_unsupported_strata(branch_constructor_certificate),
+                *_constructor_unsupported_strata(event_constructor),
+            )
+        )
+    )
+    supported_grammar = bool(
+        branch_grammar
+        and event_grammar
+        and grammar_id
+        and branch_scope_id
+        and event_scope_id
+    )
+    arbitrary_claimed = bool(
+        supported_grammar
+        and scoped_constructor.proof_certified is True
+        and validated.proof_certified is True
+        and not unsupported_strata
+    )
+    obligations = (
+        TheoremPipelineObligation(
+            obligation="supported_event_function_grammar",
+            certified=supported_grammar,
+            source="scoped_arbitrary_interval_input_partition_generation",
+            detail=(
+                f"branch_source={branch_source}; "
+                f"branch_grammar={branch_grammar or 'unsupported'}; "
+                f"event_source={event_source}; "
+                f"event_grammar={event_grammar or 'unsupported'}; "
+                f"grammar={grammar_id or 'unsupported'}"
+            ),
+        ),
+        TheoremPipelineObligation(
+            obligation="branch_constructor_scope_resolved",
+            certified=bool(branch_scope_id),
+            source="scoped_arbitrary_interval_input_partition_generation",
+            detail=(
+                f"branch_source={branch_source}; "
+                f"branch_scope={branch_scope_id or 'unsupported'}"
+            ),
+        ),
+        TheoremPipelineObligation(
+            obligation="event_order_constructor_scope_resolved",
+            certified=bool(event_scope_id),
+            source="scoped_arbitrary_interval_input_partition_generation",
+            detail=(
+                f"event_source={event_source}; "
+                f"event_scope={event_scope_id or 'unsupported'}"
+            ),
+        ),
+        TheoremPipelineObligation(
+            obligation="generated_stratified_tree_present",
+            certified=bool(generated_tree),
+            source="scoped_arbitrary_interval_input_partition_generation",
+            detail=type(generated_tree).__name__,
+        ),
+        TheoremPipelineObligation(
+            obligation="branch_partition_consumption_certified",
+            certified=branch_consumption.proof_certified is True,
+            source=type(branch_consumption).__name__,
+            detail=_recursive_stratified_detail(branch_consumption),
+        ),
+        TheoremPipelineObligation(
+            obligation="event_order_partition_consumption_certified",
+            certified=event_consumption.proof_certified is True,
+            source=type(event_consumption).__name__,
+            detail=_recursive_stratified_detail(event_consumption),
+        ),
+        TheoremPipelineObligation(
+            obligation="no_unsupported_analytic_strata",
+            certified=not unsupported_strata,
+            source="scoped_arbitrary_interval_input_partition_generation",
+            detail=",".join(unsupported_strata),
+        ),
+        TheoremPipelineObligation(
+            obligation="scoped_set_valued_constructor_proof_certified",
+            certified=scoped_constructor.proof_certified is True,
+            source=type(scoped_constructor).__name__,
+            detail="missing=" + ",".join(scoped_constructor.missing_obligations),
+        ),
+        TheoremPipelineObligation(
+            obligation="validated_set_valued_scope_proof_certified",
+            certified=validated.proof_certified is True,
+            source=type(validated).__name__,
+            detail=(
+                f"input_scope_id={validated.input_scope_id}; "
+                f"missing={','.join(validated.missing_obligations)}"
+            ),
+        ),
+        TheoremPipelineObligation(
+            obligation="unqualified_arbitrary_analytic_inputs_not_claimed",
+            certified=True,
+            source="scoped_arbitrary_interval_input_partition_generation",
+            required=False,
+            detail=(
+                "partition generation is claimed only for the finite grammar "
+                f"{grammar_id or 'unsupported'}"
+            ),
+        ),
+    )
+    return ArbitraryIntervalInputPartitionGenerationCertificate(
+        input_scope_id=validated.input_scope_id,
+        event_function_grammar_id=grammar_id,
+        branch_function_grammar_id=branch_grammar,
+        event_order_function_grammar_id=event_grammar,
+        branch_constructor_source_type=branch_source,
+        event_order_constructor_source_type=event_source,
+        branch_constructor_input_scope_id=branch_scope_id,
+        event_order_constructor_input_scope_id=event_scope_id,
+        generated_stratified_tree=generated_tree,
+        branch_consumption_certificate=branch_consumption,
+        event_order_consumption_certificate=event_consumption,
+        unsupported_strata=unsupported_strata,
+        arbitrary_partition_generation_claimed=arbitrary_claimed,
+        set_valued_constructor_certificate=scoped_constructor,
+        validated_set_valued_constructor_certificate=validated,
+        obligations=obligations,
+    )
+
+
+def certify_supported_event_function_stratification_generation(
+    theorem_certificate: FiniteTargetCompletenessTheoremCertificate,
+    *,
+    grammar_input: SupportedEventFunctionGrammarInput,
+    event_order_grammar_input: SupportedEventFunctionGrammarInput | None = None,
+    branch_root_dimension: int | None = None,
+    branch_root_rank: int | None = None,
+    event_order_root_dimension: int | None = None,
+    event_order_root_rank: int | None = None,
+    observed_prefix_failures: tuple[str, ...] = (),
+) -> SupportedEventFunctionStratificationGenerationCertificate:
+    """Generate a scoped partition from raw supported grammar data.
+
+    This is the first implementation-theorem step beyond accepting a
+    preconstructed displayed stratification.  The function takes finite
+    discriminator data in one of ``SUPPORTED_ARBITRARY_INTERVAL_PARTITION_GRAMMARS``,
+    runs the matching constructor, checks that the emitted source type is the
+    requested grammar source, and then feeds the result to
+    ``certify_arbitrary_interval_input_partition_generation``.  When
+    ``event_order_grammar_input`` is supplied, branch and event-order
+    stratifications are generated independently and consumed as a mixed
+    constructor pair.
+    """
+
+    if isinstance(grammar_input, (bool, np.bool_)) or not isinstance(
+        grammar_input,
+        SupportedEventFunctionGrammarInput,
+    ):
+        raise TypeError(
+            "grammar_input must be a SupportedEventFunctionGrammarInput"
+        )
+    if event_order_grammar_input is not None and (
+        isinstance(event_order_grammar_input, (bool, np.bool_))
+        or not isinstance(
+            event_order_grammar_input,
+            SupportedEventFunctionGrammarInput,
+        )
+    ):
+        raise TypeError(
+            "event_order_grammar_input must be a SupportedEventFunctionGrammarInput"
+        )
+    constructor = _construct_supported_event_function_stratification(
+        grammar_input,
+    )
+    event_order_constructor = (
+        _construct_supported_event_function_stratification(event_order_grammar_input)
+        if event_order_grammar_input is not None
+        else None
+    )
+    generated_source = str(
+        getattr(getattr(constructor, "source_tree", None), "source_type", "")
+    )
+    event_generated_source = (
+        str(
+            getattr(
+                getattr(event_order_constructor, "source_tree", None),
+                "source_type",
+                "",
+            )
+        )
+        if event_order_constructor is not None
+        else generated_source
+    )
+    source_matches = generated_source == grammar_input.source_type
+    event_source_matches = bool(
+        event_order_grammar_input is None
+        or event_generated_source == event_order_grammar_input.source_type
+    )
+    partition = certify_arbitrary_interval_input_partition_generation(
+        theorem_certificate,
+        branch_constructor_certificate=constructor,
+        event_order_constructor_certificate=event_order_constructor,
+        branch_root_dimension=branch_root_dimension,
+        branch_root_rank=branch_root_rank,
+        event_order_root_dimension=event_order_root_dimension,
+        event_order_root_rank=event_order_root_rank,
+        observed_prefix_failures=observed_prefix_failures,
+    )
+    expected_branch_grammar = grammar_input.grammar_id
+    expected_event_order_grammar = (
+        grammar_input.grammar_id
+        if event_order_grammar_input is None
+        else event_order_grammar_input.grammar_id
+    )
+    branch_input_signature = _supported_grammar_input_signature(grammar_input)
+    branch_payload_signature = _supported_grammar_payload_signature(grammar_input)
+    generated_branch_signature = _constructor_input_signature(constructor)
+    event_order_input_signature = (
+        branch_input_signature
+        if event_order_grammar_input is None
+        else _supported_grammar_input_signature(event_order_grammar_input)
+    )
+    event_order_payload_signature = (
+        branch_payload_signature
+        if event_order_grammar_input is None
+        else _supported_grammar_payload_signature(event_order_grammar_input)
+    )
+    generated_event_order_signature = _constructor_input_signature(
+        event_order_constructor
+        if event_order_constructor is not None
+        else constructor
+    )
+    branch_generated_evidence_signature = (
+        _constructor_generated_evidence_signature(constructor)
+    )
+    event_order_generated_evidence_signature = (
+        _constructor_generated_evidence_signature(
+            event_order_constructor
+            if event_order_constructor is not None
+            else constructor
+        )
+    )
+    branch_constructor_replays = _supported_constructor_replay_matches_grammar_input(
+        grammar_input=grammar_input,
+        constructor_certificate=constructor,
+    )
+    event_order_constructor_replays = (
+        True
+        if event_order_grammar_input is None
+        else _supported_constructor_replay_matches_grammar_input(
+            grammar_input=event_order_grammar_input,
+            constructor_certificate=event_order_constructor,
+        )
+    )
+    obligations = (
+        TheoremPipelineObligation(
+            obligation="supported_grammar_input_declared",
+            certified=grammar_input.supported,
+            source="supported_event_function_stratification_generation",
+            detail=(
+                f"source_type={grammar_input.source_type}; "
+                f"grammar={grammar_input.grammar_id or 'unsupported'}"
+            ),
+        ),
+        TheoremPipelineObligation(
+            obligation="constructor_generated_from_grammar_input",
+            certified=bool(constructor is not None),
+            source=type(constructor).__name__,
+            detail=f"generated_source={generated_source or 'missing'}",
+        ),
+        TheoremPipelineObligation(
+            obligation="generated_constructor_source_matches_requested_grammar",
+            certified=source_matches,
+            source=type(constructor).__name__,
+            detail=(
+                f"requested={grammar_input.source_type}; "
+                f"generated={generated_source or 'missing'}"
+            ),
+        ),
+        TheoremPipelineObligation(
+            obligation="generated_constructor_input_matches_grammar_input",
+            certified=generated_branch_signature == branch_input_signature,
+            source=type(constructor).__name__,
+            detail=(
+                f"requested_source={grammar_input.source_type}; "
+                f"generated_source={generated_source or 'missing'}"
+            ),
+        ),
+        TheoremPipelineObligation(
+            obligation="grammar_input_payload_matches_generation",
+            certified=branch_payload_signature
+            == _supported_grammar_payload_signature(grammar_input),
+            source="supported_event_function_stratification_generation",
+            detail=(
+                f"source_type={grammar_input.source_type}; "
+                f"policy={grammar_input.equality_resolution_policy}; "
+                f"max_bisection_depth={grammar_input.max_bisection_depth}"
+            ),
+        ),
+        TheoremPipelineObligation(
+            obligation="generated_constructor_evidence_matches_generation",
+            certified=(
+                _constructor_generated_evidence_signature(constructor)
+                == branch_generated_evidence_signature
+            ),
+            source=type(constructor).__name__,
+            detail=f"generated_source={generated_source or 'missing'}",
+        ),
+        TheoremPipelineObligation(
+            obligation="generated_constructor_replays_from_grammar_input",
+            certified=branch_constructor_replays,
+            source=type(constructor).__name__,
+            detail=(
+                f"source_type={grammar_input.source_type}; "
+                f"policy={grammar_input.equality_resolution_policy}; "
+                f"max_bisection_depth={grammar_input.max_bisection_depth}"
+            ),
+        ),
+        TheoremPipelineObligation(
+            obligation="event_order_grammar_input_declared",
+            certified=bool(
+                event_order_grammar_input is None
+                or event_order_grammar_input.supported
+            ),
+            source="supported_event_function_stratification_generation",
+            required=event_order_grammar_input is not None,
+            detail=(
+                "shared branch/event grammar"
+                if event_order_grammar_input is None
+                else (
+                    f"source_type={event_order_grammar_input.source_type}; "
+                    "grammar="
+                    f"{event_order_grammar_input.grammar_id or 'unsupported'}"
+                )
+            ),
+        ),
+        TheoremPipelineObligation(
+            obligation="event_order_constructor_generated_from_grammar_input",
+            certified=bool(
+                event_order_grammar_input is None
+                or event_order_constructor is not None
+            ),
+            source=(
+                type(event_order_constructor).__name__
+                if event_order_constructor is not None
+                else type(constructor).__name__
+            ),
+            required=event_order_grammar_input is not None,
+            detail=f"generated_source={event_generated_source or 'missing'}",
+        ),
+        TheoremPipelineObligation(
+            obligation="generated_event_order_constructor_source_matches_requested_grammar",
+            certified=event_source_matches,
+            source=(
+                type(event_order_constructor).__name__
+                if event_order_constructor is not None
+                else type(constructor).__name__
+            ),
+            required=event_order_grammar_input is not None,
+            detail=(
+                "shared branch/event grammar"
+                if event_order_grammar_input is None
+                else (
+                    f"requested={event_order_grammar_input.source_type}; "
+                    f"generated={event_generated_source or 'missing'}"
+                )
+            ),
+        ),
+        TheoremPipelineObligation(
+            obligation="generated_event_order_constructor_input_matches_grammar_input",
+            certified=generated_event_order_signature == event_order_input_signature,
+            source=(
+                type(event_order_constructor).__name__
+                if event_order_constructor is not None
+                else type(constructor).__name__
+            ),
+            required=event_order_grammar_input is not None,
+            detail=(
+                "shared branch/event grammar"
+                if event_order_grammar_input is None
+                else (
+                    f"requested_source={event_order_grammar_input.source_type}; "
+                    f"generated_source={event_generated_source or 'missing'}"
+                )
+            ),
+        ),
+        TheoremPipelineObligation(
+            obligation="event_order_grammar_input_payload_matches_generation",
+            certified=event_order_payload_signature
+            == (
+                branch_payload_signature
+                if event_order_grammar_input is None
+                else _supported_grammar_payload_signature(event_order_grammar_input)
+            ),
+            source="supported_event_function_stratification_generation",
+            required=event_order_grammar_input is not None,
+            detail=(
+                "shared branch/event grammar"
+                if event_order_grammar_input is None
+                else (
+                    f"source_type={event_order_grammar_input.source_type}; "
+                    "policy="
+                    f"{event_order_grammar_input.equality_resolution_policy}; "
+                    "max_bisection_depth="
+                    f"{event_order_grammar_input.max_bisection_depth}"
+                )
+            ),
+        ),
+        TheoremPipelineObligation(
+            obligation=(
+                "generated_event_order_constructor_evidence_matches_generation"
+            ),
+            certified=(
+                _constructor_generated_evidence_signature(
+                    event_order_constructor
+                    if event_order_constructor is not None
+                    else constructor
+                )
+                == event_order_generated_evidence_signature
+            ),
+            source=(
+                type(event_order_constructor).__name__
+                if event_order_constructor is not None
+                else type(constructor).__name__
+            ),
+            required=event_order_grammar_input is not None,
+            detail=(
+                "shared branch/event grammar"
+                if event_order_grammar_input is None
+                else f"generated_source={event_generated_source or 'missing'}"
+            ),
+        ),
+        TheoremPipelineObligation(
+            obligation="generated_event_order_constructor_replays_from_grammar_input",
+            certified=event_order_constructor_replays,
+            source=(
+                type(event_order_constructor).__name__
+                if event_order_constructor is not None
+                else type(constructor).__name__
+            ),
+            required=event_order_grammar_input is not None,
+            detail=(
+                "shared branch/event grammar"
+                if event_order_grammar_input is None
+                else (
+                    f"source_type={event_order_grammar_input.source_type}; "
+                    "policy="
+                    f"{event_order_grammar_input.equality_resolution_policy}; "
+                    "max_bisection_depth="
+                    f"{event_order_grammar_input.max_bisection_depth}"
+                )
+            ),
+        ),
+        TheoremPipelineObligation(
+            obligation="generated_event_order_constructor_proof_certified",
+            certified=bool(
+                event_order_grammar_input is None
+                or _object_proof_certified(event_order_constructor)
+            ),
+            source=(
+                type(event_order_constructor).__name__
+                if event_order_constructor is not None
+                else type(constructor).__name__
+            ),
+            required=event_order_grammar_input is not None,
+            detail=(
+                "shared branch/event grammar"
+                if event_order_constructor is None
+                else (
+                    "missing="
+                    + ",".join(
+                        getattr(
+                            event_order_constructor,
+                            "missing_obligations",
+                            (),
+                        )
+                    )
+                )
+            ),
+        ),
+        TheoremPipelineObligation(
+            obligation="generated_partition_bridge_branch_source_matches_constructor",
+            certified=partition.branch_constructor_source_type == generated_source,
+            source=type(partition).__name__,
+            detail=(
+                f"partition_branch_source={partition.branch_constructor_source_type}; "
+                f"generated_branch_source={generated_source or 'missing'}"
+            ),
+        ),
+        TheoremPipelineObligation(
+            obligation="generated_partition_bridge_event_order_source_matches_constructor",
+            certified=(
+                partition.event_order_constructor_source_type
+                == event_generated_source
+            ),
+            source=type(partition).__name__,
+            detail=(
+                "partition_event_source="
+                f"{partition.event_order_constructor_source_type}; "
+                f"generated_event_source={event_generated_source or 'missing'}"
+            ),
+        ),
+        TheoremPipelineObligation(
+            obligation="generated_partition_bridge_branch_grammar_matches_input",
+            certified=partition.branch_function_grammar_id == expected_branch_grammar,
+            source=type(partition).__name__,
+            detail=(
+                f"partition_branch_grammar={partition.branch_function_grammar_id}; "
+                f"expected_branch_grammar={expected_branch_grammar or 'missing'}"
+            ),
+        ),
+        TheoremPipelineObligation(
+            obligation="generated_partition_bridge_event_order_grammar_matches_input",
+            certified=(
+                partition.event_order_function_grammar_id
+                == expected_event_order_grammar
+            ),
+            source=type(partition).__name__,
+            detail=(
+                "partition_event_grammar="
+                f"{partition.event_order_function_grammar_id}; "
+                f"expected_event_grammar={expected_event_order_grammar or 'missing'}"
+            ),
+        ),
+        TheoremPipelineObligation(
+            obligation="generated_constructor_proof_certified",
+            certified=_object_proof_certified(constructor),
+            source=type(constructor).__name__,
+            detail=(
+                "missing="
+                + ",".join(getattr(constructor, "missing_obligations", ()))
+            ),
+        ),
+        TheoremPipelineObligation(
+            obligation="generated_partition_bridge_proof_certified",
+            certified=partition.proof_certified is True,
+            source=type(partition).__name__,
+            detail="missing=" + ",".join(partition.missing_obligations),
+        ),
+    )
+    return SupportedEventFunctionStratificationGenerationCertificate(
+        grammar_input=grammar_input,
+        constructor_certificate=constructor,
+        partition_generation_certificate=partition,
+        obligations=obligations,
+        event_order_grammar_input=event_order_grammar_input,
+        event_order_constructor_certificate=event_order_constructor,
+        branch_generated_evidence_signature=branch_generated_evidence_signature,
+        event_order_generated_evidence_signature=(
+            event_order_generated_evidence_signature
+        ),
+        branch_grammar_payload_signature=branch_payload_signature,
+        event_order_grammar_payload_signature=event_order_payload_signature,
+    )
+
+
+def _construct_supported_event_function_stratification(
+    grammar_input: SupportedEventFunctionGrammarInput,
+) -> object:
+    source_type = str(grammar_input.source_type)
+    if source_type not in SUPPORTED_ARBITRARY_INTERVAL_PARTITION_GRAMMARS:
+        raise ValueError(f"unsupported event-function grammar source: {source_type}")
+    if source_type == "AffineDecisionStratification":
+        return certify_affine_decision_stratified_branch_event_tree(
+            decision_id=grammar_input.decision_id,
+            coefficients=grammar_input.coefficients,
+            domain=_require_interval_domain(grammar_input, source_type),
+            equality_resolution_policy=grammar_input.equality_resolution_policy,
+        )
+    if source_type == "PolynomialDecisionStratification":
+        return certify_polynomial_decision_stratified_branch_event_tree(
+            decision_id=grammar_input.decision_id,
+            coefficients=grammar_input.coefficients,
+            domain=_require_interval_domain(grammar_input, source_type),
+            root_brackets=grammar_input.root_brackets,
+            equality_resolution_policy=grammar_input.equality_resolution_policy,
+        )
+    if source_type == "SturmPolynomialDecisionStratification":
+        return certify_sturm_polynomial_decision_stratified_branch_event_tree(
+            decision_id=grammar_input.decision_id,
+            coefficients=grammar_input.coefficients,
+            domain=_require_interval_domain(grammar_input, source_type),
+            equality_resolution_policy=grammar_input.equality_resolution_policy,
+            max_bisection_depth=grammar_input.max_bisection_depth,
+        )
+    if source_type == "AffineDecisionArrangement":
+        return certify_affine_decision_arrangement_stratified_branch_event_tree(
+            arrangement_id=_require_arrangement_id(grammar_input, source_type),
+            decision_functions=_require_polynomial_decision_functions(
+                grammar_input,
+                source_type,
+            ),
+            domain=_require_interval_domain(grammar_input, source_type),
+            equality_resolution_policy=grammar_input.equality_resolution_policy,
+        )
+    if source_type == "PolynomialDecisionArrangement":
+        return certify_polynomial_decision_arrangement_stratified_branch_event_tree(
+            arrangement_id=_require_arrangement_id(grammar_input, source_type),
+            decision_functions=_require_polynomial_decision_functions(
+                grammar_input,
+                source_type,
+            ),
+            domain=_require_interval_domain(grammar_input, source_type),
+            equality_resolution_policy=grammar_input.equality_resolution_policy,
+        )
+    if source_type == "SturmPolynomialDecisionArrangement":
+        return certify_sturm_polynomial_decision_arrangement_stratified_branch_event_tree(
+            arrangement_id=_require_arrangement_id(grammar_input, source_type),
+            decision_functions=_require_polynomial_decision_functions(
+                grammar_input,
+                source_type,
+            ),
+            domain=_require_interval_domain(grammar_input, source_type),
+            equality_resolution_policy=grammar_input.equality_resolution_policy,
+            max_bisection_depth=grammar_input.max_bisection_depth,
+        )
+    if source_type in {"QuadraticDoubleRootArrangement", "PolynomialRootArrangement"}:
+        return certify_quadratic_decision_arrangement_stratified_branch_event_tree(
+            arrangement_id=_require_arrangement_id(grammar_input, source_type),
+            decision_functions=_require_polynomial_decision_functions(
+                grammar_input,
+                source_type,
+            ),
+            domain=_require_interval_domain(grammar_input, source_type),
+            equality_resolution_policy=grammar_input.equality_resolution_policy,
+        )
+    if source_type == "RationalDecisionStratification":
+        return certify_rational_decision_stratified_branch_event_tree(
+            decision_function=_require_rational_decision_function(
+                grammar_input,
+                source_type,
+            ),
+            domain=_require_interval_domain(grammar_input, source_type),
+            equality_resolution_policy=grammar_input.equality_resolution_policy,
+        )
+    if source_type == "SturmRationalDecisionStratification":
+        return certify_sturm_rational_decision_stratified_branch_event_tree(
+            decision_function=_require_rational_decision_function(
+                grammar_input,
+                source_type,
+            ),
+            domain=_require_interval_domain(grammar_input, source_type),
+            equality_resolution_policy=grammar_input.equality_resolution_policy,
+            max_bisection_depth=grammar_input.max_bisection_depth,
+        )
+    if source_type == "RationalDecisionArrangement":
+        return certify_rational_decision_arrangement_stratified_branch_event_tree(
+            arrangement_id=_require_arrangement_id(grammar_input, source_type),
+            decision_functions=_require_rational_decision_functions(
+                grammar_input,
+                source_type,
+            ),
+            domain=_require_interval_domain(grammar_input, source_type),
+            equality_resolution_policy=grammar_input.equality_resolution_policy,
+        )
+    if source_type == "SturmRationalDecisionArrangement":
+        return certify_sturm_rational_decision_arrangement_stratified_branch_event_tree(
+            arrangement_id=_require_arrangement_id(grammar_input, source_type),
+            decision_functions=_require_rational_decision_functions(
+                grammar_input,
+                source_type,
+            ),
+            domain=_require_interval_domain(grammar_input, source_type),
+            equality_resolution_policy=grammar_input.equality_resolution_policy,
+            max_bisection_depth=grammar_input.max_bisection_depth,
+        )
+    if source_type == "TaylorModelDecisionStratification":
+        return certify_taylor_model_decision_stratified_branch_event_tree(
+            decision_function=_require_taylor_model_decision_function(
+                grammar_input,
+                source_type,
+            ),
+            domain=_require_interval_domain(grammar_input, source_type),
+            equality_resolution_policy=grammar_input.equality_resolution_policy,
+        )
+    if source_type == "TaylorModelDecisionArrangement":
+        return certify_taylor_model_decision_arrangement_stratified_branch_event_tree(
+            arrangement_id=_require_arrangement_id(grammar_input, source_type),
+            decision_functions=_require_taylor_model_decision_functions(
+                grammar_input,
+                source_type,
+            ),
+            domain=_require_interval_domain(grammar_input, source_type),
+            equality_resolution_policy=grammar_input.equality_resolution_policy,
+        )
+    if source_type == "AxisAlignedAffineBoxArrangement":
+        return certify_affine_box_decision_arrangement_stratified_branch_event_tree(
+            arrangement_id=_require_arrangement_id(grammar_input, source_type),
+            decision_functions=_require_affine_box_decision_functions(
+                grammar_input,
+                source_type,
+            ),
+            domain_box=_require_domain_box(grammar_input, source_type),
+        )
+    if source_type == "AffineHalfspaceDecision":
+        return certify_affine_halfspace_decision_stratified_branch_event_tree(
+            decision_id=grammar_input.decision_id,
+            coefficients=grammar_input.coefficients,
+            domain_box=_require_domain_box(grammar_input, source_type),
+            slab_half_width=_require_slab_half_width(grammar_input, source_type),
+        )
+    if source_type == "AffineHalfspaceArrangement":
+        return certify_affine_halfspace_arrangement_stratified_branch_event_tree(
+            arrangement_id=_require_arrangement_id(grammar_input, source_type),
+            decision_functions=_require_affine_box_decision_functions(
+                grammar_input,
+                source_type,
+            ),
+            domain_box=_require_domain_box(grammar_input, source_type),
+            slab_half_width=_require_slab_half_width(grammar_input, source_type),
+        )
+    if source_type == "AffineHalfspace3DArrangement":
+        return certify_affine_halfspace_3d_arrangement_stratified_branch_event_tree(
+            arrangement_id=_require_arrangement_id(grammar_input, source_type),
+            decision_functions=_require_affine_box_decision_functions(
+                grammar_input,
+                source_type,
+            ),
+            domain_box=_require_domain_box(grammar_input, source_type),
+            slab_half_width=_require_slab_half_width(grammar_input, source_type),
+        )
+    raise ValueError(f"supported grammar has no generator: {source_type}")
+
+
+def _require_interval_domain(
+    grammar_input: SupportedEventFunctionGrammarInput,
+    source_type: str,
+) -> tuple[float, float]:
+    if grammar_input.domain is None:
+        raise ValueError(f"{source_type} requires a compact interval domain")
+    lower, upper = grammar_input.domain
+    return float(lower), float(upper)
+
+
+def _require_domain_box(
+    grammar_input: SupportedEventFunctionGrammarInput,
+    source_type: str,
+) -> tuple[tuple[float, float], ...]:
+    if not grammar_input.domain_box:
+        raise ValueError(f"{source_type} requires a compact domain_box")
+    return tuple(
+        (float(lower), float(upper))
+        for lower, upper in grammar_input.domain_box
+    )
+
+
+def _require_arrangement_id(
+    grammar_input: SupportedEventFunctionGrammarInput,
+    source_type: str,
+) -> str:
+    arrangement_id = str(grammar_input.arrangement_id)
+    if not arrangement_id:
+        raise ValueError(f"{source_type} requires arrangement_id")
+    return arrangement_id
+
+
+def _require_slab_half_width(
+    grammar_input: SupportedEventFunctionGrammarInput,
+    source_type: str,
+) -> float:
+    if grammar_input.slab_half_width is None:
+        raise ValueError(f"{source_type} requires slab_half_width")
+    return float(grammar_input.slab_half_width)
+
+
+def _require_polynomial_decision_functions(
+    grammar_input: SupportedEventFunctionGrammarInput,
+    source_type: str,
+) -> tuple[PolynomialDecisionFunctionSpec, ...]:
+    specs = tuple(grammar_input.polynomial_decision_functions)
+    if not specs:
+        raise ValueError(f"{source_type} requires polynomial_decision_functions")
+    return specs
+
+
+def _require_rational_decision_function(
+    grammar_input: SupportedEventFunctionGrammarInput,
+    source_type: str,
+) -> RationalDecisionFunctionSpec:
+    spec = grammar_input.rational_decision_function
+    if spec is None:
+        raise ValueError(f"{source_type} requires rational_decision_function")
+    return spec
+
+
+def _require_rational_decision_functions(
+    grammar_input: SupportedEventFunctionGrammarInput,
+    source_type: str,
+) -> tuple[RationalDecisionFunctionSpec, ...]:
+    specs = tuple(grammar_input.rational_decision_functions)
+    if not specs:
+        raise ValueError(f"{source_type} requires rational_decision_functions")
+    return specs
+
+
+def _require_taylor_model_decision_function(
+    grammar_input: SupportedEventFunctionGrammarInput,
+    source_type: str,
+) -> TaylorModelDecisionFunctionSpec:
+    spec = grammar_input.taylor_model_decision_function
+    if spec is None:
+        raise ValueError(f"{source_type} requires taylor_model_decision_function")
+    return spec
+
+
+def _require_taylor_model_decision_functions(
+    grammar_input: SupportedEventFunctionGrammarInput,
+    source_type: str,
+) -> tuple[TaylorModelDecisionFunctionSpec, ...]:
+    specs = tuple(grammar_input.taylor_model_decision_functions)
+    if not specs:
+        raise ValueError(f"{source_type} requires taylor_model_decision_functions")
+    return specs
+
+
+def _require_affine_box_decision_functions(
+    grammar_input: SupportedEventFunctionGrammarInput,
+    source_type: str,
+) -> tuple[AffineBoxDecisionFunctionSpec, ...]:
+    specs = tuple(grammar_input.affine_box_decision_functions)
+    if not specs:
+        raise ValueError(f"{source_type} requires affine_box_decision_functions")
+    return specs
+
+
 def certify_affine_halfspace_arrangement_set_valued_constructor_completeness(
     theorem_certificate: FiniteTargetCompletenessTheoremCertificate,
     *,
@@ -4260,6 +7084,27 @@ def certify_affine_halfspace_arrangement_set_valued_constructor_completeness(
     )
 
 
+def _constructor_unsupported_strata(constructor_certificate: object) -> tuple[str, ...]:
+    tree = getattr(constructor_certificate, "stratified_tree", None)
+    leaves = tuple(getattr(tree, "leaf_certificates", ()) or ())
+    unsupported: list[str] = []
+    for leaf in leaves:
+        leaf_kind = str(getattr(leaf, "leaf_kind", ""))
+        missing = tuple(str(item) for item in getattr(leaf, "missing_obligations", ()))
+        if leaf_kind == "unsupported_analytic_stratum":
+            unsupported.append(str(getattr(leaf, "leaf_id", "unsupported")))
+        elif any("unsupported_analytic_stratum" in item for item in missing):
+            unsupported.append(str(getattr(leaf, "leaf_id", "unsupported")))
+    strata = tuple(getattr(constructor_certificate, "strata", ()) or ())
+    for stratum in strata:
+        missing = tuple(
+            str(item) for item in getattr(stratum, "missing_obligations", ())
+        )
+        if any("unsupported_analytic_stratum" in item for item in missing):
+            unsupported.append(str(getattr(stratum, "stratum_id", "unsupported")))
+    return tuple(dict.fromkeys(unsupported))
+
+
 def _derive_recursive_consumption_from_displayed_constructor(
     constructor_certificate: object,
     *,
@@ -4283,9 +7128,45 @@ def _derive_recursive_consumption_from_displayed_constructor(
         )
     if isinstance(
         constructor_certificate,
+        RationalDecisionStratificationCertificate,
+    ):
+        return certify_rational_decision_recursive_consumption(
+            constructor_certificate,
+            root_dimension=dimension,
+            root_rank=rank,
+        )
+    if isinstance(
+        constructor_certificate,
+        RationalDecisionArrangementStratificationCertificate,
+    ):
+        return certify_rational_decision_arrangement_recursive_consumption(
+            constructor_certificate,
+            root_dimension=dimension,
+            root_rank=rank,
+        )
+    if isinstance(
+        constructor_certificate,
         PolynomialDecisionArrangementStratificationCertificate,
     ):
         return certify_polynomial_decision_arrangement_recursive_consumption(
+            constructor_certificate,
+            root_dimension=dimension,
+            root_rank=rank,
+        )
+    if isinstance(
+        constructor_certificate,
+        TaylorModelDecisionStratificationCertificate,
+    ):
+        return certify_taylor_model_decision_recursive_consumption(
+            constructor_certificate,
+            root_dimension=dimension,
+            root_rank=rank,
+        )
+    if isinstance(
+        constructor_certificate,
+        TaylorModelDecisionArrangementStratificationCertificate,
+    ):
+        return certify_taylor_model_decision_arrangement_recursive_consumption(
             constructor_certificate,
             root_dimension=dimension,
             root_rank=rank,
@@ -4362,48 +7243,7 @@ def certify_validated_set_valued_constructor_completeness_theorem(
         )
     theorem = certificate.theorem_certificate
     search = certificate.search_completeness_certificate
-    theorem_id = str(certificate.theorem_id)
-    if theorem_id == "uniform_margin_set_valued_constructor_branch_event_completeness":
-        input_scope_id = "positive_margin_interval_boxes"
-        scope_detail = (
-            "explicit branch and event-order margins exclude equality strata"
-        )
-    elif (
-        theorem_id
-        == "supplied_recursive_stratified_set_valued_constructor_branch_event_completeness"
-    ):
-        constructor_scope = _shared_recursive_constructor_scope_detail(
-            certificate.branch_consumption_certificate,
-            certificate.event_order_consumption_certificate,
-        )
-        if constructor_scope is None:
-            input_scope_id = "supplied_recursive_stratified_interval_boxes"
-            scope_detail = (
-                "a finite recursive equality tree is supplied and consumed by "
-                "strict descent"
-            )
-        else:
-            input_scope_id, scope_detail = constructor_scope
-    elif (
-        theorem_id
-        == "affine_halfspace_arrangement_set_valued_constructor_branch_event_completeness"
-    ):
-        arrangement = certificate.arrangement_certificate
-        if isinstance(arrangement, AffineHalfspaceArrangement3DStratificationCertificate):
-            input_scope_id = "finite_3d_affine_halfspace_arrangement_interval_boxes"
-            scope_detail = (
-                "a constructor-derived convex-polyhedron affine halfspace "
-                "arrangement is volume-cover certified and recursively consumed"
-            )
-        else:
-            input_scope_id = "finite_2d_affine_halfspace_arrangement_interval_boxes"
-            scope_detail = (
-                "a constructor-derived convex-polygon affine halfspace "
-                "arrangement is area-cover certified and recursively consumed"
-            )
-    else:
-        input_scope_id = "represented_interval_boxes"
-        scope_detail = theorem_id or type(certificate).__name__
+    input_scope_id, scope_detail = _validated_set_valued_constructor_scope(certificate)
     obligations = (
         TheoremPipelineObligation(
             obligation="pointwise_finite_target_theorem_proof_certified",
@@ -4830,7 +7670,10 @@ def _fuchsian_projection_identity_residual_bound(
 def _checker_obligation_certified(checker_result: object, obligation: str) -> bool:
     for item in tuple(getattr(checker_result, "obligations", ()) or ()):
         if getattr(item, "obligation", None) == obligation:
-            return bool(getattr(item, "certified", False))
+            return (
+                isinstance(item, CertificateCheckObligation)
+                and item.certified is True
+            )
     return False
 
 
@@ -4876,14 +7719,18 @@ def _finite_fuchsian_log_cauchy_shell_inside_isolation(
     cauchy_inputs: FiniteFuchsianLogPrimitiveCauchyInputs,
     isolation: FiniteFuchsianLogTotalCollisionIsolationCertificate,
 ) -> bool:
+    if not isinstance(cauchy_inputs, FiniteFuchsianLogPrimitiveCauchyInputs):
+        return False
+    if not isinstance(isolation, FiniteFuchsianLogTotalCollisionIsolationCertificate):
+        return False
     try:
         initial_radius = float(cauchy_inputs.initial_radius)
         isolation_radius = float(isolation.radius)
     except (AttributeError, TypeError, ValueError):
         return False
     return bool(
-        getattr(cauchy_inputs, "certified", False)
-        and getattr(isolation, "certified", False)
+        cauchy_inputs.certified is True
+        and isolation.certified is True
         and np.isfinite(initial_radius)
         and np.isfinite(isolation_radius)
         and 0.0 < initial_radius <= isolation_radius
@@ -4896,7 +7743,11 @@ def _fuchsian_log_isolation_matches(
     *,
     tolerance: float,
 ) -> bool:
-    if not (getattr(supplied, "certified", False) and getattr(recomputed, "certified", False)):
+    if not isinstance(supplied, FiniteFuchsianLogTotalCollisionIsolationCertificate):
+        return False
+    if not isinstance(recomputed, FiniteFuchsianLogTotalCollisionIsolationCertificate):
+        return False
+    if not (supplied.certified is True and recomputed.certified is True):
         return False
     for attribute in (
         "radius",
@@ -4967,16 +7818,15 @@ def _object_has_certified_proof_entry(value: object, name: str) -> bool:
     proof_ledger = getattr(value, "proof_ledger", None)
     return any(
         getattr(entry, "name", None) == name
-        and bool(getattr(entry, "certified", False))
+        and getattr(entry, "certified", False) is True
         for entry in getattr(proof_ledger, "entries", ())
     )
 
 
 def _object_proof_certified(value: object) -> bool:
-    return bool(
-        getattr(value, "proof_certified", False)
-        or getattr(value, "certified", False)
-    )
+    if isinstance(value, (bool, np.bool_)):
+        return False
+    return getattr(value, "proof_certified", False) is True
 
 
 def _certified_leaf_count(
@@ -4991,7 +7841,7 @@ def _certified_leaf_count(
         return explicit_count
     if (
         branch_union_atlas is not None
-        and bool(getattr(branch_union_atlas, "proof_certified", False))
+        and getattr(branch_union_atlas, "proof_certified", False) is True
         and atlas_consumption_entry_certified
     ):
         return int(branch_count)
@@ -5018,6 +7868,7 @@ def _lemma(
     proof_mode: str = "declared_prose",
     externally_audited: bool = False,
     machine_checkable: bool = False,
+    machine_checked: bool = False,
     internally_proven: bool = False,
 ) -> FiniteTargetAnalyticLemmaCertificate:
     return FiniteTargetAnalyticLemmaCertificate(
@@ -5028,6 +7879,7 @@ def _lemma(
         proof_mode=str(proof_mode),
         externally_audited=bool(externally_audited),
         machine_checkable=bool(machine_checkable),
+        machine_checked=bool(machine_checked),
         internally_proven=bool(internally_proven),
     )
 
@@ -5037,12 +7889,14 @@ def _analytic_lemma_audit_record(
     *,
     source_theorem: str,
 ) -> AnalyticLemmaAuditRecord:
-    if lemma.machine_checkable:
+    if lemma.machine_checked:
         status = "machine_checked"
     elif lemma.externally_audited:
         status = "externally_audited"
     elif lemma.internally_proven:
         status = "internally_proven"
+    elif lemma.machine_checkable:
+        status = "machine_checkable"
     elif lemma.declared:
         status = "declared"
     else:

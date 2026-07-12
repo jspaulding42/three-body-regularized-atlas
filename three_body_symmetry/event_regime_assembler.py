@@ -32,6 +32,14 @@ class EventRegimeObligation:
     detail: str = ""
     required: bool = True
 
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "certified", self.certified is True)
+        object.__setattr__(
+            self,
+            "required",
+            self.required if type(self.required) is bool else True,
+        )
+
 
 @dataclass(frozen=True)
 class LocalChartFamilyCauchyCertificate:
@@ -46,7 +54,10 @@ class LocalChartFamilyCauchyCertificate:
     def source_certified(self) -> bool:
         if self.source_certificate is None:
             return False
-        return bool(_certificate_field(self.source_certificate, ("certified", "proof_certified")))
+        return _certificate_field(
+            self.source_certificate,
+            ("certified", "proof_certified"),
+        )
 
     def certified_for_components(self, components: tuple[str, ...]) -> bool:
         return bool(
@@ -224,18 +235,42 @@ class EventRegimeAssemblyCertificate:
     def certified(self) -> bool:
         return bool(
             self.obligations
-            and all(obligation.certified for obligation in self.obligations if obligation.required)
+            and any(
+                isinstance(obligation, EventRegimeObligation)
+                and obligation.required
+                for obligation in self.obligations
+            )
+            and all(
+                isinstance(obligation, EventRegimeObligation)
+                for obligation in self.obligations
+            )
+            and all(
+                obligation.certified is True
+                for obligation in self.obligations
+                if obligation.required
+            )
             and self.event_budget is not None
-            and self.event_budget.certified
+            and self.event_budget.certified is True
         )
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
+        missing: list[str] = []
+        if not self.obligations:
+            missing.append("event_regime_assembly_obligations_present")
+        if self.obligations and not any(
+            isinstance(obligation, EventRegimeObligation)
+            and obligation.required
             for obligation in self.obligations
-            if obligation.required and not obligation.certified
-        )
+        ):
+            missing.append("event_regime_assembly_required_obligation_present")
+        for obligation in self.obligations:
+            if not isinstance(obligation, EventRegimeObligation):
+                missing.append("event_regime_assembly_obligation_type")
+                continue
+            if obligation.required and obligation.certified is not True:
+                missing.append(obligation.obligation)
+        return tuple(dict.fromkeys(missing))
 
     @property
     def chart_family_counts(self) -> Mapping[str, int]:
@@ -710,7 +745,7 @@ def derive_event_recurrence_from_chart_family_certificates(
     obligations: list[EventRegimeObligation] = [
         EventRegimeObligation(
             obligation="geometric_shell_event_isolation",
-            certified=bool(getattr(shell_isolation, "certified", False)),
+            certified=getattr(shell_isolation, "certified", False) is True,
             source=type(shell_isolation).__name__,
         )
     ]
@@ -751,7 +786,7 @@ def derive_event_recurrence_from_chart_family_certificates(
 
     event_budget = None
     can_derive_budget = bool(
-        getattr(shell_isolation, "certified", False)
+        getattr(shell_isolation, "certified", False) is True
         and not duplicate_kinds
         and not unexpected_kinds
         and expected_counts
@@ -1039,7 +1074,11 @@ def _binary_pair_family_kind(pair: tuple[int, int]) -> str:
 
 
 def _certificate_field(certificate: object, field_names: tuple[str, ...]) -> bool:
-    return any(bool(getattr(certificate, field)) for field in field_names if hasattr(certificate, field))
+    return any(
+        getattr(certificate, field) is True
+        for field in field_names
+        if hasattr(certificate, field)
+    )
 
 
 def _reject_raw_bool(name: str, certificate: object | None) -> None:

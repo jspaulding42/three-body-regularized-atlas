@@ -21,6 +21,14 @@ class BranchEventTreeObligation:
     detail: str
     required: bool = True
 
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "certified", self.certified is True)
+        object.__setattr__(
+            self,
+            "required",
+            self.required if type(self.required) is bool else True,
+        )
+
 
 @dataclass(frozen=True)
 class BranchEventTreeLeafCertificate:
@@ -33,6 +41,9 @@ class BranchEventTreeLeafCertificate:
     depth: int
     certified: bool
     missing_obligations: tuple[str, ...] = ()
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "certified", self.certified is True)
 
     @property
     def pending(self) -> bool:
@@ -84,6 +95,19 @@ class BranchEventTreeCertificate:
     obligations: tuple[BranchEventTreeObligation, ...]
     theorem_id: str = "supplied_finite_branch_event_tree"
 
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "cover_certified", self.cover_certified is True)
+        object.__setattr__(
+            self,
+            "leaf_decisions_certified",
+            self.leaf_decisions_certified is True,
+        )
+        object.__setattr__(
+            self,
+            "equality_strata_explicit",
+            self.equality_strata_explicit is True,
+        )
+
     @property
     def branches(self) -> tuple[BranchEventTreeLeafCertificate, ...]:
         if self.tree_kind == "simultaneous_close_pair_branch_partition":
@@ -108,15 +132,26 @@ class BranchEventTreeCertificate:
 
     @property
     def certified_leaf_count(self) -> int:
-        return sum(leaf.certified for leaf in self.leaf_certificates)
+        return sum(
+            isinstance(leaf, BranchEventTreeLeafCertificate)
+            and leaf.certified is True
+            for leaf in self.leaf_certificates
+        )
 
     @property
     def pending_leaf_count(self) -> int:
-        return sum(leaf.pending for leaf in self.leaf_certificates)
+        return sum(
+            isinstance(leaf, BranchEventTreeLeafCertificate) and leaf.pending
+            for leaf in self.leaf_certificates
+        )
 
     @property
     def equality_stratum_leaf_count(self) -> int:
-        return sum(leaf.equality_stratum_pending for leaf in self.leaf_certificates)
+        return sum(
+            isinstance(leaf, BranchEventTreeLeafCertificate)
+            and leaf.equality_stratum_pending
+            for leaf in self.leaf_certificates
+        )
 
     @property
     def certified(self) -> bool:
@@ -125,11 +160,27 @@ class BranchEventTreeCertificate:
             and self.leaf_certificates
             and self.cover_certified
             and self.leaf_decisions_certified
-            and all(leaf.certified for leaf in self.leaf_certificates)
-            and all(
-                obligation.certified
+            and self.obligations
+            and any(
+                isinstance(obligation, BranchEventTreeObligation)
+                and obligation.required
                 for obligation in self.obligations
-                if obligation.required
+            )
+            and all(
+                isinstance(leaf, BranchEventTreeLeafCertificate)
+                and leaf.certified is True
+                for leaf in self.leaf_certificates
+            )
+            and all(
+                isinstance(obligation, BranchEventTreeObligation)
+                and obligation.certified is True
+                for obligation in self.obligations
+                if isinstance(obligation, BranchEventTreeObligation)
+                and obligation.required
+            )
+            and all(
+                isinstance(obligation, BranchEventTreeObligation)
+                for obligation in self.obligations
             )
         )
 
@@ -139,16 +190,30 @@ class BranchEventTreeCertificate:
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        own = tuple(
-            obligation.obligation
+        own: list[str] = []
+        if not self.obligations:
+            own.append("finite_branch_event_tree_obligations_present")
+        if self.obligations and not any(
+            isinstance(obligation, BranchEventTreeObligation)
+            and obligation.required
             for obligation in self.obligations
-            if obligation.required and not obligation.certified
-        )
-        leaf = tuple(
-            f"{certificate.leaf_id}:{obligation}"
-            for certificate in self.leaf_certificates
-            for obligation in certificate.missing_obligations
-        )
+        ):
+            own.append("finite_branch_event_tree_required_obligation_present")
+        for obligation in self.obligations:
+            if not isinstance(obligation, BranchEventTreeObligation):
+                own.append("finite_branch_event_tree_obligation_type")
+                continue
+            if obligation.required and obligation.certified is not True:
+                own.append(obligation.obligation)
+        leaf: list[str] = []
+        for certificate in self.leaf_certificates:
+            if not isinstance(certificate, BranchEventTreeLeafCertificate):
+                leaf.append("finite_branch_event_tree_leaf_type")
+                continue
+            leaf.extend(
+                f"{certificate.leaf_id}:{obligation}"
+                for obligation in certificate.missing_obligations
+            )
         return tuple(dict.fromkeys((*own, *leaf)))
 
 
@@ -164,6 +229,9 @@ def certify_supplied_branch_event_tree(
     leaf_certificates = tuple(
         _normalize_leaf(leaf, fallback_index=index)
         for index, leaf in enumerate(source_leaves)
+    )
+    duplicate_leaf_ids = _duplicate_ids(
+        tuple(leaf.leaf_id for leaf in leaf_certificates)
     )
     cover_certified = _partition_cover_certified(partition, kind)
     leaf_decisions_certified = _partition_leaf_decisions_certified(
@@ -208,6 +276,11 @@ def certify_supplied_branch_event_tree(
             ),
         ),
         BranchEventTreeObligation(
+            obligation="finite_branch_event_tree_leaf_ids_unique",
+            certified=not duplicate_leaf_ids,
+            detail="duplicate_leaf_ids=" + ",".join(duplicate_leaf_ids),
+        ),
+        BranchEventTreeObligation(
             obligation="equality_or_pending_strata_explicit",
             certified=equality_strata_explicit,
             detail=(
@@ -235,6 +308,16 @@ def certify_supplied_branch_event_tree(
         equality_strata_explicit=equality_strata_explicit,
         obligations=obligations,
     )
+
+
+def _duplicate_ids(values: tuple[str, ...]) -> tuple[str, ...]:
+    seen: set[str] = set()
+    duplicates: list[str] = []
+    for value in values:
+        if value in seen and value not in duplicates:
+            duplicates.append(value)
+        seen.add(value)
+    return tuple(duplicates)
 
 
 def _partition_kind_and_source_leaves(partition: object) -> tuple[str, tuple[object, ...]]:
@@ -289,7 +372,7 @@ def _normalize_leaf(
     )
     depth = int(getattr(leaf, "depth", 0) or 0)
     missing = tuple(str(value) for value in getattr(leaf, "missing_obligations", ()) or ())
-    certified = bool(getattr(leaf, "certified", False) and not missing)
+    certified = getattr(leaf, "certified", False) is True and not missing
     return BranchEventTreeLeafCertificate(
         leaf_id=leaf_id,
         leaf_type=leaf_type,
@@ -307,13 +390,14 @@ def _partition_cover_certified(partition: object, kind: str) -> bool:
     if isinstance(partition, BranchEventTreeCertificate):
         return partition.cover_certified
     if kind == "ambiguous_event_order_partition":
-        return bool(getattr(partition, "event_alternative_cover_certified", False))
-    return bool(
+        return getattr(partition, "event_alternative_cover_certified", False) is True
+    return (
         getattr(
             partition,
             "recursive_bisection_cover_certified",
             getattr(partition, "certified", False),
         )
+        is True
     )
 
 
@@ -328,17 +412,20 @@ def _partition_leaf_decisions_certified(
         return partition.leaf_decisions_certified
     if kind == "ambiguous_event_order_partition":
         return bool(
-            getattr(partition, "state_partition_certified", False)
+            getattr(partition, "state_partition_certified", False) is True
             and all(leaf.certified for leaf in leaf_certificates)
         )
-    return bool(
+    decision_flag = getattr(
+        partition,
+        "branch_cover_certified",
         getattr(
             partition,
-            "branch_cover_certified",
-            getattr(
-                partition,
-                "leaf_decisions_certified",
-                all(leaf.certified for leaf in leaf_certificates),
-            ),
-        )
+            "leaf_decisions_certified",
+            None,
+        ),
+    )
+    if decision_flag is None:
+        return all(leaf.certified for leaf in leaf_certificates)
+    return bool(
+        decision_flag is True and all(leaf.certified for leaf in leaf_certificates)
     )

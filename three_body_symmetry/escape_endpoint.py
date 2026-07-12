@@ -6,8 +6,16 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from .continuation import certify_uniformly_collision_free_taylor_recurrence
+from .continuation import (
+    UniformCollisionFreeTaylorRecurrenceCertificate,
+    certify_uniformly_collision_free_taylor_recurrence,
+)
 from .dynamics import accelerations
+from .validated_atlas import ValidatedAtlasSolution
+from .zero_angular_entry import (
+    FiniteJetDerivedIdentitySelectorEntryCertificate,
+    FiniteJetIdentitySelectorEntryCertificate,
+)
 
 
 Array = np.ndarray
@@ -72,7 +80,10 @@ class HomotheticEscapeDyadicRecurrence:
             and self.shell_ratio < 1.0
             and (
                 self.majorant_certificate is None
-                or bool(getattr(self.majorant_certificate, "certified", False))
+                or _homothetic_escape_majorant_certificate_certified(
+                    self.majorant_certificate,
+                    self.endpoint,
+                )
             )
         )
 
@@ -240,25 +251,47 @@ class PositiveEnergyHomotheticAllRealGluingCertificate:
     @property
     def endpoint_recurrences_certified(self) -> bool:
         return bool(
-            self.future_recurrence.certified
-            and self.past_recurrence.certified
+            isinstance(self.future_recurrence, HomotheticEscapeDyadicRecurrence)
+            and isinstance(
+                self.past_recurrence,
+                TimeReversedHomotheticEscapeRecurrenceCertificate,
+            )
+            and self.future_recurrence.certified is True
+            and self.past_recurrence.certified is True
             and self.past_recurrence.future_recurrence is self.future_recurrence
+        )
+
+    @property
+    def source_inputs_certified(self) -> bool:
+        return bool(
+            isinstance(self.branch_certificate, HomotheticEscapeBranchCertificate)
+            and self.branch_certificate.certified is True
+            and isinstance(
+                self.projection_invariant_certificate,
+                HomotheticEscapeProjectionInvariantCertificate,
+            )
+            and self.projection_invariant_certificate.certified is True
         )
 
     @property
     def collision_selector_certified(self) -> bool:
         return bool(
-            getattr(self.total_collision_atlas, "proof_certified", False)
-            and getattr(self.selector_entry, "certified", False)
+            isinstance(self.total_collision_atlas, ValidatedAtlasSolution)
+            and self.total_collision_atlas.proof_certified is True
+            and _finite_jet_selector_entry_certified(self.selector_entry)
         )
 
     @property
     def middle_recurrence_certified(self) -> bool:
         return bool(
-            getattr(self.middle_recurrence, "certified", False)
-            and getattr(self.middle_recurrence, "proof_certified", False)
-            and getattr(self.middle_recurrence, "tail_budget_certified", False)
-            and getattr(self.middle_recurrence, "newton_residual_certified", False)
+            isinstance(
+                self.middle_recurrence,
+                UniformCollisionFreeTaylorRecurrenceCertificate,
+            )
+            and self.middle_recurrence.certified is True
+            and self.middle_recurrence.proof_certified is True
+            and self.middle_recurrence.tail_budget_certified is True
+            and self.middle_recurrence.newton_residual_certified is True
         )
 
     @property
@@ -337,7 +370,8 @@ class PositiveEnergyHomotheticAllRealGluingCertificate:
     @property
     def certified(self) -> bool:
         return bool(
-            self.endpoint_recurrences_certified
+            self.source_inputs_certified
+            and self.endpoint_recurrences_certified
             and self.collision_selector_certified
             and self.middle_recurrence_certified
             and self.handoff_order_certified
@@ -359,6 +393,8 @@ class PositiveEnergyHomotheticAllRealGluingCertificate:
     @property
     def missing_obligations(self) -> tuple[str, ...]:
         obligations: list[str] = []
+        if not self.source_inputs_certified:
+            obligations.append("homothetic_source_inputs")
         if not self.endpoint_recurrences_certified:
             obligations.append("homothetic_endpoint_recurrences")
         if not self.collision_selector_certified:
@@ -420,6 +456,28 @@ class HomotheticEscapeImplicitCauchyMajorantCertificate:
             and self.rouche_margin > 0.0
             and self.cauchy_majorant > 0.0
         )
+
+
+def _homothetic_escape_majorant_certificate_certified(
+    majorant_certificate: object,
+    endpoint: HomotheticEscapeEndpointData,
+) -> bool:
+    return bool(
+        isinstance(
+            majorant_certificate,
+            HomotheticEscapeImplicitCauchyMajorantCertificate,
+        )
+        and majorant_certificate.certified is True
+        and majorant_certificate.endpoint == endpoint
+    )
+
+
+def _finite_jet_selector_entry_certified(selector_entry: object) -> bool:
+    if isinstance(selector_entry, FiniteJetIdentitySelectorEntryCertificate):
+        return selector_entry.certified is True
+    if isinstance(selector_entry, FiniteJetDerivedIdentitySelectorEntryCertificate):
+        return selector_entry.identity_selector_certified is True
+    return False
 
 
 @dataclass(frozen=True)
@@ -720,10 +778,14 @@ def construct_homothetic_escape_dyadic_recurrence(
 ) -> HomotheticEscapeDyadicRecurrence:
     """Construct the all-future dyadic Cauchy tail recurrence."""
 
-    if majorant_certificate is not None and not bool(
-        getattr(majorant_certificate, "certified", False)
+    if majorant_certificate is not None and not _homothetic_escape_majorant_certificate_certified(
+        majorant_certificate,
+        endpoint,
     ):
-        raise ValueError("majorant_certificate must be certified when supplied")
+        raise ValueError(
+            "majorant_certificate must be a certified homothetic escape "
+            "implicit Cauchy majorant derived for the supplied endpoint"
+        )
     start_time = float(start_time)
     tau_radius = float(tau_radius)
     rho_radius = float(rho_radius)
@@ -824,10 +886,10 @@ def certify_positive_energy_homothetic_all_real_gluing(
         raise ValueError("past_recurrence must be certified")
     if past_recurrence.future_recurrence is not future_recurrence:
         raise ValueError("past_recurrence must be derived from future_recurrence")
-    if not getattr(total_collision_atlas, "proof_certified", False):
+    if getattr(total_collision_atlas, "proof_certified", False) is not True:
         raise ValueError("total_collision_atlas must be proof certified")
-    if not getattr(selector_entry, "certified", False):
-        raise ValueError("selector_entry must be certified")
+    if not _finite_jet_selector_entry_certified(selector_entry):
+        raise ValueError("selector_entry must be a certified finite-jet selector entry")
     if not np.isfinite(compact_time_rate) or compact_time_rate <= 0.0:
         raise ValueError("compact_time_rate must be positive")
     if not np.isfinite(tolerance) or tolerance <= 0.0:

@@ -104,6 +104,14 @@ class ProofLedgerEntry:
     required: bool = True
     detail: str = ""
 
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "certified", self.certified is True)
+        object.__setattr__(
+            self,
+            "required",
+            self.required if type(self.required) is bool else True,
+        )
+
 
 @dataclass(frozen=True)
 class ProofLedger:
@@ -130,16 +138,29 @@ class ProofLedger:
     def certified(self) -> bool:
         return bool(
             self.well_formed
-            and all(entry.certified for entry in self.entries if entry.required)
+            and any(
+                isinstance(entry, ProofLedgerEntry) and entry.required is True
+                for entry in self.entries
+            )
+            and all(
+                isinstance(entry, ProofLedgerEntry)
+                and entry.certified is True
+                for entry in self.entries
+                if isinstance(entry, ProofLedgerEntry) and entry.required is True
+            )
+            and all(isinstance(entry, ProofLedgerEntry) for entry in self.entries)
         )
 
     @property
     def missing_required_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            entry.name
-            for entry in self.entries
-            if entry.required and not entry.certified
-        )
+        missing: list[str] = []
+        for entry in self.entries:
+            if not isinstance(entry, ProofLedgerEntry):
+                missing.append("proof_ledger_entry_type")
+                continue
+            if entry.required is True and entry.certified is not True:
+                missing.append(entry.name)
+        return tuple(dict.fromkeys(missing))
 
 
 @dataclass(frozen=True)
@@ -168,11 +189,11 @@ class ValidatedChart:
             and self.parameter_name
             and _float_interval_finite_nonempty(self.parameter_interval)
             and _float_interval_finite_nonempty(self.physical_time_interval)
-            and self.dynamics_certified
-            and self.residual_certified
-            and self.projection_certified
-            and self.invariants_certified
-            and self.tail_certified
+            and self.dynamics_certified is True
+            and self.residual_certified is True
+            and self.projection_certified is True
+            and self.invariants_certified is True
+            and self.tail_certified is True
             and np.isfinite(self.tail_bound)
             and self.tail_bound >= 0.0
         )
@@ -205,10 +226,10 @@ class GlobalInvariantLedger:
         return bool(
             self.expected_chart_count > 0
             and self.certified_chart_count >= self.expected_chart_count
-            and self.center_of_mass_certified
-            and self.linear_momentum_certified
-            and self.angular_momentum_certified
-            and self.energy_certified
+            and self.center_of_mass_certified is True
+            and self.linear_momentum_certified is True
+            and self.angular_momentum_certified is True
+            and self.energy_certified is True
         )
 
 
@@ -244,7 +265,7 @@ class NewtonResidualLedger:
     @property
     def coverage_certified(self) -> bool:
         return bool(
-            self.certified
+            self.certified is True
             and self.expected_chart_count > 0
             and self.certified_chart_count >= self.expected_chart_count
         )
@@ -276,7 +297,7 @@ class CollisionPolicyWitness:
             missing.append("collision_policy:total_collision_policy")
         if not self.triple_collision_status:
             missing.append("collision_policy:triple_collision_status")
-        if self.certified and not self.triple_collision_reason:
+        if self.certified is True and not self.triple_collision_reason:
             missing.append("collision_policy:triple_collision_reason")
         return tuple(missing)
 
@@ -335,8 +356,12 @@ class FiniteTimeChartSelectorAttempt:
         return bool(
             self.route_id
             and self.reason
-            and (not self.selected or self.attempted)
-            and (not self.certified or not self.missing_obligations)
+            and type(self.attempted) is bool
+            and type(self.selected) is bool
+            and type(self.certified) is bool
+            and type(self.blocks_fallback_certification) is bool
+            and (self.selected is not True or self.attempted is True)
+            and (self.certified is not True or not self.missing_obligations)
             and all(str(obligation) for obligation in self.missing_obligations)
             and (
                 self.branch_partition is None
@@ -356,7 +381,7 @@ class FiniteTimeChartSelectorTrace:
     @property
     def selected_attempt(self) -> FiniteTimeChartSelectorAttempt | None:
         for attempt in self.attempts:
-            if attempt.selected:
+            if attempt.selected is True:
                 return attempt
         return None
 
@@ -384,39 +409,46 @@ class FiniteTimeChartSelectorTrace:
             if not getattr(attempt, "well_formed", False):
                 route_id = str(getattr(attempt, "route_id", "")) or str(index)
                 missing.append(f"selector_trace_attempt_well_formed:{route_id}")
-        selected_attempts = tuple(attempt for attempt in self.attempts if attempt.selected)
+        selected_attempts = tuple(
+            attempt for attempt in self.attempts if attempt.selected is True
+        )
         if len(selected_attempts) != 1:
             missing.append("selector_trace_single_selected_route")
             return tuple(dict.fromkeys(missing))
         selected = selected_attempts[0]
         if selected.route_id != self.selected_route_id:
             missing.append("selector_trace_selected_route_match")
-        if not selected.attempted:
+        if selected.attempted is not True:
             missing.append("selector_trace_selected_attempted")
-        if not selected.certified:
+        if selected.certified is not True:
             missing.append("selector_trace_selected_attempt_certified")
             missing.extend(selected.missing_obligations)
         for attempt in self.attempts:
-            if attempt.blocks_fallback_certification and not attempt.certified:
+            if (
+                attempt.blocks_fallback_certification is True
+                and attempt.certified is not True
+            ):
                 missing.append(f"selector_trace_blocking_attempt_certified:{attempt.route_id}")
                 missing.extend(attempt.missing_obligations)
         return tuple(dict.fromkeys(missing))
 
     @property
     def certified(self) -> bool:
-        selected_attempts = tuple(attempt for attempt in self.attempts if attempt.selected)
+        selected_attempts = tuple(
+            attempt for attempt in self.attempts if attempt.selected is True
+        )
         selected = selected_attempts[0] if len(selected_attempts) == 1 else None
         return bool(
             self.well_formed
             and selected is not None
             and selected.route_id == self.selected_route_id
-            and selected.attempted
-            and selected.selected
-            and selected.certified
+            and selected.attempted is True
+            and selected.selected is True
+            and selected.certified is True
             and all(
-                attempt.certified
+                attempt.certified is True
                 for attempt in self.attempts
-                if attempt.blocks_fallback_certification
+                if attempt.blocks_fallback_certification is True
             )
         )
 
@@ -444,7 +476,7 @@ class FiniteTimeEventCandidate:
                 self.parameter_interval is None
                 or _float_interval_finite_nonempty(self.parameter_interval)
             )
-            and (not self.certified or not self.missing_obligations)
+            and (self.certified is not True or not self.missing_obligations)
             and all(str(obligation) for obligation in self.missing_obligations)
         )
 
@@ -478,7 +510,7 @@ class AmbiguousEventOrderPartitionLeaf:
             and self.source_event.well_formed
             and self.source_event.event_id == self.assumed_first_event_id
             and all(str(event_id) for event_id in self.competing_first_event_ids)
-            and (not self.certified or not self.missing_obligations)
+            and (self.certified is not True or not self.missing_obligations)
         )
 
 
@@ -955,7 +987,8 @@ class ValidatedAtlasSolution:
     @property
     def invariant_coverage_matches_charts(self) -> bool:
         return bool(
-            self.invariants.certified
+            isinstance(self.invariants, GlobalInvariantLedger)
+            and self.invariants.certified is True
             and self.invariants.expected_chart_count == self.chart_count
             and self.invariants.certified_chart_count >= self.chart_count
         )
@@ -963,13 +996,16 @@ class ValidatedAtlasSolution:
     @property
     def residual_coverage_matches_charts(self) -> bool:
         return bool(
-            self.residual_budget.coverage_certified
+            isinstance(self.residual_budget, NewtonResidualLedger)
+            and self.residual_budget.coverage_certified is True
             and self.residual_budget.expected_chart_count == self.chart_count
             and self.residual_budget.certified_chart_count >= self.chart_count
         )
 
     @property
     def proof_ledger_covers_solution(self) -> bool:
+        if not isinstance(self.proof_ledger, ProofLedger):
+            return False
         return _proof_ledger_covers_validated_solution(
             self.proof_ledger,
             self.charts,
@@ -979,6 +1015,8 @@ class ValidatedAtlasSolution:
 
     @property
     def proof_ledger_missing_coverage_obligations(self) -> tuple[str, ...]:
+        if not isinstance(self.proof_ledger, ProofLedger):
+            return ("proof_ledger_type",)
         return _proof_ledger_missing_coverage_obligations(
             self.proof_ledger,
             self.charts,
@@ -987,14 +1025,56 @@ class ValidatedAtlasSolution:
         )
 
     @property
+    def component_types_certified(self) -> bool:
+        return bool(
+            isinstance(self.proof_ledger, ProofLedger)
+            and all(isinstance(chart, ValidatedChart) for chart in self.charts)
+            and all(
+                isinstance(transition, ValidatedTransition)
+                for transition in self.transitions
+            )
+            and isinstance(self.invariants, GlobalInvariantLedger)
+            and isinstance(self.tail_budget, TailBudgetLedger)
+            and isinstance(self.residual_budget, NewtonResidualLedger)
+            and isinstance(self.collision_policy, CollisionPolicyWitness)
+            and (
+                self.selector_trace is None
+                or isinstance(self.selector_trace, FiniteTimeChartSelectorTrace)
+            )
+        )
+
+    @property
     def missing_certification_obligations(self) -> tuple[str, ...]:
         missing: list[str] = []
-        if not self.proof_ledger.well_formed:
+        if not isinstance(self.proof_ledger, ProofLedger):
+            missing.append("proof_ledger_type")
+        elif not self.proof_ledger.well_formed:
             missing.append("proof_ledger_well_formed")
-        missing.extend(self.proof_ledger.missing_required_obligations)
+        if isinstance(self.proof_ledger, ProofLedger):
+            missing.extend(self.proof_ledger.missing_required_obligations)
         missing.extend(self.proof_ledger_missing_coverage_obligations)
-        if self.selector_trace is not None:
+        if self.selector_trace is not None and not isinstance(
+            self.selector_trace,
+            FiniteTimeChartSelectorTrace,
+        ):
+            missing.append("selector_trace_type")
+        elif self.selector_trace is not None:
             missing.extend(self.selector_trace.missing_obligations)
+        if not all(isinstance(chart, ValidatedChart) for chart in self.charts):
+            missing.append("chart_type")
+        if not all(
+            isinstance(transition, ValidatedTransition)
+            for transition in self.transitions
+        ):
+            missing.append("transition_type")
+        if not isinstance(self.invariants, GlobalInvariantLedger):
+            missing.append("invariant_ledger_type")
+        if not isinstance(self.tail_budget, TailBudgetLedger):
+            missing.append("tail_budget_type")
+        if not isinstance(self.residual_budget, NewtonResidualLedger):
+            missing.append("residual_budget_type")
+        if not isinstance(self.collision_policy, CollisionPolicyWitness):
+            missing.append("collision_policy_type")
         if not self.mass_domain_certified:
             missing.append("mass_domain")
         if not self.initial_state_interval_certified:
@@ -1007,12 +1087,20 @@ class ValidatedAtlasSolution:
             missing.append("target_state_interval_union")
         if not self.invariant_coverage_matches_charts:
             missing.append("invariant_coverage_matches_charts")
-        if not (self.tail_budget.certified and self.tail_budget.admissible):
+        if not (
+            isinstance(self.tail_budget, TailBudgetLedger)
+            and self.tail_budget.certified is True
+            and self.tail_budget.admissible is True
+        ):
             missing.append("tail_budget")
         if not self.residual_coverage_matches_charts:
             missing.append("residual_coverage_matches_charts")
-        missing.extend(self.collision_policy.missing_obligations)
-        if not self.collision_policy.certified:
+        if isinstance(self.collision_policy, CollisionPolicyWitness):
+            missing.extend(self.collision_policy.missing_obligations)
+        if not (
+            isinstance(self.collision_policy, CollisionPolicyWitness)
+            and self.collision_policy.certified is True
+        ):
             missing.append("collision_policy")
         if not self.target_time_certified:
             missing.append("target_time_domain")
@@ -1027,38 +1115,53 @@ class ValidatedAtlasSolution:
             missing.append("selector_trace_matches_validated_atlas")
         if not _transition_ledger_connects_charts(self.charts, self.transitions):
             missing.append("transition_ledger_connects_charts")
-        if not all(chart.certified for chart in self.charts):
+        if not all(
+            isinstance(chart, ValidatedChart) and chart.certified is True
+            for chart in self.charts
+        ):
             missing.append("chart_certification")
-        if not all(transition.certified for transition in self.transitions):
+        if not all(
+            isinstance(transition, ValidatedTransition)
+            and transition.certified is True
+            for transition in self.transitions
+        ):
             missing.append("transition_certification")
         return tuple(dict.fromkeys(missing))
 
     @property
     def proof_certified(self) -> bool:
         return bool(
-            self.proof_ledger.certified
-            and self.proof_ledger_covers_solution
-            and self.mass_domain_certified
-            and self.initial_state_interval_certified
-            and self.initial_state_interval_union_certified
-            and self.target_state_interval_certified
-            and self.target_state_interval_union_certified
-            and self.invariant_coverage_matches_charts
-            and self.tail_budget.certified
-            and self.tail_budget.admissible
-            and self.residual_coverage_matches_charts
-            and self.collision_policy.certified
-            and self.collision_policy.well_formed
-            and self.target_time_certified
-            and self.physical_time_chain_progress_certified
-            and self.spatial_ks_ordinary_handoff_structure_certified
+            self.component_types_certified is True
+            and self.proof_ledger.certified is True
+            and self.proof_ledger_covers_solution is True
+            and self.mass_domain_certified is True
+            and self.initial_state_interval_certified is True
+            and self.initial_state_interval_union_certified is True
+            and self.target_state_interval_certified is True
+            and self.target_state_interval_union_certified is True
+            and self.invariant_coverage_matches_charts is True
+            and self.tail_budget.certified is True
+            and self.tail_budget.admissible is True
+            and self.residual_coverage_matches_charts is True
+            and self.collision_policy.certified is True
+            and self.collision_policy.well_formed is True
+            and self.target_time_certified is True
+            and self.physical_time_chain_progress_certified is True
+            and self.spatial_ks_ordinary_handoff_structure_certified is True
             and _selector_trace_matches_validated_atlas(
                 self.selector_trace,
                 self,
             )
-            and _transition_ledger_connects_charts(self.charts, self.transitions)
-            and all(chart.certified for chart in self.charts)
-            and all(transition.certified for transition in self.transitions)
+            and _transition_ledger_connects_charts(self.charts, self.transitions) is True
+            and all(
+                isinstance(chart, ValidatedChart) and chart.certified is True
+                for chart in self.charts
+            )
+            and all(
+                isinstance(transition, ValidatedTransition)
+                and transition.certified is True
+                for transition in self.transitions
+            )
         )
 
     def target_state_contains(self, state: Array) -> bool:
@@ -1184,6 +1287,11 @@ def finite_time_selector_trace_binding_token(atlas: object) -> str:
                 _selector_float_interval_signature(
                     getattr(chart, "physical_time_interval", None),
                 ),
+                bool(getattr(chart, "dynamics_certified", False)),
+                bool(getattr(chart, "residual_certified", False)),
+                bool(getattr(chart, "projection_certified", False)),
+                bool(getattr(chart, "invariants_certified", False)),
+                bool(getattr(chart, "tail_certified", False)),
                 _selector_signature_float(getattr(chart, "tail_bound", 0.0)),
             )
             for chart in getattr(atlas, "charts", ())
@@ -1569,15 +1677,17 @@ def _required_proof_ledger_groups_for_solution(
 
 def _proof_ledger_has_entry(proof_ledger: ProofLedger, name: str) -> bool:
     return any(
-        str(getattr(entry, "name", "")) == name
+        isinstance(entry, ProofLedgerEntry)
+        and str(getattr(entry, "name", "")) == name
         for entry in getattr(proof_ledger, "entries", ())
     )
 
 
 def _proof_ledger_has_certified_entry(proof_ledger: ProofLedger, name: str) -> bool:
     return any(
-        str(getattr(entry, "name", "")) == name
-        and bool(getattr(entry, "certified", False))
+        isinstance(entry, ProofLedgerEntry)
+        and str(getattr(entry, "name", "")) == name
+        and entry.certified is True
         for entry in getattr(proof_ledger, "entries", ())
     )
 

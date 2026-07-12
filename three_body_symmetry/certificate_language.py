@@ -127,6 +127,373 @@ class OrdinaryChartTransitionCertificate:
 
 
 @dataclass(frozen=True)
+class InitialValueProblemBindingCertificate:
+    """Bind a serialized chart to a specific three-body initial value problem.
+
+    This is an exact binary-float problem record.  It does not claim arbitrary
+    computable-real input support; the checker embeds these finite values
+    exactly into its rational comparison backend where available.
+    """
+
+    binding_id: str
+    chart_id: str
+    masses: tuple[float, ...]
+    initial_time: float
+    chart_parameter: float
+    positions: tuple[tuple[float, ...], ...]
+    velocities: tuple[tuple[float, ...], ...]
+    time_tolerance: float
+    position_tolerance: float
+    velocity_tolerance: float
+    source: str = "serialized_initial_value_problem_binding"
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "InitialValueProblemBindingCertificate":
+        return cls(
+            binding_id=str(data.get("binding_id", "")),
+            chart_id=str(data.get("chart_id", "")),
+            masses=_tuple_of_float(data.get("masses", ())),
+            initial_time=float(data.get("initial_time", np.inf)),
+            chart_parameter=float(data.get("chart_parameter", np.inf)),
+            positions=_coefficient_matrix(data.get("positions", ())),
+            velocities=_coefficient_matrix(data.get("velocities", ())),
+            time_tolerance=float(data.get("time_tolerance", np.inf)),
+            position_tolerance=float(data.get("position_tolerance", np.inf)),
+            velocity_tolerance=float(data.get("velocity_tolerance", np.inf)),
+            source=str(
+                data.get("source", "serialized_initial_value_problem_binding")
+            ),
+        )
+
+
+@dataclass(frozen=True)
+class OrdinaryAposterioriTubeCertificate:
+    """Candidate a-posteriori existence tube around an ordinary chart.
+
+    Bounds use the phase-space infinity norm.  The checker recomputes the
+    polynomial defect, nominal pair-distance floor, Newton-field Lipschitz
+    bound, and Gronwall enclosure; the supplied numbers are only admissible
+    caps/radii.
+    """
+
+    tube_id: str
+    chart_id: str
+    anchor_parameter: float
+    initial_error_bound: float
+    tube_radius: float
+    max_defect_bound: float
+    max_lipschitz_bound: float
+    source: str = "serialized_ordinary_aposteriori_tube"
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "OrdinaryAposterioriTubeCertificate":
+        return cls(
+            tube_id=str(data.get("tube_id", "")),
+            chart_id=str(data.get("chart_id", "")),
+            anchor_parameter=float(data.get("anchor_parameter", np.inf)),
+            initial_error_bound=float(data.get("initial_error_bound", np.inf)),
+            tube_radius=float(data.get("tube_radius", np.inf)),
+            max_defect_bound=float(data.get("max_defect_bound", np.inf)),
+            max_lipschitz_bound=float(data.get("max_lipschitz_bound", np.inf)),
+            source=str(data.get("source", "serialized_ordinary_aposteriori_tube")),
+        )
+
+
+@dataclass(frozen=True)
+class WeightedOrdinaryAposterioriTubeCertificate:
+    """Candidate ordinary a-posteriori tube in a weighted phase-space norm."""
+
+    tube_id: str
+    chart_id: str
+    anchor_parameter: float
+    initial_position_error_bound: float
+    initial_velocity_error_bound: float
+    position_radius: float
+    velocity_radius: float
+    max_scaled_defect_bound: float
+    max_scaled_lipschitz_bound: float
+    source: str = "serialized_weighted_ordinary_aposteriori_tube"
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(
+        cls, data: dict[str, Any]
+    ) -> "WeightedOrdinaryAposterioriTubeCertificate":
+        return cls(
+            tube_id=str(data.get("tube_id", "")),
+            chart_id=str(data.get("chart_id", "")),
+            anchor_parameter=float(data.get("anchor_parameter", np.inf)),
+            initial_position_error_bound=float(
+                data.get("initial_position_error_bound", np.inf)
+            ),
+            initial_velocity_error_bound=float(
+                data.get("initial_velocity_error_bound", np.inf)
+            ),
+            position_radius=float(data.get("position_radius", np.inf)),
+            velocity_radius=float(data.get("velocity_radius", np.inf)),
+            max_scaled_defect_bound=float(
+                data.get("max_scaled_defect_bound", np.inf)
+            ),
+            max_scaled_lipschitz_bound=float(
+                data.get("max_scaled_lipschitz_bound", np.inf)
+            ),
+            source=str(
+                data.get(
+                    "source", "serialized_weighted_ordinary_aposteriori_tube"
+                )
+            ),
+        )
+
+
+@dataclass(frozen=True)
+class OrdinaryEnclosureTransitionCertificate:
+    """Continuation handoff between two validated ordinary chart tubes."""
+
+    transition_id: str
+    source_chart_id: str
+    target_chart_id: str
+    source_parameter: float
+    target_parameter: float
+    handoff_time: float
+    max_time_gap: float
+    source: str = "serialized_ordinary_enclosure_transition"
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "OrdinaryEnclosureTransitionCertificate":
+        return cls(
+            transition_id=str(data.get("transition_id", "")),
+            source_chart_id=str(data.get("source_chart_id", "")),
+            target_chart_id=str(data.get("target_chart_id", "")),
+            source_parameter=float(data.get("source_parameter", np.inf)),
+            target_parameter=float(data.get("target_parameter", np.inf)),
+            handoff_time=float(data.get("handoff_time", np.inf)),
+            max_time_gap=float(data.get("max_time_gap", np.inf)),
+            source=str(data.get("source", "serialized_ordinary_enclosure_transition")),
+        )
+
+
+@dataclass(frozen=True)
+class ValidatedOrdinaryIVPChainCertificate:
+    """Finite forward chain of ordinary exact-solution enclosure charts."""
+
+    chain_id: str
+    chart_ids: tuple[str, ...]
+    transition_ids: tuple[str, ...]
+    target_physical_time_interval: tuple[float, float]
+    orientation: str = "forward"
+    source: str = "serialized_validated_ordinary_ivp_chain"
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "ValidatedOrdinaryIVPChainCertificate":
+        return cls(
+            chain_id=str(data.get("chain_id", "")),
+            chart_ids=tuple(str(value) for value in data.get("chart_ids", ())),
+            transition_ids=tuple(
+                str(value) for value in data.get("transition_ids", ())
+            ),
+            target_physical_time_interval=_pair_of_float(
+                data.get("target_physical_time_interval", ())
+            ),
+            orientation=str(data.get("orientation", "forward")),
+            source=str(data.get("source", "serialized_validated_ordinary_ivp_chain")),
+        )
+
+
+@dataclass(frozen=True)
+class PlanarLCAposterioriTubeCertificate:
+    """A-posteriori lifted solution tube for one planar LC chart."""
+
+    tube_id: str
+    chart_id: str
+    anchor_parameter: float
+    initial_error_bound: float
+    tube_radius: float
+    max_defect_bound: float
+    max_lipschitz_bound: float
+    require_pair_energy_constraint: bool = False
+    source: str = "serialized_planar_lc_aposteriori_tube"
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "PlanarLCAposterioriTubeCertificate":
+        return cls(
+            tube_id=str(data.get("tube_id", "")),
+            chart_id=str(data.get("chart_id", "")),
+            anchor_parameter=float(data.get("anchor_parameter", np.inf)),
+            initial_error_bound=float(data.get("initial_error_bound", np.inf)),
+            tube_radius=float(data.get("tube_radius", np.inf)),
+            max_defect_bound=float(data.get("max_defect_bound", np.inf)),
+            max_lipschitz_bound=float(data.get("max_lipschitz_bound", np.inf)),
+            require_pair_energy_constraint=bool(
+                data.get("require_pair_energy_constraint", False)
+            ),
+            source=str(data.get("source", "serialized_planar_lc_aposteriori_tube")),
+        )
+
+
+@dataclass(frozen=True)
+class PlanarLCExactCollisionAnchorCertificate:
+    """Bind a zero-error LC tube to an exact isolated binary collision."""
+
+    collision_id: str
+    chart_id: str
+    tube_id: str
+    collision_parameter: float
+    source: str = "serialized_planar_lc_exact_collision_anchor"
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(
+        cls, data: dict[str, Any]
+    ) -> "PlanarLCExactCollisionAnchorCertificate":
+        return cls(
+            collision_id=str(data.get("collision_id", "")),
+            chart_id=str(data.get("chart_id", "")),
+            tube_id=str(data.get("tube_id", "")),
+            collision_parameter=float(data.get("collision_parameter", np.inf)),
+            source=str(
+                data.get("source", "serialized_planar_lc_exact_collision_anchor")
+            ),
+        )
+
+
+@dataclass(frozen=True)
+class PlanarLCTwoSidedCollisionPassageCertificate:
+    """Bind two punctured ordinary projections to one collision-anchored LC branch."""
+
+    passage_id: str
+    source_chart_id: str
+    collision_id: str
+    left_target_chart_id: str
+    right_target_chart_id: str
+    left_source_parameter: float
+    right_source_parameter: float
+    left_target_parameter: float
+    right_target_parameter: float
+    source: str = "serialized_planar_lc_two_sided_collision_passage"
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(
+        cls, data: dict[str, Any]
+    ) -> "PlanarLCTwoSidedCollisionPassageCertificate":
+        return cls(
+            passage_id=str(data.get("passage_id", "")),
+            source_chart_id=str(data.get("source_chart_id", "")),
+            collision_id=str(data.get("collision_id", "")),
+            left_target_chart_id=str(data.get("left_target_chart_id", "")),
+            right_target_chart_id=str(data.get("right_target_chart_id", "")),
+            left_source_parameter=float(
+                data.get("left_source_parameter", np.inf)
+            ),
+            right_source_parameter=float(
+                data.get("right_source_parameter", np.inf)
+            ),
+            left_target_parameter=float(
+                data.get("left_target_parameter", np.inf)
+            ),
+            right_target_parameter=float(
+                data.get("right_target_parameter", np.inf)
+            ),
+            source=str(
+                data.get(
+                    "source", "serialized_planar_lc_two_sided_collision_passage"
+                )
+            ),
+        )
+
+
+@dataclass(frozen=True)
+class OrdinaryToPlanarLCEnclosureTransitionCertificate:
+    """Bind an exact ordinary enclosure to a noncollision LC lift atlas."""
+
+    transition_id: str
+    source_chart_id: str
+    target_chart_id: str
+    source_parameter: float
+    target_parameter: float
+    handoff_time: float
+    max_time_gap: float
+    source: str = "serialized_ordinary_to_planar_lc_enclosure_transition"
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(
+        cls, data: dict[str, Any]
+    ) -> "OrdinaryToPlanarLCEnclosureTransitionCertificate":
+        return cls(
+            transition_id=str(data.get("transition_id", "")),
+            source_chart_id=str(data.get("source_chart_id", "")),
+            target_chart_id=str(data.get("target_chart_id", "")),
+            source_parameter=float(data.get("source_parameter", np.inf)),
+            target_parameter=float(data.get("target_parameter", np.inf)),
+            handoff_time=float(data.get("handoff_time", np.inf)),
+            max_time_gap=float(data.get("max_time_gap", np.inf)),
+            source=str(
+                data.get(
+                    "source",
+                    "serialized_ordinary_to_planar_lc_enclosure_transition",
+                )
+            ),
+        )
+
+
+@dataclass(frozen=True)
+class PlanarLCToOrdinaryEnclosureTransitionCertificate:
+    """Project a punctured LC exit into an elapsed-time ordinary chart."""
+
+    transition_id: str
+    source_chart_id: str
+    target_chart_id: str
+    source_parameter: float
+    target_parameter: float
+    source: str = "serialized_planar_lc_to_ordinary_enclosure_transition"
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(
+        cls, data: dict[str, Any]
+    ) -> "PlanarLCToOrdinaryEnclosureTransitionCertificate":
+        return cls(
+            transition_id=str(data.get("transition_id", "")),
+            source_chart_id=str(data.get("source_chart_id", "")),
+            target_chart_id=str(data.get("target_chart_id", "")),
+            source_parameter=float(data.get("source_parameter", np.inf)),
+            target_parameter=float(data.get("target_parameter", np.inf)),
+            source=str(
+                data.get(
+                    "source",
+                    "serialized_planar_lc_to_ordinary_enclosure_transition",
+                )
+            ),
+        )
+
+
+@dataclass(frozen=True)
 class PlanarLeviCivitaBinaryChartCertificate:
     """Serialized planar Levi-Civita binary chart data for the checker."""
 
@@ -698,6 +1065,27 @@ class GeneralizedFuchsianRemainderMajorantCertificate:
     def self_map_margin(self) -> float:
         return float(self.remainder_ball_radius - self.self_map_bound)
 
+    @property
+    def picard_first_step_bound(self) -> float:
+        return float(self.linear_inverse_bound * self.defect_bound)
+
+    def picard_tail_bound(self, iteration_count: int) -> float:
+        iteration_count = int(iteration_count)
+        if iteration_count < 0:
+            raise ValueError("iteration_count must be nonnegative")
+        contraction_factor = self.contraction_factor
+        if not (
+            np.isfinite(contraction_factor)
+            and 0.0 <= contraction_factor < 1.0
+            and np.isfinite(self.picard_first_step_bound)
+        ):
+            return float("inf")
+        return float(
+            contraction_factor**iteration_count
+            * self.picard_first_step_bound
+            / (1.0 - contraction_factor)
+        )
+
     @classmethod
     def from_dict(
         cls,
@@ -859,6 +1247,7 @@ class TotalCollisionGeneralizedFuchsianStopChartCertificate:
     sample_count: int = 7
     remainder_majorant: GeneralizedFuchsianRemainderMajorantCertificate | None = None
     source: str = "serialized_total_collision_generalized_fuchsian_stop_chart"
+    projected_residual_tolerance: float | None = None
 
     @property
     def body_count(self) -> int:
@@ -930,6 +1319,11 @@ class TotalCollisionGeneralizedFuchsianStopChartCertificate:
                     "source",
                     "serialized_total_collision_generalized_fuchsian_stop_chart",
                 ),
+            ),
+            projected_residual_tolerance=(
+                float(data["projected_residual_tolerance"])
+                if data.get("projected_residual_tolerance") is not None
+                else None
             ),
         )
 
@@ -1518,6 +1912,7 @@ def total_collision_generalized_fuchsian_stop_chart_certificate_from_branch(
     sample_count: int = 7,
     remainder_majorant: GeneralizedFuchsianRemainderMajorantCertificate | None = None,
     source: str = "generalized_fuchsian_total_collision_branch_serialization",
+    projected_residual_tolerance: float | None = None,
 ) -> TotalCollisionGeneralizedFuchsianStopChartCertificate:
     """Serialize a generalized Fuchsian punctured total-collision chart."""
 
@@ -1562,6 +1957,11 @@ def total_collision_generalized_fuchsian_stop_chart_certificate_from_branch(
         sample_count=int(sample_count),
         remainder_majorant=remainder_majorant,
         source=str(source),
+        projected_residual_tolerance=(
+            None
+            if projected_residual_tolerance is None
+            else float(projected_residual_tolerance)
+        ),
     )
 
 

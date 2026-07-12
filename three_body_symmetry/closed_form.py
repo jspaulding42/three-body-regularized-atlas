@@ -10,8 +10,16 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from .general_solution_theorem import TheoremPipelineObligation
+from .certificate_checker import IndependentChartVerifierCertificate
+from .general_solution_theorem import (
+    GeneralSolutionTheoremCertificate,
+    TheoremPipelineObligation,
+)
 from .obstructions import certify_classical_integrals_do_not_determine_vector_field
+from .open_time_atlas import (
+    OpenTimeLocallyFiniteAtlasTheoremCertificate,
+    PointwiseOpenTimeLocallyFiniteAtlasTheoremCertificate,
+)
 
 
 BRUNS_THEOREM_URL = "https://scienceworld.wolfram.com/physics/BrunsTheorem.html"
@@ -20,6 +28,144 @@ SUNDMAN_MEMOIR_URL = (
     "https://archive.ymsc.tsinghua.edu.cn/pacm_download/117/"
     "5229-11511_2006_Article_BF02422379.pdf"
 )
+POINTWISE_FINITE_TARGET_CHART_FAMILIES = (
+    "ordinary_taylor",
+    "planar_levi_civita_binary",
+    "spatial_ks_binary",
+    "total_collision_stop",
+)
+POINTWISE_FINITE_TARGET_ALLOWED_OUTCOMES = (
+    "finite_atlas_reaches_target",
+    "unselected_total_collision_before_target",
+)
+POINTWISE_REGULARIZED_ATLAS_REQUIRED_OBLIGATIONS = (
+    "regularized_locally_finite_atlas_class",
+    "pointwise_open_time_atlas_proof",
+    "certificate_language_soundness",
+    "computable_atlas_certificate_enumeration",
+    "maximal_classical_total_collision_policy",
+    "pointwise_closed_form_chart_primitives",
+    "pointwise_closed_form_finite_target_outcomes",
+    "endpoint_regime_partition_not_required",
+)
+
+
+def _strict_bool(value: Any, field_name: str) -> bool:
+    if type(value) is not bool:
+        raise TypeError(f"{field_name} must be a bool")
+    return value
+
+
+def _strict_optional_bool(value: Any, field_name: str) -> bool | None:
+    if value is None:
+        return None
+    return _strict_bool(value, field_name)
+
+
+def _pipeline_obligation_ledger_certified(
+    obligations: tuple[Any, ...],
+) -> bool:
+    return bool(
+        obligations
+        and any(
+            isinstance(obligation, TheoremPipelineObligation)
+            and obligation.required is True
+            for obligation in obligations
+        )
+        and all(
+            isinstance(obligation, TheoremPipelineObligation)
+            for obligation in obligations
+        )
+        and all(
+            obligation.certified is True
+            for obligation in obligations
+            if obligation.required
+        )
+    )
+
+
+def _pipeline_obligation_ledger_missing(
+    obligations: tuple[Any, ...],
+    *,
+    ledger_name: str,
+) -> tuple[str, ...]:
+    missing: list[str] = []
+    if not obligations:
+        missing.append(f"{ledger_name}_obligations_present")
+    if obligations and not any(
+        isinstance(obligation, TheoremPipelineObligation)
+        and obligation.required is True
+        for obligation in obligations
+    ):
+        missing.append(f"{ledger_name}_required_obligation_present")
+    for obligation in obligations:
+        if not isinstance(obligation, TheoremPipelineObligation):
+            missing.append(f"{ledger_name}_obligation_type")
+            continue
+        if obligation.required and obligation.certified is not True:
+            missing.append(obligation.obligation)
+    return tuple(dict.fromkeys(missing))
+
+
+def _pipeline_obligation_manifest_exact(
+    obligations: tuple[Any, ...],
+    required_obligation_ids: tuple[str, ...],
+) -> bool:
+    return bool(
+        tuple(
+            obligation.obligation
+            for obligation in obligations
+            if isinstance(obligation, TheoremPipelineObligation)
+        )
+        == tuple(required_obligation_ids)
+        and len(obligations) == len(required_obligation_ids)
+    )
+
+
+def _requirement_status_ledger_certified(
+    statuses: tuple[Any, ...],
+) -> bool:
+    return bool(
+        statuses
+        and all(
+            type(status) is GeneralSolutionRequirementStatus
+            and status.certified is True
+            for status in statuses
+        )
+    )
+
+
+def _requirement_status_ledger_missing(
+    statuses: tuple[Any, ...],
+    *,
+    ledger_name: str,
+) -> tuple[str, ...]:
+    missing: list[str] = []
+    if not statuses:
+        missing.append(f"{ledger_name}_requirements_present")
+    for status in statuses:
+        if type(status) is not GeneralSolutionRequirementStatus:
+            missing.append(f"{ledger_name}_requirement_status_type")
+            continue
+        if status.certified is not True:
+            missing.append(status.requirement)
+    return tuple(dict.fromkeys(missing))
+
+
+def _requirement_status_ledger_structure_missing(
+    statuses: tuple[Any, ...],
+    *,
+    ledger_name: str,
+) -> tuple[str, ...]:
+    return tuple(
+        missing
+        for missing in _requirement_status_ledger_missing(
+            statuses,
+            ledger_name=ledger_name,
+        )
+        if missing.endswith("_requirements_present")
+        or missing.endswith("_requirement_status_type")
+    )
 
 
 @dataclass(frozen=True)
@@ -112,6 +258,9 @@ class GeneralSolutionRequirementStatus:
     observed: str | None = None
     blocking_obligations: tuple[str, ...] = ()
 
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "certified", self.certified is True)
+
 
 @dataclass(frozen=True)
 class ClosedFormProofObligationDetail:
@@ -122,6 +271,9 @@ class ClosedFormProofObligationDetail:
     required: str | None = None
     observed: str | None = None
     witness_field: str | None = None
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "certified", self.certified is True)
 
 
 @dataclass(frozen=True)
@@ -260,16 +412,24 @@ class CertificateLanguageSoundnessCertificate:
     @property
     def proof_certified(self) -> bool:
         return bool(
-            self.ordinary_taylor_sound
-            and self.levi_civita_sound
-            and self.spatial_ks_sound
-            and self.fuchsian_stop_sound
-            and self.generalized_fuchsian_stop_sound
-            and self.transition_sound
-            and self.branch_union_sound
-            and self.chart_chain_sound
-            and self.verifier_kernel_sound
-            and self.proof_grade_arithmetic_backend_sound
+            self.ordinary_taylor_sound is True
+            and self.levi_civita_sound is True
+            and self.spatial_ks_sound is True
+            and self.fuchsian_stop_sound is True
+            and self.generalized_fuchsian_stop_sound is True
+            and self.transition_sound is True
+            and self.branch_union_sound is True
+            and self.chart_chain_sound is True
+            and self.verifier_kernel_sound is True
+            and self.proof_grade_arithmetic_backend_sound is True
+        )
+
+    @property
+    def checker_kernel_derived(self) -> bool:
+        return bool(
+            self.proof_certified
+            and self.witness_source
+            == "checker_kernel_support_certificate_language_soundness"
         )
 
     @property
@@ -292,7 +452,7 @@ class CertificateLanguageSoundnessCertificate:
                 self.proof_grade_arithmetic_backend_sound,
             ),
         )
-        return tuple(name for name, certified in fields if not certified)
+        return tuple(name for name, certified in fields if certified is not True)
 
 
 @dataclass(frozen=True)
@@ -315,6 +475,9 @@ class ComputableAtlasCertificateEnumerationCertificate:
     finite_target_query_terminates_certified: bool = False
     source_theorem_id: str = ""
     source_theorem_proof_certified: bool = False
+    source_theorem_dimension: int = 0
+    source_theorem_input_model: str = ""
+    source_total_collision_policy_id: str = ""
     finite_target_chart_families: tuple[str, ...] = ()
     finite_target_allowed_outcomes: tuple[str, ...] = ()
     witness_source: str = "computable_atlas_certificate_enumeration"
@@ -322,20 +485,20 @@ class ComputableAtlasCertificateEnumerationCertificate:
     @property
     def proof_certified(self) -> bool:
         return bool(
-            self.chart_family_words_enumerated
-            and self.pair_labels_enumerated
-            and self.rational_domains_enumerated
-            and self.truncation_orders_enumerated
-            and self.rational_or_interval_coefficients_enumerated
-            and self.rational_tail_budgets_enumerated
-            and self.generalized_fuchsian_exponent_data_enumerated
-            and self.fuchsian_selector_constants_enumerated
-            and self.cauchy_majorants_enumerated
-            and self.transition_witnesses_enumerated
-            and self.collision_policy_data_enumerated
-            and self.independent_checker_dovetailed
-            and self.dovetailing_fairness_certified
-            and self.finite_target_query_terminates_certified
+            self.chart_family_words_enumerated is True
+            and self.pair_labels_enumerated is True
+            and self.rational_domains_enumerated is True
+            and self.truncation_orders_enumerated is True
+            and self.rational_or_interval_coefficients_enumerated is True
+            and self.rational_tail_budgets_enumerated is True
+            and self.generalized_fuchsian_exponent_data_enumerated is True
+            and self.fuchsian_selector_constants_enumerated is True
+            and self.cauchy_majorants_enumerated is True
+            and self.transition_witnesses_enumerated is True
+            and self.collision_policy_data_enumerated is True
+            and self.independent_checker_dovetailed is True
+            and self.dovetailing_fairness_certified is True
+            and self.finite_target_query_terminates_certified is True
         )
 
     @property
@@ -343,9 +506,25 @@ class ComputableAtlasCertificateEnumerationCertificate:
         return bool(
             self.proof_certified
             and self.source_theorem_id == "pointwise_open_time_locally_finite_atlas"
-            and self.source_theorem_proof_certified
-            and self.finite_target_chart_families
-            and self.finite_target_allowed_outcomes
+            and self.source_theorem_proof_certified is True
+            and self.source_theorem_dimension in {2, 3}
+            and (
+                "computable" in self.source_theorem_input_model
+                or "exact_point" in self.source_theorem_input_model
+            )
+            and self.source_total_collision_policy_id
+            in {
+                "maximal_classical_stop",
+                "maximal_classical_stop_at_total_collision",
+            }
+            and (
+                set(self.finite_target_chart_families)
+                == set(POINTWISE_FINITE_TARGET_CHART_FAMILIES)
+            )
+            and (
+                tuple(self.finite_target_allowed_outcomes)
+                == POINTWISE_FINITE_TARGET_ALLOWED_OUTCOMES
+            )
         )
 
     @property
@@ -378,7 +557,7 @@ class ComputableAtlasCertificateEnumerationCertificate:
                 self.finite_target_query_terminates_certified,
             ),
         )
-        return tuple(name for name, certified in fields if not certified)
+        return tuple(name for name, certified in fields if certified is not True)
 
 
 @dataclass(frozen=True)
@@ -390,6 +569,11 @@ class MaximalClassicalTotalCollisionPolicyCertificate:
     selected_continuation_forbidden: bool = False
     maximal_classical_domain_certified: bool = False
     pointwise_theorem_policy_matches: bool = False
+    source_theorem_id: str = ""
+    source_theorem_proof_certified: bool = False
+    source_theorem_dimension: int = 0
+    source_theorem_input_model: str = ""
+    source_total_collision_policy_id: str = ""
     witness_source: str = "maximal_classical_total_collision_policy"
 
     @property
@@ -403,10 +587,24 @@ class MaximalClassicalTotalCollisionPolicyCertificate:
     def proof_certified(self) -> bool:
         return bool(
             self.allowed_policy_id
-            and self.stop_at_unselected_total_collision
-            and self.selected_continuation_forbidden
-            and self.maximal_classical_domain_certified
-            and self.pointwise_theorem_policy_matches
+            and self.stop_at_unselected_total_collision is True
+            and self.selected_continuation_forbidden is True
+            and self.maximal_classical_domain_certified is True
+            and self.pointwise_theorem_policy_matches is True
+            and self.pointwise_theorem_derived
+        )
+
+    @property
+    def pointwise_theorem_derived(self) -> bool:
+        return bool(
+            self.source_theorem_id == "pointwise_open_time_locally_finite_atlas"
+            and self.source_theorem_proof_certified is True
+            and self.source_theorem_dimension in {2, 3}
+            and (
+                "computable" in self.source_theorem_input_model
+                or "exact_point" in self.source_theorem_input_model
+            )
+            and self.source_total_collision_policy_id == self.policy_id
         )
 
     @property
@@ -420,8 +618,9 @@ class MaximalClassicalTotalCollisionPolicyCertificate:
             ("selected_continuation_forbidden", self.selected_continuation_forbidden),
             ("maximal_classical_domain_certified", self.maximal_classical_domain_certified),
             ("pointwise_theorem_policy_matches", self.pointwise_theorem_policy_matches),
+            ("pointwise_theorem_policy_source", self.pointwise_theorem_derived),
         )
-        return tuple(name for name, certified in fields if not certified)
+        return tuple(name for name, certified in fields if certified is not True)
 
 
 @dataclass(frozen=True)
@@ -450,34 +649,71 @@ class PointwiseRegularizedAtlasClosedFormTheoremCertificate:
     @property
     def proof_certified(self) -> bool:
         return bool(
-            self.normalized_class == "regularized_locally_finite_atlas"
+            self.theorem_id == "pointwise_regularized_atlas_closed_form"
+            and self.normalized_class == "regularized_locally_finite_atlas"
+            and type(
+                self.pointwise_open_time_theorem,
+            )
+            is PointwiseOpenTimeLocallyFiniteAtlasTheoremCertificate
             and getattr(self.pointwise_open_time_theorem, "proof_certified", False)
+            is True
+            and type(
+                self.certificate_language_soundness,
+            )
+            is CertificateLanguageSoundnessCertificate
             and getattr(
                 self.certificate_language_soundness,
                 "proof_certified",
                 False,
             )
+            is True
+            and getattr(
+                self.certificate_language_soundness,
+                "checker_kernel_derived",
+                False,
+            )
+            is True
+            and type(
+                self.computable_certificate_enumeration,
+            )
+            is ComputableAtlasCertificateEnumerationCertificate
             and getattr(
                 self.computable_certificate_enumeration,
                 "proof_certified",
                 False,
             )
+            is True
+            and getattr(
+                self.computable_certificate_enumeration,
+                "pointwise_theorem_derived",
+                False,
+            )
+            is True
+            and _enumeration_source_matches_pointwise_theorem(
+                self.computable_certificate_enumeration,
+                self.pointwise_open_time_theorem,
+            )
+            and type(
+                self.maximal_classical_total_collision_policy,
+            )
+            is MaximalClassicalTotalCollisionPolicyCertificate
             and getattr(
                 self.maximal_classical_total_collision_policy,
                 "proof_certified",
                 False,
             )
+            is True
+            and _policy_source_matches_pointwise_theorem(
+                self.maximal_classical_total_collision_policy,
+                self.pointwise_open_time_theorem,
+            )
             and self.statement
             and self.proof_sketch
-            and self.obligations
+            and _pipeline_obligation_ledger_certified(self.obligations)
+            and self.obligation_manifest_certified
             and self.chart_primitive_scope_certified
             and self.finite_target_outcome_scope_certified
             and not self.endpoint_regime_partition_required
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
-            )
         )
 
     @property
@@ -485,13 +721,33 @@ class PointwiseRegularizedAtlasClosedFormTheoremCertificate:
         return self.proof_certified
 
     @property
+    def obligation_manifest_certified(self) -> bool:
+        return _pipeline_obligation_manifest_exact(
+            self.obligations,
+            POINTWISE_REGULARIZED_ATLAS_REQUIRED_OBLIGATIONS,
+        )
+
+    @property
     def missing_obligations(self) -> tuple[str, ...]:
         missing: list[str] = []
+        if self.theorem_id != "pointwise_regularized_atlas_closed_form":
+            missing.append("pointwise_regularized_atlas_closed_form_theorem_id")
         if self.normalized_class != "regularized_locally_finite_atlas":
             missing.append("regularized_locally_finite_atlas_class")
-        if not getattr(self.pointwise_open_time_theorem, "proof_certified", False):
+        if type(
+            self.pointwise_open_time_theorem,
+        ) is not PointwiseOpenTimeLocallyFiniteAtlasTheoremCertificate:
+            missing.append("pointwise_open_time_atlas_constructor_certificate")
+        if getattr(self.pointwise_open_time_theorem, "proof_certified", False) is not True:
             missing.append("pointwise_open_time_atlas_proof")
-        if not getattr(self.certificate_language_soundness, "proof_certified", False):
+        if type(
+            self.certificate_language_soundness,
+        ) is not CertificateLanguageSoundnessCertificate:
+            missing.append("certificate_language_soundness_constructor_certificate")
+        if (
+            getattr(self.certificate_language_soundness, "proof_certified", False)
+            is not True
+        ):
             missing.append("certificate_language_soundness")
             missing.extend(
                 f"certificate_language_soundness:{obligation}"
@@ -501,7 +757,25 @@ class PointwiseRegularizedAtlasClosedFormTheoremCertificate:
                     (),
                 )
             )
-        if not getattr(self.computable_certificate_enumeration, "proof_certified", False):
+        if (
+            getattr(self.certificate_language_soundness, "proof_certified", False)
+            is True
+            and getattr(
+                self.certificate_language_soundness,
+                "checker_kernel_derived",
+                False,
+            )
+            is not True
+        ):
+            missing.append("certificate_language_soundness_checker_kernel_derived")
+        if type(
+            self.computable_certificate_enumeration,
+        ) is not ComputableAtlasCertificateEnumerationCertificate:
+            missing.append("computable_atlas_certificate_enumeration_constructor_certificate")
+        if (
+            getattr(self.computable_certificate_enumeration, "proof_certified", False)
+            is not True
+        ):
             missing.append("computable_atlas_certificate_enumeration")
             missing.extend(
                 f"computable_atlas_certificate_enumeration:{obligation}"
@@ -511,10 +785,49 @@ class PointwiseRegularizedAtlasClosedFormTheoremCertificate:
                     (),
                 )
             )
-        if not getattr(
+        if (
+            getattr(self.computable_certificate_enumeration, "proof_certified", False)
+            is True
+            and getattr(
+                self.computable_certificate_enumeration,
+                "pointwise_theorem_derived",
+                False,
+            )
+            is not True
+        ):
+            missing.append(
+                "computable_atlas_certificate_enumeration_pointwise_theorem_derived"
+            )
+        if (
+            type(
+                self.computable_certificate_enumeration,
+            )
+            is ComputableAtlasCertificateEnumerationCertificate
+            and getattr(
+                self.computable_certificate_enumeration,
+                "pointwise_theorem_derived",
+                False,
+            )
+            is True
+            and not _enumeration_source_matches_pointwise_theorem(
+                self.computable_certificate_enumeration,
+                self.pointwise_open_time_theorem,
+            )
+        ):
+            missing.append(
+                "computable_atlas_certificate_enumeration_source_matches_theorem"
+            )
+        if type(
             self.maximal_classical_total_collision_policy,
-            "proof_certified",
-            False,
+        ) is not MaximalClassicalTotalCollisionPolicyCertificate:
+            missing.append("maximal_classical_total_collision_policy_constructor_certificate")
+        if (
+            getattr(
+                self.maximal_classical_total_collision_policy,
+                "proof_certified",
+                False,
+            )
+            is not True
         ):
             missing.append("maximal_classical_total_collision_policy")
             missing.extend(
@@ -525,11 +838,31 @@ class PointwiseRegularizedAtlasClosedFormTheoremCertificate:
                     (),
                 )
             )
+        if (
+            type(
+                self.maximal_classical_total_collision_policy,
+            )
+            is MaximalClassicalTotalCollisionPolicyCertificate
+            and getattr(
+                self.maximal_classical_total_collision_policy,
+                "pointwise_theorem_derived",
+                False,
+            )
+            is True
+            and not _policy_source_matches_pointwise_theorem(
+                self.maximal_classical_total_collision_policy,
+                self.pointwise_open_time_theorem,
+            )
+        ):
+            missing.append("maximal_classical_total_collision_policy_source_matches_theorem")
         missing.extend(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+            _pipeline_obligation_ledger_missing(
+                self.obligations,
+                ledger_name="pointwise_regularized_atlas_closed_form",
+            )
         )
+        if not self.obligation_manifest_certified:
+            missing.append("pointwise_regularized_atlas_closed_form_obligation_manifest")
         if not self.chart_primitive_scope_certified:
             missing.append("pointwise_closed_form_chart_primitives")
         if not self.finite_target_outcome_scope_certified:
@@ -577,12 +910,12 @@ class GeneralSolutionScopeWitnessCertificate:
 
     @property
     def general_solution_scope_certified(self) -> bool:
-        return bool(
-            self.arbitrary_positive_masses_certified
-            and self.arbitrary_noncollision_initial_data_certified
-            and self.all_real_target_times_certified
-            and self.lift_construct_project_verify_certified
-            and self.newton_equations_full_interval_certified
+        return (
+            self.arbitrary_positive_masses_certified is True
+            and self.arbitrary_noncollision_initial_data_certified is True
+            and self.all_real_target_times_certified is True
+            and self.lift_construct_project_verify_certified is True
+            and self.newton_equations_full_interval_certified is True
         )
 
     @property
@@ -1865,16 +2198,21 @@ class SundmanGeneralSolutionTheoremWitnessCertificate:
 
     @property
     def global_series_certified(self) -> bool:
-        return bool(getattr(self.compact_sundman_witness, "global_series_certified", False))
+        return getattr(
+            self.compact_sundman_witness,
+            "global_series_certified",
+            False,
+        ) is True
 
     @property
     def collision_continuation_obligations_certified(self) -> bool:
-        return bool(
+        return (
             getattr(
                 self.compact_sundman_witness,
                 "collision_continuation_obligations_certified",
                 False,
             )
+            is True
         )
 
     @property
@@ -1928,42 +2266,66 @@ class SundmanGeneralSolutionTheoremWitnessCertificate:
 
     @property
     def general_solution_scope_certified(self) -> bool:
-        return bool(
-            self.scope_witness is not None and self.scope_witness.general_solution_scope_certified
+        return (
+            self.scope_witness is not None
+            and getattr(self.scope_witness, "general_solution_scope_certified", False)
+            is True
         )
 
     @property
     def arbitrary_positive_masses_certified(self) -> bool:
-        return bool(
+        return (
             self.scope_witness is not None
-            and self.scope_witness.arbitrary_positive_masses_certified
+            and getattr(
+                self.scope_witness,
+                "arbitrary_positive_masses_certified",
+                False,
+            )
+            is True
         )
 
     @property
     def arbitrary_noncollision_initial_data_certified(self) -> bool:
-        return bool(
+        return (
             self.scope_witness is not None
-            and self.scope_witness.arbitrary_noncollision_initial_data_certified
+            and getattr(
+                self.scope_witness,
+                "arbitrary_noncollision_initial_data_certified",
+                False,
+            )
+            is True
         )
 
     @property
     def all_real_target_times_certified(self) -> bool:
-        return bool(
-            self.scope_witness is not None and self.scope_witness.all_real_target_times_certified
+        return (
+            self.scope_witness is not None
+            and getattr(self.scope_witness, "all_real_target_times_certified", False)
+            is True
         )
 
     @property
     def lift_construct_project_verify_certified(self) -> bool:
-        return bool(
+        return (
             self.scope_witness is not None
-            and self.scope_witness.lift_construct_project_verify_certified
+            and getattr(
+                self.scope_witness,
+                "lift_construct_project_verify_certified",
+                False,
+            )
+            is True
         )
 
     @property
     def newton_equations_full_interval_certified(self) -> bool:
-        return bool(
+        return (
             self.scope_witness is not None
-            and self.scope_witness.newton_equations_full_interval_certified
+            and getattr(
+                self.scope_witness,
+                "newton_equations_full_interval_certified",
+                False,
+            )
+            is True
         )
 
 
@@ -1977,35 +2339,66 @@ class GeneralClosedFormSolutionCertificate:
     @property
     def proof_certified(self) -> bool:
         return bool(
-            self.closed_form_certificate.general_solution_certified
-            and all(status.certified for status in self.requirement_statuses)
+            isinstance(self.closed_form_certificate, ClosedFormTargetCertificate)
+            and self.closed_form_certificate.general_solution_certified is True
+            and _requirement_status_ledger_certified(self.requirement_statuses)
         )
+
+    @property
+    def certified(self) -> bool:
+        return self.proof_certified
 
     @property
     def status(self) -> str:
         if self.proof_certified:
             return "certified"
-        if self.closed_form_certificate.definition_required:
+        if (
+            isinstance(self.closed_form_certificate, ClosedFormTargetCertificate)
+            and self.closed_form_certificate.definition_required
+        ):
             return "definition_required"
-        if self.closed_form_certificate.obstruction_certified:
+        if (
+            isinstance(self.closed_form_certificate, ClosedFormTargetCertificate)
+            and self.closed_form_certificate.obstruction_certified
+        ):
             return "obstructed_requested_class"
         return "incomplete"
 
     @property
     def missing_requirements(self) -> tuple[str, ...]:
-        missing = tuple(
-            status.requirement for status in self.requirement_statuses if not status.certified
+        closed_form_missing = (
+            self.closed_form_certificate.missing_requirements
+            if isinstance(self.closed_form_certificate, ClosedFormTargetCertificate)
+            else ("general_closed_form_solution_closed_form_certificate_type",)
         )
-        return (*self.closed_form_certificate.missing_requirements, *missing)
+        return (
+            *closed_form_missing,
+            *_requirement_status_ledger_missing(
+                self.requirement_statuses,
+                ledger_name="general_closed_form_solution",
+            ),
+        )
 
     @property
     def missing_requirement_details(self) -> tuple[GeneralSolutionRequirementStatus, ...]:
-        return tuple(status for status in self.requirement_statuses if not status.certified)
+        return tuple(
+            status
+            for status in self.requirement_statuses
+            if type(status) is GeneralSolutionRequirementStatus
+            and status.certified is not True
+        )
 
     @property
     def blocking_obligations(self) -> tuple[str, ...]:
         obligations: list[str] = []
         seen: set[str] = set()
+        for obligation in _requirement_status_ledger_structure_missing(
+            self.requirement_statuses,
+            ledger_name="general_closed_form_solution",
+        ):
+            if obligation not in seen:
+                seen.add(obligation)
+                obligations.append(obligation)
         for status in self.missing_requirement_details:
             for obligation in status.blocking_obligations:
                 if obligation not in seen:
@@ -2108,15 +2501,18 @@ def _regularized_atlas_reference() -> ClosedFormTheoremReference:
 def _witness_flag(witness: Any | None, *field_names: str) -> bool:
     if witness is None:
         return False
-    return any(bool(getattr(witness, field_name, False)) for field_name in field_names)
+    return any(getattr(witness, field_name, False) is True for field_name in field_names)
 
 
 def _observed_witness_flags(witness: Any | None, *field_names: str) -> str:
     if witness is None:
         return "no witness supplied"
-    return ", ".join(
-        f"{field_name}={bool(getattr(witness, field_name, False))}" for field_name in field_names
-    )
+    observed: list[str] = []
+    for field_name in field_names:
+        value = getattr(witness, field_name, False)
+        rendered = str(value) if type(value) is bool else f"{value!r} (not literal True)"
+        observed.append(f"{field_name}={rendered}")
+    return ", ".join(observed)
 
 
 def certify_closed_form_target(
@@ -2185,8 +2581,9 @@ def certify_closed_form_target(
             finite_closed_form_obstructed=True,
         )
     if normalized == "sundman_global_series":
-        if compact_sundman_witness is not None and bool(
+        if compact_sundman_witness is not None and (
             getattr(compact_sundman_witness, "global_series_certified", False)
+            is True
         ) and not tuple(
             getattr(compact_sundman_witness, "missing_global_proof_obligations", ())
         ):
@@ -2303,13 +2700,26 @@ def certify_general_solution_scope_witness(
     """Record the arbitrary-data/all-time scope witness needed by a general solution."""
 
     return GeneralSolutionScopeWitnessCertificate(
-        arbitrary_positive_masses_certified=bool(arbitrary_positive_masses_certified),
-        arbitrary_noncollision_initial_data_certified=bool(
-            arbitrary_noncollision_initial_data_certified
+        arbitrary_positive_masses_certified=_strict_bool(
+            arbitrary_positive_masses_certified,
+            "arbitrary_positive_masses_certified",
         ),
-        all_real_target_times_certified=bool(all_real_target_times_certified),
-        lift_construct_project_verify_certified=bool(lift_construct_project_verify_certified),
-        newton_equations_full_interval_certified=bool(newton_equations_full_interval_certified),
+        arbitrary_noncollision_initial_data_certified=_strict_bool(
+            arbitrary_noncollision_initial_data_certified,
+            "arbitrary_noncollision_initial_data_certified",
+        ),
+        all_real_target_times_certified=_strict_bool(
+            all_real_target_times_certified,
+            "all_real_target_times_certified",
+        ),
+        lift_construct_project_verify_certified=_strict_bool(
+            lift_construct_project_verify_certified,
+            "lift_construct_project_verify_certified",
+        ),
+        newton_equations_full_interval_certified=_strict_bool(
+            newton_equations_full_interval_certified,
+            "newton_equations_full_interval_certified",
+        ),
         witness_source=str(witness_source),
     )
 
@@ -2496,25 +2906,40 @@ def certify_certificate_language_soundness(
 ) -> CertificateLanguageSoundnessCertificate:
     """Record soundness evidence for the regularized-atlas certificate language."""
 
+    fuchsian_stop_sound = _strict_optional_bool(
+        fuchsian_stop_sound,
+        "fuchsian_stop_sound",
+    )
+    generalized_fuchsian_stop_sound = _strict_optional_bool(
+        generalized_fuchsian_stop_sound,
+        "generalized_fuchsian_stop_sound",
+    )
     return CertificateLanguageSoundnessCertificate(
-        ordinary_taylor_sound=bool(ordinary_taylor_sound),
-        levi_civita_sound=bool(levi_civita_sound),
-        spatial_ks_sound=bool(spatial_ks_sound),
-        total_stop_sound=bool(total_stop_sound),
-        fuchsian_stop_sound=bool(
+        ordinary_taylor_sound=_strict_bool(
+            ordinary_taylor_sound,
+            "ordinary_taylor_sound",
+        ),
+        levi_civita_sound=_strict_bool(levi_civita_sound, "levi_civita_sound"),
+        spatial_ks_sound=_strict_bool(spatial_ks_sound, "spatial_ks_sound"),
+        total_stop_sound=_strict_bool(total_stop_sound, "total_stop_sound"),
+        fuchsian_stop_sound=(
             False if fuchsian_stop_sound is None else fuchsian_stop_sound
         ),
-        generalized_fuchsian_stop_sound=bool(
+        generalized_fuchsian_stop_sound=(
             False
             if generalized_fuchsian_stop_sound is None
             else generalized_fuchsian_stop_sound
         ),
-        transition_sound=bool(transition_sound),
-        branch_union_sound=bool(branch_union_sound),
-        chart_chain_sound=bool(chart_chain_sound),
-        verifier_kernel_sound=bool(verifier_kernel_sound),
-        proof_grade_arithmetic_backend_sound=bool(
-            proof_grade_arithmetic_backend_sound
+        transition_sound=_strict_bool(transition_sound, "transition_sound"),
+        branch_union_sound=_strict_bool(branch_union_sound, "branch_union_sound"),
+        chart_chain_sound=_strict_bool(chart_chain_sound, "chart_chain_sound"),
+        verifier_kernel_sound=_strict_bool(
+            verifier_kernel_sound,
+            "verifier_kernel_sound",
+        ),
+        proof_grade_arithmetic_backend_sound=_strict_bool(
+            proof_grade_arithmetic_backend_sound,
+            "proof_grade_arithmetic_backend_sound",
         ),
         witness_source=str(witness_source),
     )
@@ -2535,43 +2960,47 @@ def derive_certificate_language_soundness_from_checker_kernel(
     """
 
     return certify_certificate_language_soundness(
-        ordinary_taylor_sound=bool(
-            getattr(checker_kernel_support, "ordinary_taylor_sound", False)
+        ordinary_taylor_sound=getattr(
+            checker_kernel_support,
+            "ordinary_taylor_sound",
+            False,
         ),
-        levi_civita_sound=bool(
-            getattr(checker_kernel_support, "levi_civita_sound", False)
+        levi_civita_sound=getattr(
+            checker_kernel_support,
+            "levi_civita_sound",
+            False,
         ),
-        spatial_ks_sound=bool(
-            getattr(checker_kernel_support, "spatial_ks_sound", False)
+        spatial_ks_sound=getattr(checker_kernel_support, "spatial_ks_sound", False),
+        fuchsian_stop_sound=getattr(
+            checker_kernel_support,
+            "fuchsian_stop_sound",
+            False,
         ),
-        fuchsian_stop_sound=bool(
-            getattr(checker_kernel_support, "fuchsian_stop_sound", False)
+        generalized_fuchsian_stop_sound=getattr(
+            checker_kernel_support,
+            "generalized_fuchsian_stop_sound",
+            False,
         ),
-        generalized_fuchsian_stop_sound=bool(
-            getattr(
-                checker_kernel_support,
-                "generalized_fuchsian_stop_sound",
-                False,
-            )
+        transition_sound=getattr(checker_kernel_support, "transition_sound", False),
+        branch_union_sound=getattr(
+            checker_kernel_support,
+            "branch_union_sound",
+            False,
         ),
-        transition_sound=bool(
-            getattr(checker_kernel_support, "transition_sound", False)
+        chart_chain_sound=getattr(
+            checker_kernel_support,
+            "chart_chain_sound",
+            False,
         ),
-        branch_union_sound=bool(
-            getattr(checker_kernel_support, "branch_union_sound", False)
+        verifier_kernel_sound=getattr(
+            checker_kernel_support,
+            "verifier_kernel_sound",
+            False,
         ),
-        chart_chain_sound=bool(
-            getattr(checker_kernel_support, "chart_chain_sound", False)
-        ),
-        verifier_kernel_sound=bool(
-            getattr(checker_kernel_support, "verifier_kernel_sound", False)
-        ),
-        proof_grade_arithmetic_backend_sound=bool(
-            getattr(
-                checker_kernel_support,
-                "proof_grade_arithmetic_backend_sound",
-                False,
-            )
+        proof_grade_arithmetic_backend_sound=getattr(
+            checker_kernel_support,
+            "proof_grade_arithmetic_backend_sound",
+            False,
         ),
         witness_source=str(witness_source),
     )
@@ -2595,6 +3024,9 @@ def certify_computable_atlas_certificate_enumeration(
     finite_target_query_terminates_certified: bool = False,
     source_theorem_id: str = "",
     source_theorem_proof_certified: bool = False,
+    source_theorem_dimension: int = 0,
+    source_theorem_input_model: str = "",
+    source_total_collision_policy_id: str = "",
     finite_target_chart_families: tuple[str, ...] = (),
     finite_target_allowed_outcomes: tuple[str, ...] = (),
     witness_source: str = "computable_atlas_certificate_enumeration",
@@ -2602,30 +3034,70 @@ def certify_computable_atlas_certificate_enumeration(
     """Record fair enumeration evidence for computable-input atlas certificates."""
 
     return ComputableAtlasCertificateEnumerationCertificate(
-        chart_family_words_enumerated=bool(chart_family_words_enumerated),
-        pair_labels_enumerated=bool(pair_labels_enumerated),
-        rational_domains_enumerated=bool(rational_domains_enumerated),
-        truncation_orders_enumerated=bool(truncation_orders_enumerated),
-        rational_or_interval_coefficients_enumerated=bool(
-            rational_or_interval_coefficients_enumerated
+        chart_family_words_enumerated=_strict_bool(
+            chart_family_words_enumerated,
+            "chart_family_words_enumerated",
         ),
-        rational_tail_budgets_enumerated=bool(rational_tail_budgets_enumerated),
-        generalized_fuchsian_exponent_data_enumerated=bool(
-            generalized_fuchsian_exponent_data_enumerated
+        pair_labels_enumerated=_strict_bool(
+            pair_labels_enumerated,
+            "pair_labels_enumerated",
         ),
-        fuchsian_selector_constants_enumerated=bool(
-            fuchsian_selector_constants_enumerated
+        rational_domains_enumerated=_strict_bool(
+            rational_domains_enumerated,
+            "rational_domains_enumerated",
         ),
-        cauchy_majorants_enumerated=bool(cauchy_majorants_enumerated),
-        transition_witnesses_enumerated=bool(transition_witnesses_enumerated),
-        collision_policy_data_enumerated=bool(collision_policy_data_enumerated),
-        independent_checker_dovetailed=bool(independent_checker_dovetailed),
-        dovetailing_fairness_certified=bool(dovetailing_fairness_certified),
-        finite_target_query_terminates_certified=bool(
-            finite_target_query_terminates_certified
+        truncation_orders_enumerated=_strict_bool(
+            truncation_orders_enumerated,
+            "truncation_orders_enumerated",
+        ),
+        rational_or_interval_coefficients_enumerated=_strict_bool(
+            rational_or_interval_coefficients_enumerated,
+            "rational_or_interval_coefficients_enumerated",
+        ),
+        rational_tail_budgets_enumerated=_strict_bool(
+            rational_tail_budgets_enumerated,
+            "rational_tail_budgets_enumerated",
+        ),
+        generalized_fuchsian_exponent_data_enumerated=_strict_bool(
+            generalized_fuchsian_exponent_data_enumerated,
+            "generalized_fuchsian_exponent_data_enumerated",
+        ),
+        fuchsian_selector_constants_enumerated=_strict_bool(
+            fuchsian_selector_constants_enumerated,
+            "fuchsian_selector_constants_enumerated",
+        ),
+        cauchy_majorants_enumerated=_strict_bool(
+            cauchy_majorants_enumerated,
+            "cauchy_majorants_enumerated",
+        ),
+        transition_witnesses_enumerated=_strict_bool(
+            transition_witnesses_enumerated,
+            "transition_witnesses_enumerated",
+        ),
+        collision_policy_data_enumerated=_strict_bool(
+            collision_policy_data_enumerated,
+            "collision_policy_data_enumerated",
+        ),
+        independent_checker_dovetailed=_strict_bool(
+            independent_checker_dovetailed,
+            "independent_checker_dovetailed",
+        ),
+        dovetailing_fairness_certified=_strict_bool(
+            dovetailing_fairness_certified,
+            "dovetailing_fairness_certified",
+        ),
+        finite_target_query_terminates_certified=_strict_bool(
+            finite_target_query_terminates_certified,
+            "finite_target_query_terminates_certified",
         ),
         source_theorem_id=str(source_theorem_id),
-        source_theorem_proof_certified=bool(source_theorem_proof_certified),
+        source_theorem_proof_certified=_strict_bool(
+            source_theorem_proof_certified,
+            "source_theorem_proof_certified",
+        ),
+        source_theorem_dimension=int(source_theorem_dimension),
+        source_theorem_input_model=str(source_theorem_input_model),
+        source_total_collision_policy_id=str(source_total_collision_policy_id),
         finite_target_chart_families=tuple(str(item) for item in finite_target_chart_families),
         finite_target_allowed_outcomes=tuple(str(item) for item in finite_target_allowed_outcomes),
         witness_source=str(witness_source),
@@ -2646,9 +3118,48 @@ def derive_computable_atlas_certificate_enumeration_from_pointwise_theorem(
     theorem itself is proof-certified.
     """
 
+    if not isinstance(
+        pointwise_open_time_theorem,
+        PointwiseOpenTimeLocallyFiniteAtlasTheoremCertificate,
+    ):
+        return certify_computable_atlas_certificate_enumeration(
+            source_theorem_id=str(getattr(pointwise_open_time_theorem, "theorem_id", "")),
+            source_theorem_proof_certified=(
+                getattr(pointwise_open_time_theorem, "proof_certified", False)
+                is True
+            ),
+            source_theorem_dimension=int(
+                getattr(pointwise_open_time_theorem, "dimension", 0)
+            ),
+            source_theorem_input_model=str(
+                getattr(pointwise_open_time_theorem, "input_model", "")
+            ),
+            source_total_collision_policy_id=str(
+                getattr(pointwise_open_time_theorem, "total_collision_policy_id", "")
+            ),
+            finite_target_chart_families=tuple(
+                str(item)
+                for item in getattr(
+                    getattr(pointwise_open_time_theorem, "finite_target_theorem", None),
+                    "chart_families",
+                    (),
+                )
+                or ()
+            ),
+            finite_target_allowed_outcomes=tuple(
+                str(item)
+                for item in getattr(
+                    getattr(pointwise_open_time_theorem, "finite_target_theorem", None),
+                    "allowed_outcomes",
+                    (),
+                )
+                or ()
+            ),
+            witness_source=str(witness_source),
+        )
     theorem_id = str(getattr(pointwise_open_time_theorem, "theorem_id", ""))
-    proof_certified = bool(
-        getattr(pointwise_open_time_theorem, "proof_certified", False)
+    proof_certified = (
+        getattr(pointwise_open_time_theorem, "proof_certified", False) is True
     )
     finite_target_theorem = getattr(
         pointwise_open_time_theorem,
@@ -2663,18 +3174,12 @@ def derive_computable_atlas_certificate_enumeration_from_pointwise_theorem(
         str(item)
         for item in getattr(finite_target_theorem, "allowed_outcomes", ()) or ()
     )
-    required_chart_families = {
-        "ordinary_taylor",
-        "planar_levi_civita_binary",
-        "spatial_ks_binary",
-        "total_collision_stop",
-    }
-    required_outcomes = {
-        "finite_atlas_reaches_target",
-        "unselected_total_collision_before_target",
-    }
-    chart_grammar_certified = required_chart_families.issubset(set(chart_families))
-    outcome_grammar_certified = required_outcomes.issubset(set(allowed_outcomes))
+    chart_grammar_certified = set(chart_families) == set(
+        POINTWISE_FINITE_TARGET_CHART_FAMILIES
+    )
+    outcome_grammar_certified = (
+        tuple(allowed_outcomes) == POINTWISE_FINITE_TARGET_ALLOWED_OUTCOMES
+    )
     input_model = str(getattr(pointwise_open_time_theorem, "input_model", ""))
     computable_point_input = "computable" in input_model or "exact_point" in input_model
     dimension_supported = int(getattr(pointwise_open_time_theorem, "dimension", 0)) in {
@@ -2706,6 +3211,13 @@ def derive_computable_atlas_certificate_enumeration_from_pointwise_theorem(
         finite_target_query_terminates_certified=base_certified,
         source_theorem_id=theorem_id,
         source_theorem_proof_certified=proof_certified,
+        source_theorem_dimension=int(
+            getattr(pointwise_open_time_theorem, "dimension", 0)
+        ),
+        source_theorem_input_model=input_model,
+        source_total_collision_policy_id=str(
+            getattr(pointwise_open_time_theorem, "total_collision_policy_id", "")
+        ),
         finite_target_chart_families=chart_families,
         finite_target_allowed_outcomes=allowed_outcomes,
         witness_source=str(witness_source),
@@ -2724,17 +3236,45 @@ def certify_maximal_classical_total_collision_policy(
     """Record maximal-classical total-collision stop semantics."""
 
     policy_id = str(policy_id)
+    source_theorem_id = str(getattr(pointwise_open_time_theorem, "theorem_id", ""))
+    source_theorem_proof_certified = bool(
+        isinstance(
+            pointwise_open_time_theorem,
+            PointwiseOpenTimeLocallyFiniteAtlasTheoremCertificate,
+        )
+        and getattr(pointwise_open_time_theorem, "proof_certified", False) is True
+    )
     theorem_policy_id = (
         str(getattr(pointwise_open_time_theorem, "total_collision_policy_id", ""))
         if pointwise_open_time_theorem is not None
-        else policy_id
+        else ""
     )
     return MaximalClassicalTotalCollisionPolicyCertificate(
         policy_id=policy_id,
-        stop_at_unselected_total_collision=bool(stop_at_unselected_total_collision),
-        selected_continuation_forbidden=bool(selected_continuation_forbidden),
-        maximal_classical_domain_certified=bool(maximal_classical_domain_certified),
-        pointwise_theorem_policy_matches=bool(theorem_policy_id == policy_id),
+        stop_at_unselected_total_collision=_strict_bool(
+            stop_at_unselected_total_collision,
+            "stop_at_unselected_total_collision",
+        ),
+        selected_continuation_forbidden=_strict_bool(
+            selected_continuation_forbidden,
+            "selected_continuation_forbidden",
+        ),
+        maximal_classical_domain_certified=_strict_bool(
+            maximal_classical_domain_certified,
+            "maximal_classical_domain_certified",
+        ),
+        pointwise_theorem_policy_matches=bool(
+            source_theorem_proof_certified and theorem_policy_id == policy_id
+        ),
+        source_theorem_id=source_theorem_id,
+        source_theorem_proof_certified=source_theorem_proof_certified,
+        source_theorem_dimension=int(
+            getattr(pointwise_open_time_theorem, "dimension", 0)
+        ),
+        source_theorem_input_model=str(
+            getattr(pointwise_open_time_theorem, "input_model", "")
+        ),
+        source_total_collision_policy_id=str(theorem_policy_id),
         witness_source=str(witness_source),
     )
 
@@ -2816,8 +3356,13 @@ def certify_pointwise_regularized_atlas_closed_form_theorem(
         ),
         TheoremPipelineObligation(
             obligation="pointwise_open_time_atlas_proof",
-            certified=bool(
-                getattr(pointwise_open_time_theorem, "proof_certified", False)
+            certified=(
+                isinstance(
+                    pointwise_open_time_theorem,
+                    PointwiseOpenTimeLocallyFiniteAtlasTheoremCertificate,
+                )
+                and getattr(pointwise_open_time_theorem, "proof_certified", False)
+                is True
             ),
             source=(
                 "PointwiseOpenTimeLocallyFiniteAtlasTheoremCertificate."
@@ -2827,33 +3372,71 @@ def certify_pointwise_regularized_atlas_closed_form_theorem(
         ),
         TheoremPipelineObligation(
             obligation="certificate_language_soundness",
-            certified=certificate_language_soundness.proof_certified,
-            source="CertificateLanguageSoundnessCertificate.proof_certified",
+            certified=(
+                isinstance(
+                    certificate_language_soundness,
+                    CertificateLanguageSoundnessCertificate,
+                )
+                and certificate_language_soundness.proof_certified is True
+                and certificate_language_soundness.checker_kernel_derived is True
+            ),
+            source="CertificateLanguageSoundnessCertificate.checker_kernel_derived",
             detail=(
                 "missing="
-                f"{certificate_language_soundness.missing_obligations}"
+                f"{certificate_language_soundness.missing_obligations}; "
+                "checker_kernel_derived="
+                f"{certificate_language_soundness.checker_kernel_derived}"
             ),
         ),
         TheoremPipelineObligation(
             obligation="computable_atlas_certificate_enumeration",
-            certified=computable_certificate_enumeration.proof_certified,
+            certified=(
+                isinstance(
+                    computable_certificate_enumeration,
+                    ComputableAtlasCertificateEnumerationCertificate,
+                )
+                and computable_certificate_enumeration.proof_certified is True
+                and computable_certificate_enumeration.pointwise_theorem_derived
+                is True
+                and _enumeration_source_matches_pointwise_theorem(
+                    computable_certificate_enumeration,
+                    pointwise_open_time_theorem,
+                )
+            ),
             source=(
-                "ComputableAtlasCertificateEnumerationCertificate.proof_certified"
+                "ComputableAtlasCertificateEnumerationCertificate."
+                "pointwise_theorem_derived"
             ),
             detail=(
                 "missing="
-                f"{computable_certificate_enumeration.missing_obligations}"
+                f"{computable_certificate_enumeration.missing_obligations}; "
+                "pointwise_theorem_derived="
+                f"{computable_certificate_enumeration.pointwise_theorem_derived}; "
+                "source_matches_theorem="
+                f"{_enumeration_source_matches_pointwise_theorem(computable_certificate_enumeration, pointwise_open_time_theorem)}"
             ),
         ),
         TheoremPipelineObligation(
             obligation="maximal_classical_total_collision_policy",
-            certified=policy.proof_certified,
+            certified=(
+                isinstance(
+                    policy,
+                    MaximalClassicalTotalCollisionPolicyCertificate,
+                )
+                and policy.proof_certified is True
+                and _policy_source_matches_pointwise_theorem(
+                    policy,
+                    pointwise_open_time_theorem,
+                )
+            ),
             source=(
                 "MaximalClassicalTotalCollisionPolicyCertificate.proof_certified"
             ),
             detail=(
                 f"policy_id={policy.policy_id}; "
-                f"missing={policy.missing_obligations}"
+                f"missing={policy.missing_obligations}; "
+                "source_matches_theorem="
+                f"{_policy_source_matches_pointwise_theorem(policy, pointwise_open_time_theorem)}"
             ),
         ),
         TheoremPipelineObligation(
@@ -3030,12 +3613,17 @@ def certify_sundman_general_solution_theorem_witness(
         recurrence_closure=recurrence_closure,
         scope_witness=general_scope_witness,
         collision_witness=collision_witness,
-        collision_continuation_certified=bool(collision_continuation_certified),
-        binary_collision_continuation_certified=bool(
-            binary_collision_continuation_certified
+        collision_continuation_certified=_strict_bool(
+            collision_continuation_certified,
+            "collision_continuation_certified",
         ),
-        triple_collision_continuation_certified=bool(
-            triple_collision_continuation_certified
+        binary_collision_continuation_certified=_strict_bool(
+            binary_collision_continuation_certified,
+            "binary_collision_continuation_certified",
+        ),
+        triple_collision_continuation_certified=_strict_bool(
+            triple_collision_continuation_certified,
+            "triple_collision_continuation_certified",
         ),
         witness_source=str(witness_source),
     )
@@ -3220,8 +3808,10 @@ def _scope_requirement_statuses_from_constructor_theorem(
 
 def _is_open_time_locally_finite_theorem(theorem_certificate: Any) -> bool:
     return bool(
-        type(theorem_certificate).__name__
-        == "OpenTimeLocallyFiniteAtlasTheoremCertificate"
+        isinstance(
+            theorem_certificate,
+            OpenTimeLocallyFiniteAtlasTheoremCertificate,
+        )
         and getattr(theorem_certificate, "theorem_id", None)
         == "open_time_locally_finite_atlas"
     )
@@ -3229,8 +3819,10 @@ def _is_open_time_locally_finite_theorem(theorem_certificate: Any) -> bool:
 
 def _is_pointwise_open_time_locally_finite_theorem(theorem_certificate: Any) -> bool:
     return bool(
-        type(theorem_certificate).__name__
-        == "PointwiseOpenTimeLocallyFiniteAtlasTheoremCertificate"
+        isinstance(
+            theorem_certificate,
+            PointwiseOpenTimeLocallyFiniteAtlasTheoremCertificate,
+        )
         and getattr(theorem_certificate, "theorem_id", None)
         == "pointwise_open_time_locally_finite_atlas"
     )
@@ -3240,10 +3832,77 @@ def _is_pointwise_regularized_atlas_closed_form_theorem(
     theorem_certificate: Any,
 ) -> bool:
     return bool(
-        type(theorem_certificate).__name__
-        == "PointwiseRegularizedAtlasClosedFormTheoremCertificate"
+        isinstance(
+            theorem_certificate,
+            PointwiseRegularizedAtlasClosedFormTheoremCertificate,
+        )
         and getattr(theorem_certificate, "theorem_id", None)
         == "pointwise_regularized_atlas_closed_form"
+    )
+
+
+def _is_general_solution_theorem(theorem_certificate: Any) -> bool:
+    return bool(
+        isinstance(theorem_certificate, GeneralSolutionTheoremCertificate)
+        and getattr(theorem_certificate, "theorem_id", None)
+        == "constructive_sundman_atlas_general_solution"
+    )
+
+
+def _enumeration_source_matches_pointwise_theorem(
+    enumeration: Any,
+    theorem_certificate: Any,
+) -> bool:
+    if not isinstance(
+        theorem_certificate,
+        PointwiseOpenTimeLocallyFiniteAtlasTheoremCertificate,
+    ):
+        return False
+    finite_target_theorem = getattr(theorem_certificate, "finite_target_theorem", None)
+    theorem_chart_families = tuple(
+        str(item)
+        for item in getattr(finite_target_theorem, "chart_families", ()) or ()
+    )
+    theorem_allowed_outcomes = tuple(
+        str(item)
+        for item in getattr(finite_target_theorem, "allowed_outcomes", ()) or ()
+    )
+    return bool(
+        isinstance(enumeration, ComputableAtlasCertificateEnumerationCertificate)
+        and enumeration.source_theorem_id == theorem_certificate.theorem_id
+        and enumeration.source_theorem_proof_certified is True
+        and theorem_certificate.proof_certified is True
+        and enumeration.source_theorem_dimension == theorem_certificate.dimension
+        and enumeration.source_theorem_input_model == theorem_certificate.input_model
+        and enumeration.source_total_collision_policy_id
+        == theorem_certificate.total_collision_policy_id
+        and tuple(enumeration.finite_target_chart_families) == theorem_chart_families
+        and (
+            tuple(enumeration.finite_target_allowed_outcomes)
+            == theorem_allowed_outcomes
+        )
+    )
+
+
+def _policy_source_matches_pointwise_theorem(
+    policy: Any,
+    theorem_certificate: Any,
+) -> bool:
+    if not isinstance(
+        theorem_certificate,
+        PointwiseOpenTimeLocallyFiniteAtlasTheoremCertificate,
+    ):
+        return False
+    return bool(
+        isinstance(policy, MaximalClassicalTotalCollisionPolicyCertificate)
+        and policy.source_theorem_id == theorem_certificate.theorem_id
+        and policy.source_theorem_proof_certified is True
+        and theorem_certificate.proof_certified is True
+        and policy.source_theorem_dimension == theorem_certificate.dimension
+        and policy.source_theorem_input_model == theorem_certificate.input_model
+        and policy.source_total_collision_policy_id
+        == theorem_certificate.total_collision_policy_id
+        and policy.policy_id == theorem_certificate.total_collision_policy_id
     )
 
 
@@ -3268,6 +3927,13 @@ def _constructor_theorem_blocking_obligations(
     theorem_certificate: Any,
 ) -> tuple[str, ...]:
     missing = list(getattr(theorem_certificate, "missing_obligations", ()))
+    if not (
+        _is_open_time_locally_finite_theorem(theorem_certificate)
+        or _is_pointwise_open_time_locally_finite_theorem(theorem_certificate)
+        or _is_pointwise_regularized_atlas_closed_form_theorem(theorem_certificate)
+        or _is_general_solution_theorem(theorem_certificate)
+    ):
+        missing.append("general_solution_theorem_constructor_certificate")
     missing.extend(
         tuple(getattr(theorem_certificate, "analytic_lemma_audit_blockers", ()))
     )
@@ -3281,6 +3947,8 @@ def _constructor_theorem_blocking_obligations(
                 )
             )
         )
+        if getattr(theorem_certificate, "scoped_set_valued_constructor_only", False):
+            missing.append("arbitrary_interval_input_partition_generation")
         missing.extend(
             f"independent_chart_verifier_arithmetic:{blocker}"
             for blocker in getattr(
@@ -3318,13 +3986,18 @@ def _constructor_theorem_scope_witness_field(theorem_certificate: Any) -> str:
             "OpenTimeLocallyFiniteAtlasTheoremCertificate."
             "arbitrary_finite_target_completeness_certified"
         )
+    if not _is_general_solution_theorem(theorem_certificate):
+        return "unsupported_constructor_theorem_certificate"
     return "GeneralSolutionTheoremCertificate.full_general_solution_certified"
 
 
 def _constructor_theorem_global_series_certified(theorem_certificate: Any) -> bool:
     if _is_open_time_locally_finite_theorem(theorem_certificate):
         return False
-    return bool(getattr(theorem_certificate, "regime_theorem_certified", False))
+    return bool(
+        _is_general_solution_theorem(theorem_certificate)
+        and theorem_certificate.regime_theorem_certified
+    )
 
 
 def _constructor_theorem_full_general_solution_certified(
@@ -3332,26 +4005,40 @@ def _constructor_theorem_full_general_solution_certified(
 ) -> bool:
     if _is_pointwise_regularized_atlas_closed_form_theorem(theorem_certificate):
         return bool(
-            getattr(theorem_certificate, "proof_certified", False)
+            getattr(theorem_certificate, "proof_certified", False) is True
             and not _constructor_theorem_blocking_obligations(theorem_certificate)
         )
     if _is_pointwise_open_time_locally_finite_theorem(theorem_certificate):
         return bool(
-            getattr(theorem_certificate, "proof_certified", False)
+            getattr(theorem_certificate, "proof_certified", False) is True
             and not _constructor_theorem_blocking_obligations(theorem_certificate)
         )
     if _is_open_time_locally_finite_theorem(theorem_certificate):
         return bool(
-            getattr(theorem_certificate, "proof_certified", False)
+            getattr(theorem_certificate, "proof_certified", False) is True
             and not _constructor_theorem_blocking_obligations(theorem_certificate)
         )
-    return bool(getattr(theorem_certificate, "full_general_solution_certified", False))
+    return bool(
+        _is_general_solution_theorem(theorem_certificate)
+        and theorem_certificate.full_general_solution_certified
+    )
 
 
 def _constructor_theorem_independent_verifier_certified(
     theorem_certificate: Any,
 ) -> bool:
-    return bool(getattr(theorem_certificate, "independent_chart_verifier_certified", False))
+    verifier = getattr(
+        theorem_certificate,
+        "independent_chart_verifier_certificate",
+        None,
+    )
+    return bool(
+        getattr(theorem_certificate, "independent_chart_verifier_certified", False)
+        is True
+        and type(verifier) is IndependentChartVerifierCertificate
+        and verifier.certified is True
+        and verifier.proof_grade_finite_atlas_bundle_certified is True
+    )
 
 
 def _constructor_theorem_regularized_atlas_blockers(
@@ -3359,16 +4046,16 @@ def _constructor_theorem_regularized_atlas_blockers(
 ) -> tuple[str, ...]:
     blockers = list(_constructor_theorem_blocking_obligations(theorem_certificate))
     if _is_pointwise_regularized_atlas_closed_form_theorem(theorem_certificate):
-        if not bool(getattr(theorem_certificate, "proof_certified", False)):
+        if getattr(theorem_certificate, "proof_certified", False) is not True:
             blockers.append("pointwise_regularized_atlas_closed_form_proof")
         return tuple(dict.fromkeys(str(blocker) for blocker in blockers if blocker))
     if _is_pointwise_open_time_locally_finite_theorem(theorem_certificate):
-        if not bool(getattr(theorem_certificate, "proof_certified", False)):
+        if getattr(theorem_certificate, "proof_certified", False) is not True:
             blockers.append("pointwise_open_time_atlas_proof")
         return tuple(dict.fromkeys(str(blocker) for blocker in blockers if blocker))
     if not _is_open_time_locally_finite_theorem(theorem_certificate):
         blockers.append("open_time_locally_finite_atlas_proof")
-    if not bool(getattr(theorem_certificate, "proof_certified", False)):
+    if getattr(theorem_certificate, "proof_certified", False) is not True:
         blockers.append("audited_or_machine_checked_open_time_atlas_proof")
     if not _constructor_theorem_independent_verifier_certified(theorem_certificate):
         blockers.append("independent_chart_verifier")
@@ -3467,6 +4154,14 @@ def certify_general_closed_form_solution_target(
             if _is_pointwise_open_time_locally_finite_theorem(
                 general_theorem_certificate
             ):
+                if not isinstance(
+                    certificate_language_soundness_certificate,
+                    CertificateLanguageSoundnessCertificate,
+                ):
+                    theorem_missing = (
+                        *theorem_missing,
+                        "certificate_language_soundness_constructor_certificate",
+                    )
                 if not bool(
                     getattr(
                         certificate_language_soundness_certificate,
@@ -3486,6 +4181,28 @@ def certify_general_closed_form_solution_target(
                             )
                         ),
                     )
+                elif not bool(
+                    getattr(
+                        certificate_language_soundness_certificate,
+                        "checker_kernel_derived",
+                        False,
+                    )
+                ):
+                    theorem_missing = (
+                        *theorem_missing,
+                        "certificate_language_soundness_checker_kernel_derived",
+                    )
+                if not isinstance(
+                    computable_atlas_enumeration_certificate,
+                    ComputableAtlasCertificateEnumerationCertificate,
+                ):
+                    theorem_missing = (
+                        *theorem_missing,
+                        (
+                            "computable_atlas_certificate_enumeration_"
+                            "constructor_certificate"
+                        ),
+                    )
                 if not bool(
                     getattr(
                         computable_atlas_enumeration_certificate,
@@ -3503,6 +4220,31 @@ def certify_general_closed_form_solution_target(
                                 "missing_obligations",
                                 (),
                             )
+                        ),
+                    )
+                elif not bool(
+                    getattr(
+                        computable_atlas_enumeration_certificate,
+                        "pointwise_theorem_derived",
+                        False,
+                    )
+                ):
+                    theorem_missing = (
+                        *theorem_missing,
+                        (
+                            "computable_atlas_certificate_enumeration_"
+                            "pointwise_theorem_derived"
+                        ),
+                    )
+                elif not _enumeration_source_matches_pointwise_theorem(
+                    computable_atlas_enumeration_certificate,
+                    general_theorem_certificate,
+                ):
+                    theorem_missing = (
+                        *theorem_missing,
+                        (
+                            "computable_atlas_certificate_enumeration_"
+                            "source_matches_theorem"
                         ),
                     )
                 theorem_missing = tuple(dict.fromkeys(theorem_missing))
@@ -3629,7 +4371,12 @@ def certify_general_closed_form_solution_target(
         )
     delegated_scope_witness = getattr(witness, "scope_witness", None)
     if general_scope_witness is not None:
-        scope_requirement_statuses = general_scope_witness.requirement_statuses
+        if hasattr(general_scope_witness, "requirement_statuses"):
+            scope_requirement_statuses = general_scope_witness.requirement_statuses
+        else:
+            scope_requirement_statuses = _scope_requirement_statuses_from_witness(
+                general_scope_witness,
+            )
     elif general_theorem_certificate is not None:
         scope_requirement_statuses = _scope_requirement_statuses_from_constructor_theorem(
             general_theorem_certificate,
@@ -3720,7 +4467,7 @@ def certify_general_closed_form_solution_target(
             closed_form_certificate.series_route_certified
             or closed_form_certificate.atlas_route_certified
         )
-        and all(status.certified for status in requirement_statuses)
+        and _requirement_status_ledger_certified(requirement_statuses)
     ):
         closed_form_certificate = ClosedFormTargetCertificate(
             requested_class=closed_form_certificate.requested_class,

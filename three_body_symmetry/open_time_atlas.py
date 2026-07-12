@@ -43,6 +43,8 @@ from .finite_target_completeness import (
     SuppliedRecursiveStratifiedSetValuedConstructorCompletenessCertificate,
     UniformMarginSetValuedConstructorCompletenessCertificate,
     ValidatedSetValuedConstructorCompletenessTheoremCertificate,
+    certify_constructor_derived_recursive_stratified_set_valued_constructor_completeness,
+    certify_constructor_pair_derived_recursive_stratified_set_valued_constructor_completeness,
     certify_finite_target_certificate_search_completeness,
     certify_finite_target_completeness_theorem,
     recursive_constructor_source_scope,
@@ -52,6 +54,8 @@ from .general_solution_theorem import (
     CompactTimeCoverageCertificate,
     PositiveMassNoncollisionInputDomainCertificate,
     TheoremPipelineObligation,
+    _theorem_pipeline_obligation_ledger_certified,
+    _theorem_pipeline_obligation_ledger_missing,
     certify_compact_ordinary_binary_finite_atlas,
     certify_compact_time_real_line_coverage,
     certify_positive_mass_noncollision_input_domain,
@@ -60,6 +64,7 @@ from .fuchsian import construct_fuchsian_shape_branch
 from .ks_binary_chart import SpatialKSBinaryChartState, ks_binary_chart_to_spatial
 from .ks_binary_series import construct_spatial_ks_binary_taylor_solution
 from .series import construct_taylor_solution
+from .validated_atlas import finite_time_selector_trace_binding_token
 
 
 FINITE_TARGET_OUTCOMES = (
@@ -86,6 +91,23 @@ TOTAL_COLLISION_POLICY_IDS = (
 )
 
 
+def _open_time_obligation_ledger_certified(
+    obligations: tuple[Any, ...],
+) -> bool:
+    return _theorem_pipeline_obligation_ledger_certified(obligations)
+
+
+def _open_time_obligation_ledger_missing(
+    obligations: tuple[Any, ...],
+    *,
+    ledger_name: str,
+) -> tuple[str, ...]:
+    return _theorem_pipeline_obligation_ledger_missing(
+        obligations,
+        ledger_name=ledger_name,
+    )
+
+
 @dataclass(frozen=True)
 class AnalyticTheoremCertificate:
     """A theorem-level analytic lemma with the proof idea kept in prose."""
@@ -97,6 +119,8 @@ class AnalyticTheoremCertificate:
     source: str = "open_time_atlas_theorem"
     proof_mode: str = "declared_only"
     internally_proven: bool = False
+    externally_audited: bool = False
+    machine_checked: bool = False
 
     @property
     def certified(self) -> bool:
@@ -104,6 +128,13 @@ class AnalyticTheoremCertificate:
 
     @property
     def proof_certified(self) -> bool:
+        return bool(
+            self.certified
+            and (self.externally_audited or self.machine_checked)
+        )
+
+    @property
+    def internally_supported(self) -> bool:
         return bool(
             self.certified
             and self.internally_proven
@@ -122,14 +153,14 @@ class TotalCollisionPolicyCertificate:
 
     @property
     def certified(self) -> bool:
+        stop_policy = self.policy_id.startswith("maximal_classical_stop")
+        selected_policy = self.policy_id.startswith("selected_")
         return bool(
             self.policy_id in TOTAL_COLLISION_POLICY_IDS
+            and self.stop_at_unselected_total_collision is stop_policy
+            and self.selected_continuation_allowed is selected_policy
             and (
-                self.stop_at_unselected_total_collision
-                or self.selected_continuation_allowed
-            )
-            and (
-                not self.selected_continuation_allowed
+                self.selected_continuation_allowed is not True
                 or bool(self.selector_policy_id)
             )
         )
@@ -181,12 +212,7 @@ class FiniteTargetAtlasOrStopCertificate:
     def certified(self) -> bool:
         return bool(
             self.outcome_certified
-            and self.obligations
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
-            )
+            and _open_time_obligation_ledger_certified(self.obligations)
         )
 
     @property
@@ -195,10 +221,9 @@ class FiniteTargetAtlasOrStopCertificate:
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+        return _open_time_obligation_ledger_missing(
+            self.obligations,
+            ledger_name="finite_target_atlas_or_stop",
         )
 
     @property
@@ -223,13 +248,8 @@ class TotalCollisionStopCertificate:
 
     @property
     def certified(self) -> bool:
-        return bool(
-            self.obligations
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
-            )
+        return _open_time_obligation_ledger_certified(
+            self.obligations,
         )
 
     @property
@@ -238,10 +258,9 @@ class TotalCollisionStopCertificate:
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+        return _open_time_obligation_ledger_missing(
+            self.obligations,
+            ledger_name="total_collision_stop",
         )
 
 
@@ -268,7 +287,31 @@ class CompactIntervalAtlasOrStopCertificate:
                 self.past_target_certificate,
                 self.future_target_certificate,
             )
-            if certificate is not None
+            if isinstance(certificate, FiniteTargetAtlasOrStopCertificate)
+        )
+
+    @property
+    def component_types_certified(self) -> bool:
+        return bool(
+            isinstance(self.total_collision_policy, TotalCollisionPolicyCertificate)
+            and (
+                self.past_target_certificate is None
+                or isinstance(
+                    self.past_target_certificate,
+                    FiniteTargetAtlasOrStopCertificate,
+                )
+            )
+            and (
+                self.future_target_certificate is None
+                or isinstance(
+                    self.future_target_certificate,
+                    FiniteTargetAtlasOrStopCertificate,
+                )
+            )
+            and (
+                self.stop_certificate is None
+                or isinstance(self.stop_certificate, TotalCollisionStopCertificate)
+            )
         )
 
     @property
@@ -292,30 +335,51 @@ class CompactIntervalAtlasOrStopCertificate:
     @property
     def certified(self) -> bool:
         return bool(
-            self.outcome_certified
-            and self.obligations
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
-            )
+            self.component_types_certified
+            and self.outcome_certified
+            and _open_time_obligation_ledger_certified(self.obligations)
         )
 
     @property
     def proof_certified(self) -> bool:
         return bool(
             self.certified
+            and self.component_types_certified
             and self.finite_target_certificates
             and all(certificate.proof_certified for certificate in self.finite_target_certificates)
         )
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+        type_missing = []
+        if not isinstance(self.total_collision_policy, TotalCollisionPolicyCertificate):
+            type_missing.append("compact_interval_total_collision_policy_type")
+        if not (
+            self.past_target_certificate is None
+            or isinstance(
+                self.past_target_certificate,
+                FiniteTargetAtlasOrStopCertificate,
+            )
+        ):
+            type_missing.append("compact_interval_past_finite_target_type")
+        if not (
+            self.future_target_certificate is None
+            or isinstance(
+                self.future_target_certificate,
+                FiniteTargetAtlasOrStopCertificate,
+            )
+        ):
+            type_missing.append("compact_interval_future_finite_target_type")
+        if not (
+            self.stop_certificate is None
+            or isinstance(self.stop_certificate, TotalCollisionStopCertificate)
+        ):
+            type_missing.append("compact_interval_stop_certificate_type")
+        ledger_missing = _open_time_obligation_ledger_missing(
+            self.obligations,
+            ledger_name="compact_interval_atlas_or_stop",
         )
+        return tuple(dict.fromkeys((*type_missing, *ledger_missing)))
 
 
 @dataclass(frozen=True)
@@ -332,13 +396,30 @@ class CompactIntervalExhaustionFamilyCertificate:
     obligations: tuple[TheoremPipelineObligation, ...]
 
     @property
+    def component_types_certified(self) -> bool:
+        return bool(
+            isinstance(self.compact_time_certificate, CompactTimeCoverageCertificate)
+            and self.prefix_certificates
+            and all(
+                isinstance(certificate, CompactIntervalAtlasOrStopCertificate)
+                for certificate in self.prefix_certificates
+            )
+            and isinstance(
+                self.finite_target_reduction_certificate,
+                AnalyticTheoremCertificate,
+            )
+            and isinstance(
+                self.local_finiteness_certificate,
+                AnalyticTheoremCertificate,
+            )
+        )
+
+    @property
     def certified(self) -> bool:
         return bool(
-            self.obligations
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
+            self.component_types_certified
+            and _open_time_obligation_ledger_certified(
+                self.obligations,
             )
         )
 
@@ -346,6 +427,7 @@ class CompactIntervalExhaustionFamilyCertificate:
     def proof_certified(self) -> bool:
         return bool(
             self.certified
+            and self.component_types_certified
             and self.prefix_certificates
             and all(certificate.proof_certified for certificate in self.prefix_certificates)
             and self.finite_target_reduction_certificate.proof_certified
@@ -354,11 +436,33 @@ class CompactIntervalExhaustionFamilyCertificate:
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+        type_missing = []
+        if not isinstance(
+            self.compact_time_certificate,
+            CompactTimeCoverageCertificate,
+        ):
+            type_missing.append("compact_interval_exhaustion_compact_time_type")
+        if not self.prefix_certificates:
+            type_missing.append("compact_interval_exhaustion_prefixes_present")
+        for certificate in self.prefix_certificates:
+            if not isinstance(certificate, CompactIntervalAtlasOrStopCertificate):
+                type_missing.append("compact_interval_exhaustion_prefix_type")
+                break
+        if not isinstance(
+            self.finite_target_reduction_certificate,
+            AnalyticTheoremCertificate,
+        ):
+            type_missing.append("compact_interval_exhaustion_reduction_type")
+        if not isinstance(
+            self.local_finiteness_certificate,
+            AnalyticTheoremCertificate,
+        ):
+            type_missing.append("compact_interval_exhaustion_local_finiteness_type")
+        ledger_missing = _open_time_obligation_ledger_missing(
+            self.obligations,
+            ledger_name="compact_interval_exhaustion_family",
         )
+        return tuple(dict.fromkeys((*type_missing, *ledger_missing)))
 
     @property
     def interval_radii(self) -> tuple[float, ...]:
@@ -384,13 +488,35 @@ class CountableCompactExhaustionCertificate:
     exhaustion_family_certificate: CompactIntervalExhaustionFamilyCertificate | None = None
 
     @property
+    def component_types_certified(self) -> bool:
+        return bool(
+            isinstance(self.compact_time_certificate, CompactTimeCoverageCertificate)
+            and isinstance(
+                self.finite_target_certificate,
+                FiniteTargetAtlasOrStopCertificate,
+            )
+            and (
+                self.compact_interval_certificate is None
+                or isinstance(
+                    self.compact_interval_certificate,
+                    CompactIntervalAtlasOrStopCertificate,
+                )
+            )
+            and (
+                self.exhaustion_family_certificate is None
+                or isinstance(
+                    self.exhaustion_family_certificate,
+                    CompactIntervalExhaustionFamilyCertificate,
+                )
+            )
+        )
+
+    @property
     def certified(self) -> bool:
         return bool(
-            self.obligations
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
+            self.component_types_certified
+            and _open_time_obligation_ledger_certified(
+                self.obligations,
             )
         )
 
@@ -398,6 +524,7 @@ class CountableCompactExhaustionCertificate:
     def proof_certified(self) -> bool:
         return bool(
             self.certified
+            and self.component_types_certified
             and self.finite_target_certificate.proof_certified
             and (
                 self.compact_interval_certificate is None
@@ -411,11 +538,38 @@ class CountableCompactExhaustionCertificate:
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+        type_missing = []
+        if not isinstance(
+            self.compact_time_certificate,
+            CompactTimeCoverageCertificate,
+        ):
+            type_missing.append("countable_exhaustion_compact_time_type")
+        if not isinstance(
+            self.finite_target_certificate,
+            FiniteTargetAtlasOrStopCertificate,
+        ):
+            type_missing.append("countable_exhaustion_finite_target_type")
+        if not (
+            self.compact_interval_certificate is None
+            or isinstance(
+                self.compact_interval_certificate,
+                CompactIntervalAtlasOrStopCertificate,
+            )
+        ):
+            type_missing.append("countable_exhaustion_compact_interval_type")
+        if not (
+            self.exhaustion_family_certificate is None
+            or isinstance(
+                self.exhaustion_family_certificate,
+                CompactIntervalExhaustionFamilyCertificate,
+            )
+        ):
+            type_missing.append("countable_exhaustion_family_type")
+        ledger_missing = _open_time_obligation_ledger_missing(
+            self.obligations,
+            ledger_name="countable_compact_exhaustion",
         )
+        return tuple(dict.fromkeys((*type_missing, *ledger_missing)))
 
 
 @dataclass(frozen=True)
@@ -449,13 +603,69 @@ class FiniteTargetCompletenessReductionCertificate:
     ) = None
 
     @property
+    def component_types_certified(self) -> bool:
+        return bool(
+            isinstance(
+                self.finite_target_certificate,
+                FiniteTargetAtlasOrStopCertificate,
+            )
+            and (
+                self.compact_interval_certificate is None
+                or isinstance(
+                    self.compact_interval_certificate,
+                    CompactIntervalAtlasOrStopCertificate,
+                )
+            )
+            and (
+                self.exhaustion_family_certificate is None
+                or isinstance(
+                    self.exhaustion_family_certificate,
+                    CompactIntervalExhaustionFamilyCertificate,
+                )
+            )
+            and isinstance(
+                self.pointwise_completeness_theorem,
+                FiniteTargetCompletenessTheoremCertificate,
+            )
+            and isinstance(
+                self.certificate_search_completeness,
+                FiniteTargetCertificateSearchCompletenessCertificate,
+            )
+            and (
+                self.set_valued_constructor_completeness_certificate is None
+                or isinstance(
+                    self.set_valued_constructor_completeness_certificate,
+                    (
+                        UniformMarginSetValuedConstructorCompletenessCertificate,
+                        SuppliedRecursiveStratifiedSetValuedConstructorCompletenessCertificate,
+                        ValidatedSetValuedConstructorCompletenessTheoremCertificate,
+                    ),
+                )
+            )
+        )
+
+    @property
+    def source_matches(self) -> bool:
+        if not self.component_types_certified:
+            return False
+        input_domain = self.finite_target_certificate.input_domain_certificate
+        total_collision_policy = self.finite_target_certificate.total_collision_policy
+        return bool(
+            int(self.pointwise_completeness_theorem.dimension)
+            == int(getattr(input_domain, "dimension", 0))
+            and str(self.pointwise_completeness_theorem.total_collision_policy_id)
+            == str(getattr(total_collision_policy, "policy_id", ""))
+            and self.certificate_search_completeness.theorem_certificate
+            is self.pointwise_completeness_theorem
+        )
+
+    @property
     def certified(self) -> bool:
         return bool(
-            self.obligations
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
+            self.component_types_certified
+            and self.source_matches
+            and _open_time_obligation_ledger_certified(
+                self.obligations,
             )
         )
 
@@ -463,6 +673,8 @@ class FiniteTargetCompletenessReductionCertificate:
     def proof_certified(self) -> bool:
         return bool(
             self.certified
+            and self.component_types_certified
+            and self.source_matches
             and self.finite_target_certificate.proof_certified
             and (
                 self.pointwise_completeness_theorem is not None
@@ -476,24 +688,76 @@ class FiniteTargetCompletenessReductionCertificate:
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        own_missing = tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+        type_missing = []
+        if not isinstance(
+            self.finite_target_certificate,
+            FiniteTargetAtlasOrStopCertificate,
+        ):
+            type_missing.append("finite_target_reduction_finite_target_type")
+        if not (
+            self.compact_interval_certificate is None
+            or isinstance(
+                self.compact_interval_certificate,
+                CompactIntervalAtlasOrStopCertificate,
+            )
+        ):
+            type_missing.append("finite_target_reduction_compact_interval_type")
+        if not (
+            self.exhaustion_family_certificate is None
+            or isinstance(
+                self.exhaustion_family_certificate,
+                CompactIntervalExhaustionFamilyCertificate,
+            )
+        ):
+            type_missing.append("finite_target_reduction_exhaustion_family_type")
+        if not isinstance(
+            self.pointwise_completeness_theorem,
+            FiniteTargetCompletenessTheoremCertificate,
+        ):
+            type_missing.append("finite_target_reduction_pointwise_theorem_type")
+        if not isinstance(
+            self.certificate_search_completeness,
+            FiniteTargetCertificateSearchCompletenessCertificate,
+        ):
+            type_missing.append("finite_target_reduction_search_completeness_type")
+        if not (
+            self.set_valued_constructor_completeness_certificate is None
+            or isinstance(
+                self.set_valued_constructor_completeness_certificate,
+                (
+                    UniformMarginSetValuedConstructorCompletenessCertificate,
+                    SuppliedRecursiveStratifiedSetValuedConstructorCompletenessCertificate,
+                    ValidatedSetValuedConstructorCompletenessTheoremCertificate,
+                ),
+            )
+        ):
+            type_missing.append("finite_target_reduction_set_valued_constructor_type")
+        if self.component_types_certified and not self.source_matches:
+            type_missing.append("finite_target_reduction_source_match")
+        own_missing = _open_time_obligation_ledger_missing(
+            self.obligations,
+            ledger_name="finite_target_completeness_reduction",
         )
         pointwise_missing = (
             self.pointwise_completeness_theorem.missing_obligations
-            if self.pointwise_completeness_theorem is not None
+            if isinstance(
+                self.pointwise_completeness_theorem,
+                FiniteTargetCompletenessTheoremCertificate,
+            )
             else ("pointwise_finite_target_atlas_or_stop_completeness",)
         )
         search_missing = (
             self.certificate_search_completeness.missing_obligations
-            if self.certificate_search_completeness is not None
+            if isinstance(
+                self.certificate_search_completeness,
+                FiniteTargetCertificateSearchCompletenessCertificate,
+            )
             else ("finite_target_certificate_search_completeness",)
         )
         return tuple(
             dict.fromkeys(
                 (
+                    *type_missing,
                     *pointwise_missing,
                     *search_missing,
                     *own_missing,
@@ -503,13 +767,19 @@ class FiniteTargetCompletenessReductionCertificate:
 
     @property
     def unaudited_analytic_lemma_ids(self) -> tuple[str, ...]:
-        if self.pointwise_completeness_theorem is None:
+        if not isinstance(
+            self.pointwise_completeness_theorem,
+            FiniteTargetCompletenessTheoremCertificate,
+        ):
             return ()
         return self.pointwise_completeness_theorem.unaudited_analytic_lemma_ids
 
     @property
     def critical_unaudited_analytic_lemma_ids(self) -> tuple[str, ...]:
-        if self.pointwise_completeness_theorem is None:
+        if not isinstance(
+            self.pointwise_completeness_theorem,
+            FiniteTargetCompletenessTheoremCertificate,
+        ):
             return ()
         return (
             self.pointwise_completeness_theorem
@@ -518,9 +788,39 @@ class FiniteTargetCompletenessReductionCertificate:
 
     @property
     def analytic_lemma_audit_blockers(self) -> tuple[str, ...]:
-        if self.pointwise_completeness_theorem is None:
+        if not isinstance(
+            self.pointwise_completeness_theorem,
+            FiniteTargetCompletenessTheoremCertificate,
+        ):
             return ()
         return self.pointwise_completeness_theorem.analytic_lemma_audit_blockers
+
+    @property
+    def set_valued_constructor_input_scope_id(self) -> str | None:
+        certificate = self.set_valued_constructor_completeness_certificate
+        if certificate is None:
+            return None
+        return getattr(
+            certificate,
+            "input_scope_id",
+            getattr(certificate, "theorem_id", None),
+        )
+
+    @property
+    def set_valued_constructor_arbitrary_partition_generation_claimed(self) -> bool:
+        certificate = self.set_valued_constructor_completeness_certificate
+        if certificate is None:
+            return False
+        return bool(
+            getattr(certificate, "arbitrary_partition_generation_claimed", False)
+        )
+
+    @property
+    def scoped_set_valued_constructor_only(self) -> bool:
+        return bool(
+            self.set_valued_constructor_completeness_certificate is not None
+            and not self.set_valued_constructor_arbitrary_partition_generation_claimed
+        )
 
 
 @dataclass(frozen=True)
@@ -541,20 +841,69 @@ class OpenTimeLocallyFiniteAtlasTheoremCertificate:
     theorem_id: str = "open_time_locally_finite_atlas"
 
     @property
+    def component_types_certified(self) -> bool:
+        return bool(
+            isinstance(
+                self.finite_target_certificate,
+                FiniteTargetAtlasOrStopCertificate,
+            )
+            and (
+                self.compact_interval_certificate is None
+                or isinstance(
+                    self.compact_interval_certificate,
+                    CompactIntervalAtlasOrStopCertificate,
+                )
+            )
+            and (
+                self.exhaustion_family_certificate is None
+                or isinstance(
+                    self.exhaustion_family_certificate,
+                    CompactIntervalExhaustionFamilyCertificate,
+                )
+            )
+            and isinstance(
+                self.countable_exhaustion_certificate,
+                CountableCompactExhaustionCertificate,
+            )
+            and isinstance(
+                self.finite_target_completeness_certificate,
+                FiniteTargetCompletenessReductionCertificate,
+            )
+            and (
+                self.independent_chart_verifier_certificate is None
+                or type(self.independent_chart_verifier_certificate)
+                is IndependentChartVerifierCertificate
+            )
+        )
+
+    @property
+    def theorem_prefix_obligations_certified(self) -> bool:
+        return _open_time_obligation_ledger_certified(
+            self.obligations,
+        )
+
+    @property
+    def independent_checked_prefix_certified(self) -> bool:
+        verifier = self.independent_chart_verifier_certificate
+        return bool(
+            self.independent_chart_verifier_certified is True
+            and type(verifier) is IndependentChartVerifierCertificate
+            and verifier.certified is True
+            and verifier.proof_grade_finite_atlas_bundle_certified is True
+        )
+
+    @property
     def checked_prefix_certified(self) -> bool:
         return bool(
-            self.obligations
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
-            )
+            self.theorem_prefix_obligations_certified
+            or self.independent_checked_prefix_certified
         )
 
     @property
     def certified(self) -> bool:
         return bool(
-            self.checked_prefix_certified
+            self.component_types_certified
+            and self.theorem_prefix_obligations_certified
             and self.arbitrary_finite_target_completeness_certified
         )
 
@@ -562,6 +911,8 @@ class OpenTimeLocallyFiniteAtlasTheoremCertificate:
     def proof_certified(self) -> bool:
         return bool(
             self.certified
+            and self.component_types_certified
+            and not self.scoped_set_valued_constructor_only
             and self.countable_exhaustion_certificate.proof_certified
             and (
                 self.finite_target_completeness_certificate is not None
@@ -571,21 +922,65 @@ class OpenTimeLocallyFiniteAtlasTheoremCertificate:
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        own_missing = tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+        type_missing = []
+        if not isinstance(
+            self.finite_target_certificate,
+            FiniteTargetAtlasOrStopCertificate,
+        ):
+            type_missing.append("open_time_finite_target_certificate_type")
+        if not (
+            self.compact_interval_certificate is None
+            or isinstance(
+                self.compact_interval_certificate,
+                CompactIntervalAtlasOrStopCertificate,
+            )
+        ):
+            type_missing.append("open_time_compact_interval_certificate_type")
+        if not (
+            self.exhaustion_family_certificate is None
+            or isinstance(
+                self.exhaustion_family_certificate,
+                CompactIntervalExhaustionFamilyCertificate,
+            )
+        ):
+            type_missing.append("open_time_exhaustion_family_certificate_type")
+        if not isinstance(
+            self.countable_exhaustion_certificate,
+            CountableCompactExhaustionCertificate,
+        ):
+            type_missing.append("open_time_countable_exhaustion_certificate_type")
+        if not isinstance(
+            self.finite_target_completeness_certificate,
+            FiniteTargetCompletenessReductionCertificate,
+        ):
+            type_missing.append("open_time_finite_target_completeness_certificate_type")
+        if not (
+            self.independent_chart_verifier_certificate is None
+            or type(self.independent_chart_verifier_certificate)
+            is IndependentChartVerifierCertificate
+        ):
+            type_missing.append("open_time_independent_chart_verifier_certificate_type")
+        own_missing = _open_time_obligation_ledger_missing(
+            self.obligations,
+            ledger_name="open_time_locally_finite_atlas",
         )
         return tuple(
             dict.fromkeys(
-                (*own_missing, *self.finite_target_completeness_missing_obligations)
+                (
+                    *type_missing,
+                    *own_missing,
+                    *self.finite_target_completeness_missing_obligations,
+                )
             )
         )
 
     @property
     def arbitrary_finite_target_completeness_certified(self) -> bool:
         return bool(
-            self.finite_target_completeness_certificate is not None
+            isinstance(
+                self.finite_target_completeness_certificate,
+                FiniteTargetCompletenessReductionCertificate,
+            )
             and self.finite_target_completeness_certificate.certified
         )
 
@@ -593,17 +988,72 @@ class OpenTimeLocallyFiniteAtlasTheoremCertificate:
     def finite_target_completeness_missing_obligations(self) -> tuple[str, ...]:
         if self.finite_target_completeness_certificate is None:
             return ("finite_target_completeness_reduction_certificate",)
+        if not isinstance(
+            self.finite_target_completeness_certificate,
+            FiniteTargetCompletenessReductionCertificate,
+        ):
+            return ("finite_target_completeness_reduction_certificate_type",)
         return self.finite_target_completeness_certificate.missing_obligations
+
+    @property
+    def set_valued_constructor_input_scope_id(self) -> str | None:
+        if self.finite_target_completeness_certificate is None:
+            return None
+        if not isinstance(
+            self.finite_target_completeness_certificate,
+            FiniteTargetCompletenessReductionCertificate,
+        ):
+            return None
+        return getattr(
+            self.finite_target_completeness_certificate,
+            "set_valued_constructor_input_scope_id",
+            None,
+        )
+
+    @property
+    def set_valued_constructor_arbitrary_partition_generation_claimed(self) -> bool:
+        if self.finite_target_completeness_certificate is None:
+            return False
+        if not isinstance(
+            self.finite_target_completeness_certificate,
+            FiniteTargetCompletenessReductionCertificate,
+        ):
+            return False
+        return bool(
+            getattr(
+                self.finite_target_completeness_certificate,
+                "set_valued_constructor_arbitrary_partition_generation_claimed",
+                False,
+            )
+        )
+
+    @property
+    def scoped_set_valued_constructor_only(self) -> bool:
+        if self.finite_target_completeness_certificate is None:
+            return False
+        if not isinstance(
+            self.finite_target_completeness_certificate,
+            FiniteTargetCompletenessReductionCertificate,
+        ):
+            return False
+        return bool(
+            getattr(
+                self.finite_target_completeness_certificate,
+                "scoped_set_valued_constructor_only",
+                False,
+            )
+        )
 
     @property
     def independent_chart_verifier_arithmetic_certified(self) -> bool:
         return bool(
-            self.independent_chart_verifier_certified
-            and self.independent_chart_verifier_certificate is not None
-            and getattr(
-                self.independent_chart_verifier_certificate,
-                "proof_grade_arithmetic_checked_bundle_certified",
-                False,
+            self.independent_chart_verifier_certified is True
+            and type(self.independent_chart_verifier_certificate)
+            is IndependentChartVerifierCertificate
+            and (
+                self.independent_chart_verifier_certificate
+                .proof_grade_finite_atlas_bundle_certified
+                is True
             )
         )
 
@@ -614,11 +1064,16 @@ class OpenTimeLocallyFiniteAtlasTheoremCertificate:
             or self.independent_chart_verifier_certificate is None
         ):
             return ()
+        if (
+            type(self.independent_chart_verifier_certificate)
+            is not IndependentChartVerifierCertificate
+        ):
+            return ("independent_chart_verifier_certificate_type",)
         return tuple(
             str(blocker)
             for blocker in getattr(
                 self.independent_chart_verifier_certificate,
-                "proof_grade_arithmetic_blockers",
+                "proof_grade_finite_atlas_blockers",
                 (),
             )
             if blocker
@@ -627,6 +1082,11 @@ class OpenTimeLocallyFiniteAtlasTheoremCertificate:
     @property
     def unaudited_analytic_lemma_ids(self) -> tuple[str, ...]:
         if self.finite_target_completeness_certificate is None:
+            return ()
+        if not isinstance(
+            self.finite_target_completeness_certificate,
+            FiniteTargetCompletenessReductionCertificate,
+        ):
             return ()
         return (
             self.finite_target_completeness_certificate
@@ -637,6 +1097,11 @@ class OpenTimeLocallyFiniteAtlasTheoremCertificate:
     def critical_unaudited_analytic_lemma_ids(self) -> tuple[str, ...]:
         if self.finite_target_completeness_certificate is None:
             return ()
+        if not isinstance(
+            self.finite_target_completeness_certificate,
+            FiniteTargetCompletenessReductionCertificate,
+        ):
+            return ()
         return (
             self.finite_target_completeness_certificate
             .critical_unaudited_analytic_lemma_ids
@@ -646,6 +1111,11 @@ class OpenTimeLocallyFiniteAtlasTheoremCertificate:
     def analytic_lemma_audit_blockers(self) -> tuple[str, ...]:
         if self.finite_target_completeness_certificate is None:
             return ()
+        if not isinstance(
+            self.finite_target_completeness_certificate,
+            FiniteTargetCompletenessReductionCertificate,
+        ):
+            return ()
         return (
             self.finite_target_completeness_certificate
             .analytic_lemma_audit_blockers
@@ -654,6 +1124,13 @@ class OpenTimeLocallyFiniteAtlasTheoremCertificate:
     @property
     def route_summary(self) -> str:
         if self.certified:
+            if self.scoped_set_valued_constructor_only:
+                return (
+                    "open-time locally finite atlas theorem certified for "
+                    f"scoped set-valued constructor input class "
+                    f"{self.set_valued_constructor_input_scope_id}; arbitrary "
+                    "interval-input partition generation remains separate"
+                )
             return "open-time locally finite atlas theorem certified for arbitrary finite targets"
         if self.checked_prefix_certified:
             return "compact-interval atlas-or-stop prefix certified; arbitrary finite-target completeness remains open"
@@ -683,22 +1160,60 @@ class PointwiseOpenTimeLocallyFiniteAtlasTheoremCertificate:
     theorem_id: str = "pointwise_open_time_locally_finite_atlas"
 
     @property
+    def component_types_certified(self) -> bool:
+        return bool(
+            isinstance(self.compact_time_certificate, CompactTimeCoverageCertificate)
+            and isinstance(
+                self.finite_target_theorem,
+                FiniteTargetCompletenessTheoremCertificate,
+            )
+            and isinstance(
+                self.finite_target_reduction_certificate,
+                AnalyticTheoremCertificate,
+            )
+            and isinstance(
+                self.local_finiteness_certificate,
+                AnalyticTheoremCertificate,
+            )
+        )
+
+    @property
+    def finite_target_theorem_source_matches(self) -> bool:
+        return bool(
+            isinstance(
+                self.finite_target_theorem,
+                FiniteTargetCompletenessTheoremCertificate,
+            )
+            and int(self.finite_target_theorem.dimension) == int(self.dimension)
+            and str(self.finite_target_theorem.input_model) == str(self.input_model)
+            and str(self.finite_target_theorem.total_collision_policy_id)
+            == str(self.total_collision_policy_id)
+        )
+
+    @property
+    def theorem_scope_parameters_certified(self) -> bool:
+        return bool(
+            self.theorem_id == "pointwise_open_time_locally_finite_atlas"
+            and self.endpoint_regime_partition_required is False
+        )
+
+    @property
     def certified(self) -> bool:
         return bool(
             self.statement
             and self.proof_sketch
-            and self.obligations
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
-            )
+            and self.component_types_certified
+            and self.finite_target_theorem_source_matches
+            and self.theorem_scope_parameters_certified
+            and _open_time_obligation_ledger_certified(self.obligations)
         )
 
     @property
     def proof_certified(self) -> bool:
         return bool(
             self.certified
+            and self.component_types_certified
+            and self.finite_target_theorem_source_matches
             and self.finite_target_theorem.proof_certified
             and getattr(
                 self.compact_time_certificate,
@@ -711,30 +1226,109 @@ class PointwiseOpenTimeLocallyFiniteAtlasTheoremCertificate:
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+        type_missing = []
+        if not isinstance(
+            self.compact_time_certificate,
+            CompactTimeCoverageCertificate,
+        ):
+            type_missing.append("pointwise_open_time_compact_time_type")
+        if self.theorem_id != "pointwise_open_time_locally_finite_atlas":
+            type_missing.append("pointwise_open_time_theorem_id")
+        if self.endpoint_regime_partition_required is not False:
+            type_missing.append("endpoint_regime_partition_not_required")
+        if not isinstance(
+            self.finite_target_theorem,
+            FiniteTargetCompletenessTheoremCertificate,
+        ):
+            type_missing.append("pointwise_open_time_finite_target_theorem_type")
+        elif not self.finite_target_theorem_source_matches:
+            type_missing.append("pointwise_open_time_finite_target_theorem_source_match")
+        elif not self.finite_target_theorem.proof_certified:
+            type_missing.append("pointwise_open_time_finite_target_theorem_proof")
+            type_missing.extend(
+                self.finite_target_theorem.analytic_lemma_audit_blockers
+            )
+        if not isinstance(
+            self.finite_target_reduction_certificate,
+            AnalyticTheoremCertificate,
+        ):
+            type_missing.append(
+                "pointwise_open_time_finite_target_reduction_type"
+            )
+        if not isinstance(
+            self.local_finiteness_certificate,
+            AnalyticTheoremCertificate,
+        ):
+            type_missing.append("pointwise_open_time_local_finiteness_type")
+        if isinstance(
+            self.compact_time_certificate,
+            CompactTimeCoverageCertificate,
+        ) and not getattr(
+            self.compact_time_certificate,
+            "proof_certified",
+            self.compact_time_certificate.certified,
+        ):
+            type_missing.append("pointwise_open_time_compact_time_proof")
+        if isinstance(
+            self.finite_target_reduction_certificate,
+            AnalyticTheoremCertificate,
+        ) and not self.finite_target_reduction_certificate.proof_certified:
+            type_missing.append(
+                "audited_or_machine_checked:"
+                + self.finite_target_reduction_certificate.theorem_id
+            )
+        if isinstance(
+            self.local_finiteness_certificate,
+            AnalyticTheoremCertificate,
+        ) and not self.local_finiteness_certificate.proof_certified:
+            type_missing.append(
+                "audited_or_machine_checked:"
+                + self.local_finiteness_certificate.theorem_id
+            )
+        ledger_missing = _open_time_obligation_ledger_missing(
+            self.obligations,
+            ledger_name="pointwise_open_time_locally_finite_atlas",
         )
+        return tuple(dict.fromkeys((*type_missing, *ledger_missing)))
 
     @property
     def unaudited_analytic_lemma_ids(self) -> tuple[str, ...]:
+        if not isinstance(
+            self.finite_target_theorem,
+            FiniteTargetCompletenessTheoremCertificate,
+        ):
+            return ()
         return self.finite_target_theorem.unaudited_analytic_lemma_ids
 
     @property
     def critical_unaudited_analytic_lemma_ids(self) -> tuple[str, ...]:
+        if not isinstance(
+            self.finite_target_theorem,
+            FiniteTargetCompletenessTheoremCertificate,
+        ):
+            return ()
         return self.finite_target_theorem.critical_unaudited_analytic_lemma_ids
 
     @property
     def analytic_lemma_audit_blockers(self) -> tuple[str, ...]:
+        if not isinstance(
+            self.finite_target_theorem,
+            FiniteTargetCompletenessTheoremCertificate,
+        ):
+            return ()
         return self.finite_target_theorem.analytic_lemma_audit_blockers
 
     @property
     def route_summary(self) -> str:
-        if self.certified:
+        if self.proof_certified:
             return (
                 "pointwise open-time locally finite atlas-or-stop theorem "
-                "certified by finite-target compact exhaustion"
+                "proof-certified by finite-target compact exhaustion"
+            )
+        if self.certified:
+            return (
+                "pointwise open-time atlas theorem scaffold assembled; "
+                "nested analytic proof obligations remain unaudited"
             )
         return "pointwise open-time theorem has missing finite-target obligations"
 
@@ -782,7 +1376,7 @@ def certify_finite_target_atlas_or_stop_from_validated_atlas(
     target_time = float(target_time)
     input_domain = _certify_input_domain_or_none(masses, positions, velocities)
     atlas_or_checker_certified = bool(
-        getattr(validated_atlas, "proof_certified", False)
+        getattr(validated_atlas, "proof_certified", False) is True
         or _independent_verifier_covers_validated_atlas(
             independent_chart_verifier_certificate,
             validated_atlas,
@@ -1109,20 +1703,18 @@ def certify_compact_interval_atlas_or_stop_from_finite_targets(
     certificates = tuple(
         certificate
         for certificate in (past_target, future_target)
-        if certificate is not None
+        if isinstance(certificate, FiniteTargetAtlasOrStopCertificate)
     )
     input_domain = (
         future_target.input_domain_certificate
-        if future_target is not None
+        if isinstance(future_target, FiniteTargetAtlasOrStopCertificate)
         else past_target.input_domain_certificate
-        if past_target is not None
+        if isinstance(past_target, FiniteTargetAtlasOrStopCertificate)
         else None
     )
     endpoint_base_certified = bool(
-        past_target is not None
-        and future_target is not None
-        and past_target.certified
-        and future_target.certified
+        _finite_target_atlas_or_stop_certified(past_target)
+        and _finite_target_atlas_or_stop_certified(future_target)
     )
     endpoint_policy_consistent = _compact_interval_endpoint_policy_consistent(
         past_target,
@@ -1194,7 +1786,7 @@ def certify_compact_interval_atlas_or_stop_from_finite_targets(
         ),
         TheoremPipelineObligation(
             obligation="past_finite_target_atlas_or_stop_theorem",
-            certified=bool(past_target is not None and past_target.certified),
+            certified=_finite_target_atlas_or_stop_certified(past_target),
             source=type(past_target).__name__ if past_target is not None else "missing",
             detail=(
                 past_target.outcome_id
@@ -1204,7 +1796,7 @@ def certify_compact_interval_atlas_or_stop_from_finite_targets(
         ),
         TheoremPipelineObligation(
             obligation="future_finite_target_atlas_or_stop_theorem",
-            certified=bool(future_target is not None and future_target.certified),
+            certified=_finite_target_atlas_or_stop_certified(future_target),
             source=(
                 type(future_target).__name__ if future_target is not None else "missing"
             ),
@@ -1234,9 +1826,9 @@ def certify_compact_interval_atlas_or_stop_from_finite_targets(
         ),
         TheoremPipelineObligation(
             obligation="compact_interval_total_collision_stop_certificate",
-            certified=bool(
+            certified=(
                 outcome_id != "compact_interval_total_collision_stop"
-                or getattr(stop_certificate, "certified", False)
+                or _total_collision_stop_certified(stop_certificate)
             ),
             source=type(stop_certificate).__name__ if stop_certificate is not None else "missing",
             detail=(
@@ -1472,7 +2064,42 @@ def construct_open_time_locally_finite_atlas_theorem(
         "certificate_search_set_valued_constructor_completeness_certificate",
         None,
     )
-
+    search_constructor_certificate = solver_options.pop(
+        "certificate_search_constructor_certificate",
+        None,
+    )
+    search_branch_constructor_certificate = solver_options.pop(
+        "certificate_search_branch_constructor_certificate",
+        None,
+    )
+    search_event_order_constructor_certificate = solver_options.pop(
+        "certificate_search_event_order_constructor_certificate",
+        None,
+    )
+    search_constructor_root_dimension = solver_options.pop(
+        "certificate_search_constructor_root_dimension",
+        None,
+    )
+    search_constructor_root_rank = solver_options.pop(
+        "certificate_search_constructor_root_rank",
+        None,
+    )
+    search_branch_constructor_root_dimension = solver_options.pop(
+        "certificate_search_branch_constructor_root_dimension",
+        search_constructor_root_dimension,
+    )
+    search_branch_constructor_root_rank = solver_options.pop(
+        "certificate_search_branch_constructor_root_rank",
+        search_constructor_root_rank,
+    )
+    search_event_order_constructor_root_dimension = solver_options.pop(
+        "certificate_search_event_order_constructor_root_dimension",
+        search_constructor_root_dimension,
+    )
+    search_event_order_constructor_root_rank = solver_options.pop(
+        "certificate_search_event_order_constructor_root_rank",
+        search_constructor_root_rank,
+    )
     exhaustion_family = construct_compact_interval_exhaustion_family(
         masses,
         positions,
@@ -1514,6 +2141,74 @@ def construct_open_time_locally_finite_atlas_theorem(
         compact_interval_certificate=compact_interval,
         exhaustion_family_certificate=exhaustion_family,
     )
+    if search_set_valued_constructor_completeness_certificate is None:
+        input_dimension = int(
+            getattr(
+                finite_target.input_domain_certificate,
+                "dimension",
+                3,
+            )
+        )
+        constructor_theorem = certify_finite_target_completeness_theorem(
+            dimension=input_dimension,
+            total_collision_policy_id=finite_target.total_collision_policy.policy_id,
+        )
+        if (
+            search_branch_constructor_certificate is not None
+            or search_event_order_constructor_certificate is not None
+        ):
+            branch_constructor = (
+                search_branch_constructor_certificate
+                if search_branch_constructor_certificate is not None
+                else search_constructor_certificate
+            )
+            event_constructor = (
+                search_event_order_constructor_certificate
+                if search_event_order_constructor_certificate is not None
+                else search_constructor_certificate
+            )
+            if branch_constructor is None or event_constructor is None:
+                raise ValueError(
+                    "constructor-derived certificate search requires either "
+                    "certificate_search_constructor_certificate or both branch "
+                    "and event-order constructor certificates"
+                )
+            search_set_valued_constructor_completeness_certificate = (
+                certify_constructor_pair_derived_recursive_stratified_set_valued_constructor_completeness(
+                    constructor_theorem,
+                    branch_constructor_certificate=branch_constructor,
+                    event_order_constructor_certificate=event_constructor,
+                    branch_root_dimension=search_branch_constructor_root_dimension,
+                    branch_root_rank=search_branch_constructor_root_rank,
+                    event_order_root_dimension=search_event_order_constructor_root_dimension,
+                    event_order_root_rank=search_event_order_constructor_root_rank,
+                )
+            )
+        elif search_constructor_certificate is not None:
+            search_set_valued_constructor_completeness_certificate = (
+                certify_constructor_derived_recursive_stratified_set_valued_constructor_completeness(
+                    constructor_theorem,
+                    constructor_certificate=search_constructor_certificate,
+                    root_dimension=search_constructor_root_dimension,
+                    root_rank=search_constructor_root_rank,
+                )
+            )
+    if search_set_valued_constructor_completeness_certificate is not None:
+        scoped_set_valued_certificate = _scoped_set_valued_constructor_certificate(
+            search_set_valued_constructor_completeness_certificate,
+        )
+        if search_recursive_stratified_branch_consumption_certificate is None:
+            search_recursive_stratified_branch_consumption_certificate = getattr(
+                scoped_set_valued_certificate,
+                "branch_consumption_certificate",
+                None,
+            )
+        if search_recursive_stratified_event_order_consumption_certificate is None:
+            search_recursive_stratified_event_order_consumption_certificate = getattr(
+                scoped_set_valued_certificate,
+                "event_order_consumption_certificate",
+                None,
+            )
     finite_target_completeness = certify_finite_target_completeness_reduction(
         finite_target_certificate=finite_target,
         compact_interval_certificate=compact_interval,
@@ -1689,6 +2384,16 @@ def _spatial_ks_chart_certificate_with_interval_time_enclosure(
     )
 
 
+def _bind_independent_verifier_to_validated_atlas(
+    verifier: IndependentChartVerifierCertificate,
+    validated_atlas: object,
+) -> IndependentChartVerifierCertificate:
+    return replace(
+        verifier,
+        atlas_binding_token=finite_time_selector_trace_binding_token(validated_atlas),
+    )
+
+
 def construct_independent_finite_target_checked_atlas(
     finite_target_certificate: FiniteTargetAtlasOrStopCertificate,
     *,
@@ -1705,7 +2410,7 @@ def construct_independent_finite_target_checked_atlas(
     """Serialize and independently check the finite-target atlas response."""
 
     atlas = getattr(finite_target_certificate, "validated_atlas", None)
-    if atlas is None or not bool(getattr(atlas, "proof_certified", False)):
+    if atlas is None or getattr(atlas, "proof_certified", False) is not True:
         raise ValueError("finite target certificate does not carry a proof-certified atlas")
     return construct_independent_validated_atlas_checked_chain(
         atlas,
@@ -1791,9 +2496,12 @@ def construct_independent_validated_atlas_checked_chain(
             transition_ids=(),
             target_physical_time_interval=target_interval,
         )
-        return verify_chart_certificates(
-            (chart,),
-            chart_chains=(chain,),
+        return _bind_independent_verifier_to_validated_atlas(
+            verify_chart_certificates(
+                (chart,),
+                chart_chains=(chain,),
+            ),
+            validated_atlas,
         )
 
     if _spatial_ordinary_ks_handoff_supported_for_checker(
@@ -1801,18 +2509,21 @@ def construct_independent_validated_atlas_checked_chain(
         atlas_charts,
         atlas_transitions,
     ):
-        return _construct_independent_spatial_ordinary_ks_checked_chain(
+        return _bind_independent_verifier_to_validated_atlas(
+            _construct_independent_spatial_ordinary_ks_checked_chain(
+                validated_atlas,
+                certificate_id_prefix=certificate_id_prefix,
+                coefficient_tolerance=coefficient_tolerance,
+                ordinary_residual_tolerance=ordinary_residual_tolerance,
+                regularized_residual_tolerance=regularized_residual_tolerance,
+                projected_residual_tolerance=projected_residual_tolerance,
+                constraint_tolerance=constraint_tolerance,
+                physical_time_tolerance=physical_time_tolerance,
+                position_tolerance=position_tolerance,
+                velocity_tolerance=velocity_tolerance,
+                sample_count=sample_count,
+            ),
             validated_atlas,
-            certificate_id_prefix=certificate_id_prefix,
-            coefficient_tolerance=coefficient_tolerance,
-            ordinary_residual_tolerance=ordinary_residual_tolerance,
-            regularized_residual_tolerance=regularized_residual_tolerance,
-            projected_residual_tolerance=projected_residual_tolerance,
-            constraint_tolerance=constraint_tolerance,
-            physical_time_tolerance=physical_time_tolerance,
-            position_tolerance=position_tolerance,
-            velocity_tolerance=velocity_tolerance,
-            sample_count=sample_count,
         )
 
     if _spatial_ks_competing_handoff_supported_for_checker(
@@ -1820,17 +2531,20 @@ def construct_independent_validated_atlas_checked_chain(
         atlas_charts,
         atlas_transitions,
     ):
-        return _construct_independent_spatial_ks_competing_checked_chain(
+        return _bind_independent_verifier_to_validated_atlas(
+            _construct_independent_spatial_ks_competing_checked_chain(
+                validated_atlas,
+                certificate_id_prefix=certificate_id_prefix,
+                coefficient_tolerance=coefficient_tolerance,
+                regularized_residual_tolerance=regularized_residual_tolerance,
+                projected_residual_tolerance=projected_residual_tolerance,
+                constraint_tolerance=constraint_tolerance,
+                physical_time_tolerance=physical_time_tolerance,
+                position_tolerance=position_tolerance,
+                velocity_tolerance=velocity_tolerance,
+                sample_count=sample_count,
+            ),
             validated_atlas,
-            certificate_id_prefix=certificate_id_prefix,
-            coefficient_tolerance=coefficient_tolerance,
-            regularized_residual_tolerance=regularized_residual_tolerance,
-            projected_residual_tolerance=projected_residual_tolerance,
-            constraint_tolerance=constraint_tolerance,
-            physical_time_tolerance=physical_time_tolerance,
-            position_tolerance=position_tolerance,
-            velocity_tolerance=velocity_tolerance,
-            sample_count=sample_count,
         )
 
     if _homothetic_total_collision_supported_for_checker(
@@ -1844,6 +2558,7 @@ def construct_independent_validated_atlas_checked_chain(
             chart_meta,
             certificate_id=f"{certificate_id_prefix}-homothetic-total-stop-chart-0",
             residual_tolerance=regularized_residual_tolerance,
+            projected_residual_tolerance=projected_residual_tolerance,
             angular_momentum_tolerance=regularized_residual_tolerance,
             sample_count=sample_count,
         )
@@ -1862,26 +2577,32 @@ def construct_independent_validated_atlas_checked_chain(
             transition_ids=(),
             target_physical_time_interval=target_interval,
         )
-        return verify_chart_certificates(
-            (chart,),
-            chart_chains=(chain,),
+        return _bind_independent_verifier_to_validated_atlas(
+            verify_chart_certificates(
+                (chart,),
+                chart_chains=(chain,),
+            ),
+            validated_atlas,
         )
 
     branch_atlases = tuple(getattr(evaluation, "branch_atlases", ()) or ())
     if branch_atlases:
-        return _construct_independent_branch_union_checked_atlas(
+        return _bind_independent_verifier_to_validated_atlas(
+            _construct_independent_branch_union_checked_atlas(
+                validated_atlas,
+                branch_atlases=branch_atlases,
+                certificate_id_prefix=certificate_id_prefix,
+                coefficient_tolerance=coefficient_tolerance,
+                ordinary_residual_tolerance=ordinary_residual_tolerance,
+                regularized_residual_tolerance=regularized_residual_tolerance,
+                projected_residual_tolerance=projected_residual_tolerance,
+                constraint_tolerance=constraint_tolerance,
+                physical_time_tolerance=physical_time_tolerance,
+                position_tolerance=position_tolerance,
+                velocity_tolerance=velocity_tolerance,
+                sample_count=sample_count,
+            ),
             validated_atlas,
-            branch_atlases=branch_atlases,
-            certificate_id_prefix=certificate_id_prefix,
-            coefficient_tolerance=coefficient_tolerance,
-            ordinary_residual_tolerance=ordinary_residual_tolerance,
-            regularized_residual_tolerance=regularized_residual_tolerance,
-            projected_residual_tolerance=projected_residual_tolerance,
-            constraint_tolerance=constraint_tolerance,
-            physical_time_tolerance=physical_time_tolerance,
-            position_tolerance=position_tolerance,
-            velocity_tolerance=velocity_tolerance,
-            sample_count=sample_count,
         )
 
     hybrid_solution = getattr(evaluation, "hybrid_solution", None)
@@ -1905,10 +2626,13 @@ def construct_independent_validated_atlas_checked_chain(
         sample_count=sample_count,
         source="finite_target_validated_atlas_independent_serialization",
     )
-    return verify_chart_certificates(
-        charts,
-        transitions=transitions,
-        chart_chains=(chain,),
+    return _bind_independent_verifier_to_validated_atlas(
+        verify_chart_certificates(
+            charts,
+            transitions=transitions,
+            chart_chains=(chain,),
+        ),
+        validated_atlas,
     )
 
 
@@ -1966,12 +2690,14 @@ def _exact_homothetic_total_collision_stop_chart_for_checker(
     residual_tolerance: float,
     angular_momentum_tolerance: float,
     sample_count: int,
+    projected_residual_tolerance: float | None = None,
 ):
     return _homothetic_total_collision_stop_chart_for_checker(
         evaluation,
         chart_meta,
         certificate_id=certificate_id,
         residual_tolerance=residual_tolerance,
+        projected_residual_tolerance=projected_residual_tolerance,
         angular_momentum_tolerance=angular_momentum_tolerance,
         sample_count=sample_count,
     )
@@ -1985,6 +2711,7 @@ def _homothetic_total_collision_stop_chart_for_checker(
     residual_tolerance: float,
     angular_momentum_tolerance: float,
     sample_count: int,
+    projected_residual_tolerance: float | None = None,
 ):
     """Serialize an exact homothetic selector as a generalized stop chart.
 
@@ -2064,6 +2791,7 @@ def _homothetic_total_collision_stop_chart_for_checker(
         tau_interval=tau_interval,
         event_physical_time=float(getattr(certificate, "event_time", 0.0)),
         residual_tolerance=float(residual_tolerance),
+        projected_residual_tolerance=projected_residual_tolerance,
         angular_momentum_tolerance=float(angular_momentum_tolerance),
         tail_bound=tail_bound,
         sample_count=int(sample_count),
@@ -2861,6 +3589,10 @@ def certify_pointwise_open_time_locally_finite_atlas_theorem(
     dimension = int(dimension)
     input_model = str(input_model)
     total_collision_policy_id = str(total_collision_policy_id)
+    maximal_classical_policy = total_collision_policy_id in {
+        "maximal_classical_stop",
+        "maximal_classical_stop_at_total_collision",
+    }
     finite_target_theorem = certify_finite_target_completeness_theorem(
         dimension=dimension,
         total_collision_policy_id=total_collision_policy_id,
@@ -2872,6 +3604,15 @@ def certify_pointwise_open_time_locally_finite_atlas_theorem(
     )
     local_finiteness = certify_countable_nested_compact_interval_local_finiteness()
     obligations = (
+        TheoremPipelineObligation(
+            obligation="maximal_classical_total_collision_policy",
+            certified=maximal_classical_policy,
+            source="pointwise_open_time_locally_finite_atlas_theorem",
+            detail=(
+                "open-time theorem is stated for maximal-classical stop "
+                f"semantics; policy={total_collision_policy_id!r}"
+            ),
+        ),
         TheoremPipelineObligation(
             obligation="pointwise_finite_target_atlas_or_stop_completeness",
             certified=finite_target_theorem.certified,
@@ -3103,6 +3844,12 @@ def _recursive_consumption_descent_detail(certificate: object | None) -> str:
     )
 
 
+def _scoped_set_valued_constructor_certificate(certificate: object | None) -> object | None:
+    if certificate is None:
+        return None
+    return getattr(certificate, "set_valued_constructor_certificate", certificate)
+
+
 def certify_finite_target_completeness_reduction(
     *,
     finite_target_certificate: FiniteTargetAtlasOrStopCertificate,
@@ -3148,6 +3895,33 @@ def certify_finite_target_completeness_reduction(
             finite_target_certificate.total_collision_policy.policy_id
         ),
     )
+    scoped_set_valued_certificate = _scoped_set_valued_constructor_certificate(
+        set_valued_constructor_completeness_certificate,
+    )
+    if recursive_branch_refinement_certificate is None:
+        recursive_branch_refinement_certificate = getattr(
+            scoped_set_valued_certificate,
+            "branch_refinement_certificate",
+            None,
+        )
+    if event_order_refinement_certificate is None:
+        event_order_refinement_certificate = getattr(
+            scoped_set_valued_certificate,
+            "event_order_refinement_certificate",
+            None,
+        )
+    if recursive_stratified_branch_consumption_certificate is None:
+        recursive_stratified_branch_consumption_certificate = getattr(
+            scoped_set_valued_certificate,
+            "branch_consumption_certificate",
+            None,
+        )
+    if recursive_stratified_event_order_consumption_certificate is None:
+        recursive_stratified_event_order_consumption_certificate = getattr(
+            scoped_set_valued_certificate,
+            "event_order_consumption_certificate",
+            None,
+        )
     search_completeness = certify_finite_target_certificate_search_completeness(
         pointwise_theorem,
         observed_prefix_failures=observed_prefix_failures,
@@ -3336,7 +4110,7 @@ def certify_total_collision_stop_from_validated_atlas(
     target_time = float(target_time)
     chart_type, stop_time = _first_total_collision_stop_event(validated_atlas)
     atlas_or_checker_certified = bool(
-        getattr(validated_atlas, "proof_certified", False)
+        getattr(validated_atlas, "proof_certified", False) is True
         or _independent_verifier_covers_validated_atlas(
             independent_chart_verifier_certificate,
             validated_atlas,
@@ -3385,7 +4159,7 @@ def certify_total_collision_stop_from_validated_atlas(
         ),
         TheoremPipelineObligation(
             obligation="total_collision_event_in_chart_domain",
-            certified=stop_time is not None and np.isfinite(stop_time),
+            certified=bool(stop_time is not None and np.isfinite(stop_time)),
             source=type(validated_atlas).__name__ if validated_atlas is not None else "missing",
             detail=f"stop_time={stop_time!r}",
         ),
@@ -3673,6 +4447,22 @@ def _finite_target_obstruction_obligations(
     return tuple(dict.fromkeys(str(item) for item in missing if str(item)))
 
 
+def _finite_target_atlas_or_stop_certified(
+    target: object,
+) -> bool:
+    return (
+        isinstance(target, FiniteTargetAtlasOrStopCertificate)
+        and target.certified is True
+    )
+
+
+def _total_collision_stop_certified(stop_certificate: object) -> bool:
+    return (
+        isinstance(stop_certificate, TotalCollisionStopCertificate)
+        and stop_certificate.certified is True
+    )
+
+
 def _compact_interval_obstruction_obligations(
     past_target: FiniteTargetAtlasOrStopCertificate | None,
     future_target: FiniteTargetAtlasOrStopCertificate | None,
@@ -3688,7 +4478,9 @@ def _compact_interval_obstruction_obligations(
         missing.append("positive_time_radius_compact_interval")
     if past_target is None:
         missing.append("past_finite_target_atlas_or_stop_theorem")
-    elif not past_target.certified:
+    elif not isinstance(past_target, FiniteTargetAtlasOrStopCertificate):
+        missing.append("past_finite_target_atlas_or_stop_theorem_type")
+    elif past_target.certified is not True:
         missing.extend(
             f"past:{obligation}" for obligation in past_target.missing_obligations
         )
@@ -3697,7 +4489,9 @@ def _compact_interval_obstruction_obligations(
         )
     if future_target is None:
         missing.append("future_finite_target_atlas_or_stop_theorem")
-    elif not future_target.certified:
+    elif not isinstance(future_target, FiniteTargetAtlasOrStopCertificate):
+        missing.append("future_finite_target_atlas_or_stop_theorem_type")
+    elif future_target.certified is not True:
         missing.extend(
             f"future:{obligation}" for obligation in future_target.missing_obligations
         )
@@ -3755,7 +4549,7 @@ def _compact_interval_stop_certificate(
 ) -> object | None:
     for target in (past_target, future_target):
         stop_certificate = getattr(target, "stop_certificate", None)
-        if getattr(stop_certificate, "certified", False):
+        if _total_collision_stop_certified(stop_certificate):
             return stop_certificate
     return None
 
@@ -3765,12 +4559,21 @@ def _compact_interval_endpoint_policy_consistent(
     future_target: FiniteTargetAtlasOrStopCertificate | None,
     policy: TotalCollisionPolicyCertificate,
 ) -> bool:
-    if past_target is None or future_target is None:
+    if not isinstance(past_target, FiniteTargetAtlasOrStopCertificate):
+        return False
+    if not isinstance(future_target, FiniteTargetAtlasOrStopCertificate):
+        return False
+    if not isinstance(policy, TotalCollisionPolicyCertificate):
         return False
     return bool(
-        getattr(past_target.total_collision_policy, "certified", False)
-        and getattr(future_target.total_collision_policy, "certified", False)
-        and getattr(policy, "certified", False)
+        isinstance(past_target.total_collision_policy, TotalCollisionPolicyCertificate)
+        and isinstance(
+            future_target.total_collision_policy,
+            TotalCollisionPolicyCertificate,
+        )
+        and past_target.total_collision_policy.certified is True
+        and future_target.total_collision_policy.certified is True
+        and policy.certified is True
         and past_target.total_collision_policy.policy_id == policy.policy_id
         and future_target.total_collision_policy.policy_id == policy.policy_id
         and past_target.total_collision_policy.selector_policy_id
@@ -3824,9 +4627,11 @@ def _input_domain_certificates_match(
     left: PositiveMassNoncollisionInputDomainCertificate | None,
     right: PositiveMassNoncollisionInputDomainCertificate | None,
 ) -> bool:
-    if left is None or right is None:
+    if not isinstance(left, PositiveMassNoncollisionInputDomainCertificate):
         return False
-    if not (getattr(left, "certified", False) and getattr(right, "certified", False)):
+    if not isinstance(right, PositiveMassNoncollisionInputDomainCertificate):
+        return False
+    if not (left.certified is True and right.certified is True):
         return False
     return bool(
         left.masses == right.masses
@@ -3893,18 +4698,28 @@ def _independent_verifier_covers_validated_atlas(
     verifier_certificate: object | None,
     validated_atlas: object | None,
 ) -> bool:
-    if verifier_certificate is None or validated_atlas is None:
+    if validated_atlas is None:
+        return False
+    if type(verifier_certificate) is not IndependentChartVerifierCertificate:
+        return False
+    if verifier_certificate.certified is not True:
+        return False
+    if verifier_certificate.proof_grade_arithmetic_checked_bundle_certified is not True:
+        return False
+    if (
+        verifier_certificate.atlas_binding_token
+        != finite_time_selector_trace_binding_token(validated_atlas)
+    ):
         return False
     chart_count = len(tuple(getattr(validated_atlas, "charts", ())))
     verifier_chart_count = int(
-        getattr(verifier_certificate, "checked_certificate_count", 0),
+        verifier_certificate.checked_certificate_count,
     )
     verifier_chain_count = int(
-        getattr(verifier_certificate, "checked_chart_chain_count", 0),
+        verifier_certificate.checked_chart_chain_count,
     )
     return bool(
-        getattr(verifier_certificate, "certified", False)
-        and chart_count > 0
+        chart_count > 0
         and verifier_chart_count >= chart_count
         and verifier_chain_count > 0
     )

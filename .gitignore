@@ -2,3 +2,6 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 three-body-problem.zip
+build/
+dist/
+*.egg-info/

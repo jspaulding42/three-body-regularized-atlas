@@ -1,3 +1,48 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "three-body-regularized-atlas"
+version = "0.1.0"
+description = "Validated certificate tools for a planar three-body Levi-Civita binary-collision passage"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Jeffrey Spaulding", email = "jspaulding42@hotmail.com" },
+]
+keywords = [
+    "three-body problem",
+    "Levi-Civita regularization",
+    "validated numerics",
+    "computer-assisted proof",
+    "interval arithmetic",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: BSD License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Scientific/Engineering :: Mathematics",
+]
+dependencies = [
+    "numpy",
+    "scipy",
+    "sympy",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[project.urls]
+Repository = "https://github.com/jspaulding42/three-body-regularized-atlas"
+Issues = "https://github.com/jspaulding42/three-body-regularized-atlas/issues"
+
+[tool.setuptools.packages.find]
+include = ["three_body_symmetry*"]
+
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]

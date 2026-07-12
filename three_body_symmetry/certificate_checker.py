@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
+from decimal import Decimal, DecimalException, ROUND_CEILING, ROUND_FLOOR, localcontext
+from functools import lru_cache
 from fractions import Fraction
+import math
 from typing import Iterable
 
 import numpy as np
@@ -15,20 +18,33 @@ from .certificate_language import (
     FiniteFuchsianLogPrimitiveCauchyInputsCertificate,
     GeneralizedFuchsianRemainderMajorantCertificate,
     FuchsianLogTermCertificate,
+    InitialValueProblemBindingCertificate,
     OrdinaryChartTransitionCertificate,
+    OrdinaryAposterioriTubeCertificate,
+    WeightedOrdinaryAposterioriTubeCertificate,
+    OrdinaryEnclosureTransitionCertificate,
+    OrdinaryToPlanarLCEnclosureTransitionCertificate,
+    PlanarLCToOrdinaryEnclosureTransitionCertificate,
+    PlanarLCExactCollisionAnchorCertificate,
+    PlanarLCTwoSidedCollisionPassageCertificate,
+    ValidatedOrdinaryIVPChainCertificate,
     OrdinaryTaylorChartCertificate,
     PlanarLeviCivitaBinaryChartCertificate,
+    PlanarLCAposterioriTubeCertificate,
     PlanarLeviCivitaTransitionCertificate,
+    PrimitiveCauchyTailInputCertificate,
     SpatialKSBinaryChartCertificate,
     SpatialKSTransitionCertificate,
     TotalCollisionFuchsianStopChartCertificate,
     TotalCollisionGeneralizedFuchsianStopChartCertificate,
+    total_collision_generalized_fuchsian_stop_chart_certificate_from_branch,
 )
 from .binary_chart import (
     RegularizedBinaryCollisionChartState,
     planar_accelerations_from_regularized_chart_rhs,
     regularized_binary_collision_chart_rhs,
     regularized_binary_collision_chart_to_planar,
+    planar_interval_to_regularized_binary_collision_chart_atlas,
 )
 from .binary_series import (
     RegularizedBinaryTaylorSolution,
@@ -73,6 +89,193 @@ from .series import acceleration_coefficients
 from .stratified_branch_tree import SUPPORTED_STRATIFIED_LEAF_KINDS
 
 
+@lru_cache(maxsize=2)
+def _fast_generalized_fuchsian_branch(max_total_degree: int = 2):
+    from .fuchsian import (
+        construct_fuchsian_selector_continuation,
+        linearized_acceleration_matrix,
+        mass_inner_product,
+    )
+
+    max_total_degree = int(max_total_degree)
+    masses = np.array([1.0, 0.7, 1.4])
+    configuration = np.array(
+        [
+            [1.0, 0.0],
+            [-0.5, np.sqrt(3.0) / 2.0],
+            [-0.5, -np.sqrt(3.0) / 2.0],
+        ],
+    )
+    configuration = configuration - np.average(configuration, axis=0, weights=masses)
+    central_lambda = float(np.sum(masses) / (np.sqrt(3.0) ** 3))
+    central_shape = ((9.0 / 2.0) * central_lambda) ** (1.0 / 3.0) * configuration
+    derivative_matrix = linearized_acceleration_matrix(central_shape, masses)
+    beta = float(
+        sum(masses[i] * masses[j] for i in range(3) for j in range(i + 1, 3))
+        / np.sum(masses) ** 2
+    )
+    shape_eigenvalues = (
+        1.0 / 9.0 + (1.0 / 3.0) * np.sqrt(1.0 - 3.0 * beta),
+        1.0 / 9.0 - (1.0 / 3.0) * np.sqrt(1.0 - 3.0 * beta),
+    )
+    powers = (
+        2.0,
+        *(
+            0.5 * (-1.0 + np.sqrt(9.0 + 36.0 * eigenvalue))
+            for eigenvalue in shape_eigenvalues
+        ),
+    )
+    eigenvalues, eigenvectors = np.linalg.eig(derivative_matrix)
+    fractional_modes = []
+    for eigenvalue in shape_eigenvalues:
+        eigenvector_index = int(
+            np.argmin(
+                np.abs(eigenvalues.real - eigenvalue)
+                + np.abs(eigenvalues.imag)
+            ),
+        )
+        mode = eigenvectors[:, eigenvector_index].real.reshape(3, 2)
+        mode /= np.sqrt(mass_inner_product(masses, mode, mode))
+        fractional_modes.append(mode)
+    continuation = construct_fuchsian_selector_continuation(
+        masses=masses,
+        central_shape=central_shape,
+        powers=powers,
+        incoming_selected_coefficients={
+            (1, 0, 0): 0.02 * central_shape,
+            (0, 1, 0): -0.018 * fractional_modes[0],
+            (0, 0, 1): 0.022 * fractional_modes[1],
+        },
+        max_total_degree=max_total_degree,
+        scale_index=(1, 0, 0),
+    )
+    return continuation.incoming
+
+
+def _generalized_remainder_majorant_certificate_from_majorant(
+    majorant,
+) -> GeneralizedFuchsianRemainderMajorantCertificate:
+    return GeneralizedFuchsianRemainderMajorantCertificate(
+        initial_radius=float(majorant.initial_radius),
+        shell_contraction=float(majorant.shell_contraction),
+        analytic_disk_fraction=float(majorant.analytic_disk_fraction),
+        defect_bound=float(majorant.defect_bound),
+        linear_inverse_bound=float(majorant.linear_inverse_bound),
+        nonlinear_lipschitz_bound=float(majorant.nonlinear_lipschitz_bound),
+        remainder_ball_radius=float(majorant.remainder_ball_radius),
+        component_effective_exponents=tuple(
+            (component, float(exponent))
+            for component, exponent in sorted(
+                majorant.component_effective_exponents.items(),
+            )
+        ),
+        component_inputs=tuple(
+            (component, PrimitiveCauchyTailInputCertificate.from_input(input_))
+            for component, input_ in sorted(majorant.component_inputs.items())
+        ),
+    )
+
+
+@lru_cache(maxsize=1)
+def build_fast_total_collision_generalized_fuchsian_stop_chart_certificate(
+) -> TotalCollisionGeneralizedFuchsianStopChartCertificate:
+    """Build the canonical fast generalized-Fuchsian total-stop certificate.
+
+    This production fixture is intentionally small but still routes through the
+    real generalized-Fuchsian entry, finite-row, majorant, stop-chart, and
+    serialized-chart constructors.  It is used by the final theorem package so
+    production proof assembly never imports from tests.
+    """
+
+    from .finite_target_completeness import (
+        certify_supplied_generalized_fuchsian_analytic_remainder_majorant,
+        certify_supplied_generalized_fuchsian_entry_data,
+        certify_supplied_generalized_fuchsian_finite_row_tail_budget,
+        certify_supplied_generalized_fuchsian_stop_chart_for_admissible_entry_data,
+    )
+
+    branch = _fast_generalized_fuchsian_branch(2)
+    entry = certify_supplied_generalized_fuchsian_entry_data(
+        branch=branch,
+        radius=0.02,
+        sample_taus=(-0.012, 0.012),
+        tolerance=1.0e-4,
+        energy_tolerance=1.0e-7,
+    )
+    finite_rows = certify_supplied_generalized_fuchsian_finite_row_tail_budget(
+        entry_certificate=entry,
+        retained_total_degree=branch.max_total_degree,
+        radius=0.018,
+    )
+    majorant = certify_supplied_generalized_fuchsian_analytic_remainder_majorant(
+        entry_certificate=entry,
+        finite_row_budget=finite_rows,
+        defect_bound=1.0e-14,
+        linear_inverse_bound=2.0,
+        nonlinear_lipschitz_bound=0.1,
+        component_effective_exponents={
+            "value": 1.4,
+            "first_jet": 0.4,
+            "lifted_residual": 1.1,
+            "physical_residual": 0.7,
+            "regularized_position_value": 2.1,
+        },
+        step_ratio_bounds={
+            "value": 0.2,
+            "first_jet": 0.2,
+            "lifted_residual": 0.2,
+            "physical_residual": 0.2,
+            "regularized_position_value": 0.2,
+        },
+        retained_order_initials={
+            "value": 6,
+            "first_jet": 6,
+            "lifted_residual": 6,
+            "physical_residual": 6,
+            "regularized_position_value": 6,
+        },
+        retained_order_increments={
+            "value": 1,
+            "first_jet": 1,
+            "lifted_residual": 1,
+            "physical_residual": 1,
+            "regularized_position_value": 1,
+        },
+        initial_radius=0.014,
+        shell_contraction=0.5,
+        analytic_disk_fraction=0.2,
+    )
+    stop_chart = certify_supplied_generalized_fuchsian_stop_chart_for_admissible_entry_data(
+        entry_certificate=entry,
+        finite_row_budget=finite_rows,
+        remainder_majorant=majorant,
+        residual_tolerance=1.0e-4,
+        angular_momentum_tolerance=1.0e-4,
+    )
+    certificate = total_collision_generalized_fuchsian_stop_chart_certificate_from_branch(
+        branch,
+        certificate_id="fast-generalized-fuchsian-total-stop-certificate",
+        chart_id="fast-generalized-fuchsian-total-stop",
+        isolation_radius=entry.radius,
+        central_shape_pair_distance_floor=entry.central_shape_pair_distance_floor,
+        shape_deviation_bound=entry.shape_deviation_bound,
+        shape_pair_distance_floor=entry.shape_pair_distance_floor,
+        tau_interval=stop_chart.tau_interval,
+        residual_tolerance=stop_chart.residual_tolerance,
+        angular_momentum_tolerance=stop_chart.angular_momentum_tolerance,
+        tail_bound=stop_chart.tail_bound,
+        sample_count=3,
+        remainder_majorant=(
+            _generalized_remainder_majorant_certificate_from_majorant(majorant)
+        ),
+    )
+    return replace(
+        certificate,
+        residual_tolerance=1.0e-5,
+        projected_residual_tolerance=2.0e4,
+    )
+
+
 @dataclass(frozen=True)
 class CertificateCheckObligation:
     """One checker obligation for a serialized certificate."""
@@ -80,6 +283,39 @@ class CertificateCheckObligation:
     obligation: str
     certified: bool
     detail: str
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "certified", self.certified is True)
+
+
+def _check_obligation_ledger_certified(
+    obligations: tuple[object, ...],
+) -> bool:
+    return bool(
+        obligations
+        and all(
+            isinstance(obligation, CertificateCheckObligation)
+            and obligation.certified is True
+            for obligation in obligations
+        )
+    )
+
+
+def _check_obligation_ledger_missing(
+    obligations: tuple[object, ...],
+    *,
+    ledger_name: str,
+) -> tuple[str, ...]:
+    missing: list[str] = []
+    if not obligations:
+        missing.append(f"{ledger_name}_obligations_present")
+    for obligation in obligations:
+        if not isinstance(obligation, CertificateCheckObligation):
+            missing.append(f"{ledger_name}_obligation_type")
+            continue
+        if obligation.certified is not True:
+            missing.append(obligation.obligation)
+    return tuple(dict.fromkeys(missing))
 
 
 @dataclass(frozen=True)
@@ -95,17 +331,13 @@ class CertificateCheckResult:
 
     @property
     def certified(self) -> bool:
-        return bool(
-            self.obligations
-            and all(obligation.certified for obligation in self.obligations)
-        )
+        return _check_obligation_ledger_certified(self.obligations)
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if not obligation.certified
+        return _check_obligation_ledger_missing(
+            self.obligations,
+            ledger_name=self.certificate_id or "certificate_check",
         )
 
 
@@ -122,18 +354,440 @@ class TransitionCheckResult:
 
     @property
     def certified(self) -> bool:
+        return _check_obligation_ledger_certified(self.obligations)
+
+    @property
+    def missing_obligations(self) -> tuple[str, ...]:
+        return _check_obligation_ledger_missing(
+            self.obligations,
+            ledger_name=self.transition_id or "transition_check",
+        )
+
+
+@dataclass(frozen=True)
+class InitialValueBindingCheckResult:
+    """Result of anchoring one checked chart to serialized IVP data."""
+
+    binding_id: str
+    chart_id: str
+    checker_id: str
+    obligations: tuple[CertificateCheckObligation, ...]
+    max_position_gap: float
+    max_velocity_gap: float
+    time_gap: float
+
+    @property
+    def certified(self) -> bool:
+        return _check_obligation_ledger_certified(self.obligations)
+
+    @property
+    def missing_obligations(self) -> tuple[str, ...]:
+        return _check_obligation_ledger_missing(
+            self.obligations,
+            ledger_name=self.binding_id or "initial_value_binding_check",
+        )
+
+
+@dataclass(frozen=True)
+class OrdinaryAposterioriTubeCheckResult:
+    """Checked defect-to-solution enclosure data for an ordinary chart."""
+
+    tube_id: str
+    chart_id: str
+    checker_id: str
+    obligations: tuple[CertificateCheckObligation, ...]
+    defect_bound: float
+    lipschitz_bound: float
+    gronwall_error_bound: float
+    nominal_pair_distance_floor: float
+    tube_pair_distance_floor: float
+
+    @property
+    def certified(self) -> bool:
+        return _check_obligation_ledger_certified(self.obligations)
+
+    @property
+    def missing_obligations(self) -> tuple[str, ...]:
+        return _check_obligation_ledger_missing(
+            self.obligations,
+            ledger_name=self.tube_id or "ordinary_aposteriori_tube_check",
+        )
+
+
+@dataclass(frozen=True)
+class WeightedOrdinaryAposterioriTubeCheckResult:
+    """A-posteriori Newton enclosure in a block-weighted infinity norm."""
+
+    tube_id: str
+    chart_id: str
+    checker_id: str
+    obligations: tuple[CertificateCheckObligation, ...]
+    position_defect_bound: float
+    velocity_defect_bound: float
+    scaled_defect_bound: float
+    acceleration_lipschitz_bound: float
+    scaled_lipschitz_bound: float
+    normalized_gronwall_error_bound: float
+    proven_position_error_bound: float
+    proven_velocity_error_bound: float
+    tube_pair_distance_floor: float
+
+    @property
+    def certified(self) -> bool:
+        return _check_obligation_ledger_certified(self.obligations)
+
+    @property
+    def missing_obligations(self) -> tuple[str, ...]:
+        return _check_obligation_ledger_missing(
+            self.obligations,
+            ledger_name=self.tube_id or "weighted_ordinary_aposteriori_tube",
+        )
+
+
+@dataclass(frozen=True)
+class ValidatedOrdinaryIVPChartCheckResult:
+    """Aggregate exact-solution enclosure check for one ordinary IVP chart."""
+
+    binding_result: InitialValueBindingCheckResult
+    tube_result: OrdinaryAposterioriTubeCheckResult
+    chart_result: CertificateCheckResult
+    chart_serialization_admissible: bool
+    checker_id: str
+    obligations: tuple[CertificateCheckObligation, ...]
+
+    @property
+    def certified(self) -> bool:
         return bool(
-            self.obligations
-            and all(obligation.certified for obligation in self.obligations)
+            type(self.binding_result) is InitialValueBindingCheckResult
+            and self.binding_result.certified
+            and type(self.tube_result) is OrdinaryAposterioriTubeCheckResult
+            and self.tube_result.certified
+            and type(self.chart_result) is CertificateCheckResult
+            and self.chart_serialization_admissible is True
+            and _check_obligation_ledger_certified(self.obligations)
         )
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if not obligation.certified
+        missing = list(
+            _check_obligation_ledger_missing(
+                self.obligations,
+                ledger_name="validated_ordinary_ivp_chart",
+            )
         )
+        missing.extend(self.binding_result.missing_obligations)
+        missing.extend(self.tube_result.missing_obligations)
+        return tuple(dict.fromkeys(missing))
+
+
+@dataclass(frozen=True)
+class OrdinaryEnclosureTransitionCheckResult:
+    """Validated continuation from an exact source tube into a target tube."""
+
+    transition_id: str
+    checker_id: str
+    target_chart_result: CertificateCheckResult
+    target_tube_result: OrdinaryAposterioriTubeCheckResult
+    obligations: tuple[CertificateCheckObligation, ...]
+    polynomial_state_gap: float
+    required_target_initial_error: float
+    time_gap: float
+
+    @property
+    def certified(self) -> bool:
+        return bool(
+            self.target_chart_result.certified
+            and self.target_tube_result.certified
+            and _check_obligation_ledger_certified(self.obligations)
+        )
+
+    @property
+    def missing_obligations(self) -> tuple[str, ...]:
+        missing = list(
+            _check_obligation_ledger_missing(
+                self.obligations,
+                ledger_name=self.transition_id or "ordinary_enclosure_transition",
+            )
+        )
+        missing.extend(self.target_chart_result.missing_obligations)
+        missing.extend(self.target_tube_result.missing_obligations)
+        return tuple(dict.fromkeys(missing))
+
+
+@dataclass(frozen=True)
+class ValidatedOrdinaryIVPChainCheckResult:
+    """Finite induction certificate for one exact ordinary Newtonian branch."""
+
+    chain_id: str
+    checker_id: str
+    first_chart_result: ValidatedOrdinaryIVPChartCheckResult
+    transition_results: tuple[OrdinaryEnclosureTransitionCheckResult, ...]
+    obligations: tuple[CertificateCheckObligation, ...]
+    covered_physical_time_interval: tuple[float, float]
+    target_time: float
+    target_position_intervals: tuple[tuple[tuple[float, float], ...], ...]
+    target_velocity_intervals: tuple[tuple[tuple[float, float], ...], ...]
+
+    @property
+    def certified(self) -> bool:
+        return bool(
+            self.first_chart_result.certified
+            and all(
+                type(result) is OrdinaryEnclosureTransitionCheckResult
+                and result.certified
+                for result in self.transition_results
+            )
+            and _check_obligation_ledger_certified(self.obligations)
+        )
+
+    @property
+    def exact_ivp_enclosure_certified(self) -> bool:
+        return self.certified
+
+    @property
+    def target_state_enclosure_certified(self) -> bool:
+        return bool(
+            self.certified
+            and np.isfinite(self.target_time)
+            and self.target_position_intervals
+            and self.target_velocity_intervals
+        )
+
+    @property
+    def missing_obligations(self) -> tuple[str, ...]:
+        missing = list(
+            _check_obligation_ledger_missing(
+                self.obligations,
+                ledger_name=self.chain_id or "validated_ordinary_ivp_chain",
+            )
+        )
+        missing.extend(self.first_chart_result.missing_obligations)
+        for result in self.transition_results:
+            missing.extend(result.missing_obligations)
+        return tuple(dict.fromkeys(missing))
+
+
+@dataclass(frozen=True)
+class PlanarLCAposterioriTubeCheckResult:
+    """Exact lifted-solution enclosure check for a planar LC chart."""
+
+    tube_id: str
+    chart_id: str
+    checker_id: str
+    obligations: tuple[CertificateCheckObligation, ...]
+    defect_bound: float
+    lipschitz_bound: float
+    gronwall_error_bound: float
+    third_body_distance_floor: float
+    anchor_pair_energy_constraint_residual: float
+    pair_energy_constraint_anchor_certified: bool
+    anchor_is_polynomial_center: bool
+
+    @property
+    def certified(self) -> bool:
+        return _check_obligation_ledger_certified(self.obligations)
+
+    @property
+    def lifted_exact_solution_enclosure_certified(self) -> bool:
+        return self.certified
+
+    @property
+    def constrained_newtonian_lift_certified(self) -> bool:
+        """Whether the particular center-anchored IVP is constraint preserving.
+
+        A positive initial-error ball also contains off-constraint anchors, so
+        an exact constraint check at the polynomial center cannot promote the
+        whole tube to a constrained family.
+        """
+        return bool(
+            self.certified
+            and self.pair_energy_constraint_anchor_certified
+            and self.anchor_is_polynomial_center
+        )
+
+    @property
+    def missing_obligations(self) -> tuple[str, ...]:
+        return _check_obligation_ledger_missing(
+            self.obligations,
+            ledger_name=self.tube_id or "planar_lc_aposteriori_tube",
+        )
+
+
+@dataclass(frozen=True)
+class PlanarLCExactCollisionAnchorCheckResult:
+    """Proof that one zero-error lifted IVP is anchored at binary collision."""
+
+    collision_id: str
+    checker_id: str
+    tube_result: PlanarLCAposterioriTubeCheckResult
+    obligations: tuple[CertificateCheckObligation, ...]
+    exact_speed_squared: float
+    pair_mass: float
+    collision_physical_time: float
+    collision_parameter: float
+    mass_ratio_arithmetic_exact: bool
+
+    @property
+    def certified(self) -> bool:
+        return bool(
+            self.tube_result.certified
+            and _check_obligation_ledger_certified(self.obligations)
+        )
+
+    @property
+    def isolated_binary_collision_certified(self) -> bool:
+        return self.certified
+
+    @property
+    def local_physical_time_strictly_increasing_certified(self) -> bool:
+        return self.certified
+
+    @property
+    def missing_obligations(self) -> tuple[str, ...]:
+        missing = list(
+            _check_obligation_ledger_missing(
+                self.obligations,
+                ledger_name=self.collision_id or "planar_lc_exact_collision_anchor",
+            )
+        )
+        missing.extend(self.tube_result.missing_obligations)
+        return tuple(dict.fromkeys(missing))
+
+
+@dataclass(frozen=True)
+class PlanarLCTwoSidedCollisionPassageCheckResult:
+    """Two punctured Newton branches selected by one collision-anchored IVP."""
+
+    passage_id: str
+    checker_id: str
+    collision_result: PlanarLCExactCollisionAnchorCheckResult
+    left_target_tube_result: OrdinaryAposterioriTubeCheckResult | WeightedOrdinaryAposterioriTubeCheckResult
+    right_target_tube_result: OrdinaryAposterioriTubeCheckResult | WeightedOrdinaryAposterioriTubeCheckResult
+    obligations: tuple[CertificateCheckObligation, ...]
+    left_rho_lower_bound: float
+    right_rho_lower_bound: float
+    left_projection_gap: float
+    right_projection_gap: float
+    left_time_origin_interval: tuple[float, float]
+    right_time_origin_interval: tuple[float, float]
+
+    @property
+    def certified(self) -> bool:
+        return bool(
+            self.collision_result.certified
+            and self.left_target_tube_result.certified
+            and self.right_target_tube_result.certified
+            and _check_obligation_ledger_certified(self.obligations)
+        )
+
+    @property
+    def generalized_binary_collision_continuation_certified(self) -> bool:
+        return self.certified
+
+    @property
+    def missing_obligations(self) -> tuple[str, ...]:
+        missing = list(
+            _check_obligation_ledger_missing(
+                self.obligations,
+                ledger_name=self.passage_id or "planar_lc_two_sided_collision_passage",
+            )
+        )
+        missing.extend(self.collision_result.missing_obligations)
+        missing.extend(self.left_target_tube_result.missing_obligations)
+        missing.extend(self.right_target_tube_result.missing_obligations)
+        return tuple(dict.fromkeys(missing))
+
+
+@dataclass(frozen=True)
+class OrdinaryToPlanarLCEnclosureTransitionCheckResult:
+    """Checked lift of an exact ordinary branch into an LC tube."""
+
+    transition_id: str
+    checker_id: str
+    target_tube_result: PlanarLCAposterioriTubeCheckResult
+    obligations: tuple[CertificateCheckObligation, ...]
+    lift_branch_count: int
+    max_lift_box_gap: float
+    time_gap: float
+    entry_lift_rho_lower_bound: float
+
+    @property
+    def certified(self) -> bool:
+        return bool(
+            self.target_tube_result.certified
+            and _check_obligation_ledger_certified(self.obligations)
+        )
+
+    @property
+    def constrained_newtonian_lift_certified(self) -> bool:
+        return self.certified
+
+    @property
+    def constrained_lc_entry_certified(self) -> bool:
+        """The source enclosure's algebraic LC lifts are constrained anchors."""
+        return self.certified
+
+    @property
+    def physical_time_strictly_monotone_certified(self) -> bool:
+        return bool(self.certified and self.entry_lift_rho_lower_bound > 0.0)
+
+    @property
+    def missing_obligations(self) -> tuple[str, ...]:
+        missing = list(
+            _check_obligation_ledger_missing(
+                self.obligations,
+                ledger_name=self.transition_id or "ordinary_to_planar_lc_enclosure",
+            )
+        )
+        missing.extend(self.target_tube_result.missing_obligations)
+        return tuple(dict.fromkeys(missing))
+
+
+@dataclass(frozen=True)
+class PlanarLCToOrdinaryEnclosureTransitionCheckResult:
+    """Checked punctured LC projection into an elapsed-time ordinary tube."""
+
+    transition_id: str
+    checker_id: str
+    target_tube_result: OrdinaryAposterioriTubeCheckResult
+    obligations: tuple[CertificateCheckObligation, ...]
+    source_rho_lower_bound: float
+    max_projected_lift_gap: float
+    physical_time_origin_interval: tuple[float, float]
+    constrained_source_entry_certified: bool
+
+    @property
+    def certified(self) -> bool:
+        return bool(
+            self.target_tube_result.certified
+            and _check_obligation_ledger_certified(self.obligations)
+        )
+
+    @property
+    def exact_newtonian_continuation_certified(self) -> bool:
+        # Projection equivalence, parameter ordering, and collision isolation
+        # are deliberately not inferred from an accepted endpoint enclosure.
+        return False
+
+    @property
+    def projected_exit_enclosure_certified(self) -> bool:
+        return self.certified
+
+    @property
+    def punctured_newton_projection_certified(self) -> bool:
+        """The accepted exit meets the proved punctured projection lemma."""
+        return bool(self.certified and self.constrained_source_entry_certified)
+
+    @property
+    def missing_obligations(self) -> tuple[str, ...]:
+        missing = list(
+            _check_obligation_ledger_missing(
+                self.obligations,
+                ledger_name=self.transition_id or "planar_lc_to_ordinary_enclosure",
+            )
+        )
+        missing.extend(self.target_tube_result.missing_obligations)
+        return tuple(dict.fromkeys(missing))
 
 
 @dataclass(frozen=True)
@@ -148,17 +802,13 @@ class EventIsolationCheckResult:
 
     @property
     def certified(self) -> bool:
-        return bool(
-            self.obligations
-            and all(obligation.certified for obligation in self.obligations)
-        )
+        return _check_obligation_ledger_certified(self.obligations)
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if not obligation.certified
+        return _check_obligation_ledger_missing(
+            self.obligations,
+            ledger_name=self.event_id or "event_isolation_check",
         )
 
 
@@ -174,17 +824,13 @@ class BranchUnionCheckResult:
 
     @property
     def certified(self) -> bool:
-        return bool(
-            self.obligations
-            and all(obligation.certified for obligation in self.obligations)
-        )
+        return _check_obligation_ledger_certified(self.obligations)
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if not obligation.certified
+        return _check_obligation_ledger_missing(
+            self.obligations,
+            ledger_name=self.union_id or "branch_union_check",
         )
 
 
@@ -200,17 +846,13 @@ class ChartChainCheckResult:
 
     @property
     def certified(self) -> bool:
-        return bool(
-            self.obligations
-            and all(obligation.certified for obligation in self.obligations)
-        )
+        return _check_obligation_ledger_certified(self.obligations)
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if not obligation.certified
+        return _check_obligation_ledger_missing(
+            self.obligations,
+            ledger_name=self.chain_id or "chart_chain_check",
         )
 
 
@@ -228,15 +870,42 @@ class ProofGradeArithmeticBackendCertificate:
     proof_sketch: str
     witness_source: str = "rational_interval_arithmetic_backend"
 
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self,
+            "exact_fraction_endpoints",
+            self.exact_fraction_endpoints is True,
+        )
+        object.__setattr__(
+            self,
+            "rational_interval_operations_checked",
+            self.rational_interval_operations_checked is True,
+        )
+        object.__setattr__(
+            self,
+            "rational_interval_polynomial_eval_checked",
+            self.rational_interval_polynomial_eval_checked is True,
+        )
+        object.__setattr__(
+            self,
+            "rational_interval_sign_trichotomy_checked",
+            self.rational_interval_sign_trichotomy_checked is True,
+        )
+        object.__setattr__(
+            self,
+            "finite_float_to_fraction_embedding_checked",
+            self.finite_float_to_fraction_embedding_checked is True,
+        )
+
     @property
     def proof_certified(self) -> bool:
         return bool(
             self.backend_id == "python_fraction_rational_interval_backend"
-            and self.exact_fraction_endpoints
-            and self.rational_interval_operations_checked
-            and self.rational_interval_polynomial_eval_checked
-            and self.rational_interval_sign_trichotomy_checked
-            and self.finite_float_to_fraction_embedding_checked
+            and self.exact_fraction_endpoints is True
+            and self.rational_interval_operations_checked is True
+            and self.rational_interval_polynomial_eval_checked is True
+            and self.rational_interval_sign_trichotomy_checked is True
+            and self.finite_float_to_fraction_embedding_checked is True
             and self.statement
             and self.proof_sketch
         )
@@ -262,7 +931,7 @@ class ProofGradeArithmeticBackendCertificate:
                 self.finite_float_to_fraction_embedding_checked,
             ),
         )
-        missing = [name for name, certified in fields if not certified]
+        missing = [name for name, certified in fields if certified is not True]
         if self.backend_id != "python_fraction_rational_interval_backend":
             missing.append("proof_grade_arithmetic_backend_id")
         return tuple(missing)
@@ -286,8 +955,12 @@ class CertificateCheckerKernelSupportCertificate:
     @property
     def proof_grade_arithmetic_backend_sound(self) -> bool:
         return bool(
-            self.proof_grade_arithmetic_backend_certificate is not None
+            isinstance(
+                self.proof_grade_arithmetic_backend_certificate,
+                ProofGradeArithmeticBackendCertificate,
+            )
             and self.proof_grade_arithmetic_backend_certificate.proof_certified
+            is True
         )
 
     @property
@@ -558,6 +1231,7 @@ class IndependentChartVerifierCertificate:
     event_results: tuple[EventIsolationCheckResult, ...] = ()
     branch_union_results: tuple[BranchUnionCheckResult, ...] = ()
     chart_chain_results: tuple[ChartChainCheckResult, ...] = ()
+    atlas_binding_token: str | None = None
 
     @property
     def checked_certificate_count(self) -> int:
@@ -619,11 +1293,31 @@ class IndependentChartVerifierCertificate:
     def certified(self) -> bool:
         return bool(
             self.chart_results
-            and all(result.certified for result in self.chart_results)
-            and all(result.certified for result in self.transition_results)
-            and all(result.certified for result in self.event_results)
-            and all(result.certified for result in self.branch_union_results)
-            and all(result.certified for result in self.chart_chain_results)
+            and all(
+                type(result) is CertificateCheckResult
+                and result.certified is True
+                for result in self.chart_results
+            )
+            and all(
+                type(result) is TransitionCheckResult
+                and result.certified is True
+                for result in self.transition_results
+            )
+            and all(
+                type(result) is EventIsolationCheckResult
+                and result.certified is True
+                for result in self.event_results
+            )
+            and all(
+                type(result) is BranchUnionCheckResult
+                and result.certified is True
+                for result in self.branch_union_results
+            )
+            and all(
+                type(result) is ChartChainCheckResult
+                and result.certified is True
+                for result in self.chart_chain_results
+            )
         )
 
     @property
@@ -634,12 +1328,16 @@ class IndependentChartVerifierCertificate:
     def proof_grade_arithmetic_obligation_ids(self) -> tuple[str, ...]:
         obligation_ids: list[str] = []
         for result in self.chart_results:
+            if type(result) is not CertificateCheckResult:
+                continue
             required = _PROOF_GRADE_CHART_OBLIGATIONS.get(result.certificate_type, ())
             certified = _certified_obligation_ids(result.obligations)
             obligation_ids.extend(
                 obligation for obligation in required if obligation in certified
             )
         for result in self.event_results:
+            if type(result) is not EventIsolationCheckResult:
+                continue
             certified = _certified_obligation_ids(result.obligations)
             obligation_ids.extend(
                 obligation
@@ -647,6 +1345,8 @@ class IndependentChartVerifierCertificate:
                 if obligation in certified
             )
         for result in self.branch_union_results:
+            if type(result) is not BranchUnionCheckResult:
+                continue
             certified = _certified_obligation_ids(result.obligations)
             obligation_ids.extend(
                 obligation
@@ -654,6 +1354,8 @@ class IndependentChartVerifierCertificate:
                 if obligation in certified
             )
         for result in self.chart_chain_results:
+            if type(result) is not ChartChainCheckResult:
+                continue
             certified = _certified_obligation_ids(result.obligations)
             obligation_ids.extend(
                 obligation
@@ -661,6 +1363,8 @@ class IndependentChartVerifierCertificate:
                 if obligation in certified
             )
         for result in self.transition_results:
+            if type(result) is not TransitionCheckResult:
+                continue
             certified = _certified_obligation_ids(result.obligations)
             obligation_ids.extend(
                 obligation
@@ -675,6 +1379,9 @@ class IndependentChartVerifierCertificate:
         if not self.chart_results and not self.event_results:
             blockers.append("proof_grade_arithmetic_no_checked_chart_or_event")
         for result in self.chart_results:
+            if type(result) is not CertificateCheckResult:
+                blockers.append("chart_result_type")
+                continue
             required = _PROOF_GRADE_CHART_OBLIGATIONS.get(result.certificate_type)
             if required is None:
                 blockers.append(
@@ -686,21 +1393,33 @@ class IndependentChartVerifierCertificate:
                 if obligation not in certified:
                     blockers.append(f"{result.certificate_id}:{obligation}")
         for result in self.event_results:
+            if type(result) is not EventIsolationCheckResult:
+                blockers.append("event_result_type")
+                continue
             certified = _certified_obligation_ids(result.obligations)
             for obligation in _PROOF_GRADE_EVENT_OBLIGATIONS:
                 if obligation not in certified:
                     blockers.append(f"{result.event_id}:{obligation}")
         for result in self.transition_results:
+            if type(result) is not TransitionCheckResult:
+                blockers.append("transition_result_type")
+                continue
             certified = _certified_obligation_ids(result.obligations)
             for obligation in _PROOF_GRADE_TRANSITION_OBLIGATIONS:
                 if obligation not in certified:
                     blockers.append(f"{result.transition_id}:{obligation}")
         for result in self.branch_union_results:
+            if type(result) is not BranchUnionCheckResult:
+                blockers.append("branch_union_result_type")
+                continue
             certified = _certified_obligation_ids(result.obligations)
             for obligation in _PROOF_GRADE_BRANCH_UNION_OBLIGATIONS:
                 if obligation not in certified:
                     blockers.append(f"{result.union_id}:{obligation}")
         for result in self.chart_chain_results:
+            if type(result) is not ChartChainCheckResult:
+                blockers.append("chart_chain_result_type")
+                continue
             certified = _certified_obligation_ids(result.obligations)
             for obligation in _PROOF_GRADE_CHART_CHAIN_OBLIGATIONS:
                 if obligation not in certified:
@@ -712,17 +1431,48 @@ class IndependentChartVerifierCertificate:
         return bool(self.certified and not self.proof_grade_arithmetic_blockers)
 
     @property
+    def proof_grade_finite_atlas_blockers(self) -> tuple[str, ...]:
+        blockers = list(self.proof_grade_arithmetic_blockers)
+        if self.checked_chart_chain_count <= 0:
+            blockers.append("finite_atlas_chart_chain_checked")
+        if (
+            self.checked_certificate_count <= 0
+            and self.checked_branch_union_count <= 0
+        ):
+            blockers.append("finite_atlas_chart_or_branch_union_checked")
+        return tuple(dict.fromkeys(blockers))
+
+    @property
+    def proof_grade_finite_atlas_bundle_certified(self) -> bool:
+        return bool(self.certified and not self.proof_grade_finite_atlas_blockers)
+
+    @property
     def missing_obligations(self) -> tuple[str, ...]:
         missing: list[str] = []
         for result in self.chart_results:
+            if type(result) is not CertificateCheckResult:
+                missing.append("chart_result_type")
+                continue
             missing.extend(result.missing_obligations)
         for result in self.transition_results:
+            if type(result) is not TransitionCheckResult:
+                missing.append("transition_result_type")
+                continue
             missing.extend(result.missing_obligations)
         for result in self.event_results:
+            if type(result) is not EventIsolationCheckResult:
+                missing.append("event_result_type")
+                continue
             missing.extend(result.missing_obligations)
         for result in self.branch_union_results:
+            if type(result) is not BranchUnionCheckResult:
+                missing.append("branch_union_result_type")
+                continue
             missing.extend(result.missing_obligations)
         for result in self.chart_chain_results:
+            if type(result) is not ChartChainCheckResult:
+                missing.append("chart_chain_result_type")
+                continue
             missing.extend(result.missing_obligations)
         return tuple(dict.fromkeys(missing))
 
@@ -733,7 +1483,8 @@ def _certified_obligation_ids(
     return {
         obligation.obligation
         for obligation in obligations
-        if obligation.certified
+        if isinstance(obligation, CertificateCheckObligation)
+        and obligation.certified is True
     }
 
 
@@ -2123,6 +2874,16 @@ def check_total_collision_generalized_fuchsian_stop_chart(
     total_collision_tau = float(certificate.total_collision_tau)
     isolation_radius = float(certificate.isolation_radius)
     residual_tolerance = float(certificate.residual_tolerance)
+    projected_residual_tolerance_data = getattr(
+        certificate,
+        "projected_residual_tolerance",
+        None,
+    )
+    projected_residual_tolerance = (
+        residual_tolerance
+        if projected_residual_tolerance_data is None
+        else float(projected_residual_tolerance_data)
+    )
     angular_tolerance = float(certificate.angular_momentum_tolerance)
     tail_bound = float(certificate.tail_bound)
     sample_count = int(certificate.sample_count)
@@ -2182,6 +2943,8 @@ def check_total_collision_generalized_fuchsian_stop_chart(
     finite_tolerances = bool(
         np.isfinite(residual_tolerance)
         and residual_tolerance >= 0.0
+        and np.isfinite(projected_residual_tolerance)
+        and projected_residual_tolerance >= 0.0
         and np.isfinite(angular_tolerance)
         and angular_tolerance >= 0.0
     )
@@ -2364,6 +3127,10 @@ def check_total_collision_generalized_fuchsian_stop_chart(
             cauchy_projected_residual_certified = bool(
                 majorant_checks["required_residual_components_present"]
                 and majorant_checks["physical_residual_tail_certified"]
+                and np.isfinite(max_interval_projected_residual)
+                and max_interval_projected_residual
+                + float(majorant_checks["physical_residual_tail_bound"])
+                <= projected_residual_tolerance * (1.0 + 1.0e-12)
             )
             (
                 max_interval_angular_momentum,
@@ -2568,7 +3335,7 @@ def check_total_collision_generalized_fuchsian_stop_chart(
             "cauchy_generalized_fuchsian_projected_residual_tail_on_punctured_shells",
             cauchy_projected_residual_certified,
             (
-                f"residual_tolerance={residual_tolerance}; "
+                f"projected_residual_tolerance={projected_residual_tolerance}; "
                 f"physical_residual_tail={majorant_checks['physical_residual_tail_bound']}; "
                 f"{majorant_checks['required_residual_component_detail']}; "
                 "diagnostic_direct_interval_projected_residual="
@@ -2625,9 +3392,2471 @@ def check_total_collision_generalized_fuchsian_stop_chart(
         max_sampled_newton_residual=float(
             max(
                 max_interval_lifted_residual,
+                max_interval_projected_residual,
                 float(majorant_checks["physical_residual_tail_bound"]),
             )
         ),
+    )
+
+
+def check_initial_value_problem_binding(
+    binding: InitialValueProblemBindingCertificate,
+    charts: Iterable[
+        OrdinaryTaylorChartCertificate
+        | PlanarLeviCivitaBinaryChartCertificate
+        | SpatialKSBinaryChartCertificate
+    ],
+) -> InitialValueBindingCheckResult:
+    """Anchor a serialized chart polynomial to explicit finite IVP data.
+
+    Passing this check proves equality/closeness of the serialized polynomial
+    state at one parameter.  Exact-trajectory enclosure still requires the
+    separate a-posteriori tube certificate specified in the soundness theorem.
+    """
+
+    chart_by_id = {str(chart.chart_id): chart for chart in charts}
+    chart = chart_by_id.get(str(binding.chart_id))
+    positions = np.asarray(binding.positions, dtype=float)
+    velocities = np.asarray(binding.velocities, dtype=float)
+    masses = np.asarray(binding.masses, dtype=float)
+    parameter = float(binding.chart_parameter)
+    initial_time = float(binding.initial_time)
+    time_tolerance = float(binding.time_tolerance)
+    position_tolerance = float(binding.position_tolerance)
+    velocity_tolerance = float(binding.velocity_tolerance)
+
+    identity_present = bool(binding.binding_id and binding.chart_id)
+    chart_present = chart is not None
+    finite_problem = bool(
+        masses.shape == (3,)
+        and positions.ndim == 2
+        and positions.shape[0] == 3
+        and positions.shape == velocities.shape
+        and positions.shape[1] in (2, 3)
+        and np.all(np.isfinite(masses))
+        and np.all(masses > 0.0)
+        and np.all(np.isfinite(positions))
+        and np.all(np.isfinite(velocities))
+        and np.isfinite(parameter)
+        and np.isfinite(initial_time)
+    )
+    finite_tolerances = bool(
+        np.isfinite(time_tolerance)
+        and time_tolerance >= 0.0
+        and np.isfinite(position_tolerance)
+        and position_tolerance >= 0.0
+        and np.isfinite(velocity_tolerance)
+        and velocity_tolerance >= 0.0
+    )
+    chart_masses_match = bool(
+        chart_present
+        and tuple(float(value) for value in binding.masses)
+        == tuple(float(value) for value in chart.masses)
+    )
+    parameter_inside = bool(
+        chart_present and _parameter_in_interval(chart.parameter_interval, parameter)
+    )
+
+    time_gap = np.inf
+    max_position_gap = np.inf
+    max_velocity_gap = np.inf
+    state_shape_matches = False
+    binding_matches = False
+    if (
+        chart_present
+        and finite_problem
+        and finite_tolerances
+        and chart_masses_match
+        and parameter_inside
+    ):
+        try:
+            parameter_q = Fraction.from_float(parameter)
+            chart_time_q = _exact_rational_chart_physical_time_at_parameter(
+                chart, parameter_q
+            )
+            chart_positions_q, chart_velocities_q = (
+                _exact_rational_chart_projected_state_at_parameter(
+                    chart, parameter_q
+                )
+            )
+            state_shape_matches = bool(
+                chart_positions_q.shape == positions.shape
+                and chart_velocities_q.shape == velocities.shape
+            )
+            if state_shape_matches:
+                problem_positions_q = _fraction_array_from_floats(positions)
+                problem_velocities_q = _fraction_array_from_floats(velocities)
+                time_gap_q = abs(
+                    chart_time_q - Fraction.from_float(initial_time)
+                )
+                position_gap_q = _fraction_array_max_abs_difference(
+                    chart_positions_q, problem_positions_q
+                )
+                velocity_gap_q = _fraction_array_max_abs_difference(
+                    chart_velocities_q, problem_velocities_q
+                )
+                time_gap = _fraction_upper_float(time_gap_q)
+                max_position_gap = _fraction_upper_float(position_gap_q)
+                max_velocity_gap = _fraction_upper_float(velocity_gap_q)
+                binding_matches = bool(
+                    time_gap_q <= Fraction.from_float(time_tolerance)
+                    and position_gap_q <= Fraction.from_float(position_tolerance)
+                    and velocity_gap_q <= Fraction.from_float(velocity_tolerance)
+                )
+        except (FloatingPointError, ValueError):
+            pass
+
+    obligations = (
+        CertificateCheckObligation(
+            "initial_value_binding_identity_present",
+            identity_present,
+            f"binding_id={binding.binding_id!r}; chart_id={binding.chart_id!r}",
+        ),
+        CertificateCheckObligation(
+            "initial_value_binding_chart_present",
+            chart_present,
+            f"known_chart_ids={tuple(chart_by_id)!r}",
+        ),
+        CertificateCheckObligation(
+            "initial_value_problem_finite_positive_mass_state",
+            finite_problem,
+            f"masses={binding.masses!r}; position_shape={positions.shape}",
+        ),
+        CertificateCheckObligation(
+            "initial_value_binding_tolerances_finite",
+            finite_tolerances,
+            (
+                f"time={time_tolerance}; position={position_tolerance}; "
+                f"velocity={velocity_tolerance}"
+            ),
+        ),
+        CertificateCheckObligation(
+            "initial_value_binding_chart_masses_match",
+            chart_masses_match,
+            f"problem_masses={binding.masses!r}",
+        ),
+        CertificateCheckObligation(
+            "initial_value_binding_parameter_inside_chart",
+            parameter_inside,
+            f"parameter={parameter}",
+        ),
+        CertificateCheckObligation(
+            "initial_value_binding_state_shape_matches",
+            state_shape_matches,
+            f"problem_shape={positions.shape}",
+        ),
+        CertificateCheckObligation(
+            "initial_value_binding_polynomial_state_matches",
+            binding_matches,
+            (
+                f"time_gap={time_gap}; position_gap={max_position_gap}; "
+                f"velocity_gap={max_velocity_gap}"
+            ),
+        ),
+    )
+    return InitialValueBindingCheckResult(
+        binding_id=str(binding.binding_id),
+        chart_id=str(binding.chart_id),
+        checker_id="independent_initial_value_binding_checker_v1",
+        obligations=obligations,
+        max_position_gap=float(max_position_gap),
+        max_velocity_gap=float(max_velocity_gap),
+        time_gap=float(time_gap),
+    )
+
+
+def check_ordinary_aposteriori_tube(
+    certificate: OrdinaryAposterioriTubeCertificate,
+    chart: OrdinaryTaylorChartCertificate,
+) -> OrdinaryAposterioriTubeCheckResult:
+    """Check a Gronwall tube enclosing an exact ordinary Newtonian solution.
+
+    The theorem is the standard defect estimate for a Lipschitz ODE, with a
+    self-consistency condition keeping the enclosure inside the collision-free
+    tube on which the recomputed Lipschitz bound applies.
+    """
+
+    q = _coefficient_array(chart.position_coefficients)
+    v = _coefficient_array(chart.velocity_coefficients)
+    masses = np.asarray(chart.masses, dtype=float)
+    interval = tuple(float(value) for value in chart.parameter_interval)
+    anchor_parameter = float(certificate.anchor_parameter)
+    initial_error = float(certificate.initial_error_bound)
+    radius = float(certificate.tube_radius)
+    defect_cap = float(certificate.max_defect_bound)
+    lipschitz_cap = float(certificate.max_lipschitz_bound)
+    identity_matches = bool(
+        certificate.tube_id
+        and certificate.chart_id
+        and certificate.chart_id == chart.chart_id
+        and chart.chart_type == "ordinary_taylor"
+    )
+    finite_inputs = bool(
+        np.isfinite(anchor_parameter)
+        and _finite_nonempty_interval(interval)
+        and interval[0] <= anchor_parameter <= interval[1]
+        and np.isfinite(initial_error)
+        and initial_error >= 0.0
+        and np.isfinite(radius)
+        and radius > 0.0
+        and np.isfinite(defect_cap)
+        and defect_cap >= 0.0
+        and np.isfinite(lipschitz_cap)
+        and lipschitz_cap >= 0.0
+    )
+
+    nominal_floor = 0.0
+    tube_floor = 0.0
+    defect = np.inf
+    lipschitz = np.inf
+    gronwall = np.inf
+    defect_within_cap = False
+    lipschitz_within_cap = False
+    tube_collision_free = False
+    self_consistent = False
+    if identity_matches and finite_inputs:
+        try:
+            variable = FloatInterval(interval[0], interval[1])
+            position_intervals = interval_array_series_eval(q, variable)
+            nominal_floor = _interval_minimum_pair_distance(position_intervals)
+            dimension = int(q.shape[2])
+            tube_floor = _ordinary_tube_pair_floor_lower(
+                nominal_floor, dimension, radius
+            )
+            tube_collision_free = tube_floor > 0.0
+            defect = _max_interval_ordinary_newton_residual(
+                q,
+                v,
+                masses,
+                interval,
+            )
+            defect_within_cap = defect <= defect_cap
+            if tube_collision_free:
+                acceleration_lipschitz = max(
+                    _newton_acceleration_lipschitz_upper(
+                        masses,
+                        body_index=i,
+                        dimension=dimension,
+                        pair_distance_floor=tube_floor,
+                    )
+                    for i in range(3)
+                )
+                lipschitz = max(1.0, acceleration_lipschitz)
+                lipschitz_within_cap = lipschitz <= lipschitz_cap
+                h = max(
+                    abs(float(interval[0] - anchor_parameter)),
+                    abs(float(interval[1] - anchor_parameter)),
+                )
+                exponent = _positive_product_upper(lipschitz, h)
+                exponential = _exp_upper(exponent)
+                gronwall = float(
+                    np.nextafter(
+                        exponential * initial_error
+                        + defect * (exponential - 1.0) / lipschitz,
+                        np.inf,
+                    )
+                )
+                self_consistent = gronwall < radius
+        except (
+            DecimalException,
+            FloatingPointError,
+            OverflowError,
+            ValueError,
+            ZeroDivisionError,
+        ):
+            pass
+
+    obligations = (
+        CertificateCheckObligation(
+            "ordinary_tube_identity_matches_chart",
+            identity_matches,
+            f"tube_id={certificate.tube_id!r}; chart_id={certificate.chart_id!r}",
+        ),
+        CertificateCheckObligation(
+            "ordinary_tube_inputs_finite",
+            finite_inputs,
+            (
+                f"initial_error={initial_error}; radius={radius}; "
+                f"defect_cap={defect_cap}; lipschitz_cap={lipschitz_cap}"
+            ),
+        ),
+        CertificateCheckObligation(
+            "ordinary_tube_polynomial_defect_within_cap",
+            defect_within_cap,
+            f"recomputed_defect={defect}; cap={defect_cap}",
+        ),
+        CertificateCheckObligation(
+            "ordinary_tube_collision_free",
+            tube_collision_free,
+            f"nominal_floor={nominal_floor}; tube_floor={tube_floor}",
+        ),
+        CertificateCheckObligation(
+            "ordinary_tube_lipschitz_within_cap",
+            lipschitz_within_cap,
+            f"recomputed_lipschitz={lipschitz}; cap={lipschitz_cap}",
+        ),
+        CertificateCheckObligation(
+            "ordinary_tube_gronwall_self_consistent",
+            self_consistent,
+            f"gronwall_error={gronwall}; radius={radius}",
+        ),
+    )
+    return OrdinaryAposterioriTubeCheckResult(
+        tube_id=str(certificate.tube_id),
+        chart_id=str(certificate.chart_id),
+        checker_id="independent_ordinary_aposteriori_tube_checker_v1",
+        obligations=obligations,
+        defect_bound=float(defect),
+        lipschitz_bound=float(lipschitz),
+        gronwall_error_bound=float(gronwall),
+        nominal_pair_distance_floor=float(nominal_floor),
+        tube_pair_distance_floor=float(tube_floor),
+    )
+
+
+def check_weighted_ordinary_aposteriori_tube(
+    certificate: WeightedOrdinaryAposterioriTubeCertificate,
+    chart: OrdinaryTaylorChartCertificate,
+) -> WeightedOrdinaryAposterioriTubeCheckResult:
+    """Check a Newton tube in a position/velocity weighted infinity norm."""
+
+    q = _coefficient_array(chart.position_coefficients)
+    v = _coefficient_array(chart.velocity_coefficients)
+    masses = np.asarray(chart.masses, dtype=float)
+    interval = tuple(float(value) for value in chart.parameter_interval)
+    anchor = float(certificate.anchor_parameter)
+    eps_q = float(certificate.initial_position_error_bound)
+    eps_v = float(certificate.initial_velocity_error_bound)
+    radius_q = float(certificate.position_radius)
+    radius_v = float(certificate.velocity_radius)
+    defect_cap = float(certificate.max_scaled_defect_bound)
+    lipschitz_cap = float(certificate.max_scaled_lipschitz_bound)
+    identity_matches = bool(
+        certificate.tube_id
+        and certificate.chart_id == chart.chart_id
+        and chart.chart_type == "ordinary_taylor"
+    )
+    finite_inputs = bool(
+        np.isfinite(anchor)
+        and _finite_nonempty_interval(interval)
+        and interval[0] <= anchor <= interval[1]
+        and all(
+            np.isfinite(value) and value >= 0.0
+            for value in (eps_q, eps_v, defect_cap, lipschitz_cap)
+        )
+        and np.isfinite(radius_q)
+        and radius_q > 0.0
+        and np.isfinite(radius_v)
+        and radius_v > 0.0
+    )
+    position_defect = velocity_defect = scaled_defect = np.inf
+    acceleration_lipschitz = scaled_lipschitz = np.inf
+    normalized_error = position_error = velocity_error = np.inf
+    nominal_floor = tube_floor = 0.0
+    collision_free = defect_within_cap = lipschitz_within_cap = False
+    self_consistent = False
+    if identity_matches and finite_inputs:
+        try:
+            variable = FloatInterval(*interval)
+            positions = interval_array_series_eval(q, variable)
+            nominal_floor = _interval_minimum_pair_distance(positions)
+            dimension = int(q.shape[2])
+            tube_floor = _ordinary_tube_pair_floor_lower(
+                nominal_floor, dimension, radius_q
+            )
+            collision_free = tube_floor > 0.0
+            position_defect, velocity_defect = (
+                _interval_ordinary_newton_residual_blocks(q, v, masses, interval)
+            )
+            scaled_defect = max(
+                _positive_ratio_upper(position_defect, radius_q),
+                _positive_ratio_upper(velocity_defect, radius_v),
+            )
+            defect_within_cap = scaled_defect <= defect_cap
+            if collision_free:
+                acceleration_lipschitz = max(
+                    _newton_acceleration_lipschitz_upper(
+                        masses,
+                        body_index=index,
+                        dimension=dimension,
+                        pair_distance_floor=tube_floor,
+                    )
+                    for index in range(3)
+                )
+                scaled_lipschitz = max(
+                    _positive_ratio_upper(radius_v, radius_q),
+                    _positive_ratio_upper(
+                        _positive_product_upper(acceleration_lipschitz, radius_q),
+                        radius_v,
+                    ),
+                )
+                lipschitz_within_cap = scaled_lipschitz <= lipschitz_cap
+                eta0 = max(
+                    _positive_ratio_upper(eps_q, radius_q),
+                    _positive_ratio_upper(eps_v, radius_v),
+                )
+                h = max(abs(interval[0] - anchor), abs(interval[1] - anchor))
+                exponential = _exp_upper(
+                    _positive_product_upper(scaled_lipschitz, h)
+                )
+                normalized_error = _fraction_upper_float(
+                    Fraction.from_float(exponential)
+                    * Fraction.from_float(eta0)
+                    + Fraction.from_float(scaled_defect)
+                    * (Fraction.from_float(exponential) - 1)
+                    / Fraction.from_float(scaled_lipschitz)
+                )
+                position_error = _positive_product_upper(radius_q, normalized_error)
+                velocity_error = _positive_product_upper(radius_v, normalized_error)
+                self_consistent = normalized_error < 1.0
+        except (
+            DecimalException,
+            FloatingPointError,
+            OverflowError,
+            ValueError,
+            ZeroDivisionError,
+        ):
+            pass
+    obligations = (
+        CertificateCheckObligation(
+            "weighted_ordinary_tube_identity_matches_chart",
+            identity_matches,
+            f"tube={certificate.tube_id!r}; chart={chart.chart_id!r}",
+        ),
+        CertificateCheckObligation(
+            "weighted_ordinary_tube_inputs_finite",
+            finite_inputs,
+            f"position_radius={radius_q}; velocity_radius={radius_v}",
+        ),
+        CertificateCheckObligation(
+            "weighted_ordinary_tube_scaled_defect_within_cap",
+            defect_within_cap,
+            f"scaled_defect={scaled_defect}; cap={defect_cap}",
+        ),
+        CertificateCheckObligation(
+            "weighted_ordinary_tube_collision_free",
+            collision_free,
+            f"nominal_floor={nominal_floor}; tube_floor={tube_floor}",
+        ),
+        CertificateCheckObligation(
+            "weighted_ordinary_tube_scaled_lipschitz_within_cap",
+            lipschitz_within_cap,
+            f"scaled_lipschitz={scaled_lipschitz}; cap={lipschitz_cap}",
+        ),
+        CertificateCheckObligation(
+            "weighted_ordinary_tube_gronwall_self_consistent",
+            self_consistent,
+            f"normalized_error={normalized_error}",
+        ),
+    )
+    return WeightedOrdinaryAposterioriTubeCheckResult(
+        tube_id=str(certificate.tube_id),
+        chart_id=str(certificate.chart_id),
+        checker_id="weighted_ordinary_aposteriori_tube_checker_v1",
+        obligations=obligations,
+        position_defect_bound=float(position_defect),
+        velocity_defect_bound=float(velocity_defect),
+        scaled_defect_bound=float(scaled_defect),
+        acceleration_lipschitz_bound=float(acceleration_lipschitz),
+        scaled_lipschitz_bound=float(scaled_lipschitz),
+        normalized_gronwall_error_bound=float(normalized_error),
+        proven_position_error_bound=float(position_error),
+        proven_velocity_error_bound=float(velocity_error),
+        tube_pair_distance_floor=float(tube_floor),
+    )
+
+
+def check_planar_lc_aposteriori_tube(
+    certificate: PlanarLCAposterioriTubeCertificate,
+    chart: PlanarLeviCivitaBinaryChartCertificate,
+) -> PlanarLCAposterioriTubeCheckResult:
+    """Enclose an exact lifted LC solution, including through ``z=0``."""
+
+    solution = _regularized_binary_solution_from_certificate(chart)
+    interval = tuple(float(value) for value in chart.parameter_interval)
+    anchor = float(certificate.anchor_parameter)
+    initial_error = float(certificate.initial_error_bound)
+    radius = float(certificate.tube_radius)
+    defect_cap = float(certificate.max_defect_bound)
+    lipschitz_cap = float(certificate.max_lipschitz_bound)
+    identity_matches = bool(
+        certificate.tube_id
+        and certificate.chart_id == chart.chart_id
+        and chart.chart_type == "planar_levi_civita_binary"
+    )
+    finite_inputs = bool(
+        _finite_nonempty_interval(interval)
+        and np.isfinite(anchor)
+        and interval[0] <= anchor <= interval[1]
+        and np.isfinite(initial_error)
+        and initial_error >= 0.0
+        and np.isfinite(radius)
+        and radius > 0.0
+        and np.isfinite(defect_cap)
+        and defect_cap >= 0.0
+        and np.isfinite(lipschitz_cap)
+        and lipschitz_cap >= 0.0
+    )
+    arrays = (
+        solution.z,
+        solution.z_velocity,
+        solution.pair_energy,
+        solution.binary_center,
+        solution.binary_center_velocity,
+        solution.third_offset,
+        solution.third_offset_velocity,
+        solution.physical_time,
+    )
+    masses = np.asarray(solution.masses, dtype=float)
+    lifted_serialization_admissible = bool(
+        solution.z.ndim == 2
+        and solution.z.shape[1:] == (2,)
+        and solution.z.shape[0] >= 2
+        and solution.z_velocity.shape == solution.z.shape
+        and solution.pair_energy.shape == (solution.z.shape[0],)
+        and solution.binary_center.shape == solution.z.shape
+        and solution.binary_center_velocity.shape == solution.z.shape
+        and solution.third_offset.shape == solution.z.shape
+        and solution.third_offset_velocity.shape == solution.z.shape
+        and solution.physical_time.shape == (solution.z.shape[0],)
+        and all(np.all(np.isfinite(array)) for array in arrays)
+        and masses.shape == (3,)
+        and np.all(np.isfinite(masses))
+        and np.all(masses > 0.0)
+        and len(solution.pair) == 2
+        and solution.pair[0] != solution.pair[1]
+        and set(solution.pair).issubset({0, 1, 2})
+    )
+    defect = np.inf
+    lipschitz = np.inf
+    third_floor = 0.0
+    gronwall = np.inf
+    defect_within_cap = False
+    lipschitz_within_cap = False
+    separated_third_body = False
+    self_consistent = False
+    constraint_residual = np.inf
+    constraint_anchor_certified = False
+    if identity_matches and finite_inputs and lifted_serialization_admissible:
+        try:
+            anchor_q = Fraction.from_float(anchor)
+            z_anchor = _evaluate_fraction_coefficients(
+                chart.z_coefficients, anchor_q
+            )
+            w_anchor = _evaluate_fraction_coefficients(
+                chart.z_velocity_coefficients, anchor_q
+            )
+            h_anchor = _evaluate_fraction_coefficients(
+                chart.pair_energy_coefficients, anchor_q
+            )
+            pair_mass_q = sum(
+                Fraction.from_float(float(chart.masses[index]))
+                for index in chart.pair
+            )
+            rho_anchor = sum(value * value for value in z_anchor)
+            constraint_q = (
+                2 * sum(value * value for value in w_anchor)
+                - pair_mass_q
+                - rho_anchor * h_anchor
+            )
+            constraint_residual = _fraction_upper_float(abs(constraint_q))
+            constraint_anchor_certified = constraint_q == 0
+        except (OverflowError, ValueError, ZeroDivisionError):
+            pass
+    if identity_matches and finite_inputs and lifted_serialization_admissible:
+        try:
+            defect, lipschitz, third_floor = (
+                _planar_lc_direct_defect_and_lipschitz(
+                    solution,
+                    interval,
+                    tube_radius=radius,
+                )
+            )
+            defect_within_cap = defect <= defect_cap
+            lipschitz_within_cap = lipschitz <= lipschitz_cap
+            separated_third_body = third_floor > 0.0
+            if separated_third_body and np.isfinite(lipschitz):
+                h = max(abs(interval[0] - anchor), abs(interval[1] - anchor))
+                exponential = _exp_upper(_positive_product_upper(lipschitz, h))
+                if lipschitz > 0.0:
+                    gronwall = float(
+                        np.nextafter(
+                            exponential * initial_error
+                            + defect * (exponential - 1.0) / lipschitz,
+                            np.inf,
+                        )
+                    )
+                else:
+                    gronwall = float(
+                        np.nextafter(initial_error + defect * h, np.inf)
+                    )
+                self_consistent = gronwall < radius
+        except (
+            DecimalException,
+            FloatingPointError,
+            OverflowError,
+            ValueError,
+            ZeroDivisionError,
+        ):
+            pass
+
+    obligations = (
+        CertificateCheckObligation(
+            "planar_lc_tube_identity_matches_chart",
+            identity_matches,
+            f"tube={certificate.tube_id!r}; chart={certificate.chart_id!r}",
+        ),
+        CertificateCheckObligation(
+            "planar_lc_tube_lifted_serialization_admissible",
+            lifted_serialization_admissible,
+            (
+                f"chart={chart.chart_id!r}; projected physical-velocity "
+                "checking is deliberately separate on punctured rho-positive slabs"
+            ),
+        ),
+        CertificateCheckObligation(
+            "planar_lc_tube_inputs_finite",
+            finite_inputs,
+            f"anchor={anchor}; initial_error={initial_error}; radius={radius}",
+        ),
+        CertificateCheckObligation(
+            "planar_lc_tube_direct_lifted_defect_within_cap",
+            defect_within_cap,
+            f"defect={defect}; cap={defect_cap}",
+        ),
+        CertificateCheckObligation(
+            "planar_lc_tube_separated_third_body",
+            separated_third_body,
+            f"third_body_distance_floor={third_floor}",
+        ),
+        CertificateCheckObligation(
+            "planar_lc_tube_interval_jacobian_within_cap",
+            lipschitz_within_cap,
+            f"lipschitz={lipschitz}; cap={lipschitz_cap}",
+        ),
+        CertificateCheckObligation(
+            "planar_lc_tube_pair_energy_constraint_when_required",
+            bool(
+                not certificate.require_pair_energy_constraint
+                or constraint_anchor_certified
+            ),
+            (
+                f"required={certificate.require_pair_energy_constraint}; "
+                f"exact_anchor_residual={constraint_residual}"
+            ),
+        ),
+        CertificateCheckObligation(
+            "planar_lc_tube_gronwall_self_consistent",
+            self_consistent,
+            f"gronwall_error={gronwall}; radius={radius}",
+        ),
+    )
+    return PlanarLCAposterioriTubeCheckResult(
+        tube_id=str(certificate.tube_id),
+        chart_id=str(certificate.chart_id),
+        checker_id="independent_planar_lc_aposteriori_tube_checker_v1",
+        obligations=obligations,
+        defect_bound=float(defect),
+        lipschitz_bound=float(lipschitz),
+        gronwall_error_bound=float(gronwall),
+        third_body_distance_floor=float(third_floor),
+        anchor_pair_energy_constraint_residual=float(constraint_residual),
+        pair_energy_constraint_anchor_certified=constraint_anchor_certified,
+        anchor_is_polynomial_center=bool(initial_error == 0.0),
+    )
+
+
+def check_planar_lc_exact_collision_anchor(
+    certificate: PlanarLCExactCollisionAnchorCertificate,
+    tube: PlanarLCAposterioriTubeCertificate,
+    chart: PlanarLeviCivitaBinaryChartCertificate,
+) -> PlanarLCExactCollisionAnchorCheckResult:
+    """Certify an exact, isolated collision of the center-anchored LC IVP."""
+
+    tube_result = check_planar_lc_aposteriori_tube(tube, chart)
+    parameter = float(certificate.collision_parameter)
+    identifiers_match = bool(
+        certificate.collision_id
+        and certificate.chart_id == chart.chart_id == tube.chart_id
+        and certificate.tube_id == tube.tube_id
+    )
+    parameter_matches = bool(
+        np.isfinite(parameter)
+        and _parameter_in_interval(chart.parameter_interval, parameter)
+        and parameter == float(tube.anchor_parameter)
+    )
+    zero_error_center_anchor = bool(
+        np.isfinite(tube.initial_error_bound)
+        and float(tube.initial_error_bound) == 0.0
+        and tube_result.anchor_is_polynomial_center
+    )
+    exact_zero = False
+    exact_constraint = False
+    nonzero_velocity = False
+    speed_squared = np.inf
+    pair_mass_value = np.inf
+    collision_time = np.inf
+    mass_ratio_arithmetic_exact = _planar_lc_mass_ratio_arithmetic_exact(
+        chart.masses, chart.pair
+    )
+    if identifiers_match and parameter_matches:
+        try:
+            parameter_q = Fraction.from_float(parameter)
+            state = _exact_rational_planar_lc_lifted_state_at_parameter(
+                chart, parameter_q
+            )
+            z = state[0:2]
+            w = state[2:4]
+            h = state[4]
+            rho = z[0] * z[0] + z[1] * z[1]
+            speed_q = w[0] * w[0] + w[1] * w[1]
+            pair_mass_q = sum(
+                Fraction.from_float(float(chart.masses[index]))
+                for index in chart.pair
+            )
+            constraint_q = 2 * speed_q - pair_mass_q - rho * h
+            exact_zero = z == (Fraction(0), Fraction(0))
+            exact_constraint = constraint_q == 0
+            nonzero_velocity = speed_q > 0
+            speed_squared = _fraction_lower_float(speed_q)
+            pair_mass_value = _fraction_lower_float(pair_mass_q)
+            collision_time = float(
+                _exact_rational_chart_physical_time_at_parameter(
+                    chart, parameter_q
+                )
+            )
+        except (IndexError, OverflowError, ValueError, ZeroDivisionError):
+            pass
+
+    obligations = (
+        CertificateCheckObligation(
+            "planar_lc_collision_identifiers_match",
+            identifiers_match,
+            f"collision={certificate.collision_id!r}; tube={tube.tube_id!r}",
+        ),
+        CertificateCheckObligation(
+            "planar_lc_collision_parameter_is_tube_anchor",
+            parameter_matches,
+            f"collision_parameter={parameter}; tube_anchor={tube.anchor_parameter}",
+        ),
+        CertificateCheckObligation(
+            "planar_lc_collision_tube_certified",
+            tube_result.certified,
+            f"tube={tube.tube_id!r}",
+        ),
+        CertificateCheckObligation(
+            "planar_lc_collision_zero_error_center_anchor",
+            zero_error_center_anchor,
+            f"initial_error_bound={tube.initial_error_bound}",
+        ),
+        CertificateCheckObligation(
+            "planar_lc_collision_exact_z_zero",
+            exact_zero,
+            f"collision_parameter={parameter}",
+        ),
+        CertificateCheckObligation(
+            "planar_lc_collision_exact_pair_energy_constraint",
+            bool(exact_constraint and tube_result.pair_energy_constraint_anchor_certified),
+            f"pair_mass={pair_mass_value}; speed_squared={speed_squared}",
+        ),
+        CertificateCheckObligation(
+            "planar_lc_collision_simple_zero",
+            nonzero_velocity,
+            f"speed_squared={speed_squared}",
+        ),
+        CertificateCheckObligation(
+            "planar_lc_collision_third_body_separated",
+            tube_result.third_body_distance_floor > 0.0,
+            f"third_body_distance_floor={tube_result.third_body_distance_floor}",
+        ),
+        CertificateCheckObligation(
+            "planar_lc_collision_exact_mass_ratio_arithmetic",
+            mass_ratio_arithmetic_exact,
+            "pair mass, alpha, beta, and third/pair mass ratio are exact binary rationals",
+        ),
+    )
+    return PlanarLCExactCollisionAnchorCheckResult(
+        collision_id=str(certificate.collision_id),
+        checker_id="planar_lc_exact_collision_anchor_checker_v1",
+        tube_result=tube_result,
+        obligations=obligations,
+        exact_speed_squared=float(speed_squared),
+        pair_mass=float(pair_mass_value),
+        collision_physical_time=float(collision_time),
+        collision_parameter=float(parameter),
+        mass_ratio_arithmetic_exact=mass_ratio_arithmetic_exact,
+    )
+
+
+def check_planar_lc_two_sided_collision_passage(
+    certificate: PlanarLCTwoSidedCollisionPassageCertificate,
+    source_chart: PlanarLeviCivitaBinaryChartCertificate,
+    collision_result: PlanarLCExactCollisionAnchorCheckResult,
+    left_target_chart: OrdinaryTaylorChartCertificate,
+    right_target_chart: OrdinaryTaylorChartCertificate,
+    left_target_tube: OrdinaryAposterioriTubeCertificate | WeightedOrdinaryAposterioriTubeCertificate,
+    right_target_tube: OrdinaryAposterioriTubeCertificate | WeightedOrdinaryAposterioriTubeCertificate,
+) -> PlanarLCTwoSidedCollisionPassageCheckResult:
+    """Certify two classical branches of one exact LC collision solution."""
+
+    if type(collision_result) is not PlanarLCExactCollisionAnchorCheckResult:
+        raise TypeError("collision_result must be an exact collision-anchor result")
+    def check_target_tube(tube, chart):
+        if type(tube) is WeightedOrdinaryAposterioriTubeCertificate:
+            return check_weighted_ordinary_aposteriori_tube(tube, chart)
+        if type(tube) is OrdinaryAposterioriTubeCertificate:
+            return check_ordinary_aposteriori_tube(tube, chart)
+        raise TypeError("passage target tube must be ordinary or weighted ordinary")
+
+    left_tube_result = check_target_tube(left_target_tube, left_target_chart)
+    right_tube_result = check_target_tube(right_target_tube, right_target_chart)
+    identifiers_match = bool(
+        certificate.passage_id
+        and certificate.source_chart_id == source_chart.chart_id
+        == collision_result.tube_result.chart_id
+        and certificate.collision_id == collision_result.collision_id
+        and certificate.left_target_chart_id == left_target_chart.chart_id
+        == left_target_tube.chart_id
+        and certificate.right_target_chart_id == right_target_chart.chart_id
+        == right_target_tube.chart_id
+    )
+    common_problem = bool(
+        tuple(source_chart.masses) == tuple(left_target_chart.masses)
+        == tuple(right_target_chart.masses)
+        and left_target_chart.dimension == right_target_chart.dimension == 2
+    )
+    left_source_parameter = float(certificate.left_source_parameter)
+    right_source_parameter = float(certificate.right_source_parameter)
+    left_target_parameter = float(certificate.left_target_parameter)
+    right_target_parameter = float(certificate.right_target_parameter)
+    ordered_parameters = bool(
+        _parameter_in_interval(source_chart.parameter_interval, left_source_parameter)
+        and _parameter_in_interval(source_chart.parameter_interval, right_source_parameter)
+        and left_source_parameter < collision_result.collision_parameter
+        < right_source_parameter
+        and _parameter_in_interval(
+            left_target_chart.parameter_interval, left_target_parameter
+        )
+        and _parameter_in_interval(
+            right_target_chart.parameter_interval, right_target_parameter
+        )
+        and float(left_target_tube.anchor_parameter) == left_target_parameter
+        and float(right_target_tube.anchor_parameter) == right_target_parameter
+    )
+
+    def endpoint(
+        source_parameter: float,
+        target_parameter: float,
+        target_chart: OrdinaryTaylorChartCertificate,
+        target_tube: OrdinaryAposterioriTubeCertificate | WeightedOrdinaryAposterioriTubeCertificate,
+        target_result: OrdinaryAposterioriTubeCheckResult | WeightedOrdinaryAposterioriTubeCheckResult,
+    ) -> tuple[bool, float, float, tuple[float, float]]:
+        if not (
+            identifiers_match
+            and collision_result.certified
+            and common_problem
+            and ordered_parameters
+            and target_result.certified
+        ):
+            return False, 0.0, np.inf, (np.inf, -np.inf)
+        try:
+            source_solution = _regularized_binary_solution_from_certificate(
+                source_chart
+            )
+            lifted_state = _planar_lc_state_intervals(
+                source_solution,
+                (source_parameter, source_parameter),
+                inflate=float(collision_result.tube_result.gronwall_error_bound),
+            )
+            positions, velocities, physical_time, rho = (
+                _project_interval_planar_lc_state(
+                    lifted_state,
+                    np.asarray(source_chart.masses, dtype=float),
+                    source_chart.pair,
+                )
+            )
+            rho_floor = float(rho.lower)
+            target_parameter_q = Fraction.from_float(target_parameter)
+            elapsed_anchor = (
+                _exact_rational_chart_physical_time_at_parameter(
+                    target_chart, target_parameter_q
+                )
+                == 0
+            )
+            target_q, target_v = _exact_rational_chart_projected_state_at_parameter(
+                target_chart, target_parameter_q
+            )
+            if type(target_tube) is WeightedOrdinaryAposterioriTubeCertificate:
+                position_allowance = Fraction.from_float(
+                    float(target_tube.initial_position_error_bound)
+                )
+                velocity_allowance = Fraction.from_float(
+                    float(target_tube.initial_velocity_error_bound)
+                )
+            else:
+                position_allowance = velocity_allowance = Fraction.from_float(
+                    float(target_tube.initial_error_bound)
+                )
+            gap = Fraction(0)
+            contained = True
+            for boxes, centers, allowance in (
+                (positions, target_q, position_allowance),
+                (velocities, target_v, velocity_allowance),
+            ):
+                for index in np.ndindex(boxes.shape):
+                    box = boxes[index]
+                    center = centers[index]
+                    lower = Fraction.from_float(float(box.lower))
+                    upper = Fraction.from_float(float(box.upper))
+                    gap = max(gap, abs(lower - center), abs(upper - center))
+                    contained = contained and (
+                        center - allowance <= lower
+                        and upper <= center + allowance
+                    )
+            return (
+                bool(rho_floor > 0.0 and elapsed_anchor and contained),
+                rho_floor,
+                _fraction_upper_float(gap),
+                (float(physical_time.lower), float(physical_time.upper)),
+            )
+        except (OverflowError, ValueError, ZeroDivisionError):
+            return False, 0.0, np.inf, (np.inf, -np.inf)
+
+    left_ok, left_rho, left_gap, left_time = endpoint(
+        left_source_parameter,
+        left_target_parameter,
+        left_target_chart,
+        left_target_tube,
+        left_tube_result,
+    )
+    right_ok, right_rho, right_gap, right_time = endpoint(
+        right_source_parameter,
+        right_target_parameter,
+        right_target_chart,
+        right_target_tube,
+        right_tube_result,
+    )
+    # The collision anchor gives w(s*) != 0, hence z is a nonzero analytic
+    # function.  Its zeros are isolated and integral |z|^2 ds is strictly
+    # positive on every nondegenerate interval, even when coarse endpoint-time
+    # enclosures overlap the collision time.
+    time_ordered = bool(
+        collision_result.local_physical_time_strictly_increasing_certified
+        and ordered_parameters
+        and left_ok
+        and right_ok
+    )
+    obligations = (
+        CertificateCheckObligation(
+            "planar_lc_passage_identifiers_match",
+            identifiers_match,
+            f"passage={certificate.passage_id!r}",
+        ),
+        CertificateCheckObligation(
+            "planar_lc_passage_exact_collision_anchor_certified",
+            collision_result.certified,
+            f"collision={collision_result.collision_id!r}",
+        ),
+        CertificateCheckObligation(
+            "planar_lc_passage_common_planar_problem",
+            common_problem,
+            "source and both targets share planar masses",
+        ),
+        CertificateCheckObligation(
+            "planar_lc_passage_parameters_straddle_collision",
+            ordered_parameters,
+            (
+                f"left={left_source_parameter}; collision="
+                f"{collision_result.collision_parameter}; right={right_source_parameter}"
+            ),
+        ),
+        CertificateCheckObligation(
+            "planar_lc_passage_left_punctured_projection_contained",
+            left_ok,
+            f"rho_floor={left_rho}; gap={left_gap}",
+        ),
+        CertificateCheckObligation(
+            "planar_lc_passage_right_punctured_projection_contained",
+            right_ok,
+            f"rho_floor={right_rho}; gap={right_gap}",
+        ),
+        CertificateCheckObligation(
+            "planar_lc_passage_physical_times_straddle_collision",
+            time_ordered,
+            f"left={left_time}; collision={collision_result.collision_physical_time}; right={right_time}",
+        ),
+    )
+    return PlanarLCTwoSidedCollisionPassageCheckResult(
+        passage_id=str(certificate.passage_id),
+        checker_id="planar_lc_two_sided_collision_passage_checker_v1",
+        collision_result=collision_result,
+        left_target_tube_result=left_tube_result,
+        right_target_tube_result=right_tube_result,
+        obligations=obligations,
+        left_rho_lower_bound=float(left_rho),
+        right_rho_lower_bound=float(right_rho),
+        left_projection_gap=float(left_gap),
+        right_projection_gap=float(right_gap),
+        left_time_origin_interval=left_time,
+        right_time_origin_interval=right_time,
+    )
+
+
+def check_ordinary_to_planar_lc_enclosure_transition(
+    certificate: OrdinaryToPlanarLCEnclosureTransitionCertificate,
+    source_chart: OrdinaryTaylorChartCertificate,
+    target_chart: PlanarLeviCivitaBinaryChartCertificate,
+    source_validation: ValidatedOrdinaryIVPChartCheckResult
+    | OrdinaryEnclosureTransitionCheckResult,
+    target_tube: PlanarLCAposterioriTubeCertificate,
+) -> OrdinaryToPlanarLCEnclosureTransitionCheckResult:
+    """Lift a proven ordinary state enclosure into a constrained LC tube."""
+
+    if type(source_validation) not in {
+        ValidatedOrdinaryIVPChartCheckResult,
+        OrdinaryEnclosureTransitionCheckResult,
+    }:
+        raise TypeError("source_validation must be an exact ordinary result")
+    target_tube_result = check_planar_lc_aposteriori_tube(target_tube, target_chart)
+    source_tube_result = (
+        source_validation.tube_result
+        if type(source_validation) is ValidatedOrdinaryIVPChartCheckResult
+        else source_validation.target_tube_result
+    )
+    source_parameter = float(certificate.source_parameter)
+    target_parameter = float(certificate.target_parameter)
+    handoff_time = float(certificate.handoff_time)
+    time_cap = float(certificate.max_time_gap)
+    identifiers_match = bool(
+        certificate.transition_id
+        and certificate.source_chart_id == source_chart.chart_id
+        and certificate.target_chart_id == target_chart.chart_id
+        and target_tube.chart_id == target_chart.chart_id
+    )
+    source_certified = source_validation.certified
+    common_problem = bool(
+        tuple(source_chart.masses) == tuple(target_chart.masses)
+        and source_chart.dimension == 2
+        and set(target_chart.pair).issubset({0, 1, 2})
+    )
+    mass_ratio_arithmetic_exact = _planar_lc_mass_ratio_arithmetic_exact(
+        target_chart.masses, target_chart.pair
+    )
+    parameters_inside = bool(
+        _parameter_in_interval(source_chart.parameter_interval, source_parameter)
+        and _parameter_in_interval(target_chart.parameter_interval, target_parameter)
+        and float(target_tube.anchor_parameter) == target_parameter
+    )
+    finite_time_cap = bool(np.isfinite(time_cap) and time_cap >= 0.0)
+    branch_count = 0
+    max_lift_gap = np.inf
+    time_gap = np.inf
+    entry_rho_floor = 0.0
+    time_matches = False
+    lift_atlas_certified = False
+    target_tube_contains_lift_atlas = False
+    if (
+        identifiers_match
+        and source_certified
+        and common_problem
+        and mass_ratio_arithmetic_exact
+        and parameters_inside
+        and finite_time_cap
+        and target_tube_result.certified
+    ):
+        try:
+            source_parameter_q = Fraction.from_float(source_parameter)
+            target_parameter_q = Fraction.from_float(target_parameter)
+            handoff_q = Fraction.from_float(handoff_time)
+            source_time_q = _exact_rational_chart_physical_time_at_parameter(
+                source_chart, source_parameter_q
+            )
+            target_time_q = _exact_rational_chart_physical_time_at_parameter(
+                target_chart, target_parameter_q
+            )
+            time_gap_q = max(
+                abs(source_time_q - handoff_q),
+                abs(target_time_q - handoff_q),
+                abs(source_time_q - target_time_q),
+            )
+            time_gap = _fraction_upper_float(time_gap_q)
+            time_matches = time_gap_q <= Fraction.from_float(time_cap)
+
+            source_q, source_v = _exact_rational_chart_projected_state_at_parameter(
+                source_chart, source_parameter_q
+            )
+            source_radius = float(source_tube_result.gronwall_error_bound)
+            position_boxes = _fraction_array_tube_intervals(source_q, source_radius)
+            velocity_boxes = _fraction_array_tube_intervals(source_v, source_radius)
+            flat_state = tuple(
+                interval
+                for matrix in (position_boxes, velocity_boxes)
+                for row in matrix
+                for interval in row
+            )
+            lift_atlas = planar_interval_to_regularized_binary_collision_chart_atlas(
+                flat_state,
+                np.asarray(source_chart.masses, dtype=float),
+                pair=target_chart.pair,
+            )
+            branch_count = len(lift_atlas)
+            entry_rho_floor = min(
+                float(_interval_dot(branch.z, branch.z).lower)
+                for branch in lift_atlas
+            )
+            lift_atlas_certified = bool(
+                lift_atlas
+                and all(
+                    branch.branch_certificate is not None
+                    and branch.branch_certificate.certified
+                    for branch in lift_atlas
+                )
+            )
+            target_anchor = _exact_rational_planar_lc_lifted_state_at_parameter(
+                target_chart, target_parameter_q
+            )
+            target_error_q = Fraction.from_float(
+                float(target_tube.initial_error_bound)
+            )
+            gap_q = Fraction(0)
+            boxes_contained = True
+            for branch in lift_atlas:
+                branch_values = _flatten_interval_lc_state(branch)
+                for interval, center in zip(branch_values, target_anchor):
+                    lower_q = Fraction.from_float(float(interval.lower))
+                    upper_q = Fraction.from_float(float(interval.upper))
+                    gap_q = max(gap_q, abs(lower_q - center), abs(upper_q - center))
+                    if not (
+                        center - target_error_q <= lower_q
+                        and upper_q <= center + target_error_q
+                    ):
+                        boxes_contained = False
+            max_lift_gap = _fraction_upper_float(gap_q)
+            target_tube_contains_lift_atlas = bool(
+                lift_atlas_certified and boxes_contained
+            )
+        except (OverflowError, ValueError, ZeroDivisionError):
+            pass
+
+    obligations = (
+        CertificateCheckObligation(
+            "ordinary_to_lc_identifiers_match",
+            identifiers_match,
+            f"source={certificate.source_chart_id!r}; target={certificate.target_chart_id!r}",
+        ),
+        CertificateCheckObligation(
+            "ordinary_to_lc_source_exact_enclosure_certified",
+            source_certified,
+            f"source_chart={source_chart.chart_id!r}",
+        ),
+        CertificateCheckObligation(
+            "ordinary_to_lc_common_masses_dimension_pair",
+            common_problem,
+            f"pair={target_chart.pair!r}",
+        ),
+        CertificateCheckObligation(
+            "ordinary_to_lc_exact_mass_ratio_arithmetic",
+            mass_ratio_arithmetic_exact,
+            "pair mass, alpha, beta, and third/pair mass ratio are exact binary rationals",
+        ),
+        CertificateCheckObligation(
+            "ordinary_to_lc_parameters_inside_and_anchor_matches",
+            parameters_inside,
+            f"source_parameter={source_parameter}; target_parameter={target_parameter}",
+        ),
+        CertificateCheckObligation(
+            "ordinary_to_lc_handoff_time_matches",
+            time_matches,
+            f"time_gap={time_gap}; cap={time_cap}",
+        ),
+        CertificateCheckObligation(
+            "ordinary_to_lc_target_lifted_tube_certified",
+            target_tube_result.certified,
+            f"target_tube={target_tube.tube_id!r}",
+        ),
+        CertificateCheckObligation(
+            "ordinary_to_lc_branch_atlas_covers_source_enclosure",
+            lift_atlas_certified,
+            f"branch_count={branch_count}",
+        ),
+        CertificateCheckObligation(
+            "ordinary_to_lc_entry_lift_rho_positive",
+            entry_rho_floor > 0.0,
+            f"entry_lift_rho_lower_bound={entry_rho_floor}",
+        ),
+        CertificateCheckObligation(
+            "ordinary_to_lc_target_initial_error_contains_lift_atlas",
+            target_tube_contains_lift_atlas,
+            (
+                f"max_lift_gap={max_lift_gap}; "
+                f"target_initial_error={target_tube.initial_error_bound}"
+            ),
+        ),
+        CertificateCheckObligation(
+            "ordinary_to_lc_pair_energy_constraint_symbolic",
+            target_tube_contains_lift_atlas,
+            "h=.5|v|^2-M/rho and w=.25 L(z)^T v imply the exact constraint",
+        ),
+    )
+    return OrdinaryToPlanarLCEnclosureTransitionCheckResult(
+        transition_id=str(certificate.transition_id),
+        checker_id="ordinary_to_planar_lc_enclosure_transition_checker_v1",
+        target_tube_result=target_tube_result,
+        obligations=obligations,
+        lift_branch_count=int(branch_count),
+        max_lift_box_gap=float(max_lift_gap),
+        time_gap=float(time_gap),
+        entry_lift_rho_lower_bound=float(entry_rho_floor),
+    )
+
+
+def check_planar_lc_to_ordinary_enclosure_transition(
+    certificate: PlanarLCToOrdinaryEnclosureTransitionCertificate,
+    source_chart: PlanarLeviCivitaBinaryChartCertificate,
+    target_chart: OrdinaryTaylorChartCertificate,
+    source_entry: OrdinaryToPlanarLCEnclosureTransitionCheckResult,
+    target_tube: OrdinaryAposterioriTubeCertificate,
+) -> PlanarLCToOrdinaryEnclosureTransitionCheckResult:
+    """Project a constrained LC branch into an elapsed-time ordinary tube."""
+
+    if type(source_entry) is not OrdinaryToPlanarLCEnclosureTransitionCheckResult:
+        raise TypeError("source_entry must be an exact ordinary-to-LC result")
+    target_tube_result = check_ordinary_aposteriori_tube(target_tube, target_chart)
+    source_parameter = float(certificate.source_parameter)
+    target_parameter = float(certificate.target_parameter)
+    identifiers_match = bool(
+        certificate.transition_id
+        and certificate.source_chart_id == source_chart.chart_id
+        and certificate.target_chart_id == target_chart.chart_id
+        and source_entry.target_tube_result.chart_id == source_chart.chart_id
+        and target_tube.chart_id == target_chart.chart_id
+    )
+    common_problem = bool(
+        tuple(source_chart.masses) == tuple(target_chart.masses)
+        and target_chart.dimension == 2
+    )
+    parameters_inside = bool(
+        _parameter_in_interval(source_chart.parameter_interval, source_parameter)
+        and _parameter_in_interval(target_chart.parameter_interval, target_parameter)
+        and float(target_tube.anchor_parameter) == target_parameter
+    )
+    elapsed_time_anchor = False
+    rho_floor = 0.0
+    max_gap = np.inf
+    time_origin = (np.inf, -np.inf)
+    punctured_projection = False
+    target_contains_projection = False
+    if (
+        identifiers_match
+        and source_entry.certified
+        and common_problem
+        and parameters_inside
+        and target_tube_result.certified
+    ):
+        try:
+            target_parameter_q = Fraction.from_float(target_parameter)
+            elapsed_time_anchor = (
+                _exact_rational_chart_physical_time_at_parameter(
+                    target_chart, target_parameter_q
+                )
+                == 0
+            )
+            source_solution = _regularized_binary_solution_from_certificate(
+                source_chart
+            )
+            source_error = float(
+                source_entry.target_tube_result.gronwall_error_bound
+            )
+            lifted_state = _planar_lc_state_intervals(
+                source_solution,
+                (source_parameter, source_parameter),
+                inflate=source_error,
+            )
+            positions, velocities, physical_time, rho = (
+                _project_interval_planar_lc_state(
+                    lifted_state,
+                    np.asarray(source_chart.masses, dtype=float),
+                    source_chart.pair,
+                )
+            )
+            rho_floor = float(rho.lower)
+            punctured_projection = rho_floor > 0.0
+            time_origin = (float(physical_time.lower), float(physical_time.upper))
+            target_q, target_v = _exact_rational_chart_projected_state_at_parameter(
+                target_chart, target_parameter_q
+            )
+            target_error_q = Fraction.from_float(
+                float(target_tube.initial_error_bound)
+            )
+            gap_q = Fraction(0)
+            boxes_contained = True
+            for intervals, centers in ((positions, target_q), (velocities, target_v)):
+                for index in np.ndindex(intervals.shape):
+                    interval = intervals[index]
+                    center = centers[index]
+                    lower_q = Fraction.from_float(float(interval.lower))
+                    upper_q = Fraction.from_float(float(interval.upper))
+                    gap_q = max(gap_q, abs(lower_q - center), abs(upper_q - center))
+                    if not (
+                        center - target_error_q <= lower_q
+                        and upper_q <= center + target_error_q
+                    ):
+                        boxes_contained = False
+            max_gap = _fraction_upper_float(gap_q)
+            target_contains_projection = bool(
+                punctured_projection and elapsed_time_anchor and boxes_contained
+            )
+        except (OverflowError, ValueError, ZeroDivisionError):
+            pass
+
+    obligations = (
+        CertificateCheckObligation(
+            "lc_to_ordinary_identifiers_match",
+            identifiers_match,
+            f"source={certificate.source_chart_id!r}; target={certificate.target_chart_id!r}",
+        ),
+        CertificateCheckObligation(
+            "lc_to_ordinary_constrained_source_entry_certified",
+            source_entry.constrained_newtonian_lift_certified,
+            f"source_transition={source_entry.transition_id!r}",
+        ),
+        CertificateCheckObligation(
+            "lc_to_ordinary_common_masses_dimension",
+            common_problem,
+            "source LC and target ordinary charts share planar masses",
+        ),
+        CertificateCheckObligation(
+            "lc_to_ordinary_parameters_inside_and_anchor_matches",
+            parameters_inside,
+            f"source_parameter={source_parameter}; target_parameter={target_parameter}",
+        ),
+        CertificateCheckObligation(
+            "lc_to_ordinary_exit_rho_positive",
+            punctured_projection,
+            f"source_rho_lower_bound={rho_floor}",
+        ),
+        CertificateCheckObligation(
+            "lc_to_ordinary_target_elapsed_time_anchor_zero",
+            elapsed_time_anchor,
+            f"target_parameter={target_parameter}",
+        ),
+        CertificateCheckObligation(
+            "lc_to_ordinary_target_tube_certified",
+            target_tube_result.certified,
+            f"target_tube={target_tube.tube_id!r}",
+        ),
+        CertificateCheckObligation(
+            "lc_to_ordinary_target_initial_error_contains_projection",
+            target_contains_projection,
+            (
+                f"max_projected_lift_gap={max_gap}; "
+                f"target_initial_error={target_tube.initial_error_bound}"
+            ),
+        ),
+        CertificateCheckObligation(
+            "lc_to_ordinary_autonomous_time_origin_enclosed",
+            bool(
+                np.isfinite(time_origin[0])
+                and np.isfinite(time_origin[1])
+                and time_origin[0] <= time_origin[1]
+            ),
+            f"physical_time_origin_interval={time_origin!r}",
+        ),
+    )
+    return PlanarLCToOrdinaryEnclosureTransitionCheckResult(
+        transition_id=str(certificate.transition_id),
+        checker_id="planar_lc_to_ordinary_enclosure_transition_checker_v1",
+        target_tube_result=target_tube_result,
+        obligations=obligations,
+        source_rho_lower_bound=float(rho_floor),
+        max_projected_lift_gap=float(max_gap),
+        physical_time_origin_interval=time_origin,
+        constrained_source_entry_certified=bool(
+            source_entry.constrained_lc_entry_certified
+        ),
+    )
+
+
+def _interval_minimum_pair_distance(positions: np.ndarray) -> float:
+    positions = np.asarray(positions, dtype=object)
+    if positions.ndim != 2 or positions.shape[0] != 3:
+        raise ValueError("ordinary position enclosure must have shape (3, dimension)")
+    floor = np.inf
+    for i in range(3):
+        for j in range(i + 1, 3):
+            squared = Fraction(0)
+            for axis in range(positions.shape[1]):
+                difference = positions[j, axis] - positions[i, axis]
+                if difference.lower <= 0.0 <= difference.upper:
+                    component_floor = 0.0
+                else:
+                    component_floor = min(
+                        abs(float(difference.lower)),
+                        abs(float(difference.upper)),
+                    )
+                component_q = Fraction.from_float(float(component_floor))
+                squared += component_q * component_q
+            floor = min(
+                floor,
+                _fraction_sqrt_float(squared, upward=False),
+            )
+    return float(floor)
+
+
+@dataclass(frozen=True)
+class _IntervalDual:
+    value: FloatInterval
+    derivative: tuple[FloatInterval, ...]
+
+    def __add__(self, other: object) -> "_IntervalDual":
+        right = _as_interval_dual(other, len(self.derivative))
+        return _IntervalDual(
+            self.value + right.value,
+            tuple(a + b for a, b in zip(self.derivative, right.derivative)),
+        )
+
+    __radd__ = __add__
+
+    def __neg__(self) -> "_IntervalDual":
+        return self.scale(-1.0)
+
+    def __sub__(self, other: object) -> "_IntervalDual":
+        return self + (-_as_interval_dual(other, len(self.derivative)))
+
+    def __rsub__(self, other: object) -> "_IntervalDual":
+        return _as_interval_dual(other, len(self.derivative)) - self
+
+    def __mul__(self, other: object) -> "_IntervalDual":
+        right = _as_interval_dual(other, len(self.derivative))
+        return _IntervalDual(
+            self.value * right.value,
+            tuple(
+                a * right.value + self.value * b
+                for a, b in zip(self.derivative, right.derivative)
+            ),
+        )
+
+    __rmul__ = __mul__
+
+    def scale(self, scalar: float) -> "_IntervalDual":
+        return _IntervalDual(
+            self.value.scale(float(scalar)),
+            tuple(item.scale(float(scalar)) for item in self.derivative),
+        )
+
+    def positive_power(self, exponent: float) -> "_IntervalDual":
+        value = self.value.positive_power(float(exponent))
+        multiplier = self.value.positive_power(float(exponent) - 1.0).scale(
+            float(exponent)
+        )
+        return _IntervalDual(
+            value,
+            tuple(multiplier * item for item in self.derivative),
+        )
+
+
+def _as_interval_dual(value: object, dimension: int) -> _IntervalDual:
+    if isinstance(value, _IntervalDual):
+        if len(value.derivative) != dimension:
+            raise ValueError("dual dimensions do not match")
+        return value
+    interval = value if isinstance(value, FloatInterval) else FloatInterval.point(float(value))
+    return _IntervalDual(
+        interval,
+        tuple(FloatInterval.point(0.0) for _ in range(dimension)),
+    )
+
+
+def _planar_lc_state_intervals(
+    solution: RegularizedBinaryTaylorSolution,
+    parameter_interval: tuple[float, float],
+    *,
+    inflate: float = 0.0,
+) -> tuple[FloatInterval, ...]:
+    variable = FloatInterval(*parameter_interval)
+    blocks = (
+        interval_array_series_eval(solution.z, variable).reshape(-1),
+        interval_array_series_eval(solution.z_velocity, variable).reshape(-1),
+        np.asarray([interval_polynomial_eval(solution.pair_energy, variable)], dtype=object),
+        interval_array_series_eval(solution.binary_center, variable).reshape(-1),
+        interval_array_series_eval(solution.binary_center_velocity, variable).reshape(-1),
+        interval_array_series_eval(solution.third_offset, variable).reshape(-1),
+        interval_array_series_eval(solution.third_offset_velocity, variable).reshape(-1),
+        np.asarray([interval_polynomial_eval(solution.physical_time, variable)], dtype=object),
+    )
+    radius = float(inflate)
+    out: list[FloatInterval] = []
+    for item in np.concatenate(blocks):
+        interval = item if isinstance(item, FloatInterval) else FloatInterval.point(float(item))
+        out.append(
+            FloatInterval(
+                float(np.nextafter(interval.lower - radius, -np.inf)),
+                float(np.nextafter(interval.upper + radius, np.inf)),
+            )
+        )
+    if len(out) != 14:
+        raise ValueError("planar LC lifted state must have dimension 14")
+    return tuple(out)
+
+
+def _flatten_interval_lc_state(
+    state: object,
+) -> tuple[FloatInterval, ...]:
+    blocks = (
+        np.asarray(state.z, dtype=object).reshape(-1),
+        np.asarray(state.z_velocity, dtype=object).reshape(-1),
+        np.asarray([state.pair_energy], dtype=object),
+        np.asarray(state.binary_center, dtype=object).reshape(-1),
+        np.asarray(state.binary_center_velocity, dtype=object).reshape(-1),
+        np.asarray(state.third_offset, dtype=object).reshape(-1),
+        np.asarray(state.third_offset_velocity, dtype=object).reshape(-1),
+    )
+    out = tuple(item for item in np.concatenate(blocks))
+    if len(out) != 13 or not all(isinstance(item, FloatInterval) for item in out):
+        raise ValueError("interval LC anchor must have 13 lifted state components")
+    return out
+
+
+def _exact_rational_planar_lc_lifted_state_at_parameter(
+    chart: PlanarLeviCivitaBinaryChartCertificate,
+    parameter: Fraction,
+) -> tuple[Fraction, ...]:
+    blocks = (
+        np.asarray(_evaluate_fraction_coefficients(chart.z_coefficients, parameter), dtype=object).reshape(-1),
+        np.asarray(_evaluate_fraction_coefficients(chart.z_velocity_coefficients, parameter), dtype=object).reshape(-1),
+        np.asarray([_evaluate_fraction_coefficients(chart.pair_energy_coefficients, parameter)], dtype=object),
+        np.asarray(_evaluate_fraction_coefficients(chart.binary_center_coefficients, parameter), dtype=object).reshape(-1),
+        np.asarray(_evaluate_fraction_coefficients(chart.binary_center_velocity_coefficients, parameter), dtype=object).reshape(-1),
+        np.asarray(_evaluate_fraction_coefficients(chart.third_offset_coefficients, parameter), dtype=object).reshape(-1),
+        np.asarray(_evaluate_fraction_coefficients(chart.third_offset_velocity_coefficients, parameter), dtype=object).reshape(-1),
+    )
+    out = tuple(item for item in np.concatenate(blocks))
+    if len(out) != 13 or not all(isinstance(item, Fraction) for item in out):
+        raise ValueError("serialized LC anchor must have 13 rational components")
+    return out
+
+
+def _planar_lc_derivative_intervals(
+    solution: RegularizedBinaryTaylorSolution,
+    parameter_interval: tuple[float, float],
+) -> tuple[FloatInterval, ...]:
+    variable = FloatInterval(*parameter_interval)
+    blocks = (
+        interval_array_series_eval(_derivative_coefficients(solution.z), variable).reshape(-1),
+        interval_array_series_eval(_derivative_coefficients(solution.z_velocity), variable).reshape(-1),
+        np.asarray([
+            interval_polynomial_eval(
+                _derivative_scalar_coefficients(solution.pair_energy), variable
+            )
+        ], dtype=object),
+        interval_array_series_eval(_derivative_coefficients(solution.binary_center), variable).reshape(-1),
+        interval_array_series_eval(_derivative_coefficients(solution.binary_center_velocity), variable).reshape(-1),
+        interval_array_series_eval(_derivative_coefficients(solution.third_offset), variable).reshape(-1),
+        interval_array_series_eval(_derivative_coefficients(solution.third_offset_velocity), variable).reshape(-1),
+        np.asarray([
+            interval_polynomial_eval(
+                _derivative_scalar_coefficients(solution.physical_time), variable
+            )
+        ], dtype=object),
+    )
+    out = tuple(item for item in np.concatenate(blocks))
+    if len(out) != 14:
+        raise ValueError("planar LC derivative must have dimension 14")
+    return out
+
+
+def _project_interval_planar_lc_state(
+    state: tuple[FloatInterval, ...],
+    masses: np.ndarray,
+    pair: tuple[int, int],
+) -> tuple[np.ndarray, np.ndarray, FloatInterval, FloatInterval]:
+    if len(state) != 14:
+        raise ValueError("planar LC state must have dimension 14")
+    x, y = state[0:2]
+    wx, wy = state[2:4]
+    center = np.asarray(state[5:7], dtype=object)
+    center_velocity = np.asarray(state[7:9], dtype=object)
+    third_offset = np.asarray(state[9:11], dtype=object)
+    third_velocity = np.asarray(state[11:13], dtype=object)
+    physical_time = state[13]
+    rho = x * x + y * y
+    if rho.lower <= 0.0:
+        raise ValueError("physical LC projection requires a rho-positive slab")
+    relative_position = np.asarray(
+        [x * x - y * y, (x * y).scale(2.0)], dtype=object
+    )
+    inverse_rho = rho.reciprocal()
+    relative_velocity = np.asarray(
+        [
+            ((x * wx - y * wy).scale(2.0)) * inverse_rho,
+            ((y * wx + x * wy).scale(2.0)) * inverse_rho,
+        ],
+        dtype=object,
+    )
+    first, second = pair
+    third = ({0, 1, 2} - {first, second}).pop()
+    pair_mass = float(masses[first] + masses[second])
+    alpha = float(masses[second] / pair_mass)
+    beta = float(masses[first] / pair_mass)
+    positions = _interval_zero_array((3, 2))
+    velocities = _interval_zero_array((3, 2))
+    positions[first] = _interval_vector_sub(
+        center, _interval_vector_scale(relative_position, alpha)
+    )
+    positions[second] = _interval_vector_add(
+        center, _interval_vector_scale(relative_position, beta)
+    )
+    positions[third] = _interval_vector_add(center, third_offset)
+    velocities[first] = _interval_vector_sub(
+        center_velocity, _interval_vector_scale(relative_velocity, alpha)
+    )
+    velocities[second] = _interval_vector_add(
+        center_velocity, _interval_vector_scale(relative_velocity, beta)
+    )
+    velocities[third] = _interval_vector_add(center_velocity, third_velocity)
+    return positions, velocities, physical_time, rho
+
+
+def _planar_lc_dual_rhs(
+    state: tuple[FloatInterval, ...],
+    masses: np.ndarray,
+    pair: tuple[int, int],
+) -> tuple[tuple[_IntervalDual, ...], float]:
+    dimension = len(state)
+    dual = tuple(
+        _IntervalDual(
+            interval,
+            tuple(
+                FloatInterval.point(1.0 if row == column else 0.0)
+                for column in range(dimension)
+            ),
+        )
+        for row, interval in enumerate(state)
+    )
+    x, y = dual[0:2]
+    wx, wy = dual[2:4]
+    energy = dual[4]
+    center = dual[5:7]
+    center_velocity = dual[7:9]
+    third_offset = dual[9:11]
+    third_velocity = dual[11:13]
+    del center
+    rho = x * x + y * y
+    relative = (x * x - y * y, (x * y).scale(2.0))
+    first, second = pair
+    third = ({0, 1, 2} - {first, second}).pop()
+    pair_mass = float(masses[first] + masses[second])
+    alpha = float(masses[second] / pair_mass)
+    beta = float(masses[first] / pair_mass)
+    d_first = tuple(
+        third_offset[k] + relative[k].scale(alpha) for k in range(2)
+    )
+    d_second = tuple(
+        third_offset[k] - relative[k].scale(beta) for k in range(2)
+    )
+
+    def inverse_square(vector: tuple[_IntervalDual, _IntervalDual]) -> tuple[_IntervalDual, _IntervalDual]:
+        norm_square = vector[0] * vector[0] + vector[1] * vector[1]
+        if norm_square.value.lower <= 0.0:
+            raise ValueError("LC tube reaches a third-body collision denominator")
+        inverse_cube = norm_square.positive_power(-1.5)
+        return (vector[0] * inverse_cube, vector[1] * inverse_cube)
+
+    field_first = inverse_square(d_first)
+    field_second = inverse_square(d_second)
+    center_acceleration = tuple(
+        (
+            field_first[k].scale(float(masses[first]))
+            + field_second[k].scale(float(masses[second]))
+        ).scale(float(masses[third] / pair_mass))
+        for k in range(2)
+    )
+    third_acceleration = tuple(
+        -field_first[k].scale(float(masses[first]))
+        - field_second[k].scale(float(masses[second]))
+        for k in range(2)
+    )
+    offset_acceleration = tuple(
+        third_acceleration[k] - center_acceleration[k] for k in range(2)
+    )
+    perturbation = tuple(
+        (field_second[k] - field_first[k]).scale(float(masses[third]))
+        for k in range(2)
+    )
+    at_perturbation = (
+        (x * perturbation[0] + y * perturbation[1]).scale(2.0),
+        (-y * perturbation[0] + x * perturbation[1]).scale(2.0),
+    )
+    z_acceleration = tuple(
+        energy * (x, y)[k] * 0.5 + rho * at_perturbation[k] * 0.25
+        for k in range(2)
+    )
+    a_w = (
+        (x * wx - y * wy).scale(2.0),
+        (y * wx + x * wy).scale(2.0),
+    )
+    energy_derivative = a_w[0] * perturbation[0] + a_w[1] * perturbation[1]
+    rhs = (
+        wx,
+        wy,
+        *z_acceleration,
+        energy_derivative,
+        *(rho * item for item in center_velocity),
+        *(rho * item for item in center_acceleration),
+        *(rho * item for item in third_velocity),
+        *(rho * item for item in offset_acceleration),
+        rho,
+    )
+    third_floor = min(
+        _fraction_sqrt_float(
+            Fraction.from_float(
+                max(
+                    0.0,
+                    (d_first[0] * d_first[0] + d_first[1] * d_first[1]).value.lower,
+                )
+            ),
+            upward=False,
+        ),
+        _fraction_sqrt_float(
+            Fraction.from_float(
+                max(
+                    0.0,
+                    (d_second[0] * d_second[0] + d_second[1] * d_second[1]).value.lower,
+                )
+            ),
+            upward=False,
+        ),
+    )
+    return tuple(rhs), float(third_floor)
+
+
+def _planar_lc_direct_defect_and_lipschitz(
+    solution: RegularizedBinaryTaylorSolution,
+    parameter_interval: tuple[float, float],
+    *,
+    tube_radius: float,
+) -> tuple[float, float, float]:
+    polynomial_state = _planar_lc_state_intervals(solution, parameter_interval)
+    derivative = _planar_lc_derivative_intervals(solution, parameter_interval)
+    polynomial_rhs, _ = _planar_lc_dual_rhs(
+        polynomial_state, np.asarray(solution.masses, dtype=float), solution.pair
+    )
+    defect = max(
+        _interval_abs_sup(derivative[index] - polynomial_rhs[index].value)
+        for index in range(14)
+    )
+    tube_state = _planar_lc_state_intervals(
+        solution, parameter_interval, inflate=tube_radius
+    )
+    tube_rhs, third_floor = _planar_lc_dual_rhs(
+        tube_state, np.asarray(solution.masses, dtype=float), solution.pair
+    )
+    lipschitz = max(
+        _fraction_upper_float(
+            sum(
+                (
+                    Fraction.from_float(_interval_abs_sup(entry))
+                    for entry in component.derivative
+                ),
+                Fraction(0),
+            )
+        )
+        for component in tube_rhs
+    )
+    return (
+        float(np.nextafter(defect, np.inf)),
+        float(np.nextafter(lipschitz, np.inf)),
+        third_floor,
+    )
+
+
+def _fraction_upper_float(value: Fraction) -> float:
+    """Smallest adjacent binary float we can cheaply prove is >= value."""
+
+    candidate = float(value)
+    if Fraction.from_float(candidate) < value:
+        candidate = float(np.nextafter(candidate, np.inf))
+    return candidate
+
+
+def _fraction_lower_float(value: Fraction) -> float:
+    candidate = float(value)
+    if Fraction.from_float(candidate) > value:
+        candidate = float(np.nextafter(candidate, -np.inf))
+    return candidate
+
+
+@lru_cache(maxsize=131072)
+def _fraction_sqrt_float(value: Fraction, *, upward: bool) -> float:
+    """Directed binary64 bound for sqrt of a nonnegative rational."""
+
+    value = Fraction(value)
+    if value < 0:
+        raise ValueError("square-root argument must be nonnegative")
+    if value == 0:
+        return 0.0
+    direction = ROUND_CEILING if upward else ROUND_FLOOR
+    with localcontext() as context:
+        context.prec = 100
+        context.rounding = direction
+        decimal_value = context.divide(
+            Decimal(value.numerator), Decimal(value.denominator)
+        )
+        decimal_root = context.sqrt(decimal_value)
+    candidate = float(decimal_root)
+    candidate_decimal = Decimal.from_float(candidate)
+    if upward and candidate_decimal < decimal_root:
+        candidate = float(np.nextafter(candidate, np.inf))
+    elif not upward and candidate_decimal > decimal_root:
+        candidate = float(np.nextafter(candidate, -np.inf))
+    return candidate
+
+
+def _ordinary_tube_pair_floor_lower(
+    nominal_floor: float,
+    dimension: int,
+    position_radius: float,
+) -> float:
+    sqrt_dimension_upper = _fraction_sqrt_float(
+        Fraction(int(dimension)), upward=True
+    )
+    expansion_upper = (
+        Fraction(2)
+        * Fraction.from_float(sqrt_dimension_upper)
+        * Fraction.from_float(float(position_radius))
+    )
+    return _fraction_lower_float(
+        Fraction.from_float(float(nominal_floor)) - expansion_upper
+    )
+
+
+def _planar_lc_mass_ratio_arithmetic_exact(
+    masses: tuple[float, ...] | np.ndarray,
+    pair: tuple[int, int],
+) -> bool:
+    """Whether every binary64 mass ratio used by LC field/projection is exact."""
+
+    values = np.asarray(masses, dtype=float)
+    if values.shape != (3,) or np.any(~np.isfinite(values)) or np.any(values <= 0):
+        return False
+    if len(pair) != 2 or pair[0] == pair[1] or not set(pair).issubset({0, 1, 2}):
+        return False
+    first, second = pair
+    third = ({0, 1, 2} - {first, second}).pop()
+    first_q = Fraction.from_float(float(values[first]))
+    second_q = Fraction.from_float(float(values[second]))
+    third_q = Fraction.from_float(float(values[third]))
+    pair_q = first_q + second_q
+    pair_float = float(values[first] + values[second])
+    if Fraction.from_float(pair_float) != pair_q:
+        return False
+    return bool(
+        Fraction.from_float(float(values[second] / pair_float))
+        == second_q / pair_q
+        and Fraction.from_float(float(values[first] / pair_float))
+        == first_q / pair_q
+        and Fraction.from_float(float(values[third] / pair_float))
+        == third_q / pair_q
+    )
+
+
+def _fraction_array_from_floats(values: np.ndarray) -> np.ndarray:
+    array = np.asarray(values, dtype=float)
+    out = np.empty(array.shape, dtype=object)
+    for index in np.ndindex(array.shape):
+        out[index] = Fraction.from_float(float(array[index]))
+    return out
+
+
+def _fraction_array_tube_intervals(
+    values: np.ndarray,
+    radius: float,
+) -> tuple[tuple[tuple[float, float], ...], ...]:
+    array = np.asarray(values, dtype=object)
+    if array.ndim != 2 or radius < 0.0 or not np.isfinite(radius):
+        raise ValueError("finite matrix and nonnegative tube radius required")
+    radius_q = Fraction.from_float(float(radius))
+    return tuple(
+        tuple(
+            (
+                _fraction_lower_float(array[row, axis] - radius_q),
+                _fraction_upper_float(array[row, axis] + radius_q),
+            )
+            for axis in range(array.shape[1])
+        )
+        for row in range(array.shape[0])
+    )
+
+
+def _exact_rational_ordinary_state_at_physical_time(
+    chart: OrdinaryTaylorChartCertificate,
+    physical_time: float,
+) -> tuple[np.ndarray, np.ndarray]:
+    physical = _exact_rational_interval_from_floats(chart.physical_time_interval)
+    parameter = _exact_rational_interval_from_floats(chart.parameter_interval)
+    if physical is None or parameter is None:
+        raise ValueError("ordinary chart intervals must be finite")
+    physical_width = physical[1] - physical[0]
+    parameter_width = parameter[1] - parameter[0]
+    time_q = Fraction.from_float(float(physical_time))
+    if physical_width <= 0 or parameter_width <= 0:
+        raise ValueError("ordinary chart intervals must have positive width")
+    if not physical[0] <= time_q <= physical[1]:
+        raise ValueError("target physical time lies outside ordinary chart")
+    parameter_q = (
+        parameter[0]
+        + (time_q - physical[0]) * parameter_width / physical_width
+    )
+    return _exact_rational_chart_projected_state_at_parameter(chart, parameter_q)
+
+
+def _positive_product_upper(left: float, right: float) -> float:
+    if left < 0.0 or right < 0.0 or not np.isfinite(left + right):
+        raise ValueError("positive finite factors required")
+    return _fraction_upper_float(
+        Fraction.from_float(float(left)) * Fraction.from_float(float(right))
+    )
+
+
+def _positive_ratio_upper(numerator: float, denominator: float) -> float:
+    if (
+        numerator < 0.0
+        or denominator <= 0.0
+        or not np.isfinite(numerator)
+        or not np.isfinite(denominator)
+    ):
+        raise ValueError("nonnegative finite numerator and positive denominator required")
+    return _fraction_upper_float(
+        Fraction.from_float(float(numerator))
+        / Fraction.from_float(float(denominator))
+    )
+
+
+def _newton_acceleration_lipschitz_upper(
+    masses: np.ndarray,
+    *,
+    body_index: int,
+    dimension: int,
+    pair_distance_floor: float,
+) -> float:
+    """Directed upper bound for one acceleration block in infinity norm."""
+
+    if pair_distance_floor <= 0.0:
+        raise ValueError("positive pair-distance floor required")
+    sqrt_dimension_upper = _fraction_sqrt_float(
+        Fraction(int(dimension)), upward=True
+    )
+    derivative_factor_upper = float(
+        np.nextafter(1.0 + 3.0 * sqrt_dimension_upper, np.inf)
+    )
+    mass_sum = sum(
+        (
+            Fraction.from_float(float(masses[j]))
+            for j in range(3)
+            if j != int(body_index)
+        ),
+        Fraction(0),
+    )
+    rho = Fraction.from_float(float(pair_distance_floor))
+    bound = (
+        2
+        * mass_sum
+        * Fraction.from_float(derivative_factor_upper)
+        / (rho * rho * rho)
+    )
+    return _fraction_upper_float(bound)
+
+
+def _exp_upper(value: float) -> float:
+    """High-precision decimal upper bound converted outward to binary64."""
+
+    if value < 0.0 or not np.isfinite(value):
+        raise ValueError("finite nonnegative exponent required")
+    with localcontext() as context:
+        context.prec = 80
+        context.rounding = ROUND_CEILING
+        decimal_value = Decimal.from_float(float(value))
+        decimal_exponential = context.exp(decimal_value)
+    candidate = float(decimal_exponential)
+    if Decimal.from_float(candidate) < decimal_exponential:
+        candidate = float(np.nextafter(candidate, np.inf))
+    return candidate
+
+
+def check_validated_ordinary_ivp_chart(
+    binding: InitialValueProblemBindingCertificate,
+    tube: OrdinaryAposterioriTubeCertificate,
+    chart: OrdinaryTaylorChartCertificate,
+) -> ValidatedOrdinaryIVPChartCheckResult:
+    """Prove a supplied ordinary polynomial encloses its bound Newtonian IVP.
+
+    The conclusion is local to the chart's physical interval.  It follows from
+    the recomputed defect and collision-free Lipschitz tube by the standard
+    continuation/Gronwall argument; it does not imply multi-chart completeness.
+    """
+
+    chart_result = check_ordinary_taylor_chart(chart)
+    try:
+        q_coefficients = _coefficient_array(chart.position_coefficients)
+        v_coefficients = _coefficient_array(chart.velocity_coefficients)
+        masses = np.asarray(chart.masses, dtype=float)
+        chart_serialization_admissible = bool(
+            chart.chart_type == "ordinary_taylor"
+            and bool(chart.chart_id)
+            and q_coefficients.ndim == 3
+            and q_coefficients.shape[0] >= 2
+            and q_coefficients.shape[1] == 3
+            and q_coefficients.shape[2] in (2, 3)
+            and v_coefficients.shape == q_coefficients.shape
+            and masses.shape == (3,)
+            and np.all(np.isfinite(q_coefficients))
+            and np.all(np.isfinite(v_coefficients))
+            and np.all(np.isfinite(masses))
+            and np.all(masses > 0.0)
+            and np.isfinite(chart.parameter_interval[0])
+            and np.isfinite(chart.parameter_interval[1])
+            and chart.parameter_interval[0] < chart.parameter_interval[1]
+            and np.isfinite(chart.physical_time_interval[0])
+            and np.isfinite(chart.physical_time_interval[1])
+            and chart.physical_time_interval[0] < chart.physical_time_interval[1]
+        )
+    except (TypeError, ValueError, IndexError):
+        chart_serialization_admissible = False
+    binding_result = check_initial_value_problem_binding(binding, (chart,))
+    tube_result = check_ordinary_aposteriori_tube(tube, chart)
+    identifiers_match = bool(
+        binding.chart_id == chart.chart_id == tube.chart_id
+    )
+    anchor_matches = bool(
+        np.isfinite(binding.chart_parameter)
+        and np.isfinite(tube.anchor_parameter)
+        and float(binding.chart_parameter) == float(tube.anchor_parameter)
+    )
+    actual_initial_error = max(
+        float(binding_result.max_position_gap),
+        float(binding_result.max_velocity_gap),
+    )
+    initial_error_covered = bool(
+        np.isfinite(actual_initial_error)
+        and np.isfinite(tube.initial_error_bound)
+        and actual_initial_error <= float(tube.initial_error_bound)
+    )
+    obligations = (
+        CertificateCheckObligation(
+            "validated_ordinary_chart_serialization_admissible",
+            chart_serialization_admissible,
+            f"chart_id={chart.chart_id!r}",
+        ),
+        CertificateCheckObligation(
+            "validated_ordinary_ivp_binding_checked",
+            binding_result.certified,
+            f"binding_id={binding.binding_id!r}",
+        ),
+        CertificateCheckObligation(
+            "validated_ordinary_tube_checked",
+            tube_result.certified,
+            f"tube_id={tube.tube_id!r}",
+        ),
+        CertificateCheckObligation(
+            "validated_ordinary_component_chart_ids_match",
+            identifiers_match,
+            (
+                f"binding_chart={binding.chart_id!r}; tube_chart={tube.chart_id!r}; "
+                f"chart={chart.chart_id!r}"
+            ),
+        ),
+        CertificateCheckObligation(
+            "validated_ordinary_anchor_parameter_matches_binding",
+            anchor_matches,
+            (
+                f"binding_parameter={binding.chart_parameter}; "
+                f"tube_anchor={tube.anchor_parameter}"
+            ),
+        ),
+        CertificateCheckObligation(
+            "validated_ordinary_actual_initial_error_covered",
+            initial_error_covered,
+            (
+                f"actual_initial_error={actual_initial_error}; "
+                f"tube_initial_error={tube.initial_error_bound}"
+            ),
+        ),
+    )
+    return ValidatedOrdinaryIVPChartCheckResult(
+        binding_result=binding_result,
+        tube_result=tube_result,
+        chart_result=chart_result,
+        chart_serialization_admissible=chart_serialization_admissible,
+        checker_id="validated_ordinary_ivp_chart_checker_v1",
+        obligations=obligations,
+    )
+
+
+def check_ordinary_enclosure_transition(
+    certificate: OrdinaryEnclosureTransitionCertificate,
+    source_chart: OrdinaryTaylorChartCertificate,
+    target_chart: OrdinaryTaylorChartCertificate,
+    source_validation: ValidatedOrdinaryIVPChartCheckResult
+    | OrdinaryEnclosureTransitionCheckResult,
+    target_tube: OrdinaryAposterioriTubeCertificate,
+) -> OrdinaryEnclosureTransitionCheckResult:
+    """Validate that the target tube continues the exact source IVP branch."""
+
+    if type(source_validation) not in {
+        ValidatedOrdinaryIVPChartCheckResult,
+        OrdinaryEnclosureTransitionCheckResult,
+    }:
+        raise TypeError(
+            "source_validation must be an exact validated ordinary checker result"
+        )
+    target_chart_result = check_ordinary_taylor_chart(target_chart)
+    target_tube_result = check_ordinary_aposteriori_tube(target_tube, target_chart)
+    source_parameter = float(certificate.source_parameter)
+    target_parameter = float(certificate.target_parameter)
+    handoff_time = float(certificate.handoff_time)
+    max_time_gap = float(certificate.max_time_gap)
+    source_tube_result = (
+        source_validation.tube_result
+        if type(source_validation) is ValidatedOrdinaryIVPChartCheckResult
+        else source_validation.target_tube_result
+    )
+    source_result_chart_id = (
+        source_validation.binding_result.chart_id
+        if type(source_validation) is ValidatedOrdinaryIVPChartCheckResult
+        else source_validation.target_tube_result.chart_id
+    )
+    identifiers_match = bool(
+        certificate.transition_id
+        and certificate.source_chart_id == source_chart.chart_id
+        and certificate.target_chart_id == target_chart.chart_id
+        and source_result_chart_id == source_chart.chart_id
+        and source_tube_result.chart_id == source_chart.chart_id
+        and target_tube.chart_id == target_chart.chart_id
+    )
+    source_certified = bool(source_validation.certified)
+    common_problem = bool(
+        tuple(float(value) for value in source_chart.masses)
+        == tuple(float(value) for value in target_chart.masses)
+        and source_chart.dimension == target_chart.dimension
+    )
+    parameters_inside = bool(
+        _parameter_in_interval(source_chart.parameter_interval, source_parameter)
+        and _parameter_in_interval(target_chart.parameter_interval, target_parameter)
+        and float(target_tube.anchor_parameter) == target_parameter
+    )
+    finite_time_cap = bool(np.isfinite(max_time_gap) and max_time_gap >= 0.0)
+
+    time_gap = np.inf
+    polynomial_gap = np.inf
+    required_initial_error = np.inf
+    time_matches = False
+    target_error_covers_handoff = False
+    if (
+        identifiers_match
+        and source_certified
+        and common_problem
+        and parameters_inside
+        and finite_time_cap
+        and target_chart_result.certified
+        and target_tube_result.certified
+    ):
+        try:
+            source_parameter_q = Fraction.from_float(source_parameter)
+            target_parameter_q = Fraction.from_float(target_parameter)
+            handoff_time_q = Fraction.from_float(handoff_time)
+            source_time_q = _exact_rational_chart_physical_time_at_parameter(
+                source_chart, source_parameter_q
+            )
+            target_time_q = _exact_rational_chart_physical_time_at_parameter(
+                target_chart, target_parameter_q
+            )
+            time_gap_q = max(
+                abs(source_time_q - handoff_time_q),
+                abs(target_time_q - handoff_time_q),
+                abs(source_time_q - target_time_q),
+            )
+            time_gap = _fraction_upper_float(time_gap_q)
+            time_matches = time_gap_q <= Fraction.from_float(max_time_gap)
+            source_q, source_v = _exact_rational_chart_projected_state_at_parameter(
+                source_chart, source_parameter_q
+            )
+            target_q, target_v = _exact_rational_chart_projected_state_at_parameter(
+                target_chart, target_parameter_q
+            )
+            polynomial_gap_q = max(
+                _fraction_array_max_abs_difference(source_q, target_q),
+                _fraction_array_max_abs_difference(source_v, target_v),
+            )
+            polynomial_gap = _fraction_upper_float(polynomial_gap_q)
+            required_initial_error_q = (
+                Fraction.from_float(source_tube_result.gronwall_error_bound)
+                + polynomial_gap_q
+            )
+            required_initial_error = _fraction_upper_float(
+                required_initial_error_q
+            )
+            target_error_covers_handoff = bool(
+                required_initial_error_q
+                <= Fraction.from_float(float(target_tube.initial_error_bound))
+            )
+        except (FloatingPointError, ValueError):
+            pass
+
+    obligations = (
+        CertificateCheckObligation(
+            "ordinary_enclosure_transition_identifiers_match",
+            identifiers_match,
+            (
+                f"source={certificate.source_chart_id!r}; "
+                f"target={certificate.target_chart_id!r}"
+            ),
+        ),
+        CertificateCheckObligation(
+            "ordinary_enclosure_transition_source_ivp_certified",
+            source_certified,
+            f"source_chart={source_chart.chart_id!r}",
+        ),
+        CertificateCheckObligation(
+            "ordinary_enclosure_transition_common_problem",
+            common_problem,
+            "source and target masses/dimension agree exactly",
+        ),
+        CertificateCheckObligation(
+            "ordinary_enclosure_transition_parameters_inside",
+            parameters_inside,
+            (
+                f"source_parameter={source_parameter}; "
+                f"target_parameter={target_parameter}"
+            ),
+        ),
+        CertificateCheckObligation(
+            "ordinary_enclosure_transition_target_chart_checked",
+            target_chart_result.certified,
+            f"target_chart={target_chart.chart_id!r}",
+        ),
+        CertificateCheckObligation(
+            "ordinary_enclosure_transition_target_tube_checked",
+            target_tube_result.certified,
+            f"target_tube={target_tube.tube_id!r}",
+        ),
+        CertificateCheckObligation(
+            "ordinary_enclosure_transition_time_matches",
+            time_matches,
+            f"time_gap={time_gap}; cap={max_time_gap}",
+        ),
+        CertificateCheckObligation(
+            "ordinary_enclosure_transition_target_error_covers_handoff",
+            target_error_covers_handoff,
+            (
+                f"required={required_initial_error}; "
+                f"available={target_tube.initial_error_bound}"
+            ),
+        ),
+    )
+    return OrdinaryEnclosureTransitionCheckResult(
+        transition_id=str(certificate.transition_id),
+        checker_id="ordinary_enclosure_transition_checker_v1",
+        target_chart_result=target_chart_result,
+        target_tube_result=target_tube_result,
+        obligations=obligations,
+        polynomial_state_gap=float(polynomial_gap),
+        required_target_initial_error=float(required_initial_error),
+        time_gap=float(time_gap),
+    )
+
+
+def check_validated_ordinary_ivp_chain(
+    certificate: ValidatedOrdinaryIVPChainCertificate,
+    binding: InitialValueProblemBindingCertificate,
+    charts: Iterable[OrdinaryTaylorChartCertificate],
+    tubes: Iterable[OrdinaryAposterioriTubeCertificate],
+    transitions: Iterable[OrdinaryEnclosureTransitionCertificate],
+) -> ValidatedOrdinaryIVPChainCheckResult:
+    """Check a finite forward chain enclosing one exact Newtonian IVP branch."""
+
+    chart_tuple = tuple(charts)
+    tube_tuple = tuple(tubes)
+    transition_tuple = tuple(transitions)
+    if not chart_tuple or not tube_tuple:
+        raise ValueError("validated ordinary chain requires at least one chart and tube")
+
+    count_matches = bool(
+        len(tube_tuple) == len(chart_tuple)
+        and len(transition_tuple) == len(chart_tuple) - 1
+    )
+    first_result = check_validated_ordinary_ivp_chart(
+        binding,
+        tube_tuple[0],
+        chart_tuple[0],
+    )
+    transition_results: list[OrdinaryEnclosureTransitionCheckResult] = []
+    source_result: ValidatedOrdinaryIVPChartCheckResult | OrdinaryEnclosureTransitionCheckResult = first_result
+    if count_matches:
+        for index, transition in enumerate(transition_tuple):
+            result = check_ordinary_enclosure_transition(
+                transition,
+                chart_tuple[index],
+                chart_tuple[index + 1],
+                source_result,
+                tube_tuple[index + 1],
+            )
+            transition_results.append(result)
+            source_result = result
+
+    chart_ids = tuple(str(chart.chart_id) for chart in chart_tuple)
+    transition_ids = tuple(
+        str(transition.transition_id) for transition in transition_tuple
+    )
+    identities_match = bool(
+        certificate.chain_id
+        and tuple(certificate.chart_ids) == chart_ids
+        and tuple(certificate.transition_ids) == transition_ids
+        and _nonempty_ids_unique(chart_ids)
+        and _nonempty_ids_unique(transition_ids)
+    )
+    orientation_supported = certificate.orientation == "forward"
+    physical_intervals = tuple(
+        tuple(float(value) for value in chart.physical_time_interval)
+        for chart in chart_tuple
+    )
+    intervals_finite = bool(
+        all(_finite_nonempty_interval(interval) for interval in physical_intervals)
+    )
+    oriented_frontier = bool(
+        intervals_finite
+        and all(
+            physical_intervals[index][0] <= physical_intervals[index + 1][0]
+            and physical_intervals[index + 1][0] <= physical_intervals[index][1]
+            and physical_intervals[index + 1][1] >= physical_intervals[index][1]
+            for index in range(len(physical_intervals) - 1)
+        )
+    )
+    if intervals_finite and oriented_frontier:
+        covered_interval = (
+            float(binding.initial_time),
+            max(interval[1] for interval in physical_intervals),
+        )
+    else:
+        covered_interval = (np.inf, -np.inf)
+    target_interval = tuple(
+        float(value) for value in certificate.target_physical_time_interval
+    )
+    target_covered = bool(
+        _finite_nonempty_interval(target_interval)
+        and np.isfinite(binding.initial_time)
+        and target_interval[0] == float(binding.initial_time)
+        and _finite_nonempty_interval(covered_interval)
+        and _interval_contains_interval(covered_interval, target_interval)
+    )
+    initial_time_in_first = bool(
+        intervals_finite
+        and physical_intervals[0][0]
+        <= float(binding.initial_time)
+        <= physical_intervals[0][1]
+    )
+    all_handoffs_certified = bool(
+        count_matches
+        and len(transition_results) == len(transition_tuple)
+        and all(result.certified for result in transition_results)
+    )
+    target_time = target_interval[1] if _finite_nonempty_interval(target_interval) else np.inf
+    target_positions: tuple[tuple[tuple[float, float], ...], ...] = ()
+    target_velocities: tuple[tuple[tuple[float, float], ...], ...] = ()
+    target_state_computed = False
+    if target_covered and first_result.certified and all_handoffs_certified:
+        validation_results: tuple[
+            ValidatedOrdinaryIVPChartCheckResult
+            | OrdinaryEnclosureTransitionCheckResult,
+            ...,
+        ] = (first_result, *transition_results)
+        target_chart_index = next(
+            (
+                index
+                for index in range(len(chart_tuple) - 1, -1, -1)
+                if physical_intervals[index][0]
+                <= target_time
+                <= physical_intervals[index][1]
+            ),
+            None,
+        )
+        if target_chart_index is not None:
+            try:
+                target_q, target_v = _exact_rational_ordinary_state_at_physical_time(
+                    chart_tuple[target_chart_index],
+                    target_time,
+                )
+                validation = validation_results[target_chart_index]
+                radius = (
+                    validation.tube_result.gronwall_error_bound
+                    if type(validation) is ValidatedOrdinaryIVPChartCheckResult
+                    else validation.target_tube_result.gronwall_error_bound
+                )
+                target_positions = _fraction_array_tube_intervals(target_q, radius)
+                target_velocities = _fraction_array_tube_intervals(target_v, radius)
+                target_state_computed = bool(target_positions and target_velocities)
+            except (OverflowError, ValueError, ZeroDivisionError):
+                target_state_computed = False
+
+    obligations = (
+        CertificateCheckObligation(
+            "validated_ordinary_chain_identity_and_order",
+            identities_match,
+            f"chart_ids={chart_ids!r}; transition_ids={transition_ids!r}",
+        ),
+        CertificateCheckObligation(
+            "validated_ordinary_chain_component_count_matches",
+            count_matches,
+            (
+                f"charts={len(chart_tuple)}; tubes={len(tube_tuple)}; "
+                f"transitions={len(transition_tuple)}"
+            ),
+        ),
+        CertificateCheckObligation(
+            "validated_ordinary_chain_forward_orientation",
+            orientation_supported,
+            f"orientation={certificate.orientation!r}",
+        ),
+        CertificateCheckObligation(
+            "validated_ordinary_chain_first_ivp_chart_certified",
+            first_result.certified,
+            f"chart_id={chart_tuple[0].chart_id!r}",
+        ),
+        CertificateCheckObligation(
+            "validated_ordinary_chain_handoffs_certified",
+            all_handoffs_certified,
+            f"checked_handoffs={len(transition_results)}",
+        ),
+        CertificateCheckObligation(
+            "validated_ordinary_chain_initial_time_in_first_chart",
+            initial_time_in_first,
+            f"initial_time={binding.initial_time}; first={physical_intervals[0]!r}",
+        ),
+        CertificateCheckObligation(
+            "validated_ordinary_chain_oriented_frontier_no_gaps",
+            oriented_frontier,
+            f"physical_intervals={physical_intervals!r}",
+        ),
+        CertificateCheckObligation(
+            "validated_ordinary_chain_target_interval_covered",
+            target_covered,
+            f"covered={covered_interval!r}; target={target_interval!r}",
+        ),
+        CertificateCheckObligation(
+            "validated_ordinary_chain_target_state_enclosure_computed",
+            target_state_computed,
+            f"target_time={target_time}",
+        ),
+    )
+    return ValidatedOrdinaryIVPChainCheckResult(
+        chain_id=str(certificate.chain_id),
+        checker_id="validated_ordinary_ivp_chain_checker_v1",
+        first_chart_result=first_result,
+        transition_results=tuple(transition_results),
+        obligations=obligations,
+        covered_physical_time_interval=covered_interval,
+        target_time=float(target_time),
+        target_position_intervals=target_positions,
+        target_velocity_intervals=target_velocities,
     )
 
 
@@ -3747,28 +6976,86 @@ def verify_chart_certificates(
 
     chart_tuple = tuple(certificates)
     transition_tuple = tuple(transitions)
-    results = tuple(_check_chart_certificate(certificate) for certificate in chart_tuple)
+    event_tuple = tuple(events)
+    branch_union_tuple = tuple(branch_unions)
+    chart_chain_tuple = tuple(chart_chains)
+
+    chart_ids = tuple(str(certificate.chart_id) for certificate in chart_tuple)
+    certificate_ids = tuple(
+        str(certificate.certificate_id) for certificate in chart_tuple
+    )
+    transition_ids = tuple(
+        str(certificate.transition_id) for certificate in transition_tuple
+    )
+    event_ids = tuple(str(certificate.event_id) for certificate in event_tuple)
+    union_ids = tuple(
+        str(certificate.union_id) for certificate in branch_union_tuple
+    )
+    chain_ids = tuple(
+        str(certificate.chain_id) for certificate in chart_chain_tuple
+    )
+    chart_ids_unique = _nonempty_ids_unique(chart_ids)
+    certificate_ids_unique = _nonempty_ids_unique(certificate_ids)
+    transition_ids_unique = _nonempty_ids_unique(transition_ids)
+    event_ids_unique = _nonempty_ids_unique(event_ids)
+    union_ids_unique = _nonempty_ids_unique(union_ids)
+    chain_ids_unique = _nonempty_ids_unique(chain_ids)
+
+    results = tuple(
+        _with_bundle_identity_obligations(
+            _check_chart_certificate(certificate),
+            chart_ids_unique=chart_ids_unique,
+            certificate_ids_unique=certificate_ids_unique,
+            detail=(
+                f"chart_ids={chart_ids!r}; certificate_ids={certificate_ids!r}"
+            ),
+        )
+        for certificate in chart_tuple
+    )
     transition_results = tuple(
-        _check_transition_certificate(transition, chart_tuple)
+        _with_unique_namespace_obligation(
+            _check_transition_certificate(transition, chart_tuple),
+            obligation="bundle_transition_ids_unique",
+            certified=transition_ids_unique,
+            detail=f"transition_ids={transition_ids!r}",
+        )
         for transition in transition_tuple
     )
-    event_results = tuple(check_event_isolation(event) for event in events)
-    chart_chain_results = tuple(
-        check_chart_chain(
-            chart_chain,
-            chart_tuple,
-            transition_tuple,
-            results,
-            transition_results,
+    event_results = tuple(
+        _with_unique_namespace_obligation(
+            check_event_isolation(event),
+            obligation="bundle_event_ids_unique",
+            certified=event_ids_unique,
+            detail=f"event_ids={event_ids!r}",
         )
-        for chart_chain in chart_chains
+        for event in event_tuple
+    )
+    chart_chain_results = tuple(
+        _with_unique_namespace_obligation(
+            check_chart_chain(
+                chart_chain,
+                chart_tuple,
+                transition_tuple,
+                results,
+                transition_results,
+            ),
+            obligation="bundle_chart_chain_ids_unique",
+            certified=chain_ids_unique,
+            detail=f"chain_ids={chain_ids!r}",
+        )
+        for chart_chain in chart_chain_tuple
     )
     branch_union_results = tuple(
-        check_branch_union(
-            branch_union,
-            (*results, *chart_chain_results),
+        _with_unique_namespace_obligation(
+            check_branch_union(
+                branch_union,
+                (*results, *chart_chain_results),
+            ),
+            obligation="bundle_branch_union_ids_unique",
+            certified=union_ids_unique,
+            detail=f"union_ids={union_ids!r}",
         )
-        for branch_union in branch_unions
+        for branch_union in branch_union_tuple
     )
     return IndependentChartVerifierCertificate(
         checker_id="independent_chart_verifier_v1",
@@ -3777,6 +7064,56 @@ def verify_chart_certificates(
         event_results=event_results,
         branch_union_results=branch_union_results,
         chart_chain_results=chart_chain_results,
+    )
+
+
+def _nonempty_ids_unique(values: tuple[str, ...]) -> bool:
+    """Reject duplicate or empty identifiers within one bundle namespace."""
+
+    return bool(all(values) and len(set(values)) == len(values)) if values else True
+
+
+def _with_bundle_identity_obligations(
+    result: CertificateCheckResult,
+    *,
+    chart_ids_unique: bool,
+    certificate_ids_unique: bool,
+    detail: str,
+) -> CertificateCheckResult:
+    return replace(
+        result,
+        obligations=(
+            *result.obligations,
+            CertificateCheckObligation(
+                "bundle_chart_ids_unique",
+                chart_ids_unique,
+                detail,
+            ),
+            CertificateCheckObligation(
+                "bundle_certificate_ids_unique",
+                certificate_ids_unique,
+                detail,
+            ),
+        ),
+    )
+
+
+def _with_unique_namespace_obligation(
+    result: TransitionCheckResult
+    | EventIsolationCheckResult
+    | BranchUnionCheckResult
+    | ChartChainCheckResult,
+    *,
+    obligation: str,
+    certified: bool,
+    detail: str,
+) -> TransitionCheckResult | EventIsolationCheckResult | BranchUnionCheckResult | ChartChainCheckResult:
+    return replace(
+        result,
+        obligations=(
+            *result.obligations,
+            CertificateCheckObligation(obligation, certified, detail),
+        ),
     )
 
 
@@ -3836,10 +7173,12 @@ def attach_independent_chart_verifier(
 
     if getattr(theorem_certificate, "theorem_id", None) != "open_time_locally_finite_atlas":
         raise TypeError("independent chart verifier can only be attached to open-time atlas theorem certificates")
+    if type(verifier_certificate) is not IndependentChartVerifierCertificate:
+        raise TypeError("independent chart verifier must be constructor-derived")
     return replace(
         theorem_certificate,
         independent_chart_verifier_certificate=verifier_certificate,
-        independent_chart_verifier_certified=verifier_certificate.certified,
+        independent_chart_verifier_certified=verifier_certificate.certified is True,
     )
 
 
@@ -6044,6 +9383,30 @@ def _max_interval_ordinary_newton_residual(
     )
 
 
+def _interval_ordinary_newton_residual_blocks(
+    q: np.ndarray,
+    v: np.ndarray,
+    masses: np.ndarray,
+    parameter_interval: tuple[float, float],
+) -> tuple[float, float]:
+    """Return separate outward interval bounds for q'-v and v'-a(q)."""
+
+    variable = FloatInterval(*map(float, parameter_interval))
+    positions = interval_array_series_eval(q, variable)
+    velocities = interval_array_series_eval(v, variable)
+    position_derivative = interval_array_series_eval(
+        _derivative_coefficients(q), variable
+    )
+    velocity_derivative = interval_array_series_eval(
+        _derivative_coefficients(v), variable
+    )
+    acceleration = _interval_newton_accelerations(positions, masses)
+    return (
+        _interval_array_difference_sup(position_derivative, velocities),
+        _interval_array_difference_sup(velocity_derivative, acceleration),
+    )
+
+
 def _max_interval_ordinary_taylor_model_residual(
     q: np.ndarray,
     v: np.ndarray,
@@ -7049,22 +10412,108 @@ def _max_interval_generalized_fuchsian_projected_residual_on_punctured_shells(
         initial_radius=float(remainder_majorant.initial_radius),
         shell_contraction=float(remainder_majorant.shell_contraction),
     )
+    exact_constant_bound = _exact_constant_generalized_fuchsian_projected_residual_bound(
+        branch,
+        tau_slabs,
+        remainder_majorant,
+    )
+    if exact_constant_bound is not None:
+        bound, exact_detail = exact_constant_bound
+        return (
+            float(bound),
+            (
+                f"{exact_detail}; "
+                f"checked_slabs={len(tau_slabs)}; {detail}"
+            ),
+        )
     worst = 0.0
     checked = 0
+    pieces = 128
     for tau_slab in tau_slabs:
-        lifted_residual = _interval_generalized_fuchsian_lifted_residual(
-            branch,
-            tau_slab,
-        )
-        tau_fourth = (tau_slab * tau_slab) * (tau_slab * tau_slab)
-        scale = tau_fourth.scale(9.0).reciprocal()
-        for index in np.ndindex(lifted_residual.shape):
-            projected = _coerce_float_interval(lifted_residual[index]) * scale
-            worst = max(worst, _interval_abs_sup(projected))
-        checked += 1
+        for sub_slab in _subdivide_float_interval(tau_slab, pieces):
+            lifted_residual = _interval_generalized_fuchsian_lifted_residual(
+                branch,
+                sub_slab,
+            )
+            tau_fourth = (sub_slab * sub_slab) * (sub_slab * sub_slab)
+            scale = tau_fourth.scale(9.0).reciprocal()
+            for index in np.ndindex(lifted_residual.shape):
+                projected = _coerce_float_interval(lifted_residual[index]) * scale
+                worst = max(worst, _interval_abs_sup(projected))
+            checked += 1
     if checked == 0:
         return (np.inf, "no punctured generalized slabs were available")
-    return float(worst), f"checked_slabs={checked}; {detail}"
+    return float(worst), f"checked_subslabs={checked}; pieces_per_slab={pieces}; {detail}"
+
+
+def _exact_constant_generalized_fuchsian_projected_residual_bound(
+    branch: FuchsianShapeBranch,
+    tau_slabs: tuple[FloatInterval, ...],
+    remainder_majorant: GeneralizedFuchsianRemainderMajorantCertificate | None,
+) -> tuple[float, str] | None:
+    """Projected residual bound for exact constant-shape homothetic charts.
+
+    Exact parabolic homothetic stop charts serialize as a generalized Fuchsian
+    branch with only the central coefficient nonzero and a zero Banach
+    remainder.  For that case the lifted residual is the central-configuration
+    identity ``-2 Q - 9 A(Q)``, independent of the punctured shell.  Checking
+    this identity directly avoids amplifying interval force-roundoff by
+    ``tau^-4`` on the innermost shell while preserving the generic interval
+    gate for nonconstant generalized branches.
+    """
+
+    if remainder_majorant is None:
+        return None
+    if not _generalized_remainder_majorant_is_exact_zero(remainder_majorant):
+        return None
+    if not tau_slabs:
+        return None
+    zero_index = branch.zero_index
+    for index, coefficient in branch.coefficients.items():
+        if index == zero_index:
+            continue
+        if not np.all(np.asarray(coefficient, dtype=float) == 0.0):
+            return None
+    min_abs_tau = min(
+        min(abs(float(slab.lower)), abs(float(slab.upper)))
+        for slab in tau_slabs
+    )
+    if not np.isfinite(min_abs_tau) or min_abs_tau <= 0.0:
+        return None
+    lifted_residual = (
+        -2.0 * np.asarray(branch.central_shape, dtype=float)
+        - 9.0 * accelerations(branch.central_shape, branch.masses)
+    )
+    lifted_bound = float(np.linalg.norm(lifted_residual, ord=np.inf))
+    projected_bound = float(lifted_bound / (9.0 * min_abs_tau**4))
+    if not np.isfinite(projected_bound):
+        return None
+    return (
+        projected_bound,
+        (
+            "exact_constant_homothetic_projected_residual="
+            f"{projected_bound}; exact_constant_lifted_residual={lifted_bound}; "
+            f"min_abs_tau={min_abs_tau}"
+        ),
+    )
+
+
+def _generalized_remainder_majorant_is_exact_zero(
+    majorant: GeneralizedFuchsianRemainderMajorantCertificate,
+) -> bool:
+    if not (
+        float(majorant.defect_bound) == 0.0
+        and float(majorant.nonlinear_lipschitz_bound) == 0.0
+        and float(majorant.remainder_ball_radius) == 0.0
+    ):
+        return False
+    for _component, primitive in majorant.component_inputs:
+        if (
+            float(primitive.majorant_initial) != 0.0
+            or float(primitive.first_shell_tail_bound) != 0.0
+        ):
+            return False
+    return True
 
 
 def _max_interval_generalized_fuchsian_zero_angular_momentum_on_punctured_shells(

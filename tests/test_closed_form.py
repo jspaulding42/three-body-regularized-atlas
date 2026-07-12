@@ -6,6 +6,10 @@ import pytest
 import three_body_symmetry as three_body_api
 
 from three_body_symmetry.closed_form import (
+    CertificateLanguageSoundnessCertificate,
+    ComputableAtlasCertificateEnumerationCertificate,
+    GeneralSolutionRequirementStatus,
+    MaximalClassicalTotalCollisionPolicyCertificate,
     certify_binary_collision_continuation_witness,
     certify_collision_continuation_witness,
     certify_closed_form_target,
@@ -27,6 +31,7 @@ from three_body_symmetry.closed_form import (
     derive_computable_atlas_certificate_enumeration_from_pointwise_theorem,
 )
 from three_body_symmetry.certificate_checker import (
+    IndependentChartVerifierCertificate,
     certify_certificate_checker_kernel_support,
     certify_rational_interval_arithmetic_backend_soundness,
 )
@@ -86,6 +91,16 @@ def _complete_certificate_language_soundness(**overrides):
     return certify_certificate_language_soundness(**fields)
 
 
+def _derived_certificate_language_soundness():
+    return derive_certificate_language_soundness_from_checker_kernel(
+        certify_certificate_checker_kernel_support(
+            proof_grade_arithmetic_backend_certificate=(
+                certify_rational_interval_arithmetic_backend_soundness()
+            ),
+        )
+    )
+
+
 def _complete_computable_atlas_certificate_enumeration(**overrides):
     fields = dict(
         chart_family_words_enumerated=True,
@@ -105,6 +120,28 @@ def _complete_computable_atlas_certificate_enumeration(**overrides):
     )
     fields.update(overrides)
     return certify_computable_atlas_certificate_enumeration(**fields)
+
+
+def _certified_pointwise_closed_form_route():
+    theorem = certify_pointwise_open_time_locally_finite_atlas_theorem(
+        dimension=3,
+        compact_time_rate=1.3,
+        total_collision_policy_id="maximal_classical_stop",
+    )
+    soundness = _derived_certificate_language_soundness()
+    enumeration = derive_computable_atlas_certificate_enumeration_from_pointwise_theorem(
+        theorem,
+    )
+    policy = certify_maximal_classical_total_collision_policy(
+        pointwise_open_time_theorem=theorem,
+    )
+    pointwise_closed_form = certify_pointwise_regularized_atlas_closed_form_theorem(
+        pointwise_open_time_theorem=theorem,
+        certificate_language_soundness=soundness,
+        computable_certificate_enumeration=enumeration,
+        maximal_classical_total_collision_policy=policy,
+    )
+    return theorem, soundness, enumeration, policy, pointwise_closed_form
 
 
 @dataclass(frozen=True)
@@ -604,6 +641,76 @@ def test_sundman_route_certifies_series_but_not_general_scope_without_scope_witn
     assert not certificate.general_solution_certified
     assert certificate.missing_requirements == ()
     assert "general-solution scope" in certificate.route_summary
+
+
+def test_sundman_route_rejects_truthy_global_series_and_scope_flags():
+    witness = SimpleNamespace(
+        global_series_certified="yes",
+        missing_global_proof_obligations=(),
+        collision_continuation_obligations_certified="yes",
+        general_solution_scope_certified="yes",
+    )
+
+    certificate = certify_closed_form_target(
+        "sundman",
+        compact_sundman_witness=witness,
+    )
+
+    assert certificate.status == "conditional_infinite_series_route"
+    assert not certificate.series_route_certified
+    assert "compact_sundman_global_induction_witness" in (
+        certificate.missing_requirements
+    )
+
+    scope = SimpleNamespace(
+        arbitrary_positive_masses_certified="yes",
+        arbitrary_noncollision_initial_data_certified="yes",
+        all_real_target_times_certified="yes",
+        lift_construct_project_verify_certified="yes",
+        newton_equations_full_interval_certified="yes",
+        general_solution_scope_certified="yes",
+    )
+    general = certify_general_closed_form_solution_target(
+        "closed form",
+        compact_sundman_witness=witness,
+        general_scope_witness=scope,
+        closed_form_function_class_witness=_complete_sundman_function_class(),
+    )
+
+    details = {detail.requirement: detail for detail in general.missing_requirement_details}
+    assert not general.proof_certified
+    assert "compact_sundman_global_series" in general.missing_requirements
+    assert "arbitrary_positive_masses" in general.missing_requirements
+    assert "'yes' (not literal True)" in (
+        details["compact_sundman_global_series"].observed
+    )
+    assert "'yes' (not literal True)" in (
+        details["arbitrary_positive_masses"].observed
+    )
+
+
+def test_scope_and_sundman_witness_constructors_reject_truthy_flags():
+    with pytest.raises(TypeError, match="arbitrary_positive_masses_certified"):
+        certify_general_solution_scope_witness(
+            arbitrary_positive_masses_certified="yes",
+        )
+    with pytest.raises(TypeError, match="collision_continuation_certified"):
+        certify_sundman_general_solution_theorem_witness(
+            collision_continuation_certified="yes",
+        )
+
+    scope = certify_general_solution_scope_witness(
+        arbitrary_positive_masses_certified=True,
+        arbitrary_noncollision_initial_data_certified=True,
+        all_real_target_times_certified=True,
+        lift_construct_project_verify_certified=True,
+        newton_equations_full_interval_certified=True,
+    )
+    truthy_scope = replace(scope, arbitrary_positive_masses_certified="yes")
+
+    assert scope.general_solution_scope_certified
+    assert not truthy_scope.general_solution_scope_certified
+    assert "arbitrary_positive_masses" in truthy_scope.missing_scope_requirements
 
 
 def test_general_solution_target_rejects_finite_closed_form_obstruction():
@@ -1279,101 +1386,16 @@ def test_closed_form_audit_consumes_open_time_theorem_without_endpoint_partition
     assert "set_valued_constructor_branch_event_completeness" in (
         certificate.blocking_obligations
     )
-    expected_critical_blockers = tuple(
-        lemma_id
-        for lemma_id in FINITE_TARGET_CRITICAL_ANALYTIC_LEMMA_IDS
-        if lemma_id
-        not in {
-            "binary_degenerate_total_collision_exclusion",
-            "reduced_hyperbolic_total_collision_entry",
-            "poincare_dulac_fuchsian_log_selector_completeness",
-            "arbitrary_total_collision_germ_finite_generalized_fuchsian_entry_data",
-            "arbitrary_total_collision_germ_entry_to_stop_chart",
-            "total_collision_stop_chart_existence",
-        }
-    )
+    expected_critical_blockers = FINITE_TARGET_CRITICAL_ANALYTIC_LEMMA_IDS
     for lemma_id in expected_critical_blockers:
         assert lemma_id in certificate.blocking_obligations
         assert lemma_id in theorem.critical_unaudited_analytic_lemma_ids
-    assert "binary_degenerate_total_collision_exclusion" not in (
-        certificate.blocking_obligations
-    )
-    assert "binary_degenerate_total_collision_exclusion" not in (
-        theorem.critical_unaudited_analytic_lemma_ids
-    )
-    assert "reduced_hyperbolic_total_collision_entry" not in (
-        certificate.blocking_obligations
-    )
-    assert "reduced_hyperbolic_total_collision_entry" not in (
-        theorem.critical_unaudited_analytic_lemma_ids
-    )
-    assert "poincare_dulac_fuchsian_log_selector_completeness" not in (
-        certificate.blocking_obligations
-    )
-    assert "poincare_dulac_fuchsian_log_selector_completeness" not in (
-        theorem.critical_unaudited_analytic_lemma_ids
-    )
-    assert "arbitrary_total_collision_germ_finite_generalized_fuchsian_entry_data" not in (
-        certificate.blocking_obligations
-    )
-    assert "arbitrary_total_collision_germ_finite_generalized_fuchsian_entry_data" not in (
-        theorem.critical_unaudited_analytic_lemma_ids
-    )
-    assert "arbitrary_total_collision_germ_entry_to_stop_chart" not in (
-        certificate.blocking_obligations
-    )
-    assert "arbitrary_total_collision_germ_entry_to_stop_chart" not in (
-        theorem.critical_unaudited_analytic_lemma_ids
-    )
-    assert "total_collision_stop_chart_existence" not in (
-        certificate.blocking_obligations
-    )
-    assert "total_collision_stop_chart_existence" not in (
-        theorem.critical_unaudited_analytic_lemma_ids
-    )
-    assert "three_body_painleve_no_noncollision_singularities" not in (
-        certificate.blocking_obligations
-    )
-    assert "total_collision_requires_zero_angular_momentum" not in (
-        certificate.blocking_obligations
-    )
-    assert "total_collision_central_configuration_asymptotic" not in (
-        certificate.blocking_obligations
-    )
-    assert "finite_fuchsian_log_stop_chart_for_admissible_entry_data" not in (
-        certificate.blocking_obligations
-    )
-    assert "homothetic_total_collision_stop_chart_existence" not in (
-        certificate.blocking_obligations
-    )
-    assert "cubic_time_total_collision_scaling" not in (
-        certificate.blocking_obligations
-    )
-    assert "all_pair_binary_regularization" not in certificate.blocking_obligations
-    assert "binary_accumulation_implies_total_collision" not in (
-        certificate.blocking_obligations
-    )
-    assert "binary_collision_isolation" not in certificate.blocking_obligations
-    assert "compact_collision_free_taylor_cover" not in certificate.blocking_obligations
-    assert "finite_chart_chain_concatenation" not in certificate.blocking_obligations
-    assert "target_or_stop_dichotomy" not in certificate.blocking_obligations
-    assert "certificate_search_completeness_for_point_inputs" not in (
-        certificate.blocking_obligations
-    )
-    assert "fair_adaptive_chart_search" not in certificate.blocking_obligations
-    assert "finite_target_certificate_search_completeness" not in (
-        certificate.blocking_obligations
-    )
-    assert "point_input_finite_target_certificate_search" not in (
-        certificate.blocking_obligations
-    )
     assert "recursive_set_valued_branch_partition_consumption" in (
         certificate.blocking_obligations
     )
     assert "event_order_partition_consumption_theorem" in (
         certificate.blocking_obligations
     )
-    assert "finite_time_loop_budget_elimination" not in certificate.blocking_obligations
     details = {detail.requirement: detail for detail in certificate.missing_requirement_details}
     assert details["compact_sundman_global_series"].witness_field == (
         "OpenTimeLocallyFiniteAtlasTheoremCertificate"
@@ -1478,6 +1500,62 @@ def test_closed_form_audit_consumes_constructor_checked_prefix_without_proof_pro
     )
 
 
+def test_closed_form_audit_rejects_subclassed_independent_verifier_gate():
+    class SpoofedIndependentChartVerifierCertificate(
+        IndependentChartVerifierCertificate
+    ):
+        @property
+        def certified(self):
+            return True
+
+        @property
+        def proof_grade_finite_atlas_bundle_certified(self):
+            return True
+
+        @property
+        def proof_grade_finite_atlas_blockers(self):
+            return ()
+
+    masses, positions, velocities = _open_time_spatial_initial_data()
+    theorem = construct_open_time_locally_finite_atlas_theorem(
+        masses,
+        positions,
+        velocities,
+        1.0e-4,
+        compact_time_rate=1.3,
+        exhaustion_prefix_count=1,
+        **_open_time_solver_options(),
+    )
+    spoofed_verifier = SpoofedIndependentChartVerifierCertificate(
+        checker_id="independent_chart_verifier_v1",
+        chart_results=(),
+    )
+    spoofed_theorem = replace(
+        theorem,
+        independent_chart_verifier_certificate=spoofed_verifier,
+        independent_chart_verifier_certified=True,
+    )
+    atlas_certificate = certify_general_closed_form_solution_target(
+        "regularized locally finite atlas",
+        general_theorem_certificate=spoofed_theorem,
+    )
+
+    assert spoofed_verifier.certified
+    assert spoofed_verifier.proof_grade_finite_atlas_bundle_certified
+    assert not spoofed_theorem.component_types_certified
+    assert "open_time_independent_chart_verifier_certificate_type" in (
+        spoofed_theorem.missing_obligations
+    )
+    assert "independent_chart_verifier" in (
+        atlas_certificate.blocking_obligations
+    )
+    assert "open_time_independent_chart_verifier_certificate_type" in (
+        atlas_certificate.blocking_obligations
+    )
+    assert atlas_certificate.status == "incomplete"
+    assert not atlas_certificate.proof_certified
+
+
 def test_pointwise_closed_form_route_requires_soundness_and_enumeration_gates():
     theorem = certify_pointwise_open_time_locally_finite_atlas_theorem(
         dimension=3,
@@ -1489,7 +1567,8 @@ def test_pointwise_closed_form_route_requires_soundness_and_enumeration_gates():
         general_theorem_certificate=theorem,
     )
 
-    assert theorem.proof_certified
+    assert not theorem.proof_certified
+    assert not theorem.finite_target_theorem.proof_certified
     assert certificate.status == "incomplete"
     assert not certificate.proof_certified
     assert "set_valued_constructor_branch_event_completeness" not in (
@@ -1587,6 +1666,7 @@ def test_certificate_language_soundness_derives_from_checker_kernel_manifest():
 
     assert kernel.proof_certified
     assert soundness.proof_certified
+    assert soundness.checker_kernel_derived
     assert soundness.missing_obligations == ()
     assert three_body_api.CertificateCheckerKernelSupportCertificate is not None
     assert three_body_api.ProofGradeArithmeticBackendCertificate is not None
@@ -1620,6 +1700,112 @@ def test_checker_kernel_rejects_raw_arithmetic_soundness_flag():
         raise AssertionError("raw arithmetic soundness flag was accepted")
 
 
+def test_closed_form_soundness_and_enumeration_constructors_reject_truthy_flags():
+    with pytest.raises(TypeError, match="ordinary_taylor_sound must be a bool"):
+        certify_certificate_language_soundness(
+            ordinary_taylor_sound="yes",
+        )
+
+    fake_kernel = SimpleNamespace(
+        ordinary_taylor_sound="yes",
+        levi_civita_sound=True,
+        spatial_ks_sound=True,
+        fuchsian_stop_sound=True,
+        generalized_fuchsian_stop_sound=True,
+        transition_sound=True,
+        branch_union_sound=True,
+        chart_chain_sound=True,
+        verifier_kernel_sound=True,
+        proof_grade_arithmetic_backend_sound=True,
+    )
+    with pytest.raises(TypeError, match="ordinary_taylor_sound must be a bool"):
+        derive_certificate_language_soundness_from_checker_kernel(fake_kernel)
+
+    with pytest.raises(
+        TypeError,
+        match="chart_family_words_enumerated must be a bool",
+    ):
+        certify_computable_atlas_certificate_enumeration(
+            chart_family_words_enumerated="yes",
+        )
+
+    with pytest.raises(
+        TypeError,
+        match="source_theorem_proof_certified must be a bool",
+    ):
+        certify_computable_atlas_certificate_enumeration(
+            source_theorem_proof_certified=1,
+        )
+
+
+def test_closed_form_internal_route_rejects_truthy_replaced_gate_flags():
+    _, soundness, enumeration, policy, pointwise_closed_form = (
+        _certified_pointwise_closed_form_route()
+    )
+
+    truthy_soundness = replace(soundness, ordinary_taylor_sound="yes")
+    assert not truthy_soundness.proof_certified
+    assert truthy_soundness.missing_obligations == ("ordinary_taylor_sound",)
+    soundness_route = replace(
+        pointwise_closed_form,
+        certificate_language_soundness=truthy_soundness,
+    )
+    assert not soundness_route.proof_certified
+    assert "certificate_language_soundness:ordinary_taylor_sound" in (
+        soundness_route.missing_obligations
+    )
+
+    truthy_enumeration = replace(enumeration, chart_family_words_enumerated="yes")
+    assert not truthy_enumeration.proof_certified
+    assert truthy_enumeration.missing_obligations[0] == (
+        "chart_family_words_enumerated"
+    )
+    enumeration_route = replace(
+        pointwise_closed_form,
+        computable_certificate_enumeration=truthy_enumeration,
+    )
+    assert not enumeration_route.proof_certified
+    assert "computable_atlas_certificate_enumeration:chart_family_words_enumerated" in (
+        enumeration_route.missing_obligations
+    )
+
+    truthy_source_enumeration = replace(
+        enumeration,
+        source_theorem_proof_certified="yes",
+    )
+    assert not truthy_source_enumeration.proof_certified
+    assert not truthy_source_enumeration.pointwise_theorem_derived
+
+    truthy_policy = replace(
+        policy,
+        stop_at_unselected_total_collision="yes",
+    )
+    assert not truthy_policy.proof_certified
+    assert "stop_at_unselected_total_collision" in truthy_policy.missing_obligations
+    policy_route = replace(
+        pointwise_closed_form,
+        maximal_classical_total_collision_policy=truthy_policy,
+    )
+    assert not policy_route.proof_certified
+    assert "maximal_classical_total_collision_policy" in (
+        policy_route.missing_obligations
+    )
+
+    truthy_source_policy = replace(policy, source_theorem_proof_certified="yes")
+    assert not truthy_source_policy.pointwise_theorem_derived
+    assert not truthy_source_policy.proof_certified
+
+
+def test_maximal_classical_policy_constructor_rejects_truthy_flags():
+    with pytest.raises(
+        TypeError,
+        match="stop_at_unselected_total_collision must be a bool",
+    ):
+        certify_maximal_classical_total_collision_policy(
+            stop_at_unselected_total_collision="yes",
+        )
+
+
 def test_pointwise_closed_form_route_requires_generalized_fuchsian_enumeration_data():
     theorem = certify_pointwise_open_time_locally_finite_atlas_theorem(
         dimension=3,
@@ -1634,9 +1820,7 @@ def test_pointwise_closed_form_route_requires_generalized_fuchsian_enumeration_d
     certificate = certify_general_closed_form_solution_target(
         "regularized locally finite atlas",
         general_theorem_certificate=theorem,
-        certificate_language_soundness_certificate=(
-            _complete_certificate_language_soundness()
-        ),
+        certificate_language_soundness_certificate=_derived_certificate_language_soundness(),
         computable_atlas_enumeration_certificate=enumeration,
     )
 
@@ -1661,6 +1845,315 @@ def test_pointwise_closed_form_route_requires_generalized_fuchsian_enumeration_d
     )
 
 
+def test_pointwise_closed_form_route_rejects_source_less_soundness_bundle():
+    theorem = certify_pointwise_open_time_locally_finite_atlas_theorem(
+        dimension=3,
+        compact_time_rate=1.3,
+        total_collision_policy_id="maximal_classical_stop",
+    )
+    soundness = _complete_certificate_language_soundness()
+    enumeration = (
+        derive_computable_atlas_certificate_enumeration_from_pointwise_theorem(
+            theorem,
+        )
+    )
+    certificate = certify_general_closed_form_solution_target(
+        "regularized locally finite atlas",
+        general_theorem_certificate=theorem,
+        certificate_language_soundness_certificate=soundness,
+        computable_atlas_enumeration_certificate=enumeration,
+    )
+
+    assert soundness.proof_certified
+    assert not soundness.checker_kernel_derived
+    assert not certificate.proof_certified
+    assert certificate.status == "incomplete"
+    assert "certificate_language_soundness_checker_kernel_derived" in (
+        certificate.blocking_obligations
+    )
+
+
+def test_pointwise_closed_form_route_rejects_attribute_compatible_fake_gates():
+    theorem = certify_pointwise_open_time_locally_finite_atlas_theorem(
+        dimension=3,
+        compact_time_rate=1.3,
+        total_collision_policy_id="maximal_classical_stop",
+    )
+    fake_soundness = SimpleNamespace(
+        proof_certified=True,
+        checker_kernel_derived=True,
+        missing_obligations=(),
+    )
+    fake_enumeration = SimpleNamespace(
+        proof_certified=True,
+        pointwise_theorem_derived=True,
+        missing_obligations=(),
+    )
+    fake_policy = SimpleNamespace(
+        proof_certified=True,
+        policy_id="maximal_classical_stop",
+        missing_obligations=(),
+    )
+    direct = certify_pointwise_regularized_atlas_closed_form_theorem(
+        pointwise_open_time_theorem=theorem,
+        certificate_language_soundness=fake_soundness,
+        computable_certificate_enumeration=fake_enumeration,
+        maximal_classical_total_collision_policy=fake_policy,
+    )
+    audited = certify_general_closed_form_solution_target(
+        "regularized locally finite atlas",
+        general_theorem_certificate=theorem,
+        certificate_language_soundness_certificate=fake_soundness,
+        computable_atlas_enumeration_certificate=fake_enumeration,
+    )
+
+    assert not direct.proof_certified
+    assert "certificate_language_soundness_constructor_certificate" in (
+        direct.missing_obligations
+    )
+    assert "computable_atlas_certificate_enumeration_constructor_certificate" in (
+        direct.missing_obligations
+    )
+    assert "maximal_classical_total_collision_policy_constructor_certificate" in (
+        direct.missing_obligations
+    )
+    assert not audited.proof_certified
+    assert "certificate_language_soundness_constructor_certificate" in (
+        audited.blocking_obligations
+    )
+    assert "computable_atlas_certificate_enumeration_constructor_certificate" in (
+        audited.blocking_obligations
+    )
+
+
+def test_pointwise_closed_form_route_rejects_attribute_compatible_fake_pointwise_theorem():
+    real_theorem = certify_pointwise_open_time_locally_finite_atlas_theorem(
+        dimension=3,
+        compact_time_rate=1.3,
+        total_collision_policy_id="maximal_classical_stop",
+    )
+    fake_pointwise = SimpleNamespace(
+        theorem_id="pointwise_open_time_locally_finite_atlas",
+        proof_certified=True,
+        input_model=real_theorem.input_model,
+        dimension=real_theorem.dimension,
+        total_collision_policy_id="maximal_classical_stop",
+        finite_target_theorem=real_theorem.finite_target_theorem,
+        route_summary=real_theorem.route_summary,
+        missing_obligations=(),
+    )
+    soundness = _derived_certificate_language_soundness()
+    enumeration = derive_computable_atlas_certificate_enumeration_from_pointwise_theorem(
+        fake_pointwise,
+    )
+    policy = certify_maximal_classical_total_collision_policy(
+        pointwise_open_time_theorem=fake_pointwise,
+    )
+    direct = certify_pointwise_regularized_atlas_closed_form_theorem(
+        pointwise_open_time_theorem=fake_pointwise,
+        certificate_language_soundness=soundness,
+        computable_certificate_enumeration=enumeration,
+        maximal_classical_total_collision_policy=policy,
+    )
+    audited = certify_general_closed_form_solution_target(
+        "regularized locally finite atlas",
+        general_theorem_certificate=fake_pointwise,
+        certificate_language_soundness_certificate=soundness,
+        computable_atlas_enumeration_certificate=(
+            derive_computable_atlas_certificate_enumeration_from_pointwise_theorem(
+                real_theorem,
+            )
+        ),
+    )
+
+    assert fake_pointwise.proof_certified
+    assert not enumeration.proof_certified
+    assert not enumeration.pointwise_theorem_derived
+    assert not policy.proof_certified
+    assert "pointwise_theorem_policy_source" in policy.missing_obligations
+    assert not direct.proof_certified
+    assert "pointwise_open_time_atlas_constructor_certificate" in (
+        direct.missing_obligations
+    )
+    assert "computable_atlas_certificate_enumeration" in (
+        direct.missing_obligations
+    )
+    assert not audited.proof_certified
+    assert "open_time_locally_finite_atlas_proof" in audited.blocking_obligations
+
+
+def test_pointwise_closed_form_route_rejects_non_maximal_policy_theorem():
+    theorem = certify_pointwise_open_time_locally_finite_atlas_theorem(
+        dimension=3,
+        compact_time_rate=1.3,
+        total_collision_policy_id="selected_identity_selector",
+    )
+    enumeration = derive_computable_atlas_certificate_enumeration_from_pointwise_theorem(
+        theorem,
+    )
+    certificate = certify_general_closed_form_solution_target(
+        "regularized locally finite atlas",
+        general_theorem_certificate=theorem,
+        certificate_language_soundness_certificate=_derived_certificate_language_soundness(),
+        computable_atlas_enumeration_certificate=enumeration,
+    )
+
+    assert not theorem.proof_certified
+    assert not enumeration.proof_certified
+    assert not enumeration.pointwise_theorem_derived
+    assert not certificate.proof_certified
+    assert "pointwise_open_time_atlas_proof" in certificate.blocking_obligations
+    assert "maximal_classical_total_collision_policy" in (
+        certificate.blocking_obligations
+    )
+
+
+def test_maximal_classical_policy_requires_real_pointwise_theorem_source():
+    real_theorem = certify_pointwise_open_time_locally_finite_atlas_theorem(
+        dimension=3,
+        compact_time_rate=1.3,
+        total_collision_policy_id="maximal_classical_stop",
+    )
+    source_less = certify_maximal_classical_total_collision_policy()
+    fake_theorem_policy = certify_maximal_classical_total_collision_policy(
+        pointwise_open_time_theorem=SimpleNamespace(
+            theorem_id="pointwise_open_time_locally_finite_atlas",
+            proof_certified=True,
+            total_collision_policy_id="maximal_classical_stop",
+        ),
+    )
+    real_policy = certify_maximal_classical_total_collision_policy(
+        pointwise_open_time_theorem=real_theorem,
+    )
+
+    assert not source_less.proof_certified
+    assert "pointwise_theorem_policy_matches" in source_less.missing_obligations
+    assert "pointwise_theorem_policy_source" in source_less.missing_obligations
+    assert not fake_theorem_policy.proof_certified
+    assert "pointwise_theorem_policy_matches" in (
+        fake_theorem_policy.missing_obligations
+    )
+    assert "pointwise_theorem_policy_source" in (
+        fake_theorem_policy.missing_obligations
+    )
+    assert not real_policy.proof_certified
+    assert not real_policy.pointwise_theorem_derived
+    assert real_policy.source_theorem_id == "pointwise_open_time_locally_finite_atlas"
+
+
+def test_pointwise_closed_form_route_rejects_gates_from_different_pointwise_theorem():
+    theorem_3d = certify_pointwise_open_time_locally_finite_atlas_theorem(
+        dimension=3,
+        compact_time_rate=1.3,
+        total_collision_policy_id="maximal_classical_stop",
+    )
+    theorem_2d = certify_pointwise_open_time_locally_finite_atlas_theorem(
+        dimension=2,
+        compact_time_rate=1.3,
+        total_collision_policy_id="maximal_classical_stop",
+    )
+    soundness = _derived_certificate_language_soundness()
+    enumeration_2d = (
+        derive_computable_atlas_certificate_enumeration_from_pointwise_theorem(
+            theorem_2d,
+        )
+    )
+    policy_2d = certify_maximal_classical_total_collision_policy(
+        pointwise_open_time_theorem=theorem_2d,
+    )
+    direct = certify_pointwise_regularized_atlas_closed_form_theorem(
+        pointwise_open_time_theorem=theorem_3d,
+        certificate_language_soundness=soundness,
+        computable_certificate_enumeration=enumeration_2d,
+        maximal_classical_total_collision_policy=policy_2d,
+    )
+    audited = certify_general_closed_form_solution_target(
+        "regularized locally finite atlas",
+        general_theorem_certificate=theorem_3d,
+        certificate_language_soundness_certificate=soundness,
+        computable_atlas_enumeration_certificate=enumeration_2d,
+    )
+
+    assert not enumeration_2d.proof_certified
+    assert not enumeration_2d.pointwise_theorem_derived
+    assert not policy_2d.proof_certified
+    assert not direct.proof_certified
+    assert "pointwise_open_time_atlas_proof" in direct.missing_obligations
+    assert "computable_atlas_certificate_enumeration" in direct.missing_obligations
+    assert not audited.proof_certified
+    assert "computable_atlas_certificate_enumeration" in audited.blocking_obligations
+
+
+def test_pointwise_closed_form_route_rejects_same_source_incomplete_enumeration_grammar():
+    theorem = certify_pointwise_open_time_locally_finite_atlas_theorem(
+        dimension=3,
+        compact_time_rate=1.3,
+        total_collision_policy_id="maximal_classical_stop",
+    )
+    soundness = _derived_certificate_language_soundness()
+    incomplete_enumeration = _complete_computable_atlas_certificate_enumeration(
+        source_theorem_id=theorem.theorem_id,
+        source_theorem_proof_certified=theorem.proof_certified,
+        source_theorem_dimension=theorem.dimension,
+        source_theorem_input_model=theorem.input_model,
+        source_total_collision_policy_id=theorem.total_collision_policy_id,
+        finite_target_chart_families=("ordinary_taylor",),
+        finite_target_allowed_outcomes=("finite_atlas_reaches_target",),
+    )
+    policy = certify_maximal_classical_total_collision_policy(
+        pointwise_open_time_theorem=theorem,
+    )
+    direct = certify_pointwise_regularized_atlas_closed_form_theorem(
+        pointwise_open_time_theorem=theorem,
+        certificate_language_soundness=soundness,
+        computable_certificate_enumeration=incomplete_enumeration,
+        maximal_classical_total_collision_policy=policy,
+    )
+    audited = certify_general_closed_form_solution_target(
+        "regularized locally finite atlas",
+        general_theorem_certificate=theorem,
+        certificate_language_soundness_certificate=soundness,
+        computable_atlas_enumeration_certificate=incomplete_enumeration,
+    )
+
+    assert incomplete_enumeration.proof_certified
+    assert not incomplete_enumeration.pointwise_theorem_derived
+    assert not direct.proof_certified
+    assert (
+        "computable_atlas_certificate_enumeration_pointwise_theorem_derived"
+        in direct.missing_obligations
+    )
+    assert not audited.proof_certified
+    assert (
+        "computable_atlas_certificate_enumeration_pointwise_theorem_derived"
+        in audited.blocking_obligations
+    )
+
+
+def test_pointwise_closed_form_route_rejects_source_less_enumeration_bundle():
+    theorem = certify_pointwise_open_time_locally_finite_atlas_theorem(
+        dimension=3,
+        compact_time_rate=1.3,
+        total_collision_policy_id="maximal_classical_stop",
+    )
+    enumeration = _complete_computable_atlas_certificate_enumeration()
+    certificate = certify_general_closed_form_solution_target(
+        "regularized locally finite atlas",
+        general_theorem_certificate=theorem,
+        certificate_language_soundness_certificate=_derived_certificate_language_soundness(),
+        computable_atlas_enumeration_certificate=enumeration,
+    )
+
+    assert enumeration.proof_certified
+    assert not enumeration.pointwise_theorem_derived
+    assert not certificate.proof_certified
+    assert certificate.status == "incomplete"
+    assert (
+        "computable_atlas_certificate_enumeration_pointwise_theorem_derived"
+        in certificate.blocking_obligations
+    )
+
+
 def test_computable_atlas_enumeration_derives_from_pointwise_theorem():
     theorem = certify_pointwise_open_time_locally_finite_atlas_theorem(
         dimension=3,
@@ -1675,15 +2168,13 @@ def test_computable_atlas_enumeration_derives_from_pointwise_theorem():
     certificate = certify_general_closed_form_solution_target(
         "regularized locally finite atlas",
         general_theorem_certificate=theorem,
-        certificate_language_soundness_certificate=(
-            _complete_certificate_language_soundness()
-        ),
+        certificate_language_soundness_certificate=_derived_certificate_language_soundness(),
         computable_atlas_enumeration_certificate=enumeration,
     )
 
-    assert theorem.proof_certified
-    assert enumeration.pointwise_theorem_derived
-    assert enumeration.proof_certified
+    assert not theorem.proof_certified
+    assert not enumeration.pointwise_theorem_derived
+    assert not enumeration.proof_certified
     assert enumeration.finite_target_chart_families == (
         "ordinary_taylor",
         "planar_levi_civita_binary",
@@ -1694,7 +2185,7 @@ def test_computable_atlas_enumeration_derives_from_pointwise_theorem():
         "finite_atlas_reaches_target",
         "unselected_total_collision_before_target",
     )
-    assert "computable_atlas_certificate_enumeration" not in (
+    assert "computable_atlas_certificate_enumeration" in (
         certificate.blocking_obligations
     )
 
@@ -1715,7 +2206,10 @@ def test_computable_atlas_enumeration_derivation_requires_exact_computable_input
         )
     )
 
-    assert interval_theorem.proof_certified
+    assert not interval_theorem.proof_certified
+    assert "pointwise_open_time_finite_target_theorem_source_match" in (
+        interval_theorem.missing_obligations
+    )
     assert not enumeration.proof_certified
     assert not enumeration.pointwise_theorem_derived
     assert enumeration.missing_obligations == (
@@ -1742,8 +2236,12 @@ def test_pointwise_closed_form_route_certifies_regularized_atlas_for_computable_
         compact_time_rate=1.3,
         total_collision_policy_id="maximal_classical_stop",
     )
-    soundness = _complete_certificate_language_soundness()
-    enumeration = _complete_computable_atlas_certificate_enumeration()
+    soundness = _derived_certificate_language_soundness()
+    enumeration = (
+        derive_computable_atlas_certificate_enumeration_from_pointwise_theorem(
+            theorem,
+        )
+    )
     certificate = certify_general_closed_form_solution_target(
         "regularized locally finite atlas",
         general_theorem_certificate=theorem,
@@ -1751,19 +2249,17 @@ def test_pointwise_closed_form_route_certifies_regularized_atlas_for_computable_
         computable_atlas_enumeration_certificate=enumeration,
     )
 
-    assert theorem.proof_certified
+    assert not theorem.proof_certified
     assert soundness.proof_certified
-    assert enumeration.proof_certified
-    assert certificate.proof_certified
-    assert certificate.status == "certified"
-    assert certificate.closed_form_certificate.status == (
-        "certified_pointwise_regularized_atlas_route"
-    )
-    assert certificate.closed_form_certificate.atlas_route_certified
-    assert "set_valued_constructor_branch_event_completeness" not in (
+    assert not enumeration.proof_certified
+    assert not enumeration.pointwise_theorem_derived
+    assert not certificate.proof_certified
+    assert not certificate.certified
+    assert certificate.status == "incomplete"
+    assert not certificate.closed_form_certificate.atlas_route_certified
+    assert FINITE_TARGET_CRITICAL_ANALYTIC_LEMMA_IDS[0] in (
         certificate.blocking_obligations
     )
-    assert certificate.blocking_obligations == ()
     details = {
         detail.requirement: detail
         for detail in certificate.requirement_statuses
@@ -1773,7 +2269,7 @@ def test_pointwise_closed_form_route_certifies_regularized_atlas_for_computable_
     )
 
 
-def test_set_valued_constructor_regularized_atlas_route_has_explicit_status():
+def test_set_valued_constructor_regularized_atlas_route_rejects_fake_verifier():
     theorem = OpenTimeLocallyFiniteAtlasTheoremCertificate(
         finite_target_certificate=SimpleNamespace(
             certified=True,
@@ -1806,6 +2302,9 @@ def test_set_valued_constructor_regularized_atlas_route_has_explicit_status():
             unaudited_analytic_lemma_ids=(),
             critical_unaudited_analytic_lemma_ids=(),
             analytic_lemma_audit_blockers=(),
+            scoped_set_valued_constructor_only=False,
+            set_valued_constructor_input_scope_id="arbitrary_interval_boxes",
+            set_valued_constructor_arbitrary_partition_generation_claimed=True,
         ),
         independent_chart_verifier_certified=True,
         independent_chart_verifier_certificate=SimpleNamespace(certified=True),
@@ -1815,13 +2314,80 @@ def test_set_valued_constructor_regularized_atlas_route_has_explicit_status():
         general_theorem_certificate=theorem,
     )
 
-    assert theorem.proof_certified
-    assert certificate.proof_certified
-    assert certificate.closed_form_certificate.status == (
-        "certified_set_valued_constructor_regularized_atlas_route"
+    assert not theorem.component_types_certified
+    assert not theorem.proof_certified
+    assert "open_time_finite_target_certificate_type" in theorem.missing_obligations
+    assert "open_time_independent_chart_verifier_certificate_type" in (
+        theorem.missing_obligations
     )
-    assert certificate.closed_form_certificate.route_summary == (
-        "set-valued constructor regularized locally finite atlas route certified for interval boxes"
+    assert not certificate.proof_certified
+    assert certificate.status == "incomplete"
+    assert certificate.closed_form_certificate.status == "conditional_regularized_atlas_route"
+    assert "independent_chart_verifier" in certificate.blocking_obligations
+    assert (
+        "certified_set_valued_constructor_regularized_atlas_route"
+        != certificate.closed_form_certificate.status
+    )
+
+
+def test_scoped_set_valued_constructor_route_does_not_promote_to_arbitrary_interval_boxes():
+    theorem = OpenTimeLocallyFiniteAtlasTheoremCertificate(
+        finite_target_certificate=SimpleNamespace(
+            certified=True,
+            outcome_id="finite_chart_chain_reaches_target",
+        ),
+        compact_interval_certificate=SimpleNamespace(
+            certified=True,
+            proof_certified=True,
+        ),
+        exhaustion_family_certificate=SimpleNamespace(
+            certified=True,
+            proof_certified=True,
+        ),
+        countable_exhaustion_certificate=SimpleNamespace(
+            proof_certified=True,
+        ),
+        endpoint_regime_partition_required=False,
+        obligations=(
+            TheoremPipelineObligation(
+                obligation="finite_target_atlas_or_stop_theorem",
+                certified=True,
+                source="test",
+                detail="finite chart chain reaches target",
+            ),
+        ),
+        finite_target_completeness_certificate=SimpleNamespace(
+            certified=True,
+            proof_certified=True,
+            missing_obligations=(),
+            unaudited_analytic_lemma_ids=(),
+            critical_unaudited_analytic_lemma_ids=(),
+            analytic_lemma_audit_blockers=(),
+            scoped_set_valued_constructor_only=True,
+            set_valued_constructor_input_scope_id="positive_margin_interval_boxes",
+            set_valued_constructor_arbitrary_partition_generation_claimed=False,
+        ),
+        independent_chart_verifier_certified=True,
+        independent_chart_verifier_certificate=SimpleNamespace(certified=True),
+    )
+    certificate = certify_general_closed_form_solution_target(
+        "regularized locally finite atlas",
+        general_theorem_certificate=theorem,
+    )
+
+    assert not theorem.component_types_certified
+    assert not theorem.proof_certified
+    assert not theorem.scoped_set_valued_constructor_only
+    assert certificate.status == "incomplete"
+    assert not certificate.proof_certified
+    assert certificate.closed_form_certificate.status == (
+        "conditional_regularized_atlas_route"
+    )
+    assert "open_time_finite_target_completeness_certificate_type" in (
+        certificate.blocking_obligations
+    )
+    assert "certified_set_valued_constructor_regularized_atlas_route" != (
+        certificate.closed_form_certificate.status
     )
 
 
@@ -1831,8 +2397,12 @@ def test_pointwise_regularized_atlas_closed_form_theorem_feeds_audit_directly():
         compact_time_rate=1.3,
         total_collision_policy_id="maximal_classical_stop",
     )
-    soundness = _complete_certificate_language_soundness()
-    enumeration = _complete_computable_atlas_certificate_enumeration()
+    soundness = _derived_certificate_language_soundness()
+    enumeration = (
+        derive_computable_atlas_certificate_enumeration_from_pointwise_theorem(
+            theorem,
+        )
+    )
     policy = certify_maximal_classical_total_collision_policy(
         pointwise_open_time_theorem=theorem,
     )
@@ -1847,8 +2417,8 @@ def test_pointwise_regularized_atlas_closed_form_theorem_feeds_audit_directly():
         general_theorem_certificate=pointwise_closed_form,
     )
 
-    assert policy.proof_certified
-    assert pointwise_closed_form.proof_certified
+    assert not policy.proof_certified
+    assert not pointwise_closed_form.proof_certified
     assert pointwise_closed_form.chart_primitives == (
         "ordinary_taylor",
         "planar_levi_civita_binary",
@@ -1870,10 +2440,10 @@ def test_pointwise_regularized_atlas_closed_form_theorem_feeds_audit_directly():
         isinstance(obligation, TheoremPipelineObligation)
         for obligation in pointwise_closed_form.obligations
     )
-    assert pointwise_closed_form.missing_obligations == ()
-    assert certificate.proof_certified
+    assert "pointwise_open_time_atlas_proof" in pointwise_closed_form.missing_obligations
+    assert not certificate.proof_certified
     assert certificate.closed_form_certificate.status == (
-        "certified_pointwise_regularized_atlas_route"
+        "conditional_regularized_atlas_route"
     )
     details = {
         detail.requirement: detail
@@ -1890,8 +2460,12 @@ def test_pointwise_regularized_atlas_closed_form_theorem_requires_declared_scope
         compact_time_rate=1.3,
         total_collision_policy_id="maximal_classical_stop",
     )
-    soundness = _complete_certificate_language_soundness()
-    enumeration = _complete_computable_atlas_certificate_enumeration()
+    soundness = _derived_certificate_language_soundness()
+    enumeration = (
+        derive_computable_atlas_certificate_enumeration_from_pointwise_theorem(
+            theorem,
+        )
+    )
     policy = certify_maximal_classical_total_collision_policy(
         pointwise_open_time_theorem=theorem,
     )
@@ -1915,6 +2489,224 @@ def test_pointwise_regularized_atlas_closed_form_theorem_requires_declared_scope
     )
 
 
+def test_pointwise_closed_form_theorem_rejects_spoofed_obligation_ledger():
+    *_, pointwise_closed_form = _certified_pointwise_closed_form_route()
+
+    spoofed = replace(
+        pointwise_closed_form,
+        obligations=(
+            SimpleNamespace(
+                obligation="fake",
+                certified=True,
+                required=True,
+            ),
+        ),
+    )
+    assert not spoofed.proof_certified
+    assert "pointwise_regularized_atlas_closed_form_obligation_type" in (
+        spoofed.missing_obligations
+    )
+
+    empty = replace(pointwise_closed_form, obligations=())
+    assert not empty.proof_certified
+    assert "pointwise_regularized_atlas_closed_form_obligations_present" in (
+        empty.missing_obligations
+    )
+
+    optional_only = replace(
+        pointwise_closed_form,
+        obligations=(
+            TheoremPipelineObligation(
+                obligation="optional_note",
+                certified=True,
+                required=False,
+                source="test",
+            ),
+        ),
+    )
+    assert not optional_only.proof_certified
+    assert (
+        "pointwise_regularized_atlas_closed_form_required_obligation_present"
+        in optional_only.missing_obligations
+    )
+
+    fake_real_obligation = replace(
+        pointwise_closed_form,
+        obligations=(
+            TheoremPipelineObligation(
+                obligation="fake_internal_closed_form_obligation",
+                certified=True,
+                required=True,
+                source="test",
+            ),
+        ),
+    )
+    assert not fake_real_obligation.proof_certified
+    assert "pointwise_regularized_atlas_closed_form_obligation_manifest" in (
+        fake_real_obligation.missing_obligations
+    )
+
+
+def test_pointwise_closed_form_theorem_rejects_forged_theorem_id():
+    *_, pointwise_closed_form = _certified_pointwise_closed_form_route()
+    forged = replace(
+        pointwise_closed_form,
+        theorem_id="spoofed_pointwise_closed_form",
+    )
+
+    assert not forged.proof_certified
+    assert "pointwise_regularized_atlas_closed_form_theorem_id" in (
+        forged.missing_obligations
+    )
+    assert "pointwise_open_time_atlas_proof" in forged.missing_obligations
+
+
+def test_pointwise_closed_form_theorem_rejects_subclassed_gates_and_forged_ledger():
+    class SpoofedSoundness(CertificateLanguageSoundnessCertificate):
+        @property
+        def proof_certified(self):
+            return True
+
+        @property
+        def checker_kernel_derived(self):
+            return True
+
+    class SpoofedEnumeration(ComputableAtlasCertificateEnumerationCertificate):
+        @property
+        def proof_certified(self):
+            return True
+
+        @property
+        def pointwise_theorem_derived(self):
+            return True
+
+    class SpoofedPolicy(MaximalClassicalTotalCollisionPolicyCertificate):
+        @property
+        def proof_certified(self):
+            return True
+
+        @property
+        def pointwise_theorem_derived(self):
+            return True
+
+    theorem, _soundness, enumeration, policy, pointwise_closed_form = (
+        _certified_pointwise_closed_form_route()
+    )
+    forged = replace(
+        pointwise_closed_form,
+        certificate_language_soundness=SpoofedSoundness(),
+        computable_certificate_enumeration=SpoofedEnumeration(
+            source_theorem_id=theorem.theorem_id,
+            source_theorem_proof_certified=True,
+            source_theorem_dimension=theorem.dimension,
+            source_theorem_input_model=theorem.input_model,
+            source_total_collision_policy_id=theorem.total_collision_policy_id,
+            finite_target_chart_families=enumeration.finite_target_chart_families,
+            finite_target_allowed_outcomes=enumeration.finite_target_allowed_outcomes,
+        ),
+        maximal_classical_total_collision_policy=SpoofedPolicy(
+            policy_id=policy.policy_id,
+            pointwise_theorem_policy_matches=True,
+            source_theorem_id=theorem.theorem_id,
+            source_theorem_proof_certified=True,
+            source_theorem_dimension=theorem.dimension,
+            source_theorem_input_model=theorem.input_model,
+            source_total_collision_policy_id=theorem.total_collision_policy_id,
+        ),
+        obligations=(
+            TheoremPipelineObligation(
+                obligation="fake_internal_closed_form_obligation",
+                certified=True,
+                required=True,
+                source="test",
+            ),
+        ),
+    )
+
+    assert not forged.proof_certified
+    assert "certificate_language_soundness_constructor_certificate" in (
+        forged.missing_obligations
+    )
+    assert (
+        "computable_atlas_certificate_enumeration_constructor_certificate"
+        in forged.missing_obligations
+    )
+    assert (
+        "maximal_classical_total_collision_policy_constructor_certificate"
+        in forged.missing_obligations
+    )
+    assert "pointwise_regularized_atlas_closed_form_obligation_manifest" in (
+        forged.missing_obligations
+    )
+
+
+def test_general_closed_form_solution_rejects_spoofed_requirement_statuses():
+    *_, pointwise_closed_form = _certified_pointwise_closed_form_route()
+    certificate = certify_general_closed_form_solution_target(
+        "regularized locally finite atlas",
+        general_theorem_certificate=pointwise_closed_form,
+    )
+    assert not certificate.proof_certified
+
+    class SpoofedRequirementStatus(GeneralSolutionRequirementStatus):
+        pass
+
+    spoofed = replace(
+        certificate,
+        requirement_statuses=(SimpleNamespace(requirement="fake", certified=True),),
+    )
+    subclassed = replace(
+        certificate,
+        requirement_statuses=tuple(
+            SpoofedRequirementStatus(
+                requirement=status.requirement,
+                certified=True,
+                reason=status.reason,
+                witness_field=status.witness_field,
+                required=status.required,
+                observed=status.observed,
+                blocking_obligations=(),
+            )
+            for status in certificate.requirement_statuses
+        ),
+    )
+    assert not spoofed.proof_certified
+    assert "general_closed_form_solution_requirement_status_type" in (
+        spoofed.missing_requirements
+    )
+    assert "general_closed_form_solution_requirement_status_type" in (
+        spoofed.blocking_obligations
+    )
+    assert not subclassed.proof_certified
+    assert "general_closed_form_solution_requirement_status_type" in (
+        subclassed.missing_requirements
+    )
+    assert "general_closed_form_solution_requirement_status_type" in (
+        subclassed.blocking_obligations
+    )
+
+    empty = replace(certificate, requirement_statuses=())
+    assert not empty.proof_certified
+    assert "general_closed_form_solution_requirements_present" in (
+        empty.missing_requirements
+    )
+    assert "general_closed_form_solution_requirements_present" in (
+        empty.blocking_obligations
+    )
+
+    truthy_replaced_status = replace(
+        certificate,
+        requirement_statuses=(
+            replace(certificate.requirement_statuses[0], certified="yes"),
+            *certificate.requirement_statuses[1:],
+        ),
+    )
+    assert not truthy_replaced_status.proof_certified
+    assert certificate.requirement_statuses[0].requirement in (
+        truthy_replaced_status.missing_requirements
+    )
+
+
 def test_pointwise_closed_form_public_api_exports_are_available():
     assert (
         three_body_api.PointwiseRegularizedAtlasClosedFormTheoremCertificate
@@ -1933,8 +2725,12 @@ def test_pointwise_regularized_atlas_closed_form_theorem_requires_maximal_policy
         compact_time_rate=1.3,
         total_collision_policy_id="maximal_classical_stop",
     )
-    soundness = _complete_certificate_language_soundness()
-    enumeration = _complete_computable_atlas_certificate_enumeration()
+    soundness = _derived_certificate_language_soundness()
+    enumeration = (
+        derive_computable_atlas_certificate_enumeration_from_pointwise_theorem(
+            theorem,
+        )
+    )
     selected_policy = certify_maximal_classical_total_collision_policy(
         policy_id="selected_identity_selector",
         pointwise_open_time_theorem=theorem,
@@ -2221,6 +3017,38 @@ def test_closed_form_audit_rejects_raw_boolean_constructor_theorem_witness():
             "sundman global series",
             general_theorem_certificate=True,
         )
+
+
+def test_closed_form_audit_rejects_attribute_compatible_fake_general_theorem():
+    fake_theorem = SimpleNamespace(
+        theorem_id="constructive_sundman_atlas_general_solution",
+        regime_theorem_certified=True,
+        full_general_solution_certified=True,
+        missing_obligations=(),
+        route_summary="fake general theorem says everything is certified",
+    )
+    certificate = certify_general_closed_form_solution_target(
+        "sundman global series",
+        general_theorem_certificate=fake_theorem,
+    )
+
+    assert fake_theorem.full_general_solution_certified
+    assert not certificate.proof_certified
+    assert certificate.status == "incomplete"
+    assert "compact_sundman_global_series" in certificate.missing_requirements
+    assert "general_solution_theorem_constructor_certificate" in (
+        certificate.blocking_obligations
+    )
+    details = {
+        detail.requirement: detail
+        for detail in certificate.missing_requirement_details
+    }
+    assert details["compact_sundman_global_series"].witness_field == (
+        "GeneralSolutionTheoremCertificate"
+    )
+    assert details["arbitrary_positive_masses"].witness_field == (
+        "unsupported_constructor_theorem_certificate"
+    )
 
 
 def test_binary_collision_continuation_witness_reports_granular_blockers():

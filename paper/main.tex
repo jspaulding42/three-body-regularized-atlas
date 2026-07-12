@@ -1,0 +1,506 @@
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{microtype}
+\usepackage{xcolor}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{remark}[theorem]{Remark}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand{\todo}[1]{\textcolor{red!70!black}{[Editorial TODO: #1]}}
+
+\title{A Checkable A Posteriori Certificate for a Planar\\
+Three-Body Binary-Collision Passage}
+\author{Jeffrey Spaulding\\
+\small Independent Researcher\\
+\small \href{mailto:jspaulding42@hotmail.com}{jspaulding42@hotmail.com}}
+\date{Draft of \today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We describe a small computer-assisted certificate for continuing one specified
+planar Newtonian three-body trajectory through an isolated binary collision.
+The construction combines an analytic Levi--Civita (LC) initial-value problem
+across collision, an exact collision anchor, interval residual and Jacobian
+bounds, exact symbolic checks of the punctured LC--Newton projection, and
+anisotropic a posteriori tubes for ordinary Newtonian solutions on both sides.
+Acceptance implies, subject to the stated outward-rounding hypothesis, that
+the two punctured Newtonian branches are projections of the same unique lifted
+LC solution and are correctly ordered in physical time.  A reproducible
+example with masses $(1,1,1.2)$ is included in the accompanying open-source
+implementation.  The result is deliberately local and planar: it is neither
+a general solution of the three-body problem nor a global atlas-completeness
+theorem.  The main contribution is a falsifiable certificate architecture
+which makes branch identity at collision, often left implicit in numerical
+continuation, an explicit checked obligation.
+\end{abstract}
+
+\section{Introduction}
+
+Binary collision is a coordinate singularity of the Newtonian equations but
+can be regularized in the planar problem by the classical Levi--Civita
+transformation.  Analytic regularization alone, however, does not certify that
+a computed polynomial describes an exact orbit, that its two physical
+projections belong to one lifted initial-value problem, or that all required
+force denominators remain separated.  Those points matter when a numerical
+orbit is offered as evidence for a collision passage.
+
+This paper isolates these obligations and turns them into a checkable local
+certificate.  A serialized polynomial approximates a fourteen-dimensional
+lifted LC system.  Interval evaluation bounds its differential defect and the
+Jacobian of the regularized vector field on a proposed tube.  An exact,
+zero-error anchor enforces collision and the pair-energy constraint.  On two
+punctured endpoints the complete LC enclosure is projected into physical
+coordinates and contained in independently validated Newtonian tubes.  The
+same-IVP statement is therefore obtained by construction, not inferred from
+overlapping floating-point boxes.
+
+The implementation also checks the algebraic LC--Newton identities separately
+with exact symbolic arithmetic.  Its example is intentionally modest: it
+establishes one explicit local passage and provides a basis for larger
+libraries of supplied, independently checkable collision charts.
+
+\paragraph{Scope.}
+No claim is made here of a closed form for arbitrary three-body initial data,
+of continuation through total collision, of a spatial Kustaanheimo--Stiefel
+theorem, or of termination and completeness of a global regularized atlas.
+Those statements require substantially different arguments.
+
+\paragraph{Relation to prior work.}
+Levi--Civita regularization and computer-assisted ODE validation are classical
+subjects.  A final submission should compare the certificate precisely with
+the standard regularization literature, interval Taylor methods, Lohner-type
+enclosures, and existing validated celestial-mechanics computations.
+\todo{Parent agent must verify and insert exact primary citations; placeholder
+entries are listed in Section~\ref{sec:bib}.}
+
+\section{Planar three-body and lifted LC equations}
+
+Let $m_0,m_1,m_2>0$ and choose a collision pair $(i,j)$, leaving body $k$.
+Write $M=m_i+m_j$, $\alpha=m_j/M$, and $\beta=m_i/M$.  In the lifted state
+\[
+ X=(z,w,h,R,U,y,V,t)\in\R^{14},
+\]
+the entries $z,w,R,U,y,V$ are planar vectors and $h,t$ are scalars.  Define
+\[
+ Q(z)=(z_1^2-z_2^2,2z_1z_2),\qquad \rho=|z|^2,
+\]
+and
+\[
+ L(z)=2\begin{pmatrix}z_1&-z_2\\z_2&z_1\end{pmatrix}.
+\]
+The selected relative position is $q=Q(z)$ and physical time satisfies
+$dt/ds=\rho$.  Put
+\[
+ d_i=y+\alpha Q(z),\qquad d_j=y-\beta Q(z),\qquad
+ f_i=\frac{d_i}{|d_i|^3},\quad f_j=\frac{d_j}{|d_j|^3},
+\]
+and set
+\[
+ B=\frac{m_k}{M}(m_i f_i+m_j f_j),\quad
+ A_k=-m_i f_i-m_j f_j,
+\]
+\[
+ Y=A_k-B,\qquad P=m_k(f_j-f_i).
+\]
+The regularized field used by the checker is
+\begin{align}
+ z'&=w, &
+ w'&=\tfrac12hz+\tfrac14\rho L(z)^TP,\nonumber\\
+ h'&=(L(z)w)\mathbin{\cdot}P, &
+ R'&=\rho U, & U'&=\rho B,\label{eq:lcfield}\\
+ y'&=\rho V, & V'&=\rho Y, & t'&=\rho.\nonumber
+\end{align}
+There is no division by $z$ or $\rho$.  Thus the field is analytic at the
+selected binary collision whenever $d_i$ and $d_j$ stay nonzero.
+
+The physical pair velocity on a punctured LC interval is
+\[
+ v=\frac{L(z)w}{\rho}.
+\]
+The remaining lifted variables reconstruct the three physical positions and
+velocities through the pair center of mass and third-body offset.  The
+implementation uses the same serialized masses in both coordinate systems.
+
+\section{A posteriori tube validation}
+
+Let $F$ denote either the lifted field~\eqref{eq:lcfield} or the first-order
+ordinary Newtonian field, and let $\bar X$ be a polynomial on an interval of
+half-width $\ell$.  Suppose interval arithmetic proves, uniformly on the
+declared tube,
+\[
+ \norm{\bar X'-F(\bar X)}_\infty\leq\delta,
+ \qquad \norm{DF}_\infty\leq K,
+\]
+and the exact anchor differs from the polynomial anchor by at most
+$\varepsilon$.  Define
+\begin{equation}
+ E=e^{K\ell}\varepsilon+\delta\frac{e^{K\ell}-1}{K},
+ \label{eq:gronwall}
+\end{equation}
+with the continuous interpretation $E=\varepsilon+\delta\ell$ when $K=0$.
+
+\begin{lemma}[A posteriori tube lemma]\label{lem:tube}
+If every denominator of $F$ is bounded away from zero on a radius-$r$ tube
+around $\bar X$ and $E<r$, then the exact anchored IVP has a unique solution
+throughout the certified interval and
+$\norm{X-\bar X}_\infty\leq E$ there.
+\end{lemma}
+
+\begin{proof}
+Local existence and uniqueness hold on the nonsingular tube.  Subtracting the
+integral equations for $X$ and $\bar X$ gives
+\[
+ e(s)\leq \varepsilon+\delta|s-a|+
+ K\int_a^s e(u)\,du.
+\]
+Gr\"onwall's inequality yields~\eqref{eq:gronwall}.  If the solution first
+left the radius-$r$ tube, the same strict estimate at that first-exit time
+would give $e<r$, a contradiction.  The argument applies on either side of
+the anchor and uniqueness joins the two solutions.
+\end{proof}
+
+For the LC tube, interval forward automatic differentiation evaluates both
+$F$ and $DF$, and separately establishes positive lower bounds for
+$|d_i|$ and $|d_j|$.  Hence no lower bound for $\rho$ is needed to validate
+the lifted solution across $z=0$.
+
+\subsection{Weighted ordinary tubes}
+
+Projection near collision produces errors of different scales in position
+and velocity.  A single state radius may therefore make the position domain
+spuriously intersect collision.  For position and velocity radii $R_q,R_v$,
+the checker instead uses
+\[
+ \|(\Delta q,\Delta v)\|_W=
+ \max\{\|\Delta q\|_\infty/R_q,\|\Delta v\|_\infty/R_v\}.
+\]
+If $A$ bounds the infinity norm of the acceleration Jacobian on the position
+tube, then
+\[
+ L_W=\max\{R_v/R_q,A R_q/R_v\}.
+\]
+With block defects $\delta_q,\delta_v$ and anchor errors
+$\varepsilon_q,\varepsilon_v$, define
+\[
+ \eta_0=\max\{\varepsilon_q/R_q,\varepsilon_v/R_v\},\qquad
+ \gamma=\max\{\delta_q/R_q,\delta_v/R_v\}.
+\]
+Acceptance requires
+\[
+ E_W=e^{L_W\ell}\eta_0+
+ \gamma\frac{e^{L_W\ell}-1}{L_W}<1.
+\]
+The resulting physical error bounds are $R_qE_W$ and $R_vE_W$.  This is
+Lemma~\ref{lem:tube} after a diagonal change of norm.
+
+\section{Collision anchoring and projection}
+
+Define the pair-energy constraint
+\begin{equation}
+ C=2|w|^2-M-\rho h.\label{eq:constraint}
+\end{equation}
+
+\begin{lemma}[Constraint invariance]\label{lem:constraint}
+Every solution of~\eqref{eq:lcfield} satisfies $C'=0$.
+\end{lemma}
+
+\begin{proof}
+Since $\rho'=2z\cdot w$, direct substitution gives
+\[
+ C'=4w\cdot w'-\rho'h-\rho h'
+ =2h z\cdot w+\rho(Lw)\cdot P
+ -2h z\cdot w-\rho(Lw)\cdot P=0.
+\]
+\end{proof}
+
+The certificate evaluates the serialized polynomial at the collision anchor
+using exact rational arithmetic over its binary floating-point coefficients.
+It requires zero anchor uncertainty and
+\begin{equation}
+ z(0)=0,\qquad 2|w(0)|^2=M.\label{eq:anchor}
+\end{equation}
+Thus $C=0$ for the selected exact IVP.  Because $M>0$, $w(0)\ne0$; hence
+$z$ has a simple isolated zero.  Moreover
+\[
+ t(s)-t(0)=\int_0^s |z(u)|^2\,du
+ =\frac{|w(0)|^2}{3}s^3+O(s^4),
+\]
+so physical time is strictly ordered across sufficiently small opposite
+punctured sides.  The implemented checker obtains global ordering on its
+certified local interval from analyticity, nonidentity of $z$, and
+$dt/ds=|z|^2$.
+
+\begin{lemma}[Punctured LC--Newton equivalence]\label{lem:projection}
+Let $X(s)$ solve~\eqref{eq:lcfield}, satisfy $C=0$, and have $\rho>0$.
+Under $q=Q(z)$, $v=L(z)w/\rho$, and $dt/ds=\rho$, the projected variables
+satisfy the planar Newtonian three-body equations.
+\end{lemma}
+
+\begin{proof}
+The identities
+\[
+ L^TL=LL^T=4\rho I,\qquad Lz=2q,
+\]
+and
+\[
+ \rho L(w)w-\rho_sL(z)w=-2|w|^2q
+\]
+reduce the projected relative acceleration to
+\[
+ q_{tt}=\frac{(-2|w|^2+\rho h)q}{\rho^3}+P.
+\]
+Equation~\eqref{eq:constraint} gives
+\[
+ q_{tt}=-\frac{Mq}{|q|^3}+P.
+\]
+The equations for $R,U,y,V$ similarly give
+$R_t=U$, $R_{tt}=B$, $y_t=V$, and $y_{tt}=Y$; substituting the definitions of
+$B,Y,P$ reconstructs all three Newton equations.  Seven polynomial identities
+used in this reduction are also reduced to zero independently by the exact
+symbolic verification script.
+\end{proof}
+
+The constraint is essential.  Off $C=0$, the effective singular coefficient
+is $-(M+C)q/\rho^3$.  A positive anchor ball centered on a constrained state
+would include off-constraint states; this is why the collision certificate
+requires zero anchor error rather than a merely small residual.
+
+\section{Certified two-sided passage}
+
+We now state the precise conditional result implemented by the checker.
+
+\begin{theorem}[Validated local planar binary-collision passage]
+\label{thm:passage}
+Fix positive masses and a pair $(i,j)$.  Let a serialized polynomial
+$\bar X$ approximate the lifted LC state on $[s_-,s_+]$, where
+$s_-<0<s_+$.  Suppose the checker accepts:
+\begin{enumerate}[label=(\roman*)]
+\item an LC a posteriori tube centered at $\bar X$, with zero anchor error at
+      $s=0$;
+\item the exact collision identities~\eqref{eq:anchor} and exact consistency
+      of every serialized mass ratio used by the lifted and physical systems;
+\item separated-third-body denominators on the entire LC tube;
+\item complete projected endpoint enclosures at $s_-$ and $s_+$ with a
+      positive lower bound for $\rho$; and
+\item weighted ordinary Newtonian tubes containing the respective complete
+      projected endpoint enclosures.
+\end{enumerate}
+Assume the checker's interval operations and interval automatic
+differentiation are inclusion isotonic and outward rounded.  Then there is a
+unique analytic lifted solution on $[s_-,s_+]$ with an isolated selected-pair
+collision at $s=0$.  Its projection on each punctured side is a classical
+planar Newtonian three-body solution.  Both branches and the accepted ordinary
+tubes continuing them arise from the same lifted IVP, and physical time is
+strictly ordered from the left endpoint through collision to the right
+endpoint.  The accepted data therefore certify one local generalized
+Levi--Civita binary-collision continuation.
+\end{theorem}
+
+\begin{proof}
+Lemma~\ref{lem:tube} gives one unique analytic lifted solution throughout the
+LC interval.  Exact anchor arithmetic and
+Lemma~\ref{lem:constraint} place this solution on $C=0$ and prove a simple,
+isolated zero of $z$.  Lemma~\ref{lem:projection} supplies Newtonian dynamics
+where $\rho>0$.  Interval projection of the entire LC endpoint enclosures,
+followed by containment in independently validated weighted ordinary tubes,
+binds both ordinary branches to that same lifted solution.  Finally,
+$dt/ds=|z|^2\geq0$ and analyticity with $z\not\equiv0$ imply a strictly
+positive physical-time increment on every nondegenerate subinterval.
+\end{proof}
+
+This theorem does not say that arbitrary initial data reach collision.  It is
+an a posteriori theorem: supplied data are accepted only after all listed
+inequalities and identities have been recomputed.
+
+\section{Checker architecture}
+
+The proof artifact separates construction from verification.  Fast numerical
+or formal-series code generates candidate polynomial charts.  The checker
+then recomputes the following obligations:
+\begin{enumerate}
+\item schema, chart identifiers, dimensions, masses, pairs, intervals, and
+      endpoint ordering;
+\item direct interval residuals rather than sampled or coefficient-only
+      residual surrogates;
+\item a full interval enclosure of $DF$ by forward automatic differentiation;
+\item outward upper bounds for Jacobian row sums and Gr\"onwall expressions;
+\item directed lower bounds for all force denominators and for punctured
+      endpoint $\rho$;
+\item exact rational collision-anchor and pair-energy identities;
+\item exact agreement of the binary floating-point values used for $M$,
+      $\alpha$, $\beta$, and $m_k/M$ with their rational values for the
+      serialized masses;
+\item interval projection of complete endpoint tubes, not only their centers;
+      and
+\item weighted ordinary tube validation and endpoint containment.
+\end{enumerate}
+
+The exact mass-ratio gate is restrictive: many generic floating-point masses
+will fail it even when a sound interval enclosure of the ratio would suffice.
+It is used here to prevent the implementation from silently proving a theorem
+for a nearby mass system.  Replacing it with outward interval coefficients is
+a natural extension.
+
+The checker reports separate booleans for collision anchoring, projected
+endpoint enclosure, punctured Newtonian projection, and full two-sided
+passage.  This separation prevents a weaker endpoint-containment result from
+being promoted accidentally to collision continuation.
+
+\section{Reproducible example}
+
+The included example takes
+\[
+ (m_0,m_1,m_2)=(1,1,1.2),\qquad (i,j)=(0,1),
+\]
+with collision anchor $z(0)=0$, $w(0)=(1,0)$, LC endpoints
+$s_\pm=\pm10^{-2}$, and a separated third body.  A degree-twelve candidate LC
+series and degree-twelve ordinary endpoint series are generated through the
+public implementation.  Running
+\begin{verbatim}
+python scripts/certify_planar_binary_collision_passage.py
+\end{verbatim}
+returns a JSON object whose fields include
+\texttt{collision\_certified=true} and
+\texttt{passage\_certified=true}.  In the current fixture, the reported
+punctured $\rho$ lower bounds are approximately
+$9.99598\times10^{-5}$ on both sides.  These values are checker outputs, not
+errors estimated by sampling.
+
+The ordinary endpoint charts in this proof-of-concept fixture cover only
+$10^{-12}$ units of physical time.  Their reported componentwise error bounds
+are approximately $5.004\times10^{-6}$ in position and $0.500313$ in
+velocity.  The latter is far too coarse for a precision trajectory claim;
+the role of these charts is only to certify existence, uniqueness, and
+containment of the two punctured endpoint projections.  Sharper and longer
+ordinary continuations are future work.
+
+The independent symbolic audit is run with
+\begin{verbatim}
+python scripts/verify_lc_projection_identities.py
+\end{verbatim}
+and verifies exactly seven LC projection identities.  The focused regression
+suite can be run with
+\begin{verbatim}
+python -m pytest -q tests/test_certificate_checker.py \
+  -k 'planar_lc or weighted_ordinary or two_sided'
+\end{verbatim}
+The repository documentation records broader regression commands and current
+test status; a release submission should archive the exact commit, dependency
+lock, command transcript, and machine-readable JSON witness.
+
+\section{Trusted kernel and limitations}
+
+The mathematical conclusion of Theorem~\ref{thm:passage} is conditional on
+sound outward-rounded interval arithmetic.  The present kernel comprises the
+serialized Python checker, NumPy binary64 operations where explicitly
+enclosed, directed \texttt{nextafter} inflation, directed high-precision
+decimal square-root, reciprocal-power, and exponential bounds, exact rational
+accumulation for sensitive row sums and distance calculations, and interval
+forward automatic differentiation.  The witness path has adversarial tests
+for the directed elementary bounds.  Nevertheless, this implementation has
+not been extracted into or verified by a proof assistant.  In particular,
+the exponential enclosure uses \texttt{Decimal.exp} under a directed decimal
+context; this runtime behavior is part of the hypothesis and is not here
+proved to be a correctly rounded transcendental implementation.  The
+executable should therefore not be presented as a foundational proof
+independent of its trusted runtime.
+
+The present work is limited in the following ways.
+\begin{itemize}
+\item It certifies one local example, not a parameter family or an exhaustive
+      collision atlas.
+\item It is planar and treats only one isolated binary collision.
+\item It does not address simultaneous or total collision.
+\item It establishes neither global existence nor global atlas termination.
+\item Exact representability of certain mass ratios is a conservative
+      implementation restriction.
+\item An independent implementation audit and comparison with an established
+      interval package remain desirable.
+\end{itemize}
+
+Accordingly, the scientifically useful claim is narrow: the artifact checks
+whether a supplied regularized chart describes one Newtonian solution passing
+through one isolated planar binary collision.
+
+\section{Directions for further work}
+
+A natural next stage is to define a stable, versioned JSON certificate format
+and a minimal checker independent of the candidate generator.  Replacing the
+floating-point interval layer with an audited arbitrary-precision backend
+would reduce the trusted base.  Batch generation could then produce certified
+families indexed by masses, collision energy, incoming data, and third-body
+state.  Such families could support rigorous studies of local collision
+scattering maps, periodic-orbit continuation, and bifurcation.
+
+For practical pre-collision boxes, a parametric Krawczyk treatment of the
+Levi--Civita square-root branches may be sharper than the current conservative
+interval branch atlas.  In three dimensions, analogous work would require a
+careful Kustaanheimo--Stiefel gauge and projection certificate.  These are
+extensions of the local certificate architecture; none follows automatically
+from Theorem~\ref{thm:passage}.
+
+\section{Software availability}
+
+The implementation is available under the BSD-3-Clause license at
+\begin{center}
+\url{https://github.com/jspaulding42/three-body-regularized-atlas}.
+\end{center}
+The repository records the dependencies, reproduction commands, tests, and
+machine-readable witness.  A future archival release should add an immutable
+version identifier and DOI before this manuscript is treated as a citable
+final version.
+The principal executable witness is
+\texttt{scripts/certify\_planar\_binary\_collision\_passage.py}; the independent
+algebra audit is
+\texttt{scripts/verify\_lc\_projection\_identities.py}.
+
+\section*{Generative-AI use and contributions}
+
+This project was conducted through human-directed use of OpenAI generative-AI
+systems identified in the user interface as GPT-5.5, GPT-5.5 Pro, and GPT-5.6.
+Those systems contributed substantially to mathematical exploration, software
+implementation, certificate and test design, manuscript drafting, and critical
+revision.  Jeffrey Spaulding initiated and directed the project, selected its
+research direction and scope, reviewed and authorized the release of the
+resulting artifact, and is the sole accountable author.  The AI systems are
+not authors: they cannot approve the manuscript, hold rights, disclose
+conflicts, or accept responsibility for its contents.  The manuscript and
+software should therefore be read as a human-released, AI-assisted research
+artifact whose mathematical claims remain subject to independent expert
+review.  No institutional endorsement or independent external mathematical
+review is asserted.
+
+\section{Bibliographic placeholders}\label{sec:bib}
+
+The following list records the literature categories that a submission must
+cite.  Exact editions, titles, page ranges, and identifiers have intentionally
+not been fabricated in this draft.
+\begin{enumerate}
+\item \textbf{Levi--Civita regularization.}
+      \todo{Verify the primary Levi--Civita source and a modern celestial-
+      mechanics treatment using the same normalization.}
+\item \textbf{Generalized solutions and binary-collision continuation.}
+      \todo{Verify the standard definition and historical source appropriate
+      to the claimed ``LC generalized continuation'' terminology.}
+\item \textbf{Validated ODE integration and a posteriori enclosures.}
+      \todo{Insert primary references for interval Taylor methods,
+      Lohner-type methods, and the first-exit/Gr\"onwall tube argument.}
+\item \textbf{Computer-assisted celestial mechanics.}
+      \todo{Insert the closest existing validated collision/regularization
+      computations and explain the distinction from the present certificate.}
+\item \textbf{Interval arithmetic and directed rounding.}
+      \todo{Insert an authoritative interval-arithmetic standard or monograph
+      and documentation for the backend used in the archived release.}
+\end{enumerate}
+
+\end{document}

@@ -18,6 +18,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass, replace
 from fractions import Fraction
 from itertools import combinations, product
+import math
 
 import numpy as np
 
@@ -54,6 +55,79 @@ TERMINAL_STRATIFIED_LEAF_KINDS = {
 }
 
 
+def _constructor_tree_components_certified(
+    source_tree: object,
+    stratified_tree: object,
+) -> bool:
+    return bool(
+        isinstance(source_tree, BranchEventTreeCertificate)
+        and source_tree.cover_certified is True
+        and isinstance(stratified_tree, StratifiedBranchTreeCertificate)
+        and stratified_tree.certified is True
+        and stratified_tree.source_tree == source_tree
+    )
+
+
+def _typed_certified_items(items: tuple[object, ...], item_type: type[object]) -> bool:
+    return bool(
+        items
+        and all(
+            isinstance(item, item_type)
+            and item.proof_certified is True
+            for item in items
+        )
+    )
+
+
+def _constructor_tree_missing_obligations(
+    source_tree: object,
+    stratified_tree: object,
+) -> tuple[str, ...]:
+    missing: list[str] = []
+    if not isinstance(source_tree, BranchEventTreeCertificate):
+        missing.append("source_tree_type")
+    elif source_tree.cover_certified is not True:
+        missing.append("source_tree_cover")
+    if not isinstance(stratified_tree, StratifiedBranchTreeCertificate):
+        missing.append("stratified_tree_type")
+    else:
+        if stratified_tree.certified is not True:
+            missing.append("stratified_tree_certified")
+        if (
+            isinstance(source_tree, BranchEventTreeCertificate)
+            and stratified_tree.source_tree != source_tree
+        ):
+            missing.append("source_tree_matches_stratified_tree")
+        missing.extend(stratified_tree.missing_obligations)
+    return tuple(dict.fromkeys(missing))
+
+
+def _typed_item_missing_obligations(
+    items: tuple[object, ...],
+    item_type: type[object],
+    *,
+    label: str,
+) -> tuple[str, ...]:
+    missing: list[str] = []
+    if not items:
+        missing.append(f"{label}_present")
+    for index, item in enumerate(items):
+        item_id = str(getattr(item, "stratum_id", "")) or str(
+            getattr(item, "cell_id", ""),
+        )
+        item_label = item_id or str(index)
+        if not isinstance(item, item_type):
+            missing.append(f"{label}:{item_label}:type")
+            continue
+        if item.proof_certified is not True:
+            missing.append(f"{label}:{item_label}:proof_certified")
+        missing.extend(
+            f"{label}:{item_label}:{obligation}"
+            for obligation in item.missing_obligations
+        )
+    return tuple(dict.fromkeys(missing))
+
+
 @dataclass(frozen=True)
 class AnalyticDecisionFunctionCertificate:
     """Positive-margin decision evidence for one analytic selector function."""
@@ -68,7 +142,7 @@ class AnalyticDecisionFunctionCertificate:
     @property
     def positive_margin_certified(self) -> bool:
         return bool(
-            self.certified
+            self.certified is True
             and not self.missing_obligations
             and self.margin_lower_bound > 0.0
             and self.lipschitz_bound >= 0.0
@@ -104,9 +178,9 @@ class EqualityStratumCertificate:
     @property
     def proof_certified(self) -> bool:
         return bool(
-            self.certified
+            self.certified is True
             and self.well_formed
-            and self.isolation_certified
+            and self.isolation_certified is True
         )
 
 
@@ -125,9 +199,9 @@ class EventOrderTieLeafCertificate:
         return bool(
             self.leaf_id
             and len(self.tied_event_ids) >= 2
-            and self.certified
+            and self.certified is True
             and not self.missing_obligations
-            and self.equality_stratum.proof_certified
+            and self.equality_stratum.proof_certified is True
         )
 
 
@@ -160,8 +234,8 @@ class SelectorPolicyLeafCertificate:
             self.leaf_id
             and self.selector_policy_id
             and self.defining_function_ids
-            and self.isolation_certified
-            and self.certified
+            and self.isolation_certified is True
+            and self.certified is True
             and not self.missing_obligations
         )
 
@@ -181,16 +255,13 @@ class TotalCollisionClusterLeafCertificate:
     def proof_certified(self) -> bool:
         entry_certified = bool(
             self.entry_certificate is not None
-            and (
-                getattr(self.entry_certificate, "proof_certified", False)
-                or getattr(self.entry_certificate, "certified", False)
-            )
+            and getattr(self.entry_certificate, "proof_certified", False) is True
         )
         return bool(
             self.leaf_id
             and len(self.cluster_pair_ids) >= 2
             and self.stop_or_selector_policy
-            and self.certified
+            and self.certified is True
             and entry_certified
             and not self.missing_obligations
         )
@@ -238,7 +309,10 @@ class StratifiedBranchLeafCertificate:
             and self.supported_kind
             and self.terminal_response_kind
             and self.depth >= 0
-            and (not self.terminal_response_certified or not self.missing_obligations)
+            and (
+                self.terminal_response_certified is not True
+                or not self.missing_obligations
+            )
         )
 
     @property
@@ -249,33 +323,33 @@ class StratifiedBranchLeafCertificate:
             return bool(
                 self.decision_functions
                 and all(
-                    decision.proof_certified
+                    decision.proof_certified is True
                     for decision in self.decision_functions
                 )
             )
         if self.leaf_kind == "simultaneous_event_equality":
             return bool(
                 self.event_order_tie is not None
-                and self.event_order_tie.proof_certified
+                and self.event_order_tie.proof_certified is True
             )
         if self.leaf_kind == "total_collision_cluster":
             return bool(
                 self.total_collision_cluster is not None
-                and self.total_collision_cluster.proof_certified
+                and self.total_collision_cluster.proof_certified is True
             )
         if self.leaf_kind == "selector_policy":
             return bool(
                 self.equality_stratum is not None
-                and self.equality_stratum.proof_certified
+                and self.equality_stratum.proof_certified is True
             )
         return True
 
     @property
     def proof_certified(self) -> bool:
         return bool(
-            self.source_leaf_certified
-            and self.stratum_certified
-            and self.terminal_response_certified
+            self.source_leaf_certified is True
+            and self.stratum_certified is True
+            and self.terminal_response_certified is True
             and not self.missing_obligations
         )
 
@@ -310,15 +384,18 @@ class StratifiedBranchTreeCertificate:
 
     @property
     def terminal_response_count(self) -> int:
-        return sum(leaf.terminal_response_certified for leaf in self.leaf_certificates)
+        return sum(
+            leaf.terminal_response_certified is True
+            for leaf in self.leaf_certificates
+        )
 
     @property
     def certified(self) -> bool:
         return bool(
             self.theorem_id
-            and self.cover_certified
-            and self.preserves_branch_tree
-            and self.leaf_taxonomy_certified
+            and self.cover_certified is True
+            and self.preserves_branch_tree is True
+            and self.leaf_taxonomy_certified is True
             and self.leaf_certificates
         )
 
@@ -327,7 +404,7 @@ class StratifiedBranchTreeCertificate:
         return bool(
             self.certified
             and self.unsupported_leaf_count == 0
-            and all(leaf.proof_certified for leaf in self.leaf_certificates)
+            and all(leaf.proof_certified is True for leaf in self.leaf_certificates)
         )
 
     @property
@@ -338,29 +415,29 @@ class StratifiedBranchTreeCertificate:
     def recursive_theorem_certified(self) -> bool:
         return bool(
             self.supplied_tree_proof_certified
-            and self.recursive_exhaustion_certified
+            and self.recursive_exhaustion_certified is True
         )
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
         missing: list[str] = []
-        if not self.cover_certified:
+        if self.cover_certified is not True:
             missing.append("stratified_branch_tree_cover")
-        if not self.preserves_branch_tree:
+        if self.preserves_branch_tree is not True:
             missing.append("stratified_branch_tree_preserves_source_leaves")
-        if not self.leaf_taxonomy_certified:
+        if self.leaf_taxonomy_certified is not True:
             missing.append("stratified_branch_tree_leaf_taxonomy")
         for leaf in self.leaf_certificates:
             if leaf.unsupported:
                 missing.append(f"{leaf.leaf_id}:unsupported_analytic_stratum")
-            if not leaf.source_leaf_certified:
+            if leaf.source_leaf_certified is not True:
                 missing.append(f"{leaf.leaf_id}:source_leaf_not_certified")
-            if not leaf.stratum_certified:
+            if leaf.stratum_certified is not True:
                 missing.append(f"{leaf.leaf_id}:stratum_not_certified")
-            if not leaf.terminal_response_certified:
+            if leaf.terminal_response_certified is not True:
                 missing.append(f"{leaf.leaf_id}:terminal_response_missing")
             missing.extend(f"{leaf.leaf_id}:{item}" for item in leaf.missing_obligations)
-        if not self.recursive_exhaustion_certified:
+        if self.recursive_exhaustion_certified is not True:
             missing.append("arbitrary_recursive_stratified_exhaustion_not_claimed")
         return tuple(dict.fromkeys(missing))
 
@@ -373,6 +450,14 @@ class RecursiveStratifiedConsumptionObligation:
     certified: bool
     detail: str
     required: bool = True
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "certified", self.certified is True)
+        object.__setattr__(
+            self,
+            "required",
+            self.required if type(self.required) is bool else True,
+        )
 
 
 @dataclass(frozen=True)
@@ -404,11 +489,11 @@ class RecursiveStratifiedLeafConsumption:
             not self.unsupported
             and not self.missing_obligations
             and (
-                self.terminal_certified
+                self.terminal_certified is True
                 or (
                     self.recursive
-                    and self.child_certified
-                    and self.descent_certified
+                    and self.child_certified is True
+                    and self.descent_certified is True
                 )
             )
         )
@@ -443,7 +528,10 @@ class RecursiveStratifiedBranchEventConsumptionCertificate:
 
     @property
     def terminal_leaf_count(self) -> int:
-        return sum(leaf.terminal_certified for leaf in self.leaf_consumptions)
+        return sum(
+            leaf.terminal_certified is True
+            for leaf in self.leaf_consumptions
+        )
 
     @property
     def recursive_leaf_count(self) -> int:
@@ -456,14 +544,14 @@ class RecursiveStratifiedBranchEventConsumptionCertificate:
     @property
     def strict_descent_edge_count(self) -> int:
         return sum(
-            leaf.recursive and leaf.descent_certified
+            leaf.recursive and leaf.descent_certified is True
             for leaf in self.leaf_consumptions
         )
 
     @property
     def unresolved_descent_edge_count(self) -> int:
         return sum(
-            leaf.recursive and not leaf.descent_certified
+            leaf.recursive and leaf.descent_certified is not True
             for leaf in self.leaf_consumptions
         )
 
@@ -475,14 +563,26 @@ class RecursiveStratifiedBranchEventConsumptionCertificate:
     def certified(self) -> bool:
         return bool(
             self.theorem_id
-            and self.source_tree.certified
+            and self.source_tree.certified is True
             and self.leaf_consumptions
-            and self.descent_well_founded
-            and all(leaf.certified for leaf in self.leaf_consumptions)
-            and all(
-                obligation.certified
+            and self.descent_well_founded is True
+            and self.obligations
+            and any(
+                isinstance(obligation, RecursiveStratifiedConsumptionObligation)
+                and obligation.required
                 for obligation in self.obligations
-                if obligation.required
+            )
+            and all(leaf.certified is True for leaf in self.leaf_consumptions)
+            and all(
+                isinstance(obligation, RecursiveStratifiedConsumptionObligation)
+                and obligation.certified is True
+                for obligation in self.obligations
+                if isinstance(obligation, RecursiveStratifiedConsumptionObligation)
+                and obligation.required
+            )
+            and all(
+                isinstance(obligation, RecursiveStratifiedConsumptionObligation)
+                for obligation in self.obligations
             )
         )
 
@@ -516,11 +616,23 @@ class RecursiveStratifiedBranchEventConsumptionCertificate:
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        missing = [
-            obligation.obligation
+        missing: list[str] = []
+        if not self.obligations:
+            missing.append("recursive_stratified_consumption_obligations_present")
+        if self.obligations and not any(
+            isinstance(obligation, RecursiveStratifiedConsumptionObligation)
+            and obligation.required
             for obligation in self.obligations
-            if obligation.required and not obligation.certified
-        ]
+        ):
+            missing.append(
+                "recursive_stratified_consumption_required_obligation_present"
+            )
+        for obligation in self.obligations:
+            if not isinstance(obligation, RecursiveStratifiedConsumptionObligation):
+                missing.append("recursive_stratified_consumption_obligation_type")
+                continue
+            if obligation.required and obligation.certified is not True:
+                missing.append(obligation.obligation)
         for leaf in self.leaf_consumptions:
             missing.extend(
                 f"{leaf.leaf_id}:{item}" for item in leaf.missing_obligations
@@ -547,16 +659,18 @@ class PolynomialDecisionStratumCertificate:
     def equality(self) -> bool:
         return self.stratum_kind in {
             "equality_root",
+            "simultaneous_taylor_model_equality_root",
             "simultaneous_affine_equality_root",
             "simultaneous_polynomial_equality_root",
             "simultaneous_polynomial_multiple_equality_root",
             "quadratic_double_equality_root",
             "sturm_polynomial_multiple_equality_root",
+            "rational_equality_root",
         }
 
     @property
     def proof_certified(self) -> bool:
-        return bool(self.certified and not self.missing_obligations)
+        return bool(self.certified is True and not self.missing_obligations)
 
 
 @dataclass(frozen=True)
@@ -566,6 +680,43 @@ class PolynomialDecisionFunctionSpec:
     decision_id: str
     coefficients: tuple[float, ...]
     root_brackets: tuple[tuple[float, float], ...] = ()
+
+
+@dataclass(frozen=True)
+class RationalDecisionFunctionSpec:
+    """One rational discriminator with a denominator excluded from zero."""
+
+    decision_id: str
+    numerator_coefficients: tuple[float, ...]
+    denominator_coefficients: tuple[float, ...]
+    root_brackets: tuple[tuple[float, float], ...] = ()
+
+
+@dataclass(frozen=True)
+class TaylorModelDecisionFunctionSpec:
+    """One finite Taylor-model discriminator on a compact interval.
+
+    ``coefficients`` store the finite Taylor polynomial in the ordinary
+    polynomial basis used by the interval checker.  ``remainder_bound`` and
+    ``derivative_remainder_bound`` are scalar absolute bounds for the omitted
+    analytic tail on the domain and on its derivative.  Equality roots are
+    accepted only with an explicit monotone or Weierstrass-style witness.
+    """
+
+    decision_id: str
+    coefficients: tuple[float, ...]
+    expansion_center: float
+    remainder_bound: float
+    derivative_remainder_bound: float
+    root_brackets: tuple[tuple[float, float], ...] = ()
+    witness_kind: str = "unsupported"
+
+    @property
+    def supported_witness(self) -> bool:
+        return self.witness_kind in {
+            "monotone_root_isolation",
+            "weierstrass_simple_root",
+        }
 
 
 @dataclass(frozen=True)
@@ -617,9 +768,11 @@ class PolynomialDecisionStratificationCertificate:
         return bool(
             self.statement
             and self.proof_sketch
-            and self.strata
-            and all(stratum.proof_certified for stratum in self.strata)
-            and self.stratified_tree.certified
+            and _typed_certified_items(self.strata, PolynomialDecisionStratumCertificate)
+            and _constructor_tree_components_certified(
+                self.source_tree,
+                self.stratified_tree,
+            )
         )
 
     @property
@@ -629,11 +782,245 @@ class PolynomialDecisionStratificationCertificate:
     @property
     def missing_obligations(self) -> tuple[str, ...]:
         missing = [
-            f"{stratum.stratum_id}:{item}"
-            for stratum in self.strata
-            for item in stratum.missing_obligations
+            *_typed_item_missing_obligations(
+                self.strata,
+                PolynomialDecisionStratumCertificate,
+                label="polynomial_decision_stratum",
+            ),
+            *_constructor_tree_missing_obligations(
+                self.source_tree,
+                self.stratified_tree,
+            ),
         ]
-        missing.extend(self.stratified_tree.missing_obligations)
+        return tuple(dict.fromkeys(missing))
+
+
+@dataclass(frozen=True)
+class RationalDecisionStratificationCertificate:
+    """Constructor-derived stratified tree for a rational decision function.
+
+    The constructor is intentionally scoped: the denominator must have a
+    certified interval sign on the whole compact domain.  Under that exclusion,
+    the rational sign/equality partition is reduced to a polynomial numerator
+    partition without introducing new equality strata.
+    """
+
+    decision_function: RationalDecisionFunctionSpec
+    domain: tuple[float, float]
+    denominator_interval: tuple[float, float]
+    denominator_sign: int
+    numerator_strata: tuple[PolynomialDecisionStratumCertificate, ...]
+    strata: tuple[PolynomialDecisionStratumCertificate, ...]
+    source_tree: BranchEventTreeCertificate
+    stratified_tree: StratifiedBranchTreeCertificate
+    statement: str
+    proof_sketch: str
+    theorem_id: str = "rational_decision_stratified_branch_tree"
+
+    @property
+    def decision_id(self) -> str:
+        return self.decision_function.decision_id
+
+    @property
+    def dimension(self) -> int:
+        return 1
+
+    @property
+    def denominator_excluded_from_zero(self) -> bool:
+        return self.denominator_sign != 0
+
+    @property
+    def sign_stratum_count(self) -> int:
+        return sum(not stratum.equality for stratum in self.strata)
+
+    @property
+    def equality_stratum_count(self) -> int:
+        return sum(stratum.equality for stratum in self.strata)
+
+    @property
+    def certified(self) -> bool:
+        return bool(
+            self.statement
+            and self.proof_sketch
+            and self.decision_id
+            and self.denominator_excluded_from_zero
+            and _typed_certified_items(self.strata, PolynomialDecisionStratumCertificate)
+            and _constructor_tree_components_certified(
+                self.source_tree,
+                self.stratified_tree,
+            )
+        )
+
+    @property
+    def proof_certified(self) -> bool:
+        return self.certified
+
+    @property
+    def missing_obligations(self) -> tuple[str, ...]:
+        missing = [
+            *_typed_item_missing_obligations(
+                self.strata,
+                PolynomialDecisionStratumCertificate,
+                label="rational_decision_stratum",
+            ),
+            *_constructor_tree_missing_obligations(
+                self.source_tree,
+                self.stratified_tree,
+            ),
+        ]
+        if not self.denominator_excluded_from_zero:
+            missing.append("rational_denominator_sign_not_isolated")
+        return tuple(dict.fromkeys(missing))
+
+
+@dataclass(frozen=True)
+class TaylorModelDecisionStratificationCertificate:
+    """Constructor-derived stratified tree for a Taylor-model decision.
+
+    This is deliberately a scoped grammar: it certifies finite Taylor models
+    with explicit remainder bounds and root witnesses.  It does not claim a
+    representation theorem for arbitrary analytic event functions.
+    """
+
+    decision_function: TaylorModelDecisionFunctionSpec
+    domain: tuple[float, float]
+    strata: tuple[PolynomialDecisionStratumCertificate, ...]
+    source_tree: BranchEventTreeCertificate
+    stratified_tree: StratifiedBranchTreeCertificate
+    statement: str
+    proof_sketch: str
+    theorem_id: str = "taylor_model_decision_stratified_branch_tree"
+
+    @property
+    def decision_id(self) -> str:
+        return self.decision_function.decision_id
+
+    @property
+    def dimension(self) -> int:
+        return 1
+
+    @property
+    def sign_stratum_count(self) -> int:
+        return sum(not stratum.equality for stratum in self.strata)
+
+    @property
+    def equality_stratum_count(self) -> int:
+        return sum(stratum.equality for stratum in self.strata)
+
+    @property
+    def unsupported_stratum_count(self) -> int:
+        stratum_count = sum(
+            "unsupported_analytic_stratum" in stratum.missing_obligations
+            for stratum in self.strata
+        )
+        return max(stratum_count, self.stratified_tree.unsupported_leaf_count)
+
+    @property
+    def certified(self) -> bool:
+        return bool(
+            self.statement
+            and self.proof_sketch
+            and self.decision_id
+            and _typed_certified_items(self.strata, PolynomialDecisionStratumCertificate)
+            and _constructor_tree_components_certified(
+                self.source_tree,
+                self.stratified_tree,
+            )
+            and self.unsupported_stratum_count == 0
+        )
+
+    @property
+    def proof_certified(self) -> bool:
+        return self.certified
+
+    @property
+    def missing_obligations(self) -> tuple[str, ...]:
+        missing = [
+            *_typed_item_missing_obligations(
+                self.strata,
+                PolynomialDecisionStratumCertificate,
+                label="taylor_model_decision_stratum",
+            ),
+            *_constructor_tree_missing_obligations(
+                self.source_tree,
+                self.stratified_tree,
+            ),
+        ]
+        return tuple(dict.fromkeys(missing))
+
+
+@dataclass(frozen=True)
+class TaylorModelDecisionArrangementStratificationCertificate:
+    """Constructor-derived stratified tree for several Taylor-model decisions.
+
+    This extends the single Taylor-model grammar to finite arrangements on one
+    compact interval.  It is still a represented finite grammar: root brackets
+    and monotone/Weierstrass witnesses must be supplied by the constructor
+    input, and unsupported equality witnesses remain explicit blockers.
+    """
+
+    arrangement_id: str
+    decision_functions: tuple[TaylorModelDecisionFunctionSpec, ...]
+    domain: tuple[float, float]
+    strata: tuple[PolynomialDecisionStratumCertificate, ...]
+    source_tree: BranchEventTreeCertificate
+    stratified_tree: StratifiedBranchTreeCertificate
+    statement: str
+    proof_sketch: str
+    theorem_id: str = "taylor_model_decision_arrangement_stratified_branch_tree"
+
+    @property
+    def dimension(self) -> int:
+        return 1
+
+    @property
+    def sign_stratum_count(self) -> int:
+        return sum(not stratum.equality for stratum in self.strata)
+
+    @property
+    def equality_stratum_count(self) -> int:
+        return sum(stratum.equality for stratum in self.strata)
+
+    @property
+    def unsupported_stratum_count(self) -> int:
+        stratum_count = sum(
+            "unsupported_analytic_stratum" in stratum.missing_obligations
+            for stratum in self.strata
+        )
+        return max(stratum_count, self.stratified_tree.unsupported_leaf_count)
+
+    @property
+    def certified(self) -> bool:
+        return bool(
+            self.statement
+            and self.proof_sketch
+            and self.arrangement_id
+            and self.decision_functions
+            and _typed_certified_items(self.strata, PolynomialDecisionStratumCertificate)
+            and _constructor_tree_components_certified(
+                self.source_tree,
+                self.stratified_tree,
+            )
+            and self.unsupported_stratum_count == 0
+        )
+
+    @property
+    def proof_certified(self) -> bool:
+        return self.certified
+
+    @property
+    def missing_obligations(self) -> tuple[str, ...]:
+        missing = [
+            *_typed_item_missing_obligations(
+                self.strata,
+                PolynomialDecisionStratumCertificate,
+                label="taylor_model_arrangement_stratum",
+            ),
+            *_constructor_tree_missing_obligations(
+                self.source_tree,
+                self.stratified_tree,
+            ),
+        ]
         return tuple(dict.fromkeys(missing))
 
 
@@ -665,9 +1052,11 @@ class PolynomialDecisionArrangementStratificationCertificate:
             self.statement
             and self.proof_sketch
             and self.decision_functions
-            and self.strata
-            and all(stratum.proof_certified for stratum in self.strata)
-            and self.stratified_tree.certified
+            and _typed_certified_items(self.strata, PolynomialDecisionStratumCertificate)
+            and _constructor_tree_components_certified(
+                self.source_tree,
+                self.stratified_tree,
+            )
         )
 
     @property
@@ -677,11 +1066,85 @@ class PolynomialDecisionArrangementStratificationCertificate:
     @property
     def missing_obligations(self) -> tuple[str, ...]:
         missing = [
-            f"{stratum.stratum_id}:{item}"
-            for stratum in self.strata
-            for item in stratum.missing_obligations
+            *_typed_item_missing_obligations(
+                self.strata,
+                PolynomialDecisionStratumCertificate,
+                label="polynomial_arrangement_stratum",
+            ),
+            *_constructor_tree_missing_obligations(
+                self.source_tree,
+                self.stratified_tree,
+            ),
         ]
-        missing.extend(self.stratified_tree.missing_obligations)
+        return tuple(dict.fromkeys(missing))
+
+
+@dataclass(frozen=True)
+class RationalDecisionArrangementStratificationCertificate:
+    """Constructor-derived stratified tree for several rational decisions."""
+
+    arrangement_id: str
+    decision_functions: tuple[RationalDecisionFunctionSpec, ...]
+    domain: tuple[float, float]
+    denominator_intervals: tuple[tuple[float, float], ...]
+    denominator_signs: tuple[int, ...]
+    strata: tuple[PolynomialDecisionStratumCertificate, ...]
+    source_tree: BranchEventTreeCertificate
+    stratified_tree: StratifiedBranchTreeCertificate
+    statement: str
+    proof_sketch: str
+    theorem_id: str = "rational_decision_arrangement_stratified_branch_tree"
+
+    @property
+    def dimension(self) -> int:
+        return 1
+
+    @property
+    def denominators_excluded_from_zero(self) -> bool:
+        return bool(self.denominator_signs and all(self.denominator_signs))
+
+    @property
+    def sign_stratum_count(self) -> int:
+        return sum(not stratum.equality for stratum in self.strata)
+
+    @property
+    def equality_stratum_count(self) -> int:
+        return sum(stratum.equality for stratum in self.strata)
+
+    @property
+    def certified(self) -> bool:
+        return bool(
+            self.statement
+            and self.proof_sketch
+            and self.arrangement_id
+            and self.decision_functions
+            and self.denominators_excluded_from_zero
+            and _typed_certified_items(self.strata, PolynomialDecisionStratumCertificate)
+            and _constructor_tree_components_certified(
+                self.source_tree,
+                self.stratified_tree,
+            )
+        )
+
+    @property
+    def proof_certified(self) -> bool:
+        return self.certified
+
+    @property
+    def missing_obligations(self) -> tuple[str, ...]:
+        missing = [
+            *_typed_item_missing_obligations(
+                self.strata,
+                PolynomialDecisionStratumCertificate,
+                label="rational_arrangement_stratum",
+            ),
+            *_constructor_tree_missing_obligations(
+                self.source_tree,
+                self.stratified_tree,
+            ),
+        ]
+        if not self.denominators_excluded_from_zero:
+            missing.append("rational_arrangement_denominator_sign_not_isolated")
         return tuple(dict.fromkeys(missing))
 
 
@@ -704,7 +1167,7 @@ class AffineBoxDecisionStratumCertificate:
 
     @property
     def proof_certified(self) -> bool:
-        return bool(self.certified and not self.missing_obligations)
+        return bool(self.certified is True and not self.missing_obligations)
 
 
 @dataclass(frozen=True)
@@ -741,9 +1204,11 @@ class AffineBoxDecisionArrangementStratificationCertificate:
             and self.arrangement_id
             and self.decision_functions
             and self.domain_box
-            and self.strata
-            and all(stratum.proof_certified for stratum in self.strata)
-            and self.stratified_tree.certified
+            and _typed_certified_items(self.strata, AffineBoxDecisionStratumCertificate)
+            and _constructor_tree_components_certified(
+                self.source_tree,
+                self.stratified_tree,
+            )
         )
 
     @property
@@ -753,11 +1218,16 @@ class AffineBoxDecisionArrangementStratificationCertificate:
     @property
     def missing_obligations(self) -> tuple[str, ...]:
         missing = [
-            f"{stratum.stratum_id}:{item}"
-            for stratum in self.strata
-            for item in stratum.missing_obligations
+            *_typed_item_missing_obligations(
+                self.strata,
+                AffineBoxDecisionStratumCertificate,
+                label="affine_box_decision_stratum",
+            ),
+            *_constructor_tree_missing_obligations(
+                self.source_tree,
+                self.stratified_tree,
+            ),
         ]
-        missing.extend(self.stratified_tree.missing_obligations)
         return tuple(dict.fromkeys(missing))
 
 
@@ -782,7 +1252,7 @@ class AffineHalfspaceDecisionCellCertificate:
 
     @property
     def proof_certified(self) -> bool:
-        return bool(self.certified and not self.missing_obligations)
+        return bool(self.certified is True and not self.missing_obligations)
 
 
 @dataclass(frozen=True)
@@ -820,9 +1290,14 @@ class AffineHalfspaceDecisionStratificationCertificate:
             and self.decision_id
             and self.domain_box
             and self.slab_half_width > 0.0
-            and self.cells
-            and all(cell.proof_certified for cell in self.cells)
-            and self.stratified_tree.certified
+            and _typed_certified_items(
+                self.cells,
+                AffineHalfspaceDecisionCellCertificate,
+            )
+            and _constructor_tree_components_certified(
+                self.source_tree,
+                self.stratified_tree,
+            )
         )
 
     @property
@@ -832,11 +1307,16 @@ class AffineHalfspaceDecisionStratificationCertificate:
     @property
     def missing_obligations(self) -> tuple[str, ...]:
         missing = [
-            f"{cell.cell_id}:{item}"
-            for cell in self.cells
-            for item in cell.missing_obligations
+            *_typed_item_missing_obligations(
+                self.cells,
+                AffineHalfspaceDecisionCellCertificate,
+                label="affine_halfspace_decision_cell",
+            ),
+            *_constructor_tree_missing_obligations(
+                self.source_tree,
+                self.stratified_tree,
+            ),
         ]
-        missing.extend(self.stratified_tree.missing_obligations)
         return tuple(dict.fromkeys(missing))
 
 
@@ -864,7 +1344,7 @@ class AffineHalfspaceArrangementCellCertificate:
     @property
     def proof_certified(self) -> bool:
         return bool(
-            self.certified
+            self.certified is True
             and self.area_lower_bound > 0.0
             and self.vertices
             and not self.missing_obligations
@@ -913,10 +1393,16 @@ class AffineHalfspaceArrangementStratificationCertificate:
             and self.slab_half_width > 0.0
             and self.cells
             and self.domain_area > 0.0
-            and self.area_cover_certified
+            and self.area_cover_certified is True
             and self.cover_area_gap_upper_bound <= 1.0e-8 * max(1.0, self.domain_area)
-            and all(cell.proof_certified for cell in self.cells)
-            and self.stratified_tree.certified
+            and _typed_certified_items(
+                self.cells,
+                AffineHalfspaceArrangementCellCertificate,
+            )
+            and _constructor_tree_components_certified(
+                self.source_tree,
+                self.stratified_tree,
+            )
         )
 
     @property
@@ -926,11 +1412,16 @@ class AffineHalfspaceArrangementStratificationCertificate:
     @property
     def missing_obligations(self) -> tuple[str, ...]:
         missing = [
-            f"{cell.cell_id}:{item}"
-            for cell in self.cells
-            for item in cell.missing_obligations
+            *_typed_item_missing_obligations(
+                self.cells,
+                AffineHalfspaceArrangementCellCertificate,
+                label="affine_halfspace_arrangement_cell",
+            ),
+            *_constructor_tree_missing_obligations(
+                self.source_tree,
+                self.stratified_tree,
+            ),
         ]
-        missing.extend(self.stratified_tree.missing_obligations)
         return tuple(dict.fromkeys(missing))
 
 
@@ -958,7 +1449,7 @@ class AffineHalfspaceArrangement3DCellCertificate:
     @property
     def proof_certified(self) -> bool:
         return bool(
-            self.certified
+            self.certified is True
             and self.volume_lower_bound > 0.0
             and len(self.vertices) >= 4
             and not self.missing_obligations
@@ -1007,11 +1498,17 @@ class AffineHalfspaceArrangement3DStratificationCertificate:
             and self.slab_half_width > 0.0
             and self.cells
             and self.domain_volume > 0.0
-            and self.volume_cover_certified
+            and self.volume_cover_certified is True
             and self.cover_volume_gap_upper_bound
             <= 1.0e-8 * max(1.0, self.domain_volume)
-            and all(cell.proof_certified for cell in self.cells)
-            and self.stratified_tree.certified
+            and _typed_certified_items(
+                self.cells,
+                AffineHalfspaceArrangement3DCellCertificate,
+            )
+            and _constructor_tree_components_certified(
+                self.source_tree,
+                self.stratified_tree,
+            )
         )
 
     @property
@@ -1021,11 +1518,16 @@ class AffineHalfspaceArrangement3DStratificationCertificate:
     @property
     def missing_obligations(self) -> tuple[str, ...]:
         missing = [
-            f"{cell.cell_id}:{item}"
-            for cell in self.cells
-            for item in cell.missing_obligations
+            *_typed_item_missing_obligations(
+                self.cells,
+                AffineHalfspaceArrangement3DCellCertificate,
+                label="affine_halfspace_3d_arrangement_cell",
+            ),
+            *_constructor_tree_missing_obligations(
+                self.source_tree,
+                self.stratified_tree,
+            ),
         ]
-        missing.extend(self.stratified_tree.missing_obligations)
         return tuple(dict.fromkeys(missing))
 
 
@@ -1094,6 +1596,11 @@ def certify_terminal_policy_stratified_branch_event_tree(
         if isinstance(source_tree, BranchEventTreeCertificate)
         else certify_supplied_branch_event_tree(source_tree)
     )
+    _validate_terminal_policy_leaf_ids(
+        normalized.leaf_certificates,
+        selector_policies=selector_policies,
+        total_collision_clusters=total_collision_clusters,
+    )
     selector_by_leaf = {certificate.leaf_id: certificate for certificate in selector_policies}
     cluster_by_leaf = {
         certificate.leaf_id: certificate for certificate in total_collision_clusters
@@ -1141,6 +1648,82 @@ def certify_terminal_policy_stratified_branch_event_tree(
         normalized,
         leaf_certificates=tuple(leaf_certificates),
     )
+
+
+def _validate_terminal_policy_leaf_ids(
+    source_leaves: tuple[BranchEventTreeLeafCertificate, ...],
+    *,
+    selector_policies: tuple[SelectorPolicyLeafCertificate, ...],
+    total_collision_clusters: tuple[TotalCollisionClusterLeafCertificate, ...],
+) -> None:
+    source_ids = tuple(leaf.leaf_id for leaf in source_leaves)
+    duplicate_source_ids = _duplicate_ids(source_ids)
+    if duplicate_source_ids:
+        raise ValueError(
+            "terminal policy source tree has duplicate leaf ids: "
+            + ", ".join(duplicate_source_ids)
+        )
+    source_by_leaf_id = {leaf.leaf_id: leaf for leaf in source_leaves}
+    source_leaf_ids = set(source_by_leaf_id)
+    selector_ids = tuple(certificate.leaf_id for certificate in selector_policies)
+    cluster_ids = tuple(certificate.leaf_id for certificate in total_collision_clusters)
+    duplicate_selector_ids = _duplicate_ids(selector_ids)
+    duplicate_cluster_ids = _duplicate_ids(cluster_ids)
+    overlapping_ids = tuple(sorted(set(selector_ids).intersection(cluster_ids)))
+    unknown_ids = tuple(
+        sorted((set(selector_ids) | set(cluster_ids)).difference(source_leaf_ids))
+    )
+    if duplicate_selector_ids:
+        raise ValueError(
+            "duplicate selector policy certificates for leaf ids: "
+            + ", ".join(duplicate_selector_ids)
+        )
+    if duplicate_cluster_ids:
+        raise ValueError(
+            "duplicate total-collision cluster certificates for leaf ids: "
+            + ", ".join(duplicate_cluster_ids)
+        )
+    if overlapping_ids:
+        raise ValueError(
+            "a source leaf cannot be both selector and total cluster: "
+            + ", ".join(overlapping_ids)
+        )
+    if unknown_ids:
+        raise ValueError(
+            "terminal policy certificates reference unknown source leaves: "
+            + ", ".join(unknown_ids)
+        )
+    selector_kind_mismatches = tuple(
+        leaf_id
+        for leaf_id in selector_ids
+        if _infer_leaf_kind(source_by_leaf_id[leaf_id]) != "selector_policy"
+    )
+    cluster_kind_mismatches = tuple(
+        leaf_id
+        for leaf_id in cluster_ids
+        if _infer_leaf_kind(source_by_leaf_id[leaf_id]) != "total_collision_cluster"
+    )
+    if selector_kind_mismatches:
+        raise ValueError(
+            "selector policy certificates require selector source leaves: "
+            + ", ".join(selector_kind_mismatches)
+        )
+    if cluster_kind_mismatches:
+        raise ValueError(
+            "total-collision cluster certificates require total-collision "
+            "source leaves: "
+            + ", ".join(cluster_kind_mismatches)
+        )
+
+
+def _duplicate_ids(values: tuple[str, ...]) -> tuple[str, ...]:
+    seen: set[str] = set()
+    duplicates: list[str] = []
+    for value in values:
+        if value in seen and value not in duplicates:
+            duplicates.append(value)
+        seen.add(value)
+    return tuple(duplicates)
 
 
 def certify_recursive_stratified_branch_event_consumption(
@@ -3401,6 +3984,885 @@ def certify_polynomial_decision_stratified_branch_event_tree(
     )
 
 
+def certify_rational_decision_stratified_branch_event_tree(
+    *,
+    decision_function: RationalDecisionFunctionSpec,
+    domain: tuple[float, float],
+    equality_resolution_policy: str = "lower_dimensional_recursive_stratum",
+) -> RationalDecisionStratificationCertificate:
+    """Derive a rational decision tree by reducing to the numerator.
+
+    On a compact interval where the denominator has a certified nonzero
+    interval sign, ``N(x)/D(x)`` has exactly the numerator's zero set and its
+    sign cells are the numerator sign cells possibly flipped by
+    ``sign(D)``.  The returned tree records the denominator exclusion instead
+    of treating the rational function as an arbitrary analytic discriminator.
+    """
+
+    spec = RationalDecisionFunctionSpec(
+        decision_id=str(decision_function.decision_id),
+        numerator_coefficients=tuple(
+            float(value) for value in decision_function.numerator_coefficients
+        ),
+        denominator_coefficients=tuple(
+            float(value) for value in decision_function.denominator_coefficients
+        ),
+        root_brackets=tuple(
+            (float(left), float(right))
+            for left, right in decision_function.root_brackets
+        ),
+    )
+    lower, upper = (float(domain[0]), float(domain[1]))
+    domain_interval = FloatInterval(lower, upper)
+    denominator_value = interval_polynomial_eval(
+        np.asarray(spec.denominator_coefficients, dtype=float),
+        domain_interval,
+    )
+    denominator_sign = interval_sign(denominator_value)
+    denominator_excluded = denominator_sign != 0
+    numerator = certify_polynomial_decision_stratified_branch_event_tree(
+        decision_id=spec.decision_id,
+        coefficients=spec.numerator_coefficients,
+        domain=(lower, upper),
+        root_brackets=spec.root_brackets,
+        equality_resolution_policy=equality_resolution_policy,
+    )
+
+    strata: list[PolynomialDecisionStratumCertificate] = []
+    source_leaves: list[BranchEventTreeLeafCertificate] = []
+    stratified_leaves: list[StratifiedBranchLeafCertificate] = []
+    denominator_derivative = interval_polyder(
+        np.asarray(spec.denominator_coefficients, dtype=float)
+    )
+    numerator_derivative = interval_polyder(
+        np.asarray(spec.numerator_coefficients, dtype=float)
+    )
+
+    for index, numerator_stratum in enumerate(numerator.strata):
+        interval = FloatInterval(*numerator_stratum.interval)
+        local_denominator = interval_polynomial_eval(
+            np.asarray(spec.denominator_coefficients, dtype=float),
+            interval,
+        )
+        local_denominator_sign = interval_sign(local_denominator)
+        denominator_ok = denominator_excluded and local_denominator_sign != 0
+        missing = list(numerator_stratum.missing_obligations)
+        if not denominator_ok:
+            missing.append("rational_denominator_sign_not_isolated")
+        rational_value = FloatInterval(*numerator_stratum.value_interval)
+        if denominator_ok:
+            rational_value = rational_value / local_denominator
+        if numerator_stratum.equality:
+            rational_sign = 0
+            rational_kind = "rational_equality_root"
+            derivative_interval = numerator_stratum.derivative_interval
+            if denominator_ok and derivative_interval is not None:
+                derivative_interval = (
+                    FloatInterval(*derivative_interval) / local_denominator
+                ).as_tuple()
+            certified = bool(numerator_stratum.certified and denominator_ok)
+        else:
+            rational_sign = interval_sign(rational_value)
+            rational_kind = (
+                "positive_sign_cell" if rational_sign > 0 else "negative_sign_cell"
+            )
+            derivative_interval = None
+            if rational_sign == 0:
+                missing.append("rational_sign_cell_not_separated_from_zero")
+            certified = bool(
+                numerator_stratum.certified
+                and denominator_ok
+                and rational_sign != 0
+            )
+        stratum_id = f"{spec.decision_id}:rational:{index}"
+        rational_stratum = PolynomialDecisionStratumCertificate(
+            stratum_id=stratum_id,
+            stratum_kind=rational_kind,
+            interval=numerator_stratum.interval,
+            value_interval=rational_value.as_tuple(),
+            sign=rational_sign,
+            derivative_interval=derivative_interval,
+            root_multiplicities=numerator_stratum.root_multiplicities,
+            certified=certified,
+            missing_obligations=tuple(dict.fromkeys(missing)),
+        )
+        strata.append(rational_stratum)
+        source_id = f"{stratum_id}:leaf"
+        if rational_stratum.equality:
+            source_leaves.append(
+                BranchEventTreeLeafCertificate(
+                    leaf_id=source_id,
+                    leaf_type="rational_equality_root_leaf",
+                    decision="simultaneous_event_equality",
+                    source_type="RationalDecisionStratification",
+                    depth=0,
+                    certified=False,
+                    missing_obligations=(),
+                )
+            )
+            equality = EqualityStratumCertificate(
+                stratum_id=stratum_id,
+                defining_function_ids=(spec.decision_id,),
+                leaf_kind="simultaneous_event_equality",
+                isolation_certified=certified,
+                resolution_policy=str(equality_resolution_policy),
+                certified=certified,
+                missing_obligations=tuple(dict.fromkeys(missing)),
+            )
+            tie = EventOrderTieLeafCertificate(
+                leaf_id=source_id,
+                tied_event_ids=("rational_negative_side", "rational_positive_side"),
+                equality_stratum=equality,
+                certified=certified,
+                missing_obligations=tuple(dict.fromkeys(missing)),
+            )
+            stratified_leaves.append(
+                StratifiedBranchLeafCertificate(
+                    leaf_id=f"stratified:{source_id}",
+                    source_leaf_id=source_id,
+                    leaf_kind="simultaneous_event_equality",
+                    terminal_response_kind="recursive_equality_stratum",
+                    terminal_response_certified=False,
+                    source_leaf_certified=True,
+                    equality_stratum=equality,
+                    event_order_tie=tie,
+                    missing_obligations=(),
+                )
+            )
+            continue
+
+        source_leaves.append(
+            BranchEventTreeLeafCertificate(
+                leaf_id=source_id,
+                leaf_type="rational_positive_margin_leaf",
+                decision=("positive" if rational_sign > 0 else "negative"),
+                source_type="RationalDecisionStratification",
+                depth=0,
+                certified=certified,
+                missing_obligations=tuple(dict.fromkeys(missing)),
+            )
+        )
+        derivative_bound = _polynomial_derivative_lipschitz_bound(
+            numerator_derivative,
+            interval,
+        )
+        if denominator_ok:
+            denominator_margin = min(
+                abs(local_denominator.lower),
+                abs(local_denominator.upper),
+            )
+            denominator_derivative_bound = _polynomial_derivative_lipschitz_bound(
+                denominator_derivative,
+                interval,
+            )
+            numerator_margin = max(
+                abs(numerator_stratum.value_interval[0]),
+                abs(numerator_stratum.value_interval[1]),
+            )
+            derivative_bound = (
+                derivative_bound / denominator_margin
+                + numerator_margin
+                * denominator_derivative_bound
+                / (denominator_margin * denominator_margin)
+            )
+        stratified_leaves.append(
+            StratifiedBranchLeafCertificate(
+                leaf_id=f"stratified:{source_id}",
+                source_leaf_id=source_id,
+                leaf_kind="positive_margin_unique_event",
+                terminal_response_kind="rational_sign_decision",
+                terminal_response_certified=certified,
+                source_leaf_certified=certified,
+                decision_functions=(
+                    AnalyticDecisionFunctionCertificate(
+                        function_id=stratum_id,
+                        function_kind="rational_decision_sign",
+                        margin_lower_bound=(
+                            min(abs(rational_value.lower), abs(rational_value.upper))
+                            if rational_sign != 0
+                            else 0.0
+                        ),
+                        lipschitz_bound=float(derivative_bound),
+                        certified=certified,
+                        missing_obligations=tuple(dict.fromkeys(missing)),
+                    ),
+                ),
+                missing_obligations=tuple(dict.fromkeys(missing)),
+            )
+        )
+
+    source_tree = BranchEventTreeCertificate(
+        tree_kind="ambiguous_event_order_partition",
+        source_type="RationalDecisionStratification",
+        leaf_certificates=tuple(source_leaves),
+        cover_certified=bool(
+            numerator.source_tree.cover_certified
+            and denominator_excluded
+        ),
+        leaf_decisions_certified=bool(
+            source_leaves
+            and all(
+                leaf.certified
+                for leaf in source_leaves
+                if "equality" not in leaf.leaf_type
+            )
+        ),
+        equality_strata_explicit=bool(numerator.equality_stratum_count),
+        obligations=(
+            BranchEventTreeObligation(
+                obligation="rational_decision_domain_valid",
+                certified=bool(numerator.source_tree.cover_certified),
+                detail=f"domain={(lower, upper)!r}; root_brackets={spec.root_brackets!r}",
+            ),
+            BranchEventTreeObligation(
+                obligation="rational_denominator_excluded_from_zero",
+                certified=denominator_excluded,
+                detail=f"denominator_interval={denominator_value.as_tuple()!r}",
+            ),
+            BranchEventTreeObligation(
+                obligation="rational_decision_strata_cover_domain",
+                certified=_strata_cover_domain(strata, lower, upper),
+                detail=f"stratum_count={len(strata)}",
+            ),
+        ),
+    )
+    stratified = certify_stratified_branch_event_tree(
+        source_tree,
+        leaf_certificates=tuple(stratified_leaves),
+    )
+    return RationalDecisionStratificationCertificate(
+        decision_function=spec,
+        domain=(lower, upper),
+        denominator_interval=denominator_value.as_tuple(),
+        denominator_sign=denominator_sign,
+        numerator_strata=numerator.strata,
+        strata=tuple(strata),
+        source_tree=source_tree,
+        stratified_tree=stratified,
+        statement=(
+            "A one-dimensional rational decision function whose denominator "
+            "has a certified nonzero interval sign on the compact domain "
+            "reduces to the numerator polynomial decision stratification."
+        ),
+        proof_sketch=(
+            "Interval evaluation proves the denominator excludes zero on the "
+            "whole domain, so multiplication by its fixed sign is an analytic "
+            "bijection of sign decisions.  The rational equality set is "
+            "therefore exactly the numerator equality set, and every numerator "
+            "root bracket remains an explicit recursive equality stratum.  "
+            "Sign cells inherit positive margins from interval division by "
+            "the denominator interval instead of being treated as unsupported "
+            "analytic strata."
+        ),
+    )
+
+
+def certify_taylor_model_decision_stratified_branch_event_tree(
+    *,
+    decision_function: TaylorModelDecisionFunctionSpec,
+    domain: tuple[float, float],
+    equality_resolution_policy: str = "lower_dimensional_recursive_stratum",
+) -> TaylorModelDecisionStratificationCertificate:
+    """Derive a finite decision tree from a supported Taylor model.
+
+    The constructor accepts only a finite Taylor polynomial with explicit
+    value/derivative remainder bounds.  Equality brackets require a supported
+    monotone or Weierstrass simple-root witness.  If such a witness is absent,
+    the root bracket is returned as an explicit unsupported analytic stratum;
+    it is never hulled into a terminal interval box.
+    """
+
+    spec = TaylorModelDecisionFunctionSpec(
+        decision_id=str(decision_function.decision_id),
+        coefficients=tuple(
+            float(value)
+            for value in np.asarray(decision_function.coefficients, dtype=float).reshape(-1)
+        ),
+        expansion_center=float(decision_function.expansion_center),
+        remainder_bound=float(decision_function.remainder_bound),
+        derivative_remainder_bound=float(decision_function.derivative_remainder_bound),
+        root_brackets=tuple(
+            (float(left), float(right))
+            for left, right in decision_function.root_brackets
+        ),
+        witness_kind=str(decision_function.witness_kind),
+    )
+    lower, upper = (float(domain[0]), float(domain[1]))
+    roots = tuple(sorted(spec.root_brackets))
+    derivative = interval_polyder(np.asarray(spec.coefficients, dtype=float))
+    domain_ok = bool(
+        spec.decision_id
+        and len(spec.coefficients) >= 1
+        and np.isfinite(spec.expansion_center)
+        and np.isfinite(spec.remainder_bound)
+        and np.isfinite(spec.derivative_remainder_bound)
+        and spec.remainder_bound >= 0.0
+        and spec.derivative_remainder_bound >= 0.0
+        and np.isfinite(lower)
+        and np.isfinite(upper)
+        and lower < upper
+        and _root_brackets_sorted_and_inside(roots, lower, upper)
+    )
+    strata: list[PolynomialDecisionStratumCertificate] = []
+    source_leaves: list[BranchEventTreeLeafCertificate] = []
+    stratified_leaves: list[StratifiedBranchLeafCertificate] = []
+    cover_cursor = lower
+
+    def add_sign_cell(index: int, left: float, right: float) -> None:
+        if right <= left:
+            return
+        interval = FloatInterval(left, right)
+        value = _taylor_model_value_interval(spec, interval)
+        sign = interval_sign(value)
+        missing: list[str] = []
+        if sign == 0:
+            missing.append("taylor_model_sign_cell_not_separated_from_zero")
+        certified = bool(domain_ok and sign != 0)
+        stratum_id = f"{spec.decision_id}:taylor-sign:{index}"
+        strata.append(
+            PolynomialDecisionStratumCertificate(
+                stratum_id=stratum_id,
+                stratum_kind="positive_sign_cell" if sign > 0 else "negative_sign_cell",
+                interval=(left, right),
+                value_interval=value.as_tuple(),
+                sign=sign,
+                derivative_interval=(
+                    _taylor_model_derivative_interval(spec, derivative, interval)
+                    .as_tuple()
+                ),
+                certified=certified,
+                missing_obligations=tuple(missing),
+            )
+        )
+        source_id = f"{stratum_id}:leaf"
+        source_leaves.append(
+            BranchEventTreeLeafCertificate(
+                leaf_id=source_id,
+                leaf_type="taylor_model_positive_margin_leaf",
+                decision=("positive" if sign > 0 else "negative"),
+                source_type="TaylorModelDecisionStratification",
+                depth=0,
+                certified=certified,
+                missing_obligations=tuple(missing),
+            )
+        )
+        stratified_leaves.append(
+            StratifiedBranchLeafCertificate(
+                leaf_id=f"stratified:{source_id}",
+                source_leaf_id=source_id,
+                leaf_kind="positive_margin_unique_event",
+                terminal_response_kind="taylor_model_sign_decision",
+                terminal_response_certified=certified,
+                source_leaf_certified=certified,
+                decision_functions=(
+                    AnalyticDecisionFunctionCertificate(
+                        function_id=stratum_id,
+                        function_kind="taylor_model_decision_sign",
+                        margin_lower_bound=(
+                            min(abs(value.lower), abs(value.upper))
+                            if sign != 0
+                            else 0.0
+                        ),
+                        lipschitz_bound=_taylor_model_derivative_lipschitz_bound(
+                            spec,
+                            derivative,
+                            interval,
+                        ),
+                        certified=certified,
+                        missing_obligations=tuple(missing),
+                    ),
+                ),
+                missing_obligations=tuple(missing),
+            )
+        )
+
+    for index, (root_lower, root_upper) in enumerate(roots):
+        add_sign_cell(index, cover_cursor, root_lower)
+        root_interval = FloatInterval(root_lower, root_upper)
+        value = _taylor_model_value_interval(spec, root_interval)
+        derivative_value = _taylor_model_derivative_interval(
+            spec,
+            derivative,
+            root_interval,
+        )
+        derivative_sign = interval_sign(derivative_value)
+        missing: list[str] = []
+        if interval_sign(value) != 0:
+            missing.append("taylor_model_root_value_does_not_contain_zero")
+        if derivative_sign == 0:
+            missing.append("taylor_model_root_derivative_sign_not_isolated")
+        if not spec.supported_witness:
+            missing.append("taylor_model_weierstrass_or_monotone_witness_missing")
+        certified = bool(domain_ok and not missing)
+        unsupported = bool(
+            domain_ok
+            and not spec.supported_witness
+            and "taylor_model_root_value_does_not_contain_zero" not in missing
+        )
+        stratum_id = f"{spec.decision_id}:taylor-root:{index}"
+        strata.append(
+            PolynomialDecisionStratumCertificate(
+                stratum_id=stratum_id,
+                stratum_kind="equality_root",
+                interval=(root_lower, root_upper),
+                value_interval=value.as_tuple(),
+                sign=0,
+                derivative_interval=derivative_value.as_tuple(),
+                certified=certified,
+                missing_obligations=tuple(missing),
+            )
+        )
+        source_id = f"{stratum_id}:leaf"
+        source_leaves.append(
+            BranchEventTreeLeafCertificate(
+                leaf_id=source_id,
+                leaf_type="taylor_model_equality_root_leaf",
+                decision=(
+                    "unsupported_analytic_stratum"
+                    if unsupported
+                    else "simultaneous_event_equality"
+                ),
+                source_type="TaylorModelDecisionStratification",
+                depth=0,
+                certified=True,
+                missing_obligations=(),
+            )
+        )
+        equality = EqualityStratumCertificate(
+            stratum_id=stratum_id,
+            defining_function_ids=(spec.decision_id,),
+            leaf_kind=(
+                "unsupported_analytic_stratum"
+                if unsupported
+                else "simultaneous_event_equality"
+            ),
+            isolation_certified=bool(certified),
+            resolution_policy=(
+                "unsupported_taylor_model_witness"
+                if unsupported
+                else str(equality_resolution_policy)
+            ),
+            certified=certified,
+            missing_obligations=tuple(missing),
+        )
+        tie = EventOrderTieLeafCertificate(
+            leaf_id=source_id,
+            tied_event_ids=("taylor_model_negative_side", "taylor_model_positive_side"),
+            equality_stratum=equality,
+            certified=certified,
+            missing_obligations=tuple(missing),
+        )
+        stratified_leaves.append(
+            StratifiedBranchLeafCertificate(
+                leaf_id=f"stratified:{source_id}",
+                source_leaf_id=source_id,
+                leaf_kind=(
+                    "unsupported_analytic_stratum"
+                    if unsupported
+                    else "simultaneous_event_equality"
+                ),
+                terminal_response_kind=(
+                    "unsupported_taylor_model_witness"
+                    if unsupported
+                    else "recursive_equality_stratum"
+                ),
+                terminal_response_certified=False,
+                source_leaf_certified=True,
+                equality_stratum=equality,
+                event_order_tie=(None if unsupported else tie),
+                missing_obligations=tuple(missing if unsupported else ()),
+            )
+        )
+        cover_cursor = root_upper
+    add_sign_cell(len(roots), cover_cursor, upper)
+
+    source_tree = BranchEventTreeCertificate(
+        tree_kind="ambiguous_event_order_partition",
+        source_type="TaylorModelDecisionStratification",
+        leaf_certificates=tuple(source_leaves),
+        cover_certified=domain_ok and _strata_cover_domain(strata, lower, upper),
+        leaf_decisions_certified=bool(
+            source_leaves
+            and all(leaf.certified for leaf in source_leaves)
+        ),
+        equality_strata_explicit=bool(roots),
+        obligations=(
+            BranchEventTreeObligation(
+                obligation="taylor_model_decision_domain_valid",
+                certified=domain_ok,
+                detail=(
+                    f"domain={(lower, upper)!r}; root_brackets={roots!r}; "
+                    f"remainder_bound={spec.remainder_bound:g}; "
+                    f"derivative_remainder_bound={spec.derivative_remainder_bound:g}"
+                ),
+            ),
+            BranchEventTreeObligation(
+                obligation="taylor_model_decision_strata_cover_domain",
+                certified=_strata_cover_domain(strata, lower, upper),
+                detail=f"stratum_count={len(strata)}",
+            ),
+            BranchEventTreeObligation(
+                obligation="taylor_model_equality_witnesses_supported",
+                certified=bool(not roots or spec.supported_witness),
+                detail=f"witness_kind={spec.witness_kind!r}",
+                required=False,
+            ),
+        ),
+    )
+    stratified = certify_stratified_branch_event_tree(
+        source_tree,
+        leaf_certificates=tuple(stratified_leaves),
+    )
+    return TaylorModelDecisionStratificationCertificate(
+        decision_function=spec,
+        domain=(lower, upper),
+        strata=tuple(strata),
+        source_tree=source_tree,
+        stratified_tree=stratified,
+        statement=(
+            "A one-dimensional finite Taylor-model decision with explicit "
+            "remainder bounds and supported equality-root witnesses induces a "
+            "finite stratified branch/event tree."
+        ),
+        proof_sketch=(
+            "Evaluate the Taylor polynomial plus its uniform analytic "
+            "remainder on each sign cell.  Strict interval sign separation "
+            "certifies positive-margin leaves.  On each supplied equality "
+            "bracket, the value interval must contain zero and the derivative "
+            "Taylor model must have a fixed nonzero sign under either a "
+            "monotone-root isolation or Weierstrass simple-root witness.  "
+            "Unsupported equality witnesses remain explicit unsupported "
+            "analytic strata rather than being hulled into an interval box."
+        ),
+    )
+
+
+def certify_sturm_rational_decision_stratified_branch_event_tree(
+    *,
+    decision_function: RationalDecisionFunctionSpec,
+    domain: tuple[float, float],
+    equality_resolution_policy: str = "lower_dimensional_recursive_stratum",
+    max_bisection_depth: int = 96,
+) -> RationalDecisionStratificationCertificate:
+    """Derive a single rational decision with Sturm denominator exclusion.
+
+    This is the one-discriminator counterpart of the Sturm rational
+    arrangement constructor.  The numerator root strata are produced by exact
+    Sturm isolation, while the denominator is proved zero-free on the closed
+    compact domain by exact endpoint/Sturm-variation evidence.
+    """
+
+    spec = RationalDecisionFunctionSpec(
+        decision_id=str(decision_function.decision_id),
+        numerator_coefficients=tuple(
+            float(value) for value in decision_function.numerator_coefficients
+        ),
+        denominator_coefficients=tuple(
+            float(value) for value in decision_function.denominator_coefficients
+        ),
+        root_brackets=(),
+    )
+    lower, upper = (float(domain[0]), float(domain[1]))
+    if not (np.isfinite(lower) and np.isfinite(upper) and lower < upper):
+        raise ValueError("Sturm rational decision requires a compact interval")
+    if not spec.decision_id or not spec.numerator_coefficients or not spec.denominator_coefficients:
+        raise ValueError("Sturm rational decision requires ids and coefficients")
+
+    numerator = certify_sturm_polynomial_decision_arrangement_stratified_branch_event_tree(
+        arrangement_id=f"{spec.decision_id}:sturm-numerator",
+        decision_functions=(
+            PolynomialDecisionFunctionSpec(
+                decision_id=spec.decision_id,
+                coefficients=spec.numerator_coefficients,
+            ),
+        ),
+        domain=(lower, upper),
+        equality_resolution_policy=equality_resolution_policy,
+        max_bisection_depth=max_bisection_depth,
+    )
+    denominator_value = interval_polynomial_eval(
+        np.asarray(spec.denominator_coefficients, dtype=float),
+        FloatInterval(lower, upper),
+    )
+    denominator_sign = _sturm_closed_interval_zero_free_sign(
+        spec.denominator_coefficients,
+        left=lower,
+        right=upper,
+    )
+    denominator_excluded = denominator_sign != 0
+
+    strata: list[PolynomialDecisionStratumCertificate] = []
+    source_leaves: list[BranchEventTreeLeafCertificate] = []
+    stratified_leaves: list[StratifiedBranchLeafCertificate] = []
+    for index, numerator_stratum in enumerate(numerator.strata):
+        interval = FloatInterval(*numerator_stratum.interval)
+        missing = list(numerator_stratum.missing_obligations)
+        if not denominator_excluded:
+            missing.append("sturm_rational_denominator_zero_not_excluded")
+        if numerator_stratum.equality:
+            rational_value = FloatInterval(*numerator_stratum.value_interval)
+            derivative_interval = numerator_stratum.derivative_interval
+            second_derivative_interval = numerator_stratum.second_derivative_interval
+            if denominator_excluded:
+                try:
+                    rational_value = _rational_value_interval_by_denominator_subdivision(
+                        numerator_coefficients=spec.numerator_coefficients,
+                        denominator_coefficients=spec.denominator_coefficients,
+                        interval=interval,
+                        expected_denominator_sign=denominator_sign,
+                    )
+                    if derivative_interval is not None:
+                        derivative_interval = (
+                            _rational_derivative_interval_with_denominator_subdivision(
+                                numerator_coefficients=spec.numerator_coefficients,
+                                denominator_coefficients=spec.denominator_coefficients,
+                                interval=interval,
+                                expected_denominator_sign=denominator_sign,
+                            ).as_tuple()
+                        )
+                    if second_derivative_interval is not None:
+                        second_derivative_interval = (
+                            _rational_second_derivative_interval_with_denominator_subdivision(
+                                numerator_coefficients=spec.numerator_coefficients,
+                                denominator_coefficients=spec.denominator_coefficients,
+                                interval=interval,
+                                expected_denominator_sign=denominator_sign,
+                            ).as_tuple()
+                        )
+                except ValueError as exc:
+                    missing.append(str(exc))
+            certified = bool(numerator_stratum.certified and denominator_excluded and not missing)
+            stratum_id = f"{spec.decision_id}:sturm-rational:{index}"
+            rational_stratum = PolynomialDecisionStratumCertificate(
+                stratum_id=stratum_id,
+                stratum_kind="rational_equality_root",
+                interval=numerator_stratum.interval,
+                value_interval=rational_value.as_tuple(),
+                sign=0,
+                derivative_interval=derivative_interval,
+                second_derivative_interval=second_derivative_interval,
+                root_multiplicities=numerator_stratum.root_multiplicities,
+                certified=certified,
+                missing_obligations=tuple(dict.fromkeys(missing)),
+            )
+            strata.append(rational_stratum)
+            source_id = f"{stratum_id}:leaf"
+            source_leaves.append(
+                BranchEventTreeLeafCertificate(
+                    leaf_id=source_id,
+                    leaf_type="sturm_rational_equality_root_leaf",
+                    decision="simultaneous_event_equality",
+                    source_type="SturmRationalDecisionStratification",
+                    depth=0,
+                    certified=False,
+                    missing_obligations=(),
+                )
+            )
+            equality = EqualityStratumCertificate(
+                stratum_id=stratum_id,
+                defining_function_ids=(spec.decision_id,),
+                leaf_kind="simultaneous_event_equality",
+                isolation_certified=certified,
+                resolution_policy=str(equality_resolution_policy),
+                certified=certified,
+                missing_obligations=tuple(dict.fromkeys(missing)),
+            )
+            tie = EventOrderTieLeafCertificate(
+                leaf_id=source_id,
+                tied_event_ids=("sturm_rational_negative_side", "sturm_rational_positive_side"),
+                equality_stratum=equality,
+                certified=certified,
+                missing_obligations=tuple(dict.fromkeys(missing)),
+            )
+            stratified_leaves.append(
+                StratifiedBranchLeafCertificate(
+                    leaf_id=f"stratified:{source_id}",
+                    source_leaf_id=source_id,
+                    leaf_kind="simultaneous_event_equality",
+                    terminal_response_kind="recursive_equality_stratum",
+                    terminal_response_certified=False,
+                    source_leaf_certified=True,
+                    equality_stratum=equality,
+                    event_order_tie=tie,
+                    missing_obligations=(),
+                )
+            )
+            continue
+
+        rational_value = FloatInterval(*numerator_stratum.value_interval)
+        rational_sign = 0
+        derivative_bound = _polynomial_derivative_lipschitz_bound(
+            interval_polyder(np.asarray(spec.numerator_coefficients, dtype=float)),
+            interval,
+        )
+        if denominator_excluded:
+            try:
+                numerator_sign = _sturm_sign_on_root_free_interval(
+                    spec.numerator_coefficients,
+                    left=interval.lower,
+                    right=interval.upper,
+                )
+                rational_sign = numerator_sign * denominator_sign
+                rational_value = _rational_value_interval_by_denominator_subdivision(
+                    numerator_coefficients=spec.numerator_coefficients,
+                    denominator_coefficients=spec.denominator_coefficients,
+                    interval=interval,
+                    expected_denominator_sign=denominator_sign,
+                )
+                denominator_margin = _polynomial_strict_sign_margin_by_subdivision(
+                    spec.denominator_coefficients,
+                    left=interval.lower,
+                    right=interval.upper,
+                    expected_sign=denominator_sign,
+                )
+                numerator_bound = _subdivided_polynomial_value_interval_with_sign(
+                    spec.numerator_coefficients,
+                    interval=interval,
+                    expected_sign=numerator_sign,
+                )
+                numerator_size = max(
+                    abs(numerator_bound.lower),
+                    abs(numerator_bound.upper),
+                )
+                derivative_bound = (
+                    derivative_bound / denominator_margin
+                    + numerator_size
+                    * _polynomial_derivative_lipschitz_bound(
+                        interval_polyder(
+                            np.asarray(spec.denominator_coefficients, dtype=float)
+                        ),
+                        interval,
+                    )
+                    / (denominator_margin * denominator_margin)
+                )
+            except ValueError as exc:
+                missing.append(str(exc))
+        if rational_sign == 0:
+            missing.append("sturm_rational_sign_cell_sign_not_decided")
+        certified = bool(numerator_stratum.certified and denominator_excluded and not missing)
+        stratum_id = f"{spec.decision_id}:sturm-rational:{index}"
+        rational_stratum = PolynomialDecisionStratumCertificate(
+            stratum_id=stratum_id,
+            stratum_kind=(
+                "positive_sign_cell" if rational_sign > 0 else "negative_sign_cell"
+            ),
+            interval=numerator_stratum.interval,
+            value_interval=rational_value.as_tuple(),
+            sign=rational_sign,
+            certified=certified,
+            missing_obligations=tuple(dict.fromkeys(missing)),
+        )
+        strata.append(rational_stratum)
+        source_id = f"{stratum_id}:leaf"
+        source_leaves.append(
+            BranchEventTreeLeafCertificate(
+                leaf_id=source_id,
+                leaf_type="sturm_rational_positive_margin_leaf",
+                decision=("positive" if rational_sign > 0 else "negative"),
+                source_type="SturmRationalDecisionStratification",
+                depth=0,
+                certified=certified,
+                missing_obligations=tuple(dict.fromkeys(missing)),
+            )
+        )
+        stratified_leaves.append(
+            StratifiedBranchLeafCertificate(
+                leaf_id=f"stratified:{source_id}",
+                source_leaf_id=source_id,
+                leaf_kind="positive_margin_unique_event",
+                terminal_response_kind="sturm_rational_sign_decision",
+                terminal_response_certified=certified,
+                source_leaf_certified=certified,
+                decision_functions=(
+                    AnalyticDecisionFunctionCertificate(
+                        function_id=stratum_id,
+                        function_kind="sturm_rational_decision_sign",
+                        margin_lower_bound=(
+                            min(abs(rational_value.lower), abs(rational_value.upper))
+                            if rational_sign != 0
+                            else 0.0
+                        ),
+                        lipschitz_bound=float(derivative_bound),
+                        certified=certified,
+                        missing_obligations=tuple(dict.fromkeys(missing)),
+                    ),
+                ),
+                missing_obligations=tuple(dict.fromkeys(missing)),
+            )
+        )
+
+    source_tree = BranchEventTreeCertificate(
+        tree_kind="ambiguous_event_order_partition",
+        source_type="SturmRationalDecisionStratification",
+        leaf_certificates=tuple(source_leaves),
+        cover_certified=bool(
+            numerator.source_tree.cover_certified
+            and denominator_excluded
+            and _strata_cover_domain(strata, lower, upper)
+        ),
+        leaf_decisions_certified=bool(
+            source_leaves
+            and all(
+                leaf.certified
+                for leaf in source_leaves
+                if "equality" not in leaf.leaf_type
+            )
+        ),
+        equality_strata_explicit=bool(numerator.equality_stratum_count),
+        obligations=(
+            BranchEventTreeObligation(
+                obligation="sturm_rational_decision_domain_valid",
+                certified=bool(numerator.source_tree.cover_certified),
+                detail=f"domain={(lower, upper)!r}; numerator_source={numerator.source_tree.source_type}",
+            ),
+            BranchEventTreeObligation(
+                obligation="sturm_rational_denominator_excluded_from_zero",
+                certified=denominator_excluded,
+                detail=(
+                    f"denominator_sign={denominator_sign}; "
+                    f"denominator_interval={denominator_value.as_tuple()!r}"
+                ),
+            ),
+            BranchEventTreeObligation(
+                obligation="sturm_rational_decision_strata_cover_domain",
+                certified=_strata_cover_domain(strata, lower, upper),
+                detail=f"stratum_count={len(strata)}",
+            ),
+        ),
+    )
+    stratified = certify_stratified_branch_event_tree(
+        source_tree,
+        leaf_certificates=tuple(stratified_leaves),
+    )
+    return RationalDecisionStratificationCertificate(
+        decision_function=spec,
+        domain=(lower, upper),
+        denominator_interval=denominator_value.as_tuple(),
+        denominator_sign=denominator_sign,
+        numerator_strata=numerator.strata,
+        strata=tuple(strata),
+        source_tree=source_tree,
+        stratified_tree=stratified,
+        statement=(
+            "A one-dimensional rational decision function whose denominator "
+            "is zero-free by closed-interval Sturm evidence reduces to the "
+            "Sturm-isolated numerator stratification."
+        ),
+        proof_sketch=(
+            "The numerator is rationalized and passed through the exact Sturm "
+            "polynomial arrangement constructor, yielding certified sign "
+            "cells and isolated equality roots with multiplicity data.  The "
+            "denominator is separately checked at both endpoints and by Sturm "
+            "variation on the compact interval, proving a fixed nonzero sign. "
+            "Therefore the rational equality set is exactly the numerator "
+            "equality set, rational sign cells are obtained by quotient signs, "
+            "and derivative or tangent-root data are projected through the "
+            "quotient rule instead of being inherited unverified from the "
+            "numerator."
+        ),
+    )
+
+
 def certify_polynomial_decision_recursive_consumption(
     stratification: PolynomialDecisionStratificationCertificate,
     *,
@@ -3466,6 +4928,555 @@ def derive_polynomial_decision_child_consumptions(
     return _derive_polynomial_root_child_consumptions_from_strata(
         strata=stratification.strata,
         source_id=stratification.decision_id,
+        child_root_rank=child_root_rank,
+    )
+
+
+def certify_rational_decision_recursive_consumption(
+    stratification: RationalDecisionStratificationCertificate,
+    *,
+    root_dimension: int,
+    root_rank: int | None = None,
+    child_consumptions: Mapping[
+        str,
+        RecursiveStratifiedBranchEventConsumptionCertificate,
+    ]
+    | tuple[
+        tuple[str, RecursiveStratifiedBranchEventConsumptionCertificate],
+        ...,
+    ] = (),
+    recursion_kind: str = "rational_decision_stratification",
+) -> RecursiveStratifiedBranchEventConsumptionCertificate:
+    """Consume a rational decision stratification by recursive numerator roots."""
+
+    if not isinstance(stratification, RationalDecisionStratificationCertificate):
+        raise TypeError(
+            "stratification must be a RationalDecisionStratificationCertificate"
+        )
+    child_by_leaf = _normalize_arrangement_child_consumptions(
+        stratification,  # type: ignore[arg-type]
+        child_consumptions,
+    )
+    if (
+        not child_by_leaf
+        and stratification.proof_certified
+        and stratification.equality_stratum_count
+    ):
+        child_by_leaf = _normalize_arrangement_child_consumptions(
+            stratification,  # type: ignore[arg-type]
+            derive_rational_decision_child_consumptions(
+                stratification,
+                child_root_rank=0,
+            ),
+        )
+    return certify_recursive_stratified_branch_event_consumption(
+        stratification.stratified_tree,
+        root_dimension=root_dimension,
+        root_rank=root_rank,
+        child_consumptions=child_by_leaf,
+        recursion_kind=recursion_kind,
+    )
+
+
+def derive_rational_decision_child_consumptions(
+    stratification: RationalDecisionStratificationCertificate,
+    *,
+    child_root_rank: int | None = 0,
+) -> dict[str, RecursiveStratifiedBranchEventConsumptionCertificate]:
+    """Derive terminal 0D children for rational numerator root strata."""
+
+    if not isinstance(stratification, RationalDecisionStratificationCertificate):
+        raise TypeError(
+            "stratification must be a RationalDecisionStratificationCertificate"
+        )
+    if not stratification.proof_certified:
+        raise ValueError("rational decision stratification must be proof-certified")
+
+    return _derive_polynomial_root_child_consumptions_from_strata(
+        strata=stratification.strata,
+        source_id=stratification.decision_id,
+        child_root_rank=child_root_rank,
+    )
+
+
+def certify_taylor_model_decision_recursive_consumption(
+    stratification: TaylorModelDecisionStratificationCertificate,
+    *,
+    root_dimension: int,
+    root_rank: int | None = None,
+    child_consumptions: Mapping[
+        str,
+        RecursiveStratifiedBranchEventConsumptionCertificate,
+    ]
+    | tuple[
+        tuple[str, RecursiveStratifiedBranchEventConsumptionCertificate],
+        ...,
+    ] = (),
+    recursion_kind: str = "taylor_model_decision_stratification",
+) -> RecursiveStratifiedBranchEventConsumptionCertificate:
+    """Consume a Taylor-model decision stratification by recursive roots."""
+
+    if not isinstance(stratification, TaylorModelDecisionStratificationCertificate):
+        raise TypeError(
+            "stratification must be a "
+            "TaylorModelDecisionStratificationCertificate"
+        )
+    child_by_leaf = _normalize_arrangement_child_consumptions(
+        stratification,  # type: ignore[arg-type]
+        child_consumptions,
+    )
+    if (
+        not child_by_leaf
+        and stratification.proof_certified
+        and stratification.equality_stratum_count
+    ):
+        child_by_leaf = _normalize_arrangement_child_consumptions(
+            stratification,  # type: ignore[arg-type]
+            derive_taylor_model_decision_child_consumptions(
+                stratification,
+                child_root_rank=0,
+            ),
+        )
+    return certify_recursive_stratified_branch_event_consumption(
+        stratification.stratified_tree,
+        root_dimension=root_dimension,
+        root_rank=root_rank,
+        child_consumptions=child_by_leaf,
+        recursion_kind=recursion_kind,
+    )
+
+
+def derive_taylor_model_decision_child_consumptions(
+    stratification: TaylorModelDecisionStratificationCertificate,
+    *,
+    child_root_rank: int | None = 0,
+) -> dict[str, RecursiveStratifiedBranchEventConsumptionCertificate]:
+    """Derive terminal 0D children for certified Taylor-model root strata."""
+
+    if not isinstance(stratification, TaylorModelDecisionStratificationCertificate):
+        raise TypeError(
+            "stratification must be a "
+            "TaylorModelDecisionStratificationCertificate"
+        )
+    if not stratification.proof_certified:
+        raise ValueError("Taylor-model decision stratification must be proof-certified")
+
+    return _derive_polynomial_root_child_consumptions_from_strata(
+        strata=stratification.strata,
+        source_id=stratification.decision_id,
+        child_root_rank=child_root_rank,
+    )
+
+
+def certify_taylor_model_decision_arrangement_stratified_branch_event_tree(
+    *,
+    arrangement_id: str,
+    decision_functions: tuple[TaylorModelDecisionFunctionSpec, ...],
+    domain: tuple[float, float],
+    equality_resolution_policy: str = "lower_dimensional_recursive_stratum",
+) -> TaylorModelDecisionArrangementStratificationCertificate:
+    """Derive a 1D stratified tree from several Taylor-model discriminants."""
+
+    arrangement_id = str(arrangement_id)
+    specs = tuple(
+        TaylorModelDecisionFunctionSpec(
+            decision_id=str(spec.decision_id),
+            coefficients=tuple(
+                float(value)
+                for value in np.asarray(spec.coefficients, dtype=float).reshape(-1)
+            ),
+            expansion_center=float(spec.expansion_center),
+            remainder_bound=float(spec.remainder_bound),
+            derivative_remainder_bound=float(spec.derivative_remainder_bound),
+            root_brackets=tuple(
+                (float(left), float(right))
+                for left, right in spec.root_brackets
+            ),
+            witness_kind=str(spec.witness_kind),
+        )
+        for spec in decision_functions
+    )
+    lower, upper = (float(domain[0]), float(domain[1]))
+    root_groups = _group_taylor_model_root_bracket_occurrences(specs)
+    root_brackets = tuple((left, right) for left, right, _decision_ids in root_groups)
+    decision_ids = tuple(spec.decision_id for spec in specs)
+    domain_ok = bool(
+        arrangement_id
+        and specs
+        and len(set(decision_ids)) == len(decision_ids)
+        and np.isfinite(lower)
+        and np.isfinite(upper)
+        and lower < upper
+        and all(
+            spec.decision_id
+            and spec.coefficients
+            and all(np.isfinite(value) for value in spec.coefficients)
+            and np.isfinite(spec.expansion_center)
+            and np.isfinite(spec.remainder_bound)
+            and np.isfinite(spec.derivative_remainder_bound)
+            and spec.remainder_bound >= 0.0
+            and spec.derivative_remainder_bound >= 0.0
+            for spec in specs
+        )
+        and _root_brackets_sorted_and_inside(root_brackets, lower, upper)
+    )
+    derivative_by_id = {
+        spec.decision_id: interval_polyder(np.asarray(spec.coefficients, dtype=float))
+        for spec in specs
+    }
+    strata: list[PolynomialDecisionStratumCertificate] = []
+    source_leaves: list[BranchEventTreeLeafCertificate] = []
+    stratified_leaves: list[StratifiedBranchLeafCertificate] = []
+    cursor = lower
+
+    def add_arrangement_sign_cell(index: int, left: float, right: float) -> None:
+        if right <= left:
+            return
+        interval = FloatInterval(left, right)
+        value_intervals = tuple(
+            _taylor_model_value_interval(spec, interval) for spec in specs
+        )
+        signs = tuple(interval_sign(value) for value in value_intervals)
+        missing: list[str] = []
+        if any(sign == 0 for sign in signs):
+            missing.append(
+                "taylor_model_arrangement_sign_cell_not_separated_from_all_boundaries"
+            )
+        certified = bool(domain_ok and not missing)
+        sign_label = ",".join(
+            f"{spec.decision_id}:{'+' if sign > 0 else '-'}"
+            for spec, sign in zip(specs, signs)
+        )
+        stratum_id = f"{arrangement_id}:taylor-cell:{index}"
+        strata.append(
+            PolynomialDecisionStratumCertificate(
+                stratum_id=stratum_id,
+                stratum_kind="taylor_model_arrangement_sign_cell",
+                interval=(left, right),
+                value_interval=_aggregate_value_intervals(value_intervals),
+                sign=1 if certified else 0,
+                certified=certified,
+                missing_obligations=tuple(missing),
+            )
+        )
+        source_id = f"{stratum_id}:leaf"
+        source_leaves.append(
+            BranchEventTreeLeafCertificate(
+                leaf_id=source_id,
+                leaf_type="taylor_model_arrangement_positive_margin_leaf",
+                decision=sign_label if certified else "undecided_sign_vector",
+                source_type="TaylorModelDecisionArrangement",
+                depth=0,
+                certified=certified,
+                missing_obligations=tuple(missing),
+            )
+        )
+        stratified_leaves.append(
+            StratifiedBranchLeafCertificate(
+                leaf_id=f"stratified:{source_id}",
+                source_leaf_id=source_id,
+                leaf_kind="positive_margin_unique_event",
+                terminal_response_kind="taylor_model_arrangement_sign_decision",
+                terminal_response_certified=certified,
+                source_leaf_certified=certified,
+                decision_functions=tuple(
+                    AnalyticDecisionFunctionCertificate(
+                        function_id=f"{stratum_id}:{spec.decision_id}",
+                        function_kind="taylor_model_arrangement_decision_sign",
+                        margin_lower_bound=(
+                            _strict_sign_margin(value) if sign != 0 else 0.0
+                        ),
+                        lipschitz_bound=_taylor_model_derivative_lipschitz_bound(
+                            spec,
+                            derivative_by_id[spec.decision_id],
+                            interval,
+                        ),
+                        certified=certified and sign != 0,
+                        missing_obligations=tuple(missing),
+                    )
+                    for spec, value, sign in zip(specs, value_intervals, signs)
+                ),
+                missing_obligations=tuple(missing),
+            )
+        )
+
+    specs_by_id = {spec.decision_id: spec for spec in specs}
+    for index, (root_lower, root_upper, group_decision_ids) in enumerate(root_groups):
+        add_arrangement_sign_cell(index, cursor, root_lower)
+        root_interval = FloatInterval(root_lower, root_upper)
+        defining_specs = tuple(specs_by_id[decision_id] for decision_id in group_decision_ids)
+        defining_values = tuple(
+            _taylor_model_value_interval(spec, root_interval)
+            for spec in defining_specs
+        )
+        derivative_values = tuple(
+            _taylor_model_derivative_interval(
+                spec,
+                derivative_by_id[spec.decision_id],
+                root_interval,
+            )
+            for spec in defining_specs
+        )
+        nondefining_values = tuple(
+            _taylor_model_value_interval(spec, root_interval)
+            for spec in specs
+            if spec.decision_id not in group_decision_ids
+        )
+        missing: list[str] = []
+        if any(interval_sign(value) != 0 for value in defining_values):
+            missing.append("taylor_model_root_value_does_not_contain_zero")
+        if any(interval_sign(value) == 0 for value in derivative_values):
+            missing.append("taylor_model_root_derivative_sign_not_isolated")
+        if any(not spec.supported_witness for spec in defining_specs):
+            missing.append("taylor_model_weierstrass_or_monotone_witness_missing")
+        if any(interval_sign(value) == 0 for value in nondefining_values):
+            missing.append("taylor_model_simultaneous_nondefining_decision_not_separated")
+        certified = bool(domain_ok and not missing)
+        unsupported = bool(
+            domain_ok
+            and any(not spec.supported_witness for spec in defining_specs)
+            and "taylor_model_root_value_does_not_contain_zero" not in missing
+        )
+        decision_label = "+".join(group_decision_ids)
+        stratum_id = f"{arrangement_id}:taylor-root:{index}:{decision_label}"
+        stratum_kind = (
+            "simultaneous_taylor_model_equality_root"
+            if len(group_decision_ids) > 1
+            else "equality_root"
+        )
+        strata.append(
+            PolynomialDecisionStratumCertificate(
+                stratum_id=stratum_id,
+                stratum_kind=stratum_kind,
+                interval=(root_lower, root_upper),
+                value_interval=_aggregate_value_intervals(defining_values),
+                sign=0,
+                derivative_interval=_aggregate_value_intervals(derivative_values),
+                certified=certified,
+                missing_obligations=tuple(missing),
+            )
+        )
+        source_id = f"{stratum_id}:leaf"
+        source_leaves.append(
+            BranchEventTreeLeafCertificate(
+                leaf_id=source_id,
+                leaf_type="taylor_model_arrangement_equality_root_leaf",
+                decision=(
+                    "unsupported_analytic_stratum"
+                    if unsupported
+                    else "simultaneous_event_equality"
+                ),
+                source_type="TaylorModelDecisionArrangement",
+                depth=0,
+                certified=True,
+                missing_obligations=(),
+            )
+        )
+        equality = EqualityStratumCertificate(
+            stratum_id=stratum_id,
+            defining_function_ids=tuple(group_decision_ids),
+            leaf_kind=(
+                "unsupported_analytic_stratum"
+                if unsupported
+                else "simultaneous_event_equality"
+            ),
+            isolation_certified=bool(certified),
+            resolution_policy=(
+                "unsupported_taylor_model_witness"
+                if unsupported
+                else str(equality_resolution_policy)
+            ),
+            certified=certified,
+            missing_obligations=tuple(missing),
+        )
+        tie = EventOrderTieLeafCertificate(
+            leaf_id=source_id,
+            tied_event_ids=tuple(
+                event_id
+                for decision_id in group_decision_ids
+                for event_id in (
+                    f"{decision_id}:negative_side",
+                    f"{decision_id}:positive_side",
+                )
+            ),
+            equality_stratum=equality,
+            certified=certified,
+            missing_obligations=tuple(missing),
+        )
+        stratified_leaves.append(
+            StratifiedBranchLeafCertificate(
+                leaf_id=f"stratified:{source_id}",
+                source_leaf_id=source_id,
+                leaf_kind=(
+                    "unsupported_analytic_stratum"
+                    if unsupported
+                    else "simultaneous_event_equality"
+                ),
+                terminal_response_kind=(
+                    "unsupported_taylor_model_witness"
+                    if unsupported
+                    else "recursive_equality_stratum"
+                ),
+                terminal_response_certified=False,
+                source_leaf_certified=True,
+                equality_stratum=equality,
+                event_order_tie=(None if unsupported else tie),
+                missing_obligations=tuple(missing if unsupported else ()),
+            )
+        )
+        cursor = root_upper
+    add_arrangement_sign_cell(len(root_groups), cursor, upper)
+
+    source_tree = BranchEventTreeCertificate(
+        tree_kind="ambiguous_event_order_partition",
+        source_type="TaylorModelDecisionArrangement",
+        leaf_certificates=tuple(source_leaves),
+        cover_certified=domain_ok and _strata_cover_domain(strata, lower, upper),
+        leaf_decisions_certified=bool(
+            source_leaves
+            and all(
+                leaf.certified
+                for leaf in source_leaves
+                if "equality" not in leaf.leaf_type
+            )
+        ),
+        equality_strata_explicit=bool(root_groups),
+        obligations=(
+            BranchEventTreeObligation(
+                obligation="taylor_model_arrangement_domain_valid",
+                certified=domain_ok,
+                detail=(
+                    f"domain={(lower, upper)!r}; "
+                    f"decision_ids={decision_ids!r}; "
+                    f"root_brackets={root_brackets!r}"
+                ),
+            ),
+            BranchEventTreeObligation(
+                obligation="taylor_model_arrangement_strata_cover_domain",
+                certified=_strata_cover_domain(strata, lower, upper),
+                detail=f"stratum_count={len(strata)}",
+            ),
+            BranchEventTreeObligation(
+                obligation="taylor_model_arrangement_equality_witnesses_supported",
+                certified=all(
+                    spec.supported_witness or not spec.root_brackets
+                    for spec in specs
+                ),
+                detail=(
+                    "witnesses="
+                    + ",".join(f"{spec.decision_id}:{spec.witness_kind}" for spec in specs)
+                ),
+                required=False,
+            ),
+        ),
+    )
+    stratified = certify_stratified_branch_event_tree(
+        source_tree,
+        leaf_certificates=tuple(stratified_leaves),
+    )
+    return TaylorModelDecisionArrangementStratificationCertificate(
+        arrangement_id=arrangement_id,
+        decision_functions=specs,
+        domain=(lower, upper),
+        strata=tuple(strata),
+        source_tree=source_tree,
+        stratified_tree=stratified,
+        statement=(
+            "A finite arrangement of one-dimensional Taylor-model decision "
+            "functions with explicit remainder bounds and supported "
+            "equality-root witnesses induces a finite stratified branch/event "
+            "tree by sign vectors and explicit equality root strata."
+        ),
+        proof_sketch=(
+            "Collect, sort, and group matching Taylor-model root brackets.  On "
+            "each complementary cell, interval evaluation of every retained "
+            "Taylor polynomial plus its uniform analytic remainder gives a "
+            "strict sign vector, so the branch/event decision is stable on "
+            "that cell.  On a grouped root bracket, every defining value "
+            "interval must contain zero, every defining derivative Taylor "
+            "model plus derivative remainder must have a fixed nonzero sign, "
+            "all nondefining decisions must remain separated from zero, and "
+            "each defining decision must carry either a monotone-root "
+            "isolation or Weierstrass simple-root witness.  "
+            "Unsupported equality witnesses remain explicit unsupported "
+            "analytic strata rather than being hulled into interval boxes."
+        ),
+    )
+
+
+def certify_taylor_model_decision_arrangement_recursive_consumption(
+    stratification: TaylorModelDecisionArrangementStratificationCertificate,
+    *,
+    root_dimension: int,
+    root_rank: int | None = None,
+    child_consumptions: Mapping[
+        str,
+        RecursiveStratifiedBranchEventConsumptionCertificate,
+    ]
+    | tuple[
+        tuple[str, RecursiveStratifiedBranchEventConsumptionCertificate],
+        ...,
+    ] = (),
+    recursion_kind: str = "taylor_model_decision_arrangement",
+) -> RecursiveStratifiedBranchEventConsumptionCertificate:
+    """Consume a Taylor-model arrangement by recursive equality roots."""
+
+    if not isinstance(
+        stratification,
+        TaylorModelDecisionArrangementStratificationCertificate,
+    ):
+        raise TypeError(
+            "stratification must be a "
+            "TaylorModelDecisionArrangementStratificationCertificate"
+        )
+    child_by_leaf = _normalize_arrangement_child_consumptions(
+        stratification,  # type: ignore[arg-type]
+        child_consumptions,
+    )
+    if (
+        not child_by_leaf
+        and stratification.proof_certified
+        and stratification.equality_stratum_count
+    ):
+        child_by_leaf = _normalize_arrangement_child_consumptions(
+            stratification,  # type: ignore[arg-type]
+            derive_taylor_model_decision_arrangement_child_consumptions(
+                stratification,
+                child_root_rank=0,
+            ),
+        )
+    return certify_recursive_stratified_branch_event_consumption(
+        stratification.stratified_tree,
+        root_dimension=root_dimension,
+        root_rank=root_rank,
+        child_consumptions=child_by_leaf,
+        recursion_kind=recursion_kind,
+    )
+
+
+def derive_taylor_model_decision_arrangement_child_consumptions(
+    stratification: TaylorModelDecisionArrangementStratificationCertificate,
+    *,
+    child_root_rank: int | None = 0,
+) -> dict[str, RecursiveStratifiedBranchEventConsumptionCertificate]:
+    """Derive terminal 0D children for certified Taylor-model root strata."""
+
+    if not isinstance(
+        stratification,
+        TaylorModelDecisionArrangementStratificationCertificate,
+    ):
+        raise TypeError(
+            "stratification must be a "
+            "TaylorModelDecisionArrangementStratificationCertificate"
+        )
+    if not stratification.proof_certified:
+        raise ValueError(
+            "Taylor-model decision arrangement stratification must be proof-certified"
+        )
+
+    return _derive_polynomial_root_child_consumptions_from_strata(
+        strata=stratification.strata,
+        source_id=stratification.arrangement_id,
         child_root_rank=child_root_rank,
     )
 
@@ -3719,6 +5730,825 @@ def certify_polynomial_decision_arrangement_stratified_branch_event_tree(
     )
 
 
+def certify_rational_decision_arrangement_stratified_branch_event_tree(
+    *,
+    arrangement_id: str,
+    decision_functions: tuple[RationalDecisionFunctionSpec, ...],
+    domain: tuple[float, float],
+    equality_resolution_policy: str = "lower_dimensional_recursive_stratum",
+) -> RationalDecisionArrangementStratificationCertificate:
+    """Derive a 1D stratified tree from several rational discriminants.
+
+    Each denominator is interval-checked on the whole domain.  When all
+    denominators exclude zero, the rational equality strata are exactly the
+    numerator equality strata, while sign cells are certified by interval
+    division by the corresponding denominator intervals.
+    """
+
+    arrangement_id = str(arrangement_id)
+    specs = tuple(
+        RationalDecisionFunctionSpec(
+            decision_id=str(spec.decision_id),
+            numerator_coefficients=tuple(
+                float(value) for value in spec.numerator_coefficients
+            ),
+            denominator_coefficients=tuple(
+                float(value) for value in spec.denominator_coefficients
+            ),
+            root_brackets=tuple(
+                (float(left), float(right))
+                for left, right in spec.root_brackets
+            ),
+        )
+        for spec in decision_functions
+    )
+    lower, upper = (float(domain[0]), float(domain[1]))
+    domain_interval = FloatInterval(lower, upper)
+    denominator_intervals = tuple(
+        interval_polynomial_eval(
+            np.asarray(spec.denominator_coefficients, dtype=float),
+            domain_interval,
+        )
+        for spec in specs
+    )
+    denominator_signs = tuple(interval_sign(value) for value in denominator_intervals)
+    all_roots = sorted(
+        (left, right, spec.decision_id)
+        for spec in specs
+        for left, right in spec.root_brackets
+    )
+    root_brackets = tuple((left, right) for left, right, _decision_id in all_roots)
+    domain_ok = bool(
+        arrangement_id
+        and specs
+        and np.isfinite(lower)
+        and np.isfinite(upper)
+        and lower < upper
+        and all(
+            spec.decision_id
+            and spec.numerator_coefficients
+            and spec.denominator_coefficients
+            for spec in specs
+        )
+        and all(denominator_signs)
+        and _root_brackets_sorted_and_inside(root_brackets, lower, upper)
+    )
+    strata: list[PolynomialDecisionStratumCertificate] = []
+    source_leaves: list[BranchEventTreeLeafCertificate] = []
+    stratified_leaves: list[StratifiedBranchLeafCertificate] = []
+    cursor = lower
+
+    def rational_value_interval(
+        spec: RationalDecisionFunctionSpec,
+        interval: FloatInterval,
+    ) -> tuple[FloatInterval, FloatInterval, int]:
+        numerator_value = interval_polynomial_eval(
+            np.asarray(spec.numerator_coefficients, dtype=float),
+            interval,
+        )
+        denominator_value = interval_polynomial_eval(
+            np.asarray(spec.denominator_coefficients, dtype=float),
+            interval,
+        )
+        denominator_sign = interval_sign(denominator_value)
+        if denominator_sign == 0:
+            return numerator_value, denominator_value, 0
+        return numerator_value / denominator_value, denominator_value, denominator_sign
+
+    def add_rational_sign_cell(index: int, left: float, right: float) -> None:
+        if right <= left:
+            return
+        interval = FloatInterval(left, right)
+        values = tuple(rational_value_interval(spec, interval) for spec in specs)
+        rational_values = tuple(value for value, _denominator, _sign in values)
+        denominator_cell_signs = tuple(sign for _value, _denominator, sign in values)
+        signs = tuple(interval_sign(value) for value in rational_values)
+        missing: list[str] = []
+        if any(sign == 0 for sign in denominator_cell_signs):
+            missing.append("rational_arrangement_denominator_sign_not_isolated")
+        if any(sign == 0 for sign in signs):
+            missing.append("rational_arrangement_sign_cell_not_separated_from_all_boundaries")
+        certified = bool(domain_ok and not missing)
+        sign_label = ",".join(
+            f"{spec.decision_id}:{'+' if sign > 0 else '-'}"
+            for spec, sign in zip(specs, signs)
+        )
+        stratum_id = f"{arrangement_id}:rational-cell:{index}"
+        aggregate_interval = _aggregate_value_intervals(rational_values)
+        strata.append(
+            PolynomialDecisionStratumCertificate(
+                stratum_id=stratum_id,
+                stratum_kind="arrangement_sign_cell",
+                interval=(left, right),
+                value_interval=aggregate_interval,
+                sign=1 if certified else 0,
+                certified=certified,
+                missing_obligations=tuple(missing),
+            )
+        )
+        source_id = f"{stratum_id}:leaf"
+        source_leaves.append(
+            BranchEventTreeLeafCertificate(
+                leaf_id=source_id,
+                leaf_type="rational_arrangement_positive_margin_leaf",
+                decision=sign_label if certified else "undecided_rational_sign_vector",
+                source_type="RationalDecisionArrangement",
+                depth=0,
+                certified=certified,
+                missing_obligations=tuple(missing),
+            )
+        )
+        decision_evidence = []
+        for spec, value, sign, (_rational, denominator_value, denominator_sign) in zip(
+            specs,
+            rational_values,
+            signs,
+            values,
+        ):
+            denominator_margin = (
+                min(abs(denominator_value.lower), abs(denominator_value.upper))
+                if denominator_sign != 0
+                else 0.0
+            )
+            numerator_derivative = interval_polyder(
+                np.asarray(spec.numerator_coefficients, dtype=float)
+            )
+            denominator_derivative = interval_polyder(
+                np.asarray(spec.denominator_coefficients, dtype=float)
+            )
+            numerator_bound = interval_polynomial_eval(
+                np.asarray(spec.numerator_coefficients, dtype=float),
+                interval,
+            )
+            numerator_size = max(abs(numerator_bound.lower), abs(numerator_bound.upper))
+            lipschitz = math.inf
+            if denominator_margin > 0.0:
+                lipschitz = (
+                    _polynomial_derivative_lipschitz_bound(
+                        numerator_derivative,
+                        interval,
+                    )
+                    / denominator_margin
+                    + numerator_size
+                    * _polynomial_derivative_lipschitz_bound(
+                        denominator_derivative,
+                        interval,
+                    )
+                    / (denominator_margin * denominator_margin)
+                )
+            decision_evidence.append(
+                AnalyticDecisionFunctionCertificate(
+                    function_id=f"{stratum_id}:{spec.decision_id}",
+                    function_kind="rational_arrangement_decision_sign",
+                    margin_lower_bound=(
+                        min(abs(value.lower), abs(value.upper))
+                        if sign != 0
+                        else 0.0
+                    ),
+                    lipschitz_bound=float(lipschitz),
+                    certified=certified and sign != 0 and denominator_sign != 0,
+                    missing_obligations=tuple(missing),
+                )
+            )
+        stratified_leaves.append(
+            StratifiedBranchLeafCertificate(
+                leaf_id=f"stratified:{source_id}",
+                source_leaf_id=source_id,
+                leaf_kind="positive_margin_unique_event",
+                terminal_response_kind="rational_arrangement_sign_decision",
+                terminal_response_certified=certified,
+                source_leaf_certified=certified,
+                decision_functions=tuple(decision_evidence),
+                missing_obligations=tuple(missing),
+            )
+        )
+
+    for index, (root_lower, root_upper, decision_id) in enumerate(all_roots):
+        add_rational_sign_cell(index, cursor, root_lower)
+        spec = next(spec for spec in specs if spec.decision_id == decision_id)
+        root_interval = FloatInterval(root_lower, root_upper)
+        numerator_value = interval_polynomial_eval(
+            np.asarray(spec.numerator_coefficients, dtype=float),
+            root_interval,
+        )
+        denominator_value = interval_polynomial_eval(
+            np.asarray(spec.denominator_coefficients, dtype=float),
+            root_interval,
+        )
+        derivative = interval_polyder(
+            np.asarray(spec.numerator_coefficients, dtype=float)
+        )
+        derivative_value = (
+            interval_polynomial_eval(derivative, root_interval)
+            if derivative
+            else FloatInterval.point(0.0)
+        )
+        denominator_sign = interval_sign(denominator_value)
+        rational_value = numerator_value
+        rational_derivative = derivative_value
+        if denominator_sign != 0:
+            rational_value = numerator_value / denominator_value
+            rational_derivative = derivative_value / denominator_value
+        missing: list[str] = []
+        if denominator_sign == 0:
+            missing.append("rational_arrangement_denominator_sign_not_isolated")
+        if interval_sign(numerator_value) != 0:
+            missing.append("root_bracket_value_does_not_contain_zero")
+        if interval_sign(derivative_value) == 0:
+            missing.append("root_bracket_derivative_sign_not_isolated")
+        certified = bool(domain_ok and not missing)
+        stratum_id = f"{arrangement_id}:rational-root:{index}:{decision_id}"
+        strata.append(
+            PolynomialDecisionStratumCertificate(
+                stratum_id=stratum_id,
+                stratum_kind="rational_equality_root",
+                interval=(root_lower, root_upper),
+                value_interval=rational_value.as_tuple(),
+                sign=0,
+                derivative_interval=rational_derivative.as_tuple(),
+                certified=certified,
+                missing_obligations=tuple(missing),
+            )
+        )
+        source_id = f"{stratum_id}:leaf"
+        source_leaves.append(
+            BranchEventTreeLeafCertificate(
+                leaf_id=source_id,
+                leaf_type="rational_arrangement_equality_root_leaf",
+                decision="simultaneous_event_equality",
+                source_type="RationalDecisionArrangement",
+                depth=0,
+                certified=False,
+                missing_obligations=(),
+            )
+        )
+        equality = EqualityStratumCertificate(
+            stratum_id=stratum_id,
+            defining_function_ids=(decision_id,),
+            leaf_kind="simultaneous_event_equality",
+            isolation_certified=certified,
+            resolution_policy=str(equality_resolution_policy),
+            certified=certified,
+            missing_obligations=tuple(missing),
+        )
+        tie = EventOrderTieLeafCertificate(
+            leaf_id=source_id,
+            tied_event_ids=(
+                f"{decision_id}:negative_side",
+                f"{decision_id}:positive_side",
+            ),
+            equality_stratum=equality,
+            certified=certified,
+            missing_obligations=tuple(missing),
+        )
+        stratified_leaves.append(
+            StratifiedBranchLeafCertificate(
+                leaf_id=f"stratified:{source_id}",
+                source_leaf_id=source_id,
+                leaf_kind="simultaneous_event_equality",
+                terminal_response_kind="recursive_equality_stratum",
+                terminal_response_certified=False,
+                source_leaf_certified=True,
+                equality_stratum=equality,
+                event_order_tie=tie,
+            )
+        )
+        cursor = root_upper
+    add_rational_sign_cell(len(all_roots), cursor, upper)
+
+    source_tree = BranchEventTreeCertificate(
+        tree_kind="ambiguous_event_order_partition",
+        source_type="RationalDecisionArrangement",
+        leaf_certificates=tuple(source_leaves),
+        cover_certified=domain_ok and _strata_cover_domain(strata, lower, upper),
+        leaf_decisions_certified=bool(
+            source_leaves
+            and all(
+                leaf.certified
+                for leaf in source_leaves
+                if "equality" not in leaf.leaf_type
+            )
+        ),
+        equality_strata_explicit=bool(all_roots),
+        obligations=(
+            BranchEventTreeObligation(
+                obligation="rational_arrangement_domain_valid",
+                certified=domain_ok,
+                detail=f"domain={(lower, upper)!r}; root_brackets={root_brackets!r}",
+            ),
+            BranchEventTreeObligation(
+                obligation="rational_arrangement_denominators_excluded_from_zero",
+                certified=bool(all(denominator_signs)),
+                detail=(
+                    "denominator_intervals="
+                    + repr(tuple(value.as_tuple() for value in denominator_intervals))
+                ),
+            ),
+            BranchEventTreeObligation(
+                obligation="rational_arrangement_strata_cover_domain",
+                certified=_strata_cover_domain(strata, lower, upper),
+                detail=f"stratum_count={len(strata)}",
+            ),
+            BranchEventTreeObligation(
+                obligation="rational_arrangement_equality_strata_explicit",
+                certified=True,
+                detail=f"equality_stratum_count={sum(stratum.equality for stratum in strata)}",
+                required=False,
+            ),
+        ),
+    )
+    stratified = certify_stratified_branch_event_tree(
+        source_tree,
+        leaf_certificates=tuple(stratified_leaves),
+    )
+    return RationalDecisionArrangementStratificationCertificate(
+        arrangement_id=arrangement_id,
+        decision_functions=specs,
+        domain=(lower, upper),
+        denominator_intervals=tuple(
+            value.as_tuple() for value in denominator_intervals
+        ),
+        denominator_signs=denominator_signs,
+        strata=tuple(strata),
+        source_tree=source_tree,
+        stratified_tree=stratified,
+        statement=(
+            "A finite arrangement of one-dimensional rational decision "
+            "functions with denominator-exclusion certificates induces a "
+            "finite stratified branch/event tree by rational sign vectors and "
+            "explicit numerator-root equality strata."
+        ),
+        proof_sketch=(
+            "Interval evaluation proves each denominator has a fixed nonzero "
+            "sign on the compact domain.  Therefore each rational equality "
+            "set is exactly its numerator zero set, while sign cells are "
+            "certified by interval division by the corresponding denominator "
+            "interval.  The finite ordered list of sign cells and numerator "
+            "root brackets covers the domain, and equality strata remain "
+            "nonterminal leaves for recursive lower-dimensional consumption."
+        ),
+    )
+
+
+def certify_sturm_rational_decision_arrangement_stratified_branch_event_tree(
+    *,
+    arrangement_id: str,
+    decision_functions: tuple[RationalDecisionFunctionSpec, ...],
+    domain: tuple[float, float],
+    equality_resolution_policy: str = "lower_dimensional_recursive_stratum",
+    max_bisection_depth: int = 96,
+) -> RationalDecisionArrangementStratificationCertificate:
+    """Derive a rational arrangement with exact Sturm denominator exclusion.
+
+    This constructor is stricter than the interval-denominator rational
+    arrangement above in the proof it records, but less conservative in the
+    inputs it accepts.  Numerator roots are isolated by the exact Sturm
+    polynomial arrangement constructor.  Each denominator is separately proved
+    zero-free with a fixed sign on the closed compact domain, so interval
+    dependency in a wide denominator box cannot by itself block a regular
+    rational event-function grammar.
+    """
+
+    arrangement_id = str(arrangement_id)
+    lower, upper = (float(domain[0]), float(domain[1]))
+    if not (np.isfinite(lower) and np.isfinite(upper) and lower < upper):
+        raise ValueError("Sturm rational arrangement requires a compact interval")
+    if max_bisection_depth <= 0:
+        raise ValueError("Sturm rational arrangement requires positive bisection depth")
+    specs = tuple(
+        RationalDecisionFunctionSpec(
+            decision_id=str(spec.decision_id),
+            numerator_coefficients=tuple(
+                float(value) for value in spec.numerator_coefficients
+            ),
+            denominator_coefficients=tuple(
+                float(value) for value in spec.denominator_coefficients
+            ),
+            root_brackets=(),
+        )
+        for spec in decision_functions
+    )
+    if not specs:
+        raise ValueError("Sturm rational arrangement requires at least one decision")
+    if any(
+        not spec.decision_id
+        or not spec.numerator_coefficients
+        or not spec.denominator_coefficients
+        for spec in specs
+    ):
+        raise ValueError("Sturm rational decision functions require ids and coefficients")
+
+    numerator_arrangement = certify_sturm_polynomial_decision_arrangement_stratified_branch_event_tree(
+        arrangement_id=f"{arrangement_id}:numerator",
+        decision_functions=tuple(
+            PolynomialDecisionFunctionSpec(
+                decision_id=spec.decision_id,
+                coefficients=spec.numerator_coefficients,
+            )
+            for spec in specs
+        ),
+        domain=(lower, upper),
+        equality_resolution_policy=equality_resolution_policy,
+        max_bisection_depth=max_bisection_depth,
+    )
+    specs_by_id = {spec.decision_id: spec for spec in specs}
+    denominator_intervals = tuple(
+        interval_polynomial_eval(
+            np.asarray(spec.denominator_coefficients, dtype=float),
+            FloatInterval(lower, upper),
+        )
+        for spec in specs
+    )
+    denominator_signs = tuple(
+        _sturm_closed_interval_zero_free_sign(
+            spec.denominator_coefficients,
+            left=lower,
+            right=upper,
+        )
+        for spec in specs
+    )
+    denominator_sign_by_id = {
+        spec.decision_id: sign for spec, sign in zip(specs, denominator_signs)
+    }
+    equality_ids_by_stratum = {
+        str(leaf.equality_stratum.stratum_id): tuple(
+            leaf.equality_stratum.defining_function_ids
+        )
+        for leaf in numerator_arrangement.stratified_tree.leaf_certificates
+        if leaf.equality_stratum is not None
+    }
+    domain_ok = bool(
+        arrangement_id
+        and numerator_arrangement.proof_certified
+        and all(denominator_signs)
+    )
+
+    strata: list[PolynomialDecisionStratumCertificate] = []
+    source_leaves: list[BranchEventTreeLeafCertificate] = []
+    stratified_leaves: list[StratifiedBranchLeafCertificate] = []
+
+    def rational_interval(
+        spec: RationalDecisionFunctionSpec,
+        interval: FloatInterval,
+        denominator_sign: int,
+    ) -> FloatInterval:
+        return _rational_value_interval_by_denominator_subdivision(
+            numerator_coefficients=spec.numerator_coefficients,
+            denominator_coefficients=spec.denominator_coefficients,
+            interval=interval,
+            expected_denominator_sign=denominator_sign,
+        )
+
+    for index, numerator_stratum in enumerate(numerator_arrangement.strata):
+        interval = FloatInterval(*numerator_stratum.interval)
+        missing = list(numerator_stratum.missing_obligations)
+        if numerator_stratum.equality:
+            defining_ids = equality_ids_by_stratum.get(
+                numerator_stratum.stratum_id,
+                (),
+            )
+            rational_values: list[FloatInterval] = []
+            rational_derivatives: list[FloatInterval] = []
+            rational_second_derivatives: list[FloatInterval] = []
+            for decision_id in defining_ids:
+                spec = specs_by_id[decision_id]
+                denominator_sign = denominator_sign_by_id.get(decision_id, 0)
+                if denominator_sign == 0:
+                    missing.append(
+                        f"{decision_id}:sturm_rational_denominator_zero_not_excluded"
+                    )
+                    continue
+                try:
+                    rational_values.append(
+                        rational_interval(spec, interval, denominator_sign)
+                    )
+                    rational_derivatives.append(
+                        _rational_derivative_interval_with_denominator_subdivision(
+                            numerator_coefficients=spec.numerator_coefficients,
+                            denominator_coefficients=spec.denominator_coefficients,
+                            interval=interval,
+                            expected_denominator_sign=denominator_sign,
+                        )
+                    )
+                    if numerator_stratum.second_derivative_interval is not None:
+                        rational_second_derivatives.append(
+                            _rational_second_derivative_interval_with_denominator_subdivision(
+                                numerator_coefficients=spec.numerator_coefficients,
+                                denominator_coefficients=spec.denominator_coefficients,
+                                interval=interval,
+                                expected_denominator_sign=denominator_sign,
+                            )
+                        )
+                except ValueError as exc:
+                    missing.append(f"{decision_id}:{exc}")
+            if not defining_ids:
+                missing.append("sturm_rational_equality_defining_ids_missing")
+            value_interval = (
+                _aggregate_value_intervals(tuple(rational_values))
+                if rational_values
+                else numerator_stratum.value_interval
+            )
+            derivative_interval = (
+                _aggregate_value_intervals(tuple(rational_derivatives))
+                if rational_derivatives
+                else numerator_stratum.derivative_interval
+            )
+            second_derivative_interval = (
+                _aggregate_value_intervals(tuple(rational_second_derivatives))
+                if rational_second_derivatives
+                else numerator_stratum.second_derivative_interval
+            )
+            certified = bool(domain_ok and numerator_stratum.certified and not missing)
+            stratum_id = f"{arrangement_id}:sturm-rational-root:{index}"
+            strata.append(
+                PolynomialDecisionStratumCertificate(
+                    stratum_id=stratum_id,
+                    stratum_kind="rational_equality_root",
+                    interval=numerator_stratum.interval,
+                    value_interval=(
+                        value_interval.as_tuple()
+                        if isinstance(value_interval, FloatInterval)
+                        else value_interval
+                    ),
+                    sign=0,
+                    derivative_interval=derivative_interval,
+                    second_derivative_interval=second_derivative_interval,
+                    root_multiplicities=numerator_stratum.root_multiplicities,
+                    certified=certified,
+                    missing_obligations=tuple(dict.fromkeys(missing)),
+                )
+            )
+            source_id = f"{stratum_id}:leaf"
+            source_leaves.append(
+                BranchEventTreeLeafCertificate(
+                    leaf_id=source_id,
+                    leaf_type="sturm_rational_arrangement_equality_root_leaf",
+                    decision="simultaneous_event_equality",
+                    source_type="SturmRationalDecisionArrangement",
+                    depth=0,
+                    certified=False,
+                    missing_obligations=(),
+                )
+            )
+            equality = EqualityStratumCertificate(
+                stratum_id=stratum_id,
+                defining_function_ids=tuple(defining_ids),
+                leaf_kind="simultaneous_event_equality",
+                isolation_certified=certified,
+                resolution_policy=str(equality_resolution_policy),
+                certified=certified,
+                missing_obligations=tuple(dict.fromkeys(missing)),
+            )
+            tie = EventOrderTieLeafCertificate(
+                leaf_id=source_id,
+                tied_event_ids=tuple(
+                    event_id
+                    for decision_id in defining_ids
+                    for event_id in (
+                        f"{decision_id}:negative_side",
+                        f"{decision_id}:positive_side",
+                    )
+                )
+                or ("sturm_rational_left", "sturm_rational_right"),
+                equality_stratum=equality,
+                certified=certified,
+                missing_obligations=tuple(dict.fromkeys(missing)),
+            )
+            stratified_leaves.append(
+                StratifiedBranchLeafCertificate(
+                    leaf_id=f"stratified:{source_id}",
+                    source_leaf_id=source_id,
+                    leaf_kind="simultaneous_event_equality",
+                    terminal_response_kind="recursive_equality_stratum",
+                    terminal_response_certified=False,
+                    source_leaf_certified=True,
+                    equality_stratum=equality,
+                    event_order_tie=tie,
+                    missing_obligations=(),
+                )
+            )
+            continue
+
+        rational_values: list[FloatInterval] = []
+        rational_signs: list[int] = []
+        decision_evidence: list[AnalyticDecisionFunctionCertificate] = []
+        for spec in specs:
+            denominator_sign = denominator_sign_by_id.get(spec.decision_id, 0)
+            if denominator_sign == 0:
+                missing.append(
+                    f"{spec.decision_id}:sturm_rational_denominator_zero_not_excluded"
+                )
+                rational_signs.append(0)
+                continue
+            try:
+                numerator_sign = _sturm_sign_on_root_free_interval(
+                    spec.numerator_coefficients,
+                    left=interval.lower,
+                    right=interval.upper,
+                )
+                value = rational_interval(spec, interval, denominator_sign)
+                rational_sign = numerator_sign * denominator_sign
+                denominator_margin = _polynomial_strict_sign_margin_by_subdivision(
+                    spec.denominator_coefficients,
+                    left=interval.lower,
+                    right=interval.upper,
+                    expected_sign=denominator_sign,
+                )
+                numerator_margin = _polynomial_strict_sign_margin_by_subdivision(
+                    spec.numerator_coefficients,
+                    left=interval.lower,
+                    right=interval.upper,
+                    expected_sign=numerator_sign,
+                )
+                numerator_bound = _subdivided_polynomial_value_interval_with_sign(
+                    spec.numerator_coefficients,
+                    interval=interval,
+                    expected_sign=numerator_sign,
+                )
+                numerator_size = max(
+                    abs(numerator_bound.lower),
+                    abs(numerator_bound.upper),
+                )
+                lipschitz = (
+                    _polynomial_derivative_lipschitz_bound(
+                        interval_polyder(
+                            np.asarray(spec.numerator_coefficients, dtype=float)
+                        ),
+                        interval,
+                    )
+                    / denominator_margin
+                    + numerator_size
+                    * _polynomial_derivative_lipschitz_bound(
+                        interval_polyder(
+                            np.asarray(spec.denominator_coefficients, dtype=float)
+                        ),
+                        interval,
+                    )
+                    / (denominator_margin * denominator_margin)
+                )
+                rational_values.append(value)
+                rational_signs.append(rational_sign)
+                decision_evidence.append(
+                    AnalyticDecisionFunctionCertificate(
+                        function_id=(
+                            f"{arrangement_id}:sturm-rational-cell:{index}:"
+                            f"{spec.decision_id}"
+                        ),
+                        function_kind="sturm_rational_arrangement_decision_sign",
+                        margin_lower_bound=(
+                            numerator_margin / denominator_margin
+                            if rational_sign != 0
+                            else 0.0
+                        ),
+                        lipschitz_bound=float(lipschitz),
+                        certified=bool(rational_sign != 0),
+                        missing_obligations=(),
+                    )
+                )
+            except ValueError as exc:
+                missing.append(f"{spec.decision_id}:{exc}")
+                rational_signs.append(0)
+        if any(sign == 0 for sign in rational_signs):
+            missing.append("sturm_rational_sign_cell_sign_not_decided")
+        certified = bool(domain_ok and numerator_stratum.certified and not missing)
+        stratum_id = f"{arrangement_id}:sturm-rational-cell:{index}"
+        strata.append(
+            PolynomialDecisionStratumCertificate(
+                stratum_id=stratum_id,
+                stratum_kind="sturm_rational_arrangement_sign_cell",
+                interval=numerator_stratum.interval,
+                value_interval=_aggregate_value_intervals(tuple(rational_values))
+                if rational_values
+                else numerator_stratum.value_interval,
+                sign=1 if certified else 0,
+                certified=certified,
+                missing_obligations=tuple(dict.fromkeys(missing)),
+            )
+        )
+        source_id = f"{stratum_id}:leaf"
+        sign_label = ",".join(
+            f"{spec.decision_id}:{'+' if sign > 0 else '-'}"
+            for spec, sign in zip(specs, rational_signs)
+        )
+        source_leaves.append(
+            BranchEventTreeLeafCertificate(
+                leaf_id=source_id,
+                leaf_type="sturm_rational_arrangement_positive_margin_leaf",
+                decision=sign_label if certified else "undecided_sturm_rational_sign_vector",
+                source_type="SturmRationalDecisionArrangement",
+                depth=0,
+                certified=certified,
+                missing_obligations=tuple(dict.fromkeys(missing)),
+            )
+        )
+        stratified_leaves.append(
+            StratifiedBranchLeafCertificate(
+                leaf_id=f"stratified:{source_id}",
+                source_leaf_id=source_id,
+                leaf_kind="positive_margin_unique_event",
+                terminal_response_kind="sturm_rational_arrangement_sign_decision",
+                terminal_response_certified=certified,
+                source_leaf_certified=certified,
+                decision_functions=tuple(
+                    replace(
+                        evidence,
+                        certified=certified and evidence.certified,
+                        missing_obligations=tuple(dict.fromkeys(missing)),
+                    )
+                    for evidence in decision_evidence
+                ),
+                missing_obligations=tuple(dict.fromkeys(missing)),
+            )
+        )
+
+    source_tree = BranchEventTreeCertificate(
+        tree_kind="ambiguous_event_order_partition",
+        source_type="SturmRationalDecisionArrangement",
+        leaf_certificates=tuple(source_leaves),
+        cover_certified=domain_ok and _strata_cover_domain(strata, lower, upper),
+        leaf_decisions_certified=bool(
+            source_leaves
+            and all(
+                leaf.certified
+                for leaf in source_leaves
+                if "equality" not in leaf.leaf_type
+            )
+        ),
+        equality_strata_explicit=bool(
+            any(stratum.equality for stratum in strata)
+        ),
+        obligations=(
+            BranchEventTreeObligation(
+                obligation="sturm_rational_arrangement_domain_valid",
+                certified=bool(numerator_arrangement.proof_certified),
+                detail=(
+                    f"domain={(lower, upper)!r}; "
+                    f"numerator_source={numerator_arrangement.source_tree.source_type}"
+                ),
+            ),
+            BranchEventTreeObligation(
+                obligation="sturm_rational_denominators_excluded_from_zero",
+                certified=bool(all(denominator_signs)),
+                detail=(
+                    "denominator_signs="
+                    + repr(denominator_signs)
+                    + "; denominator_intervals="
+                    + repr(tuple(value.as_tuple() for value in denominator_intervals))
+                ),
+            ),
+            BranchEventTreeObligation(
+                obligation="sturm_rational_arrangement_strata_cover_domain",
+                certified=_strata_cover_domain(strata, lower, upper),
+                detail=f"stratum_count={len(strata)}",
+            ),
+            BranchEventTreeObligation(
+                obligation="sturm_rational_equality_strata_explicit",
+                certified=True,
+                detail=(
+                    "equality_stratum_count="
+                    f"{sum(stratum.equality for stratum in strata)}"
+                ),
+                required=False,
+            ),
+        ),
+    )
+    stratified = certify_stratified_branch_event_tree(
+        source_tree,
+        leaf_certificates=tuple(stratified_leaves),
+    )
+    return RationalDecisionArrangementStratificationCertificate(
+        arrangement_id=arrangement_id,
+        decision_functions=specs,
+        domain=(lower, upper),
+        denominator_intervals=tuple(
+            value.as_tuple() for value in denominator_intervals
+        ),
+        denominator_signs=denominator_signs,
+        strata=tuple(strata),
+        source_tree=source_tree,
+        stratified_tree=stratified,
+        statement=(
+            "A finite one-dimensional arrangement of rational decision "
+            "functions with Sturm-proved denominator exclusion induces a "
+            "finite stratified branch/event tree by numerator Sturm roots, "
+            "rational sign cells, and explicit numerator-root equality strata."
+        ),
+        proof_sketch=(
+            "The numerator polynomials are rationalized and passed through "
+            "the exact Sturm arrangement constructor, which isolates every "
+            "distinct numerator root and certifies root-free sign cells.  For "
+            "each denominator, closed-interval Sturm variation plus endpoint "
+            "checks proves that no pole lies in the compact domain and fixes "
+            "the denominator sign.  On every numerator sign cell the rational "
+            "sign is the quotient of the exact numerator sign and the fixed "
+            "denominator sign; interval subdivision supplies value, margin, "
+            "and Lipschitz envelopes without hulling equality strata back into "
+            "ambient boxes.  Numerator roots remain explicit recursive "
+            "equality leaves with the original Sturm multiplicity data."
+        ),
+    )
+
+
 def certify_affine_decision_arrangement_stratified_branch_event_tree(
     *,
     arrangement_id: str,
@@ -3883,6 +6713,100 @@ def certify_affine_decision_arrangement_stratified_branch_event_tree(
             "containment at each root bracket, and nonzero derivative on each "
             "bracket."
         ),
+    )
+
+
+def certify_affine_decision_stratified_branch_event_tree(
+    *,
+    decision_id: str,
+    coefficients: tuple[float, ...] | list[float] | np.ndarray,
+    domain: tuple[float, float],
+    equality_resolution_policy: str = "lower_dimensional_recursive_stratum",
+) -> PolynomialDecisionStratificationCertificate:
+    """Derive a single one-dimensional affine decision without supplied roots."""
+
+    decision_id = str(decision_id)
+    coeffs = tuple(float(value) for value in np.asarray(coefficients, dtype=float).reshape(-1))
+    lower, upper = (float(domain[0]), float(domain[1]))
+    if not (np.isfinite(lower) and np.isfinite(upper) and lower < upper):
+        raise ValueError("affine decision stratification requires a compact interval")
+    if len(coeffs) != 2:
+        raise ValueError(
+            "affine decision stratification accepts only degree-one coefficients"
+        )
+    constant, slope = coeffs
+    if not decision_id:
+        raise ValueError("affine decision stratification requires decision_id")
+    if not np.isfinite(constant) or not np.isfinite(slope):
+        raise ValueError("affine decision coefficients must be finite")
+    if slope == 0.0 and constant == 0.0:
+        raise ValueError(
+            "identically-zero affine decisions require a supplied equality stratum"
+        )
+
+    root_brackets: tuple[tuple[float, float], ...] = ()
+    if slope != 0.0:
+        root = float(-constant / slope)
+        if lower <= root <= upper:
+            root_brackets = _root_group_brackets(
+                (root,),
+                domain=(lower, upper),
+                error_label="affine decision root bracket requires nonzero domain gap",
+            )
+
+    stratification = certify_polynomial_decision_stratified_branch_event_tree(
+        decision_id=decision_id,
+        coefficients=coeffs,
+        domain=(lower, upper),
+        root_brackets=root_brackets,
+        equality_resolution_policy=equality_resolution_policy,
+    )
+    stratification = _retag_polynomial_stratification_source(
+        stratification,
+        source_type="AffineDecisionStratification",
+    )
+    return replace(
+        stratification,
+        statement=(
+            "A single one-dimensional affine decision function induces a "
+            "finite stratified branch/event tree without supplied root "
+            "brackets.  The affine root, if it lies in the compact domain, is "
+            "computed from coefficients and rechecked as an isolated equality "
+            "bracket; otherwise the whole domain is one strict sign cell."
+        ),
+        proof_sketch=(
+            "For an affine discriminator a0+a1*x, either a1 is zero and the "
+            "nonzero constant sign decides the whole compact interval, or the "
+            "only possible equality point is -a0/a1.  When that root lies in "
+            "the domain, a one-quarter-gap bracket, one-sided at boundaries, "
+            "is derived from the compact interval and then passed through the "
+            "polynomial decision checker.  The checker proves strict sign on "
+            "complementary cells, value containment at the root bracket, and "
+            "nonzero derivative on the bracket.  Equality strata remain "
+            "explicit recursive leaves."
+        ),
+    )
+
+
+def _retag_polynomial_stratification_source(
+    stratification: PolynomialDecisionStratificationCertificate,
+    *,
+    source_type: str,
+) -> PolynomialDecisionStratificationCertificate:
+    source_leaves = tuple(
+        replace(leaf, source_type=source_type)
+        for leaf in stratification.source_tree.leaf_certificates
+    )
+    source_tree = replace(
+        stratification.source_tree,
+        source_type=source_type,
+        leaf_certificates=source_leaves,
+    )
+    stratified_tree = replace(stratification.stratified_tree, source_tree=source_tree)
+    return replace(
+        stratification,
+        source_tree=source_tree,
+        stratified_tree=stratified_tree,
     )
 
 
@@ -4222,6 +7146,121 @@ def certify_sturm_polynomial_decision_arrangement_stratified_branch_event_tree(
             "ambiguous ordering.  The Sturm arrangement checker then certifies "
             "strict sign vectors on complementary cells and finite coverage of "
             "the compact domain."
+        ),
+    )
+
+
+def certify_sturm_polynomial_decision_stratified_branch_event_tree(
+    *,
+    decision_id: str,
+    coefficients: tuple[float, ...] | list[float] | np.ndarray,
+    domain: tuple[float, float],
+    equality_resolution_policy: str = "lower_dimensional_recursive_stratum",
+    max_bisection_depth: int = 96,
+) -> PolynomialDecisionStratificationCertificate:
+    """Derive a single polynomial decision tree by exact Sturm isolation.
+
+    This is the one-discriminator analogue of the Sturm arrangement
+    constructor.  It proves root-free sign cells and isolated equality roots
+    from the polynomial coefficients themselves, so no caller-supplied root
+    brackets are trusted.
+    """
+
+    decision_id = str(decision_id)
+    coeffs = tuple(
+        float(value) for value in np.asarray(coefficients, dtype=float).reshape(-1)
+    )
+    arrangement = certify_sturm_polynomial_decision_arrangement_stratified_branch_event_tree(
+        arrangement_id=f"{decision_id}:sturm_polynomial_decision",
+        decision_functions=(
+            PolynomialDecisionFunctionSpec(
+                decision_id=decision_id,
+                coefficients=coeffs,
+            ),
+        ),
+        domain=domain,
+        equality_resolution_policy=equality_resolution_policy,
+        max_bisection_depth=max_bisection_depth,
+    )
+
+    source_leaves = tuple(
+        replace(
+            leaf,
+            leaf_type=str(leaf.leaf_type).replace("arrangement", "stratification"),
+            source_type="SturmPolynomialDecisionStratification",
+        )
+        for leaf in arrangement.source_tree.leaf_certificates
+    )
+    source_tree = replace(
+        arrangement.source_tree,
+        source_type="SturmPolynomialDecisionStratification",
+        leaf_certificates=source_leaves,
+        obligations=tuple(
+            replace(
+                obligation,
+                obligation=str(obligation.obligation).replace(
+                    "sturm_polynomial_arrangement",
+                    "sturm_polynomial_decision",
+                ),
+            )
+            for obligation in arrangement.source_tree.obligations
+        ),
+    )
+    stratified_leaves = tuple(
+        replace(
+            leaf,
+            terminal_response_kind=str(leaf.terminal_response_kind).replace(
+                "arrangement",
+                "stratification",
+            ),
+            decision_functions=tuple(
+                replace(
+                    decision,
+                    function_kind=str(decision.function_kind).replace(
+                        "arrangement",
+                        "stratification",
+                    ),
+                )
+                for decision in leaf.decision_functions
+            ),
+        )
+        for leaf in arrangement.stratified_tree.leaf_certificates
+    )
+    stratified_tree = certify_stratified_branch_event_tree(
+        source_tree,
+        leaf_certificates=stratified_leaves,
+    )
+
+    return PolynomialDecisionStratificationCertificate(
+        decision_id=decision_id,
+        coefficients=coeffs,
+        domain=arrangement.domain,
+        root_brackets=tuple(
+            stratum.interval for stratum in arrangement.strata if stratum.equality
+        ),
+        strata=arrangement.strata,
+        source_tree=source_tree,
+        stratified_tree=stratified_tree,
+        statement=(
+            "A single one-dimensional polynomial decision function induces a "
+            "finite stratified branch/event tree without supplied root "
+            "brackets. Exact rational Sturm sequences derive every root "
+            "bracket and preserve multiplicity; complementary sign cells "
+            "become positive-margin leaves and equality roots remain explicit "
+            "recursive strata."
+        ),
+        proof_sketch=(
+            "Rationalize the polynomial coefficients and isolate the distinct "
+            "roots of the exact square-free part on the compact interval by "
+            "Sturm variation. Exact derivative/gcd evidence records root "
+            "multiplicity. The existing Sturm arrangement checker, restricted "
+            "to this one discriminator, then verifies value containment, "
+            "lower-derivative vanishing at multiple roots, nonzero leading "
+            "derivative, strict sign cells, and finite coverage. The returned "
+            "source type is single-decision-specific, so scoped set-valued "
+            "theorem reducers can consume this constructor without treating "
+            "it as either a supplied-root polynomial decision or a general "
+            "multi-function arrangement."
         ),
     )
 
@@ -5467,6 +8506,79 @@ def derive_polynomial_decision_arrangement_child_consumptions(
     )
 
 
+def certify_rational_decision_arrangement_recursive_consumption(
+    arrangement: RationalDecisionArrangementStratificationCertificate,
+    *,
+    root_dimension: int,
+    root_rank: int | None = None,
+    child_consumptions: Mapping[
+        str,
+        RecursiveStratifiedBranchEventConsumptionCertificate,
+    ]
+    | tuple[
+        tuple[str, RecursiveStratifiedBranchEventConsumptionCertificate],
+        ...,
+    ] = (),
+    recursion_kind: str = "rational_decision_arrangement",
+) -> RecursiveStratifiedBranchEventConsumptionCertificate:
+    """Consume a rational arrangement by terminal cells and numerator roots."""
+
+    if not isinstance(
+        arrangement,
+        RationalDecisionArrangementStratificationCertificate,
+    ):
+        raise TypeError(
+            "arrangement must be a RationalDecisionArrangementStratificationCertificate"
+        )
+    child_by_leaf = _normalize_arrangement_child_consumptions(
+        arrangement,
+        child_consumptions,
+    )
+    if (
+        not child_by_leaf
+        and arrangement.proof_certified
+        and arrangement.equality_stratum_count
+    ):
+        child_by_leaf = _normalize_arrangement_child_consumptions(
+            arrangement,
+            derive_rational_decision_arrangement_child_consumptions(
+                arrangement,
+                child_root_rank=0,
+            ),
+        )
+    return certify_recursive_stratified_branch_event_consumption(
+        arrangement.stratified_tree,
+        root_dimension=root_dimension,
+        root_rank=root_rank,
+        child_consumptions=child_by_leaf,
+        recursion_kind=recursion_kind,
+    )
+
+
+def derive_rational_decision_arrangement_child_consumptions(
+    arrangement: RationalDecisionArrangementStratificationCertificate,
+    *,
+    child_root_rank: int | None = 0,
+) -> dict[str, RecursiveStratifiedBranchEventConsumptionCertificate]:
+    """Derive terminal 0D children for rational arrangement root strata."""
+
+    if not isinstance(
+        arrangement,
+        RationalDecisionArrangementStratificationCertificate,
+    ):
+        raise TypeError(
+            "arrangement must be a RationalDecisionArrangementStratificationCertificate"
+        )
+    if not arrangement.proof_certified:
+        raise ValueError("rational decision arrangement must be proof-certified")
+
+    return _derive_polynomial_root_child_consumptions_from_strata(
+        strata=arrangement.strata,
+        source_id=arrangement.arrangement_id,
+        child_root_rank=child_root_rank,
+    )
+
+
 def _default_polynomial_arrangement_recursion_kind(
     arrangement: PolynomialDecisionArrangementStratificationCertificate,
 ) -> str:
@@ -5552,6 +8664,59 @@ def _root_brackets_sorted_and_inside(
     return True
 
 
+def _group_taylor_model_root_bracket_occurrences(
+    specs: tuple[TaylorModelDecisionFunctionSpec, ...],
+    *,
+    tolerance: float = 1.0e-12,
+) -> tuple[tuple[float, float, tuple[str, ...]], ...]:
+    occurrences = sorted(
+        (
+            float(left),
+            float(right),
+            spec.decision_id,
+        )
+        for spec in specs
+        for left, right in spec.root_brackets
+    )
+    groups: list[dict[str, object]] = []
+    for left, right, decision_id in occurrences:
+        placed = False
+        for group in groups:
+            group_left = float(group["left"])
+            group_right = float(group["right"])
+            overlaps = not (right < group_left or left > group_right)
+            same_bracket = (
+                abs(left - group_left) <= tolerance
+                and abs(right - group_right) <= tolerance
+            )
+            if same_bracket:
+                members = group["members"]
+                assert isinstance(members, list)
+                members.append(decision_id)
+                placed = True
+                break
+            if overlaps:
+                raise ValueError(
+                    "Taylor-model arrangement requires separated root "
+                    "brackets or exactly matching brackets for simultaneous "
+                    "equality strata"
+                )
+        if not placed:
+            groups.append({"left": left, "right": right, "members": [decision_id]})
+    grouped: list[tuple[float, float, tuple[str, ...]]] = []
+    for group in groups:
+        members = group["members"]
+        assert isinstance(members, list)
+        grouped.append(
+            (
+                float(group["left"]),
+                float(group["right"]),
+                tuple(str(member) for member in members),
+            )
+        )
+    return tuple(grouped)
+
+
 def _strata_cover_domain(
     strata: list[PolynomialDecisionStratumCertificate],
     lower: float,
@@ -5575,6 +8740,51 @@ def _polynomial_derivative_lipschitz_bound(
     if not derivative_coefficients:
         return 0.0
     value = interval_polynomial_eval(derivative_coefficients, interval)
+    return float(max(abs(value.lower), abs(value.upper)))
+
+
+def _inflate_interval(value: FloatInterval, radius: float) -> FloatInterval:
+    radius = max(0.0, float(radius))
+    return FloatInterval(value.lower - radius, value.upper + radius)
+
+
+def _taylor_model_value_interval(
+    spec: TaylorModelDecisionFunctionSpec,
+    interval: FloatInterval,
+) -> FloatInterval:
+    shifted = FloatInterval(
+        interval.lower - spec.expansion_center,
+        interval.upper - spec.expansion_center,
+    )
+    value = interval_polynomial_eval(
+        np.asarray(spec.coefficients, dtype=float),
+        shifted,
+    )
+    return _inflate_interval(value, spec.remainder_bound)
+
+
+def _taylor_model_derivative_interval(
+    spec: TaylorModelDecisionFunctionSpec,
+    derivative_coefficients: tuple[FloatInterval, ...],
+    interval: FloatInterval,
+) -> FloatInterval:
+    if not derivative_coefficients:
+        value = FloatInterval.point(0.0)
+    else:
+        shifted = FloatInterval(
+            interval.lower - spec.expansion_center,
+            interval.upper - spec.expansion_center,
+        )
+        value = interval_polynomial_eval(derivative_coefficients, shifted)
+    return _inflate_interval(value, spec.derivative_remainder_bound)
+
+
+def _taylor_model_derivative_lipschitz_bound(
+    spec: TaylorModelDecisionFunctionSpec,
+    derivative_coefficients: tuple[FloatInterval, ...],
+    interval: FloatInterval,
+) -> float:
+    value = _taylor_model_derivative_interval(spec, derivative_coefficients, interval)
     return float(max(abs(value.lower), abs(value.upper)))
 
 
@@ -6123,6 +9333,8 @@ def _sturm_sign_on_root_free_interval(
     polynomial = _rational_polynomial_trim(
         tuple(_fraction_from_float(value) for value in coefficients)
     )
+    if _rational_polynomial_degree(polynomial) < 0:
+        raise ValueError("sturm_polynomial_identically_zero_on_cell")
     sequence = _sturm_sequence(polynomial)
     left_fraction = _fraction_from_float(left)
     right_fraction = _fraction_from_float(right)
@@ -6138,6 +9350,250 @@ def _sturm_sign_on_root_free_interval(
     if value < 0:
         return -1
     raise ValueError("sturm_sign_probe_is_root")
+
+
+def _sturm_closed_interval_zero_free_sign(
+    coefficients: tuple[float, ...],
+    *,
+    left: float,
+    right: float,
+) -> int:
+    """Return the fixed sign of a polynomial on a closed interval.
+
+    A zero return is a failed certificate, not a numerical sign guess.  The
+    check rejects endpoint zeros and uses Sturm variation to rule out interior
+    roots before reading the sign from the left endpoint.
+    """
+
+    if right <= left:
+        return 0
+    polynomial = _rational_polynomial_trim(
+        tuple(_fraction_from_float(value) for value in coefficients)
+    )
+    degree = _rational_polynomial_degree(polynomial)
+    if degree < 0:
+        return 0
+    left_fraction = _fraction_from_float(left)
+    right_fraction = _fraction_from_float(right)
+    left_value = _rational_polynomial_eval(polynomial, left_fraction)
+    right_value = _rational_polynomial_eval(polynomial, right_fraction)
+    if left_value == 0 or right_value == 0:
+        return 0
+    if degree > 0:
+        sequence = _sturm_sequence(polynomial)
+        if _sturm_root_count(sequence, left_fraction, right_fraction) != 0:
+            return 0
+    if left_value > 0 and right_value > 0:
+        return 1
+    if left_value < 0 and right_value < 0:
+        return -1
+    return 0
+
+
+def _subdivided_polynomial_value_interval_with_sign(
+    coefficients: tuple[float, ...],
+    *,
+    interval: FloatInterval,
+    expected_sign: int,
+    max_depth: int = 32,
+) -> FloatInterval:
+    if expected_sign not in {-1, 1}:
+        raise ValueError("expected polynomial sign must be nonzero")
+    coefficient_array = np.asarray(coefficients, dtype=float)
+    pieces: list[FloatInterval] = []
+    stack: list[tuple[float, float, int]] = [
+        (float(interval.lower), float(interval.upper), 0)
+    ]
+    while stack:
+        left, right, depth = stack.pop()
+        if right <= left:
+            continue
+        value = interval_polynomial_eval(
+            coefficient_array,
+            FloatInterval(left, right),
+        )
+        if interval_sign(value) == expected_sign:
+            pieces.append(value)
+            continue
+        if depth >= max_depth:
+            raise ValueError("subdivided_polynomial_sign_not_certified")
+        midpoint = 0.5 * (left + right)
+        if midpoint <= left or midpoint >= right:
+            raise ValueError("subdivided_polynomial_interval_collapse")
+        stack.append((midpoint, right, depth + 1))
+        stack.append((left, midpoint, depth + 1))
+    if not pieces:
+        raise ValueError("subdivided_polynomial_empty_interval")
+    return FloatInterval(*_aggregate_value_intervals(tuple(pieces)))
+
+
+def _rational_value_interval_by_denominator_subdivision(
+    *,
+    numerator_coefficients: tuple[float, ...],
+    denominator_coefficients: tuple[float, ...],
+    interval: FloatInterval,
+    expected_denominator_sign: int,
+    max_depth: int = 32,
+) -> FloatInterval:
+    if expected_denominator_sign not in {-1, 1}:
+        raise ValueError("expected denominator sign must be nonzero")
+    numerator_array = np.asarray(numerator_coefficients, dtype=float)
+    denominator_array = np.asarray(denominator_coefficients, dtype=float)
+    pieces: list[FloatInterval] = []
+    stack: list[tuple[float, float, int]] = [
+        (float(interval.lower), float(interval.upper), 0)
+    ]
+    while stack:
+        left, right, depth = stack.pop()
+        if right <= left:
+            continue
+        piece = FloatInterval(left, right)
+        denominator_value = interval_polynomial_eval(denominator_array, piece)
+        if interval_sign(denominator_value) == expected_denominator_sign:
+            numerator_value = interval_polynomial_eval(numerator_array, piece)
+            pieces.append(numerator_value / denominator_value)
+            continue
+        if depth >= max_depth:
+            raise ValueError("rational_denominator_interval_sign_not_certified")
+        midpoint = 0.5 * (left + right)
+        if midpoint <= left or midpoint >= right:
+            raise ValueError("rational_denominator_subdivision_collapse")
+        stack.append((midpoint, right, depth + 1))
+        stack.append((left, midpoint, depth + 1))
+    if not pieces:
+        raise ValueError("rational_value_interval_empty_cell")
+    return FloatInterval(*_aggregate_value_intervals(tuple(pieces)))
+
+
+def _rational_derivative_interval_with_denominator_subdivision(
+    *,
+    numerator_coefficients: tuple[float, ...],
+    denominator_coefficients: tuple[float, ...],
+    interval: FloatInterval,
+    expected_denominator_sign: int,
+    max_depth: int = 32,
+) -> FloatInterval:
+    if expected_denominator_sign not in {-1, 1}:
+        raise ValueError("expected denominator sign must be nonzero")
+    numerator_array = np.asarray(numerator_coefficients, dtype=float)
+    denominator_array = np.asarray(denominator_coefficients, dtype=float)
+    numerator_derivative = interval_polyder(numerator_array)
+    denominator_derivative = interval_polyder(denominator_array)
+    pieces: list[FloatInterval] = []
+    stack: list[tuple[float, float, int]] = [
+        (float(interval.lower), float(interval.upper), 0)
+    ]
+    while stack:
+        left, right, depth = stack.pop()
+        if right <= left:
+            continue
+        piece = FloatInterval(left, right)
+        denominator_value = interval_polynomial_eval(denominator_array, piece)
+        if interval_sign(denominator_value) == expected_denominator_sign:
+            numerator_value = interval_polynomial_eval(numerator_array, piece)
+            numerator_prime = (
+                interval_polynomial_eval(numerator_derivative, piece)
+                if numerator_derivative
+                else FloatInterval.point(0.0)
+            )
+            denominator_prime = (
+                interval_polynomial_eval(denominator_derivative, piece)
+                if denominator_derivative
+                else FloatInterval.point(0.0)
+            )
+            pieces.append(
+                (numerator_prime / denominator_value)
+                - (
+                    (numerator_value * denominator_prime)
+                    / (denominator_value * denominator_value)
+                )
+            )
+            continue
+        if depth >= max_depth:
+            raise ValueError("rational_derivative_denominator_sign_not_certified")
+        midpoint = 0.5 * (left + right)
+        if midpoint <= left or midpoint >= right:
+            raise ValueError("rational_derivative_subdivision_collapse")
+        stack.append((midpoint, right, depth + 1))
+        stack.append((left, midpoint, depth + 1))
+    if not pieces:
+        raise ValueError("rational_derivative_interval_empty_cell")
+    return FloatInterval(*_aggregate_value_intervals(tuple(pieces)))
+
+
+def _rational_second_derivative_interval_with_denominator_subdivision(
+    *,
+    numerator_coefficients: tuple[float, ...],
+    denominator_coefficients: tuple[float, ...],
+    interval: FloatInterval,
+    expected_denominator_sign: int,
+    max_depth: int = 32,
+) -> FloatInterval:
+    if expected_denominator_sign not in {-1, 1}:
+        raise ValueError("expected denominator sign must be nonzero")
+    numerator_array = np.asarray(numerator_coefficients, dtype=float)
+    denominator_array = np.asarray(denominator_coefficients, dtype=float)
+    numerator_prime = interval_polyder(numerator_array)
+    denominator_prime = interval_polyder(denominator_array)
+    numerator_second = interval_polyder(numerator_prime)
+    denominator_second = interval_polyder(denominator_prime)
+    pieces: list[FloatInterval] = []
+    stack: list[tuple[float, float, int]] = [
+        (float(interval.lower), float(interval.upper), 0)
+    ]
+    while stack:
+        left, right, depth = stack.pop()
+        if right <= left:
+            continue
+        piece = FloatInterval(left, right)
+        denominator_value = interval_polynomial_eval(denominator_array, piece)
+        if interval_sign(denominator_value) == expected_denominator_sign:
+            numerator_value = interval_polynomial_eval(numerator_array, piece)
+            numerator_prime_value = (
+                interval_polynomial_eval(numerator_prime, piece)
+                if numerator_prime
+                else FloatInterval.point(0.0)
+            )
+            denominator_prime_value = (
+                interval_polynomial_eval(denominator_prime, piece)
+                if denominator_prime
+                else FloatInterval.point(0.0)
+            )
+            numerator_second_value = (
+                interval_polynomial_eval(numerator_second, piece)
+                if numerator_second
+                else FloatInterval.point(0.0)
+            )
+            denominator_second_value = (
+                interval_polynomial_eval(denominator_second, piece)
+                if denominator_second
+                else FloatInterval.point(0.0)
+            )
+            denominator_square = denominator_value * denominator_value
+            denominator_cube = denominator_square * denominator_value
+            pieces.append(
+                (numerator_second_value / denominator_value)
+                - (
+                    (numerator_prime_value * denominator_prime_value).scale(2.0)
+                    / denominator_square
+                )
+                - ((numerator_value * denominator_second_value) / denominator_square)
+                + (
+                    (numerator_value * denominator_prime_value * denominator_prime_value).scale(2.0)
+                    / denominator_cube
+                )
+            )
+            continue
+        if depth >= max_depth:
+            raise ValueError("rational_second_derivative_denominator_sign_not_certified")
+        midpoint = 0.5 * (left + right)
+        if midpoint <= left or midpoint >= right:
+            raise ValueError("rational_second_derivative_subdivision_collapse")
+        stack.append((midpoint, right, depth + 1))
+        stack.append((left, midpoint, depth + 1))
+    if not pieces:
+        raise ValueError("rational_second_derivative_interval_empty_cell")
+    return FloatInterval(*_aggregate_value_intervals(tuple(pieces)))
 
 
 def _polynomial_strict_sign_margin_by_subdivision(
@@ -7874,7 +11330,23 @@ def _normalize_child_consumptions(
         items = child_consumptions.items()
     else:
         items = child_consumptions
-    return {str(leaf_id): child for leaf_id, child in items}
+    normalized: dict[str, RecursiveStratifiedBranchEventConsumptionCertificate] = {}
+    duplicate_ids: list[str] = []
+    for leaf_id, child in items:
+        if not isinstance(child, RecursiveStratifiedBranchEventConsumptionCertificate):
+            raise TypeError(
+                "child_consumptions must map leaf ids to "
+                "RecursiveStratifiedBranchEventConsumptionCertificate objects"
+            )
+        key = str(leaf_id)
+        if key in normalized and key not in duplicate_ids:
+            duplicate_ids.append(key)
+        normalized[key] = child
+    if duplicate_ids:
+        raise ValueError(
+            "duplicate child consumption ids: " + ", ".join(duplicate_ids)
+        )
+    return normalized
 
 
 def _normalize_arrangement_child_consumptions(
@@ -7900,10 +11372,95 @@ def _normalize_arrangement_child_consumptions(
             aliases[f"stratified:{leaf.equality_stratum.stratum_id}:leaf"] = (
                 leaf.leaf_id
             )
-    return {
-        aliases.get(str(leaf_id), str(leaf_id)): child
-        for leaf_id, child in normalized.items()
+    remapped: dict[str, RecursiveStratifiedBranchEventConsumptionCertificate] = {}
+    alias_collisions: list[str] = []
+    for leaf_id, child in normalized.items():
+        target_leaf_id = aliases.get(str(leaf_id), str(leaf_id))
+        if target_leaf_id in remapped and target_leaf_id not in alias_collisions:
+            alias_collisions.append(target_leaf_id)
+        remapped[target_leaf_id] = child
+    if alias_collisions:
+        raise ValueError(
+            "child consumption aliases collide after normalization: "
+            + ", ".join(alias_collisions)
+        )
+    return remapped
+
+
+_PARENT_BOUND_CHILD_SOURCE_TYPES = frozenset(
+    {
+        "AxisAlignedAffineBoxChild",
+        "AffineHalfspaceDecisionChild",
+        "AffineHalfspaceLineChild",
+        "AffineHalfspacePlaneChild",
+        "AffineHalfspacePointChild",
+        "AffineHalfspaceSpatialLineChild",
+        "AffineHalfspaceSpatialPointChild",
+        "PolynomialRootChild",
     }
+)
+
+
+def _child_consumption_bound_to_parent_leaf(
+    leaf: StratifiedBranchLeafCertificate,
+    child: RecursiveStratifiedBranchEventConsumptionCertificate | None,
+) -> bool:
+    if child is None:
+        return True
+    expected_ids: list[str] = []
+    if leaf.equality_stratum is not None:
+        expected_ids.append(str(leaf.equality_stratum.stratum_id))
+    if leaf.source_leaf_id:
+        expected_ids.append(str(leaf.source_leaf_id))
+        expected_ids.append(str(leaf.source_leaf_id).removesuffix(":leaf"))
+    expected_ids = [item for item in dict.fromkeys(expected_ids) if item]
+    if not expected_ids:
+        return True
+
+    child_source_tree = getattr(child.source_tree, "source_tree", None)
+    child_leaf_ids = tuple(
+        str(getattr(source_leaf, "leaf_id", ""))
+        for source_leaf in tuple(getattr(child_source_tree, "leaf_certificates", ()) or ())
+    )
+    child_details = tuple(
+        str(getattr(obligation, "detail", ""))
+        for obligation in tuple(getattr(child_source_tree, "obligations", ()) or ())
+    )
+    child_source_types = {
+        str(getattr(child, "constructor_source_type", "")),
+        str(getattr(child_source_tree, "source_type", "")),
+    }
+    child_claims_parent_bound_source = bool(
+        child_source_types.intersection(_PARENT_BOUND_CHILD_SOURCE_TYPES)
+        or any(
+            "stratum_id=" in detail
+            or "cell_id=" in detail
+            or "slab_id=" in detail
+            for detail in child_details
+        )
+    )
+    if not child_claims_parent_bound_source:
+        return True
+    for expected_id in expected_ids:
+        detail_markers = (
+            f"stratum_id={expected_id}",
+            f"cell_id={expected_id}",
+            f"slab_id={expected_id}",
+        )
+        if any(
+            leaf_id == expected_id
+            or leaf_id.startswith(f"{expected_id}:")
+            or f":{expected_id}" in leaf_id
+            for leaf_id in child_leaf_ids
+        ):
+            return True
+        if any(
+            marker in detail
+            for marker in detail_markers
+            for detail in child_details
+        ):
+            return True
+    return False
 
 
 def _consume_recursive_stratified_leaf(
@@ -7916,9 +11473,9 @@ def _consume_recursive_stratified_leaf(
     missing: list[str] = []
     terminal_certified = bool(
         leaf.leaf_kind in TERMINAL_STRATIFIED_LEAF_KINDS
-        and leaf.proof_certified
+        and leaf.proof_certified is True
     )
-    child_certified = bool(child is not None and child.certified)
+    child_certified = bool(child is not None and child.certified is True)
     descent_certified = bool(
         child is not None
         and _strict_dimension_or_rank_descent(
@@ -7944,6 +11501,11 @@ def _consume_recursive_stratified_leaf(
         missing.append("child_consumption_not_certified")
     if child is not None and not descent_certified:
         missing.append("child_stratum_not_strictly_lower_dimension_or_rank")
+    if child is not None and not _child_consumption_bound_to_parent_leaf(
+        leaf,
+        child,
+    ):
+        missing.append("child_consumption_source_leaf_binding")
     if not terminal_certified and child is None:
         missing.append("terminal_or_recursive_response_missing")
     missing.extend(str(item) for item in leaf.missing_obligations)

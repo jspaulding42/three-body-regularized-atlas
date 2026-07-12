@@ -2,12 +2,15 @@ from dataclasses import replace
 from types import SimpleNamespace
 
 import numpy as np
+import pytest
 
 from three_body_symmetry.branch_event_tree import certify_supplied_branch_event_tree
+from three_body_symmetry.certificate_checker import IndependentChartVerifierCertificate
 from three_body_symmetry.dynamics import accelerations, split_state
 from three_body_symmetry.finite_target_completeness import (
     certify_affine_halfspace_arrangement_set_valued_constructor_completeness,
     certify_constructor_derived_recursive_stratified_set_valued_constructor_completeness,
+    certify_constructor_pair_derived_recursive_stratified_set_valued_constructor_completeness,
     certify_finite_target_completeness_theorem,
     certify_supplied_recursive_stratified_set_valued_constructor_completeness,
     certify_uniform_margin_branch_refinement_termination,
@@ -15,6 +18,7 @@ from three_body_symmetry.finite_target_completeness import (
     certify_validated_set_valued_constructor_completeness_theorem,
 )
 from three_body_symmetry.general_solution_theorem import (
+    TheoremPipelineObligation,
     certify_compact_ordinary_binary_finite_atlas,
     certify_positive_mass_noncollision_input_domain,
 )
@@ -31,8 +35,10 @@ from three_body_symmetry.ks_binary_series import (
 )
 from three_body_symmetry.intervals import FloatInterval
 from three_body_symmetry.open_time_atlas import (
+    TotalCollisionPolicyCertificate,
     certify_compact_interval_atlas_or_stop_from_finite_targets,
     certify_finite_target_atlas_or_stop_from_validated_atlas,
+    certify_finite_target_completeness_reduction,
     certify_pointwise_open_time_locally_finite_atlas_theorem,
     construct_compact_interval_atlas_or_stop,
     construct_compact_interval_exhaustion_family,
@@ -48,6 +54,7 @@ from three_body_symmetry.stratified_branch_tree import (
     PolynomialDecisionFunctionSpec,
     SelectorPolicyLeafCertificate,
     StratifiedBranchLeafCertificate,
+    TotalCollisionClusterLeafCertificate,
     certify_affine_decision_arrangement_stratified_branch_event_tree,
     certify_affine_box_decision_arrangement_recursive_consumption,
     certify_affine_box_decision_arrangement_stratified_branch_event_tree,
@@ -652,15 +659,24 @@ def test_open_time_reduction_can_certify_uniform_margin_set_valued_subset():
     completeness = theorem.finite_target_completeness_certificate
     details = {obligation.obligation: obligation for obligation in completeness.obligations}
 
-    assert set_valued.certified
-    assert completeness.certified
-    assert theorem.certified
+    assert branch_refinement.certified
+    assert event_refinement.certified
+    assert not set_valued.certified
+    assert not completeness.certified
+    assert not theorem.certified
     assert not theorem.proof_certified
-    assert "set_valued_constructor_branch_event_completeness" not in (
+    assert theorem.scoped_set_valued_constructor_only
+    assert theorem.proof_certified is False
+    assert theorem.set_valued_constructor_input_scope_id == (
+        "uniform_margin_set_valued_constructor_branch_event_completeness"
+    )
+    assert not theorem.set_valued_constructor_arbitrary_partition_generation_claimed
+    assert "arbitrary finite-target completeness remains open" in theorem.route_summary
+    assert "set_valued_constructor_branch_event_completeness" in (
         theorem.missing_obligations
     )
-    assert details["set_valued_constructor_branch_event_completeness"].certified
-    assert "positive-margin input class" in (
+    assert not details["set_valued_constructor_branch_event_completeness"].certified
+    assert "arbitrary positive-mass noncollision interval inputs" in (
         details["set_valued_constructor_branch_event_completeness"].detail
     )
     assert completeness.set_valued_constructor_completeness_certificate is set_valued
@@ -709,13 +725,20 @@ def test_open_time_reduction_can_consume_named_validated_set_valued_theorem():
     completeness = theorem.finite_target_completeness_certificate
     details = {obligation.obligation: obligation for obligation in completeness.obligations}
 
-    assert set_valued.proof_certified
-    assert theorem.certified
-    assert "set_valued_constructor_branch_event_completeness" not in (
+    assert branch_refinement.certified
+    assert event_refinement.certified
+    assert not scoped.proof_certified
+    assert not set_valued.proof_certified
+    assert not theorem.certified
+    assert theorem.scoped_set_valued_constructor_only
+    assert theorem.set_valued_constructor_input_scope_id == (
+        "positive_margin_interval_boxes"
+    )
+    assert "set_valued_constructor_branch_event_completeness" in (
         theorem.missing_obligations
     )
-    assert details["set_valued_constructor_branch_event_completeness"].certified
-    assert "validated set-valued constructor theorem" in (
+    assert not details["set_valued_constructor_branch_event_completeness"].certified
+    assert "arbitrary positive-mass noncollision interval inputs" in (
         details["set_valued_constructor_branch_event_completeness"].detail
     )
     assert completeness.set_valued_constructor_completeness_certificate is set_valued
@@ -786,15 +809,15 @@ def test_open_time_reduction_can_consume_affine_halfspace_arrangement_scope():
 
     assert arrangement.area_cover_certified
     assert recursive.certified
-    assert scoped.proof_certified
-    assert set_valued.proof_certified
-    assert theorem.certified
+    assert not scoped.proof_certified
+    assert not set_valued.proof_certified
+    assert not theorem.certified
     assert not theorem.proof_certified
-    assert "set_valued_constructor_branch_event_completeness" not in (
+    assert "set_valued_constructor_branch_event_completeness" in (
         theorem.missing_obligations
     )
-    assert details["set_valued_constructor_branch_event_completeness"].certified
-    assert "finite_2d_affine_halfspace_arrangement_interval_boxes" in (
+    assert not details["set_valued_constructor_branch_event_completeness"].certified
+    assert "arbitrary positive-mass noncollision interval inputs" in (
         details["set_valued_constructor_branch_event_completeness"].detail
     )
     assert completeness.set_valued_constructor_completeness_certificate is set_valued
@@ -859,16 +882,13 @@ def test_open_time_reduction_consumes_affine_line_child_scope():
     assert arrangement.equality_stratum_count == 1
     assert recursive.strict_descent_edge_count == 1
     assert recursive.proof_certified
-    assert scoped.proof_certified
-    assert set_valued.proof_certified
-    assert theorem.certified
-    assert "set_valued_constructor_branch_event_completeness" not in (
+    assert not scoped.proof_certified
+    assert not set_valued.proof_certified
+    assert not theorem.certified
+    assert "set_valued_constructor_branch_event_completeness" in (
         theorem.missing_obligations
     )
-    assert "finite_2d_affine_halfspace_arrangement_interval_boxes" in (
-        details["set_valued_constructor_branch_event_completeness"].detail
-    )
-    assert "strict_descent_edge_count=1" in (
+    assert "arbitrary positive-mass noncollision interval inputs" in (
         details["set_valued_constructor_branch_event_completeness"].detail
     )
 
@@ -931,11 +951,13 @@ def test_open_time_reduction_consumes_terminal_affine_line_child_scope():
         "AffineHalfspaceLineChild"
     )
     assert recursive.proof_certified
-    assert theorem.certified
-    assert "set_valued_constructor_branch_event_completeness" not in (
+    assert not scoped.proof_certified
+    assert not set_valued.proof_certified
+    assert not theorem.certified
+    assert "set_valued_constructor_branch_event_completeness" in (
         theorem.missing_obligations
     )
-    assert "strict_descent_edge_count=1" in (
+    assert "arbitrary positive-mass noncollision interval inputs" in (
         details["set_valued_constructor_branch_event_completeness"].detail
     )
 
@@ -1005,15 +1027,14 @@ def test_open_time_reduction_consumes_coincident_affine_line_child_scope():
     assert recursive.child_constructor_source_types == ("AffineHalfspaceLineChild",)
     assert recursive.strict_descent_edge_count == 1
     assert recursive.proof_certified
-    assert scoped.proof_certified
-    assert set_valued.proof_certified
-    assert theorem.certified
-    assert "set_valued_constructor_branch_event_completeness" not in (
+    assert not scoped.proof_certified
+    assert not set_valued.proof_certified
+    assert not theorem.certified
+    assert "set_valued_constructor_branch_event_completeness" in (
         theorem.missing_obligations
     )
     detail = details["set_valued_constructor_branch_event_completeness"].detail
-    assert "strict_descent_edge_count=1" in detail
-    assert "AffineHalfspaceLineChild" in detail
+    assert "arbitrary positive-mass noncollision interval inputs" in detail
 
 
 def test_open_time_reduction_consumes_affine_point_child_scope():
@@ -1069,13 +1090,13 @@ def test_open_time_reduction_consumes_affine_point_child_scope():
     assert len(point_children) == 1
     assert recursive.strict_descent_edge_count == arrangement.equality_stratum_count
     assert recursive.proof_certified
-    assert scoped.proof_certified
-    assert set_valued.proof_certified
-    assert theorem.certified
-    assert "set_valued_constructor_branch_event_completeness" not in (
+    assert not scoped.proof_certified
+    assert not set_valued.proof_certified
+    assert not theorem.certified
+    assert "set_valued_constructor_branch_event_completeness" in (
         theorem.missing_obligations
     )
-    assert "strict_descent_edge_count=5" in (
+    assert "arbitrary positive-mass noncollision interval inputs" in (
         details["set_valued_constructor_branch_event_completeness"].detail
     )
 
@@ -1131,15 +1152,15 @@ def test_open_time_reduction_can_consume_spatial_affine_halfspace_arrangement_sc
     assert recursive.certified
     assert "AffineHalfspacePlaneChild" in recursive.child_constructor_source_types
     assert "AffineHalfspaceSpatialLineChild" in recursive.child_constructor_source_types
-    assert scoped.proof_certified
-    assert set_valued.proof_certified
-    assert theorem.certified
+    assert not scoped.proof_certified
+    assert not set_valued.proof_certified
+    assert not theorem.certified
     assert not theorem.proof_certified
-    assert "set_valued_constructor_branch_event_completeness" not in (
+    assert "set_valued_constructor_branch_event_completeness" in (
         theorem.missing_obligations
     )
-    assert details["set_valued_constructor_branch_event_completeness"].certified
-    assert "finite_3d_affine_halfspace_arrangement_interval_boxes" in (
+    assert not details["set_valued_constructor_branch_event_completeness"].certified
+    assert "arbitrary positive-mass noncollision interval inputs" in (
         details["set_valued_constructor_branch_event_completeness"].detail
     )
     assert completeness.set_valued_constructor_completeness_certificate is set_valued
@@ -1203,14 +1224,13 @@ def test_open_time_reduction_consumes_terminal_spatial_affine_plane_child_scope(
         "AffineHalfspacePlaneChild"
     )
     assert recursive.proof_certified
-    assert theorem.certified
-    assert "set_valued_constructor_branch_event_completeness" not in (
+    assert not scoped.proof_certified
+    assert not set_valued.proof_certified
+    assert not theorem.certified
+    assert "set_valued_constructor_branch_event_completeness" in (
         theorem.missing_obligations
     )
-    assert "child_constructor_sources=AffineHalfspacePlaneChild" in (
-        details["set_valued_constructor_branch_event_completeness"].detail
-    )
-    assert "strict_descent_edge_count=1" in (
+    assert "arbitrary positive-mass noncollision interval inputs" in (
         details["set_valued_constructor_branch_event_completeness"].detail
     )
 
@@ -1280,15 +1300,14 @@ def test_open_time_reduction_consumes_coincident_spatial_affine_plane_child_scop
     assert recursive.child_constructor_source_types == ("AffineHalfspacePlaneChild",)
     assert recursive.strict_descent_edge_count == 1
     assert recursive.proof_certified
-    assert scoped.proof_certified
-    assert set_valued.proof_certified
-    assert theorem.certified
-    assert "set_valued_constructor_branch_event_completeness" not in (
+    assert not scoped.proof_certified
+    assert not set_valued.proof_certified
+    assert not theorem.certified
+    assert "set_valued_constructor_branch_event_completeness" in (
         theorem.missing_obligations
     )
     detail = details["set_valued_constructor_branch_event_completeness"].detail
-    assert "strict_descent_edge_count=1" in detail
-    assert "AffineHalfspacePlaneChild" in detail
+    assert "arbitrary positive-mass noncollision interval inputs" in detail
 
 
 def test_open_time_reduction_reports_spatial_point_child_source():
@@ -1356,11 +1375,14 @@ def test_open_time_reduction_reports_spatial_point_child_source():
     assert "AffineHalfspacePlaneChild" in recursive.child_constructor_source_types
     assert "AffineDecisionArrangement" in recursive.child_constructor_source_types
     assert "AffineHalfspaceSpatialPointChild" in recursive.child_constructor_source_types
-    assert theorem.certified
-    assert "child_constructor_sources=" in detail
-    assert "AffineHalfspacePlaneChild" in detail
-    assert "AffineDecisionArrangement" in detail
-    assert "AffineHalfspaceSpatialPointChild" in detail
+    assert recursive.proof_certified
+    assert not scoped.proof_certified
+    assert not set_valued.proof_certified
+    assert not theorem.certified
+    assert "set_valued_constructor_branch_event_completeness" in (
+        theorem.missing_obligations
+    )
+    assert "arbitrary positive-mass noncollision interval inputs" in detail
 
 
 def test_open_time_reduction_reports_spatial_line_child_source():
@@ -1423,9 +1445,14 @@ def test_open_time_reduction_reports_spatial_line_child_source():
 
     assert "AffineHalfspaceSpatialLineChild" in recursive.child_constructor_source_types
     assert "AffineHalfspacePlaneChild" in recursive.child_constructor_source_types
-    assert theorem.certified
-    assert "child_constructor_sources=" in detail
-    assert "AffineHalfspaceSpatialLineChild" in detail
+    assert recursive.proof_certified
+    assert not scoped.proof_certified
+    assert not set_valued.proof_certified
+    assert not theorem.certified
+    assert "set_valued_constructor_branch_event_completeness" in (
+        theorem.missing_obligations
+    )
+    assert "arbitrary positive-mass noncollision interval inputs" in detail
 
 
 def test_open_time_reduction_can_certify_supplied_recursive_stratified_set_valued_subset():
@@ -1489,18 +1516,15 @@ def test_open_time_reduction_can_certify_supplied_recursive_stratified_set_value
     assert arrangement.source_tree.source_type == "AffineDecisionArrangement"
     assert recursive.certified
     assert recursive.recursion_kind == "affine_decision_arrangement"
-    assert set_valued.certified
-    assert completeness.certified
-    assert theorem.certified
+    assert not set_valued.certified
+    assert not completeness.certified
+    assert not theorem.certified
     assert not theorem.proof_certified
-    assert "set_valued_constructor_branch_event_completeness" not in (
+    assert "set_valued_constructor_branch_event_completeness" in (
         theorem.missing_obligations
     )
-    assert details["set_valued_constructor_branch_event_completeness"].certified
-    assert "constructor-derived affine decision arrangement" in (
-        details["set_valued_constructor_branch_event_completeness"].detail
-    )
-    assert "coefficient-derived roots" in (
+    assert not details["set_valued_constructor_branch_event_completeness"].certified
+    assert "arbitrary positive-mass noncollision interval inputs" in (
         details["set_valued_constructor_branch_event_completeness"].detail
     )
     assert completeness.set_valued_constructor_completeness_certificate is set_valued
@@ -1575,17 +1599,67 @@ def test_open_time_reduction_consumes_verified_polynomial_root_bracket_scope():
     assert arrangement.source_tree.source_type == "PolynomialDecisionArrangement"
     assert recursive.recursion_kind == "polynomial_decision_arrangement"
     assert recursive.certified
-    assert set_valued.certified
-    assert theorem.certified
-    assert "set_valued_constructor_branch_event_completeness" not in (
+    assert not set_valued.certified
+    assert not theorem.certified
+    assert "set_valued_constructor_branch_event_completeness" in (
         theorem.missing_obligations
     )
-    assert "constructor-derived polynomial decision arrangement" in (
+    assert "arbitrary positive-mass noncollision interval inputs" in (
         details["set_valued_constructor_branch_event_completeness"].detail
     )
-    assert "verified simple root brackets" in (
-        details["set_valued_constructor_branch_event_completeness"].detail
+
+
+def test_finite_target_reduction_extracts_recursive_evidence_from_validated_set_valued_certificate():
+    masses, positions, velocities = _spatial_initial_data()
+    theorem_certificate = certify_finite_target_completeness_theorem(dimension=3)
+    finite_target = construct_finite_target_atlas_or_stop(
+        masses,
+        positions,
+        velocities,
+        1.0e-4,
+        **_solver_options(),
     )
+    arrangement = certify_polynomial_decision_arrangement_stratified_branch_event_tree(
+        arrangement_id="direct_reduction_verified_polynomial_event_order",
+        decision_functions=(
+            PolynomialDecisionFunctionSpec(
+                decision_id="binary_minus_total",
+                coefficients=(0.0, 1.0),
+                root_brackets=((-0.01, 0.01),),
+            ),
+        ),
+        domain=(-1.0, 1.0),
+    )
+    scoped = (
+        certify_constructor_derived_recursive_stratified_set_valued_constructor_completeness(
+            theorem_certificate,
+            constructor_certificate=arrangement,
+            root_dimension=3,
+            root_rank=2,
+        )
+    )
+    validated = certify_validated_set_valued_constructor_completeness_theorem(scoped)
+    reduction = certify_finite_target_completeness_reduction(
+        finite_target_certificate=finite_target,
+        set_valued_constructor_completeness_certificate=validated,
+    )
+    search = reduction.certificate_search_completeness
+
+    assert scoped.branch_consumption_certificate.certified
+    assert not scoped.certified
+    assert not validated.certified
+    assert search.certified
+    assert "recursive_set_valued_branch_partition_consumption" not in (
+        search.missing_obligations
+    )
+    assert "event_order_partition_consumption_theorem" not in (
+        search.missing_obligations
+    )
+    assert "set_valued_constructor_branch_event_completeness" in (
+        reduction.missing_obligations
+    )
+    assert not reduction.certified
+    assert reduction.set_valued_constructor_completeness_certificate is validated
 
 
 def test_open_time_reduction_can_consume_constructor_close_pair_partition_scope():
@@ -1634,14 +1708,15 @@ def test_open_time_reduction_can_consume_constructor_close_pair_partition_scope(
     assert stratified.leaf_kinds == ("separated_binary_entry", "separated_binary_entry")
     assert recursive.certified
     assert recursive.terminal_leaf_count == 2
-    assert set_valued.proof_certified
-    assert theorem.certified
+    assert not set_valued.proof_certified
+    assert not completeness.certified
+    assert not theorem.certified
     assert not theorem.proof_certified
-    assert "set_valued_constructor_branch_event_completeness" not in (
+    assert "set_valued_constructor_branch_event_completeness" in (
         theorem.missing_obligations
     )
-    assert details["set_valued_constructor_branch_event_completeness"].certified
-    assert "constructor-derived simultaneous close-pair branch partition" in (
+    assert not details["set_valued_constructor_branch_event_completeness"].certified
+    assert "arbitrary positive-mass noncollision interval inputs" in (
         details["set_valued_constructor_branch_event_completeness"].detail
     )
 
@@ -1700,16 +1775,13 @@ def test_open_time_reduction_consumes_axis_aligned_affine_box_scope():
     assert recursive.recursion_kind == "axis_aligned_affine_box_decision_arrangement"
     assert recursive.certified
     assert recursive.child_constructor_source_types == ("AxisAlignedAffineBoxChild",)
-    assert set_valued.certified
+    assert not set_valued.certified
     assert set_valued.event_order_consumption_certificate is recursive
-    assert theorem.certified
-    assert "set_valued_constructor_branch_event_completeness" not in (
+    assert not theorem.certified
+    assert "set_valued_constructor_branch_event_completeness" in (
         theorem.missing_obligations
     )
-    assert "axis-aligned affine box arrangement" in (
-        details["set_valued_constructor_branch_event_completeness"].detail
-    )
-    assert "coordinate equality slabs" in (
+    assert "arbitrary positive-mass noncollision interval inputs" in (
         details["set_valued_constructor_branch_event_completeness"].detail
     )
 
@@ -1759,16 +1831,13 @@ def test_open_time_reduction_consumes_affine_halfspace_decision_scope():
     assert recursive.recursion_kind == "affine_halfspace_decision"
     assert recursive.certified
     assert recursive.child_constructor_source_types == ("AffineHalfspaceDecisionChild",)
-    assert set_valued.certified
+    assert not set_valued.certified
     assert set_valued.event_order_consumption_certificate is recursive
-    assert theorem.certified
-    assert "set_valued_constructor_branch_event_completeness" not in (
+    assert not theorem.certified
+    assert "set_valued_constructor_branch_event_completeness" in (
         theorem.missing_obligations
     )
-    assert "affine halfspace decision stratification" in (
-        details["set_valued_constructor_branch_event_completeness"].detail
-    )
-    assert "central equality slab" in (
+    assert "arbitrary positive-mass noncollision interval inputs" in (
         details["set_valued_constructor_branch_event_completeness"].detail
     )
 
@@ -1816,23 +1885,59 @@ def test_open_time_reduction_consumes_polynomial_decision_scope():
     assert recursive.recursion_kind == "polynomial_decision_stratification"
     assert recursive.certified
     assert recursive.child_constructor_source_types == ("PolynomialRootChild",)
-    assert set_valued.certified
+    # The polynomial partition is locally certified, but does not prove that
+    # the constructor covers arbitrary admissible three-body inputs.
+    assert not set_valued.certified
     assert set_valued.event_order_consumption_certificate is recursive
-    assert theorem.certified
-    assert "set_valued_constructor_branch_event_completeness" not in (
+    assert not theorem.certified
+    assert "set_valued_constructor_branch_event_completeness" in (
         theorem.missing_obligations
     )
-    assert "single-polynomial decision stratification" in (
+    assert "arbitrary positive-mass noncollision interval inputs" in (
         details["set_valued_constructor_branch_event_completeness"].detail
     )
-    assert "strict sign cells" in (
+
+
+def test_open_time_reduction_derives_constructor_search_scope_internally():
+    masses, positions, velocities = _spatial_initial_data()
+    stratification = certify_polynomial_decision_stratified_branch_event_tree(
+        decision_id="open_time_internal_event_tie_discriminant",
+        coefficients=(0.0, 1.0),
+        domain=(-1.0, 1.0),
+        root_brackets=((-0.01, 0.01),),
+    )
+    theorem = construct_open_time_locally_finite_atlas_theorem(
+        masses,
+        positions,
+        velocities,
+        1.0e-4,
+        compact_time_rate=1.3,
+        exhaustion_prefix_count=1,
+        certificate_search_constructor_certificate=stratification,
+        certificate_search_constructor_root_dimension=3,
+        certificate_search_constructor_root_rank=1,
+        **_solver_options(),
+    )
+    completeness = theorem.finite_target_completeness_certificate
+    set_valued = completeness.set_valued_constructor_completeness_certificate
+    recursive = set_valued.branch_consumption_certificate
+    details = {obligation.obligation: obligation for obligation in completeness.obligations}
+
+    assert recursive.recursion_kind == "polynomial_decision_stratification"
+    assert recursive.child_constructor_source_types == ("PolynomialRootChild",)
+    assert set_valued.event_order_consumption_certificate is recursive
+    assert not set_valued.certified
+    assert not theorem.certified
+    assert "set_valued_constructor_branch_event_completeness" in (
+        theorem.missing_obligations
+    )
+    assert "arbitrary positive-mass noncollision interval inputs" in (
         details["set_valued_constructor_branch_event_completeness"].detail
     )
 
 
 def test_open_time_reduction_consumes_mixed_constructor_branch_event_scope():
     masses, positions, velocities = _spatial_initial_data()
-    theorem_certificate = certify_finite_target_completeness_theorem(dimension=3)
     branch_stratification = certify_affine_halfspace_decision_stratified_branch_event_tree(
         decision_id="open_time_branch_oblique_boundary",
         coefficients=(0.0, 1.0, 1.0),
@@ -1850,29 +1955,6 @@ def test_open_time_reduction_consumes_mixed_constructor_branch_event_scope():
         ),
         domain=(-1.0, 1.0),
     )
-    branch_recursive = certify_affine_halfspace_decision_recursive_consumption(
-        branch_stratification,
-        root_dimension=2,
-        root_rank=2,
-        child_consumptions=derive_affine_halfspace_decision_child_consumptions(
-            branch_stratification,
-        ),
-    )
-    event_recursive = certify_polynomial_decision_arrangement_recursive_consumption(
-        event_arrangement,
-        root_dimension=3,
-        root_rank=2,
-    )
-    set_valued = (
-        certify_supplied_recursive_stratified_set_valued_constructor_completeness(
-            theorem_certificate,
-            recursive_stratified_branch_consumption_certificate=branch_recursive,
-            recursive_stratified_event_order_consumption_certificate=event_recursive,
-        )
-    )
-    validated = certify_validated_set_valued_constructor_completeness_theorem(
-        set_valued,
-    )
     theorem = construct_open_time_locally_finite_atlas_theorem(
         masses,
         positions,
@@ -1880,40 +1962,32 @@ def test_open_time_reduction_consumes_mixed_constructor_branch_event_scope():
         1.0e-4,
         compact_time_rate=1.3,
         exhaustion_prefix_count=1,
-        certificate_search_recursive_stratified_branch_consumption_certificate=(
-            branch_recursive
-        ),
-        certificate_search_recursive_stratified_event_order_consumption_certificate=(
-            event_recursive
-        ),
-        certificate_search_set_valued_constructor_completeness_certificate=(
-            validated
-        ),
+        certificate_search_branch_constructor_certificate=branch_stratification,
+        certificate_search_event_order_constructor_certificate=event_arrangement,
+        certificate_search_branch_constructor_root_dimension=2,
+        certificate_search_branch_constructor_root_rank=2,
+        certificate_search_event_order_constructor_root_dimension=3,
+        certificate_search_event_order_constructor_root_rank=2,
         **_solver_options(),
     )
     completeness = theorem.finite_target_completeness_certificate
+    set_valued = completeness.set_valued_constructor_completeness_certificate
+    branch_recursive = set_valued.branch_consumption_certificate
+    event_recursive = set_valued.event_order_consumption_certificate
     details = {obligation.obligation: obligation for obligation in completeness.obligations}
 
-    assert validated.input_scope_id == (
-        "finite_mixed_constructor_branch_event_interval_boxes"
-    )
     assert branch_recursive.certified
     assert event_recursive.certified
     assert branch_recursive.child_constructor_source_types == (
         "AffineHalfspaceDecisionChild",
     )
     assert event_recursive.child_constructor_source_types == ("PolynomialRootChild",)
-    assert theorem.certified
-    assert "set_valued_constructor_branch_event_completeness" not in (
+    assert not set_valued.certified
+    assert not theorem.certified
+    assert "set_valued_constructor_branch_event_completeness" in (
         theorem.missing_obligations
     )
-    assert "mixed branch/event recursive partition" in (
-        details["set_valued_constructor_branch_event_completeness"].detail
-    )
-    assert "branch source AffineHalfspaceDecision" in (
-        details["set_valued_constructor_branch_event_completeness"].detail
-    )
-    assert "event-order source PolynomialDecisionArrangement" in (
+    assert "arbitrary positive-mass noncollision interval inputs" in (
         details["set_valued_constructor_branch_event_completeness"].detail
     )
 
@@ -1946,29 +2020,19 @@ def test_open_time_reduction_consumes_mixed_oblique_affine_arrangement_scope():
         ),
         domain=(-1.0, 1.0),
     )
-    branch_recursive = certify_affine_halfspace_3d_arrangement_recursive_consumption(
-        branch_arrangement,
-        root_dimension=3,
-        root_rank=2,
-        child_consumptions=derive_affine_halfspace_3d_arrangement_child_consumptions(
-            branch_arrangement,
-        ),
-    )
-    event_recursive = certify_polynomial_decision_arrangement_recursive_consumption(
-        event_arrangement,
-        root_dimension=3,
-        root_rank=2,
-        child_consumptions=derive_polynomial_decision_arrangement_child_consumptions(
-            event_arrangement,
-        ),
-    )
     set_valued = (
-        certify_supplied_recursive_stratified_set_valued_constructor_completeness(
+        certify_constructor_pair_derived_recursive_stratified_set_valued_constructor_completeness(
             theorem_certificate,
-            recursive_stratified_branch_consumption_certificate=branch_recursive,
-            recursive_stratified_event_order_consumption_certificate=event_recursive,
+            branch_constructor_certificate=branch_arrangement,
+            event_order_constructor_certificate=event_arrangement,
+            branch_root_dimension=3,
+            branch_root_rank=2,
+            event_order_root_dimension=3,
+            event_order_root_rank=2,
         )
     )
+    branch_recursive = set_valued.branch_consumption_certificate
+    event_recursive = set_valued.event_order_consumption_certificate
     validated = certify_validated_set_valued_constructor_completeness_theorem(
         set_valued,
     )
@@ -2003,17 +2067,13 @@ def test_open_time_reduction_consumes_mixed_oblique_affine_arrangement_scope():
     assert validated.input_scope_id == (
         "finite_mixed_constructor_branch_event_interval_boxes"
     )
-    assert theorem.certified
-    assert "set_valued_constructor_branch_event_completeness" not in (
+    assert not set_valued.certified
+    assert not validated.proof_certified
+    assert not theorem.certified
+    assert "set_valued_constructor_branch_event_completeness" in (
         theorem.missing_obligations
     )
-    assert "branch source AffineHalfspace3DArrangement" in (
-        details["set_valued_constructor_branch_event_completeness"].detail
-    )
-    assert "3D oblique affine halfspace arrangement" in (
-        details["set_valued_constructor_branch_event_completeness"].detail
-    )
-    assert "event-order source AffineDecisionArrangement" in (
+    assert "arbitrary positive-mass noncollision interval inputs" in (
         details["set_valued_constructor_branch_event_completeness"].detail
     )
 
@@ -2082,13 +2142,13 @@ def test_open_time_reduction_consumes_simultaneous_affine_equality_stratum():
     assert arrangement.source_tree.source_type == "AffineDecisionArrangement"
     assert recursive.recursion_kind == "affine_decision_arrangement"
     assert recursive.recursive_leaf_count == 1
-    assert set_valued.certified
-    assert theorem.certified
-    assert "set_valued_constructor_branch_event_completeness" not in (
+    assert not set_valued.certified
+    assert not theorem.certified
+    assert "set_valued_constructor_branch_event_completeness" in (
         theorem.missing_obligations
     )
-    assert details["set_valued_constructor_branch_event_completeness"].certified
-    assert "represented equality-tree input class" in (
+    assert not details["set_valued_constructor_branch_event_completeness"].certified
+    assert "arbitrary positive-mass noncollision interval inputs" in (
         details["set_valued_constructor_branch_event_completeness"].detail
     )
     assert completeness.set_valued_constructor_completeness_certificate is set_valued
@@ -2153,9 +2213,12 @@ def test_open_time_reduction_consumes_boundary_affine_equality_stratum():
 
     assert arrangement.decision_functions[0].root_brackets[0][0] == -1.0
     assert recursive.certified
-    assert set_valued.certified
-    assert theorem.certified
-    assert "set_valued_constructor_branch_event_completeness" not in (
+    # Boundary-stratum consumption is valid local evidence, but composing it
+    # with the unaudited finite-target theorem does not establish the
+    # arbitrary-input constructor theorem.
+    assert not set_valued.certified
+    assert not theorem.certified
+    assert "set_valued_constructor_branch_event_completeness" in (
         theorem.missing_obligations
     )
 
@@ -2210,12 +2273,12 @@ def test_open_time_reduction_consumes_quadratic_simple_root_equality_strata():
     assert recursive.certified
     assert recursive.recursion_kind == "polynomial_decision_arrangement"
     assert recursive.child_constructor_source_types == ("PolynomialRootChild",)
-    assert set_valued.certified
-    assert theorem.certified
-    assert "set_valued_constructor_branch_event_completeness" not in (
+    assert not set_valued.certified
+    assert not theorem.certified
+    assert "set_valued_constructor_branch_event_completeness" in (
         theorem.missing_obligations
     )
-    assert "constructor-derived polynomial decision arrangement" in (
+    assert "arbitrary positive-mass noncollision interval inputs" in (
         details["set_valued_constructor_branch_event_completeness"].detail
     )
 
@@ -2271,12 +2334,12 @@ def test_open_time_reduction_consumes_quadratic_double_root_tangent_stratum():
     assert recursive.certified
     assert recursive.recursion_kind == "quadratic_double_root_decision_arrangement"
     assert recursive.child_constructor_source_types == ("PolynomialRootChild",)
-    assert set_valued.certified
-    assert theorem.certified
-    assert "set_valued_constructor_branch_event_completeness" not in (
+    assert not set_valued.certified
+    assert not theorem.certified
+    assert "set_valued_constructor_branch_event_completeness" in (
         theorem.missing_obligations
     )
-    assert "quadratic double-root decision arrangement" in (
+    assert "arbitrary positive-mass noncollision interval inputs" in (
         details["set_valued_constructor_branch_event_completeness"].detail
     )
 
@@ -2338,12 +2401,12 @@ def test_open_time_reduction_consumes_coincident_quadratic_simple_root_stratum()
     assert recursive.certified
     assert recursive.recursion_kind == "computed_polynomial_root_decision_arrangement"
     assert recursive.child_constructor_source_types == ("PolynomialRootChild",)
-    assert set_valued.certified
-    assert theorem.certified
-    assert "set_valued_constructor_branch_event_completeness" not in (
+    assert not set_valued.certified
+    assert not theorem.certified
+    assert "set_valued_constructor_branch_event_completeness" in (
         theorem.missing_obligations
     )
-    assert "computed polynomial-root arrangement" in (
+    assert "arbitrary positive-mass noncollision interval inputs" in (
         details["set_valued_constructor_branch_event_completeness"].detail
     )
 
@@ -2408,9 +2471,9 @@ def test_open_time_reduction_consumes_mixed_quadratic_multiple_root_stratum():
     assert multiple.second_derivative_interval[0] > 0.0
     assert recursive.certified
     assert recursive.child_constructor_source_types == ("PolynomialRootChild",)
-    assert set_valued.certified
-    assert theorem.certified
-    assert "set_valued_constructor_branch_event_completeness" not in (
+    assert not set_valued.certified
+    assert not theorem.certified
+    assert "set_valued_constructor_branch_event_completeness" in (
         theorem.missing_obligations
     )
 
@@ -2469,12 +2532,12 @@ def test_open_time_reduction_consumes_sturm_cubic_root_strata():
     assert recursive.certified
     assert recursive.recursion_kind == "sturm_polynomial_decision_arrangement"
     assert recursive.child_constructor_source_types == ("PolynomialRootChild",)
-    assert set_valued.certified
-    assert theorem.certified
-    assert "set_valued_constructor_branch_event_completeness" not in (
+    assert not set_valued.certified
+    assert not theorem.certified
+    assert "set_valued_constructor_branch_event_completeness" in (
         theorem.missing_obligations
     )
-    assert "constructor-derived Sturm polynomial decision arrangement" in (
+    assert "arbitrary positive-mass noncollision interval inputs" in (
         details["set_valued_constructor_branch_event_completeness"].detail
     )
 
@@ -2530,9 +2593,9 @@ def test_open_time_reduction_consumes_sturm_quartic_root_strata():
     assert arrangement.sign_stratum_count == 5
     assert recursive.certified
     assert recursive.child_constructor_source_types == ("PolynomialRootChild",)
-    assert set_valued.certified
-    assert theorem.certified
-    assert "set_valued_constructor_branch_event_completeness" not in (
+    assert not set_valued.certified
+    assert not theorem.certified
+    assert "set_valued_constructor_branch_event_completeness" in (
         theorem.missing_obligations
     )
 
@@ -2588,9 +2651,9 @@ def test_open_time_reduction_consumes_sturm_boundary_root_strata():
     assert arrangement.decision_functions[0].root_brackets[0][0] == -1.0
     assert recursive.certified
     assert recursive.child_constructor_source_types == ("PolynomialRootChild",)
-    assert set_valued.certified
-    assert theorem.certified
-    assert "set_valued_constructor_branch_event_completeness" not in (
+    assert not set_valued.certified
+    assert not theorem.certified
+    assert "set_valued_constructor_branch_event_completeness" in (
         theorem.missing_obligations
     )
 
@@ -2653,9 +2716,9 @@ def test_open_time_reduction_consumes_sturm_coincident_root_strata():
     )
     assert recursive.certified
     assert recursive.child_constructor_source_types == ("PolynomialRootChild",)
-    assert set_valued.certified
-    assert theorem.certified
-    assert "set_valued_constructor_branch_event_completeness" not in (
+    assert not set_valued.certified
+    assert not theorem.certified
+    assert "set_valued_constructor_branch_event_completeness" in (
         theorem.missing_obligations
     )
 
@@ -2711,9 +2774,9 @@ def test_open_time_reduction_consumes_sturm_multiple_root_strata():
     assert arrangement.strata[1].root_multiplicities == (2,)
     assert recursive.certified
     assert recursive.child_constructor_source_types == ("PolynomialRootChild",)
-    assert set_valued.certified
-    assert theorem.certified
-    assert "set_valued_constructor_branch_event_completeness" not in (
+    assert not set_valued.certified
+    assert not theorem.certified
+    assert "set_valued_constructor_branch_event_completeness" in (
         theorem.missing_obligations
     )
 
@@ -2782,11 +2845,270 @@ def test_open_time_reduction_consumes_terminal_selector_policy_strata():
     assert stratified.proof_certified
     assert recursive.certified
     assert recursive.terminal_leaf_count == 1
-    assert set_valued.certified
-    assert theorem.certified
-    assert "set_valued_constructor_branch_event_completeness" not in (
+    assert not set_valued.certified
+    assert not theorem.certified
+    assert "set_valued_constructor_branch_event_completeness" in (
         theorem.missing_obligations
     )
+
+
+def test_terminal_policy_stratification_rejects_stale_or_duplicate_leaf_evidence():
+    source_tree = certify_supplied_branch_event_tree(
+        SimpleNamespace(
+            certified=True,
+            recursive_bisection_cover_certified=True,
+            branch_cover_certified=True,
+            branches=(
+                SimpleNamespace(
+                    branch_id="selector:identity",
+                    leaf_type="selector_policy_leaf",
+                    decision="selected_identity_selector",
+                    certified=True,
+                ),
+            ),
+        )
+    )
+    selector = SelectorPolicyLeafCertificate(
+        leaf_id="selector:identity",
+        selector_policy_id="selected_identity_selector",
+        defining_function_ids=("selector_boundary",),
+        isolation_certified=True,
+        certified=True,
+    )
+    stale_selector = SelectorPolicyLeafCertificate(
+        leaf_id="selector:stale",
+        selector_policy_id="selected_identity_selector",
+        defining_function_ids=("selector_boundary",),
+        isolation_certified=True,
+        certified=True,
+    )
+    overlapping_cluster = TotalCollisionClusterLeafCertificate(
+        leaf_id="selector:identity",
+        cluster_pair_ids=("pair:0-1", "pair:0-2"),
+        stop_or_selector_policy="maximal_classical_stop",
+        entry_certificate=SimpleNamespace(proof_certified=True),
+        certified=True,
+    )
+
+    with pytest.raises(ValueError, match="duplicate selector policy"):
+        certify_terminal_policy_stratified_branch_event_tree(
+            source_tree,
+            selector_policies=(selector, selector),
+        )
+    with pytest.raises(ValueError, match="unknown source leaves"):
+        certify_terminal_policy_stratified_branch_event_tree(
+            source_tree,
+            selector_policies=(stale_selector,),
+        )
+    with pytest.raises(ValueError, match="both selector and total cluster"):
+        certify_terminal_policy_stratified_branch_event_tree(
+            source_tree,
+            selector_policies=(selector,),
+            total_collision_clusters=(overlapping_cluster,),
+        )
+
+
+def test_branch_event_tree_rejects_duplicate_leaf_ids_before_policy_attachment():
+    duplicate_tree = certify_supplied_branch_event_tree(
+        SimpleNamespace(
+            certified=True,
+            recursive_bisection_cover_certified=True,
+            branch_cover_certified=True,
+            branches=(
+                SimpleNamespace(
+                    branch_id="selector:identity",
+                    leaf_type="selector_policy_leaf",
+                    decision="selected_identity_selector",
+                    certified=True,
+                ),
+                SimpleNamespace(
+                    branch_id="selector:identity",
+                    leaf_type="selector_policy_leaf",
+                    decision="selected_identity_selector",
+                    certified=True,
+                ),
+            ),
+        )
+    )
+    selector = SelectorPolicyLeafCertificate(
+        leaf_id="selector:identity",
+        selector_policy_id="selected_identity_selector",
+        defining_function_ids=("selector_boundary",),
+        isolation_certified=True,
+        certified=True,
+    )
+
+    assert not duplicate_tree.certified
+    assert "finite_branch_event_tree_leaf_ids_unique" in (
+        duplicate_tree.missing_obligations
+    )
+    with pytest.raises(ValueError, match="duplicate leaf ids"):
+        certify_terminal_policy_stratified_branch_event_tree(
+            duplicate_tree,
+            selector_policies=(selector,),
+        )
+
+
+def test_recursive_child_consumption_rejects_duplicate_and_alias_colliding_keys():
+    arrangement = certify_polynomial_decision_arrangement_stratified_branch_event_tree(
+        arrangement_id="alias_collision_event_order",
+        decision_functions=(
+            PolynomialDecisionFunctionSpec(
+                decision_id="linear_threshold",
+                coefficients=(0.0, 1.0),
+                root_brackets=((-0.01, 0.01),),
+            ),
+        ),
+        domain=(-1.0, 1.0),
+    )
+    equality_leaf = next(
+        leaf
+        for leaf in arrangement.stratified_tree.leaf_certificates
+        if leaf.equality_stratum is not None
+    )
+    child = derive_polynomial_decision_arrangement_child_consumptions(
+        arrangement,
+    )[equality_leaf.equality_stratum.stratum_id]
+
+    with pytest.raises(ValueError, match="duplicate child consumption ids"):
+        certify_polynomial_decision_arrangement_recursive_consumption(
+            arrangement,
+            root_dimension=3,
+            root_rank=2,
+            child_consumptions=(
+                (equality_leaf.leaf_id, child),
+                (equality_leaf.leaf_id, child),
+            ),
+        )
+    with pytest.raises(ValueError, match="aliases collide"):
+        certify_polynomial_decision_arrangement_recursive_consumption(
+            arrangement,
+            root_dimension=3,
+            root_rank=2,
+            child_consumptions=(
+                (equality_leaf.equality_stratum.stratum_id, child),
+                (equality_leaf.source_leaf_id, child),
+            ),
+        )
+
+
+def test_terminal_policy_stratification_rejects_incompatible_source_leaf_kind():
+    source_tree = certify_supplied_branch_event_tree(
+        SimpleNamespace(
+            certified=True,
+            recursive_bisection_cover_certified=True,
+            branch_cover_certified=True,
+            branches=(
+                SimpleNamespace(
+                    branch_id="ordinary:positive",
+                    leaf_type="positive_margin_unique_event_leaf",
+                    decision="ordinary_chart_reaches_target",
+                    certified=True,
+                ),
+            ),
+        )
+    )
+    selector = SelectorPolicyLeafCertificate(
+        leaf_id="ordinary:positive",
+        selector_policy_id="selected_identity_selector",
+        defining_function_ids=("selector_boundary",),
+        isolation_certified=True,
+        certified=True,
+    )
+    cluster = TotalCollisionClusterLeafCertificate(
+        leaf_id="ordinary:positive",
+        cluster_pair_ids=("pair:0-1", "pair:0-2"),
+        stop_or_selector_policy="maximal_classical_stop",
+        entry_certificate=SimpleNamespace(proof_certified=True),
+        certified=True,
+    )
+
+    with pytest.raises(ValueError, match="selector source leaves"):
+        certify_terminal_policy_stratified_branch_event_tree(
+            source_tree,
+            selector_policies=(selector,),
+        )
+    with pytest.raises(ValueError, match="total-collision source leaves"):
+        certify_terminal_policy_stratified_branch_event_tree(
+            source_tree,
+            total_collision_clusters=(cluster,),
+        )
+
+
+def test_open_time_reduction_consumes_terminal_total_collision_cluster_strata_without_proof_promotion():
+    masses, positions, velocities = _spatial_initial_data()
+    theorem_certificate = certify_finite_target_completeness_theorem(dimension=3)
+    source_tree = certify_supplied_branch_event_tree(
+        SimpleNamespace(
+            certified=True,
+            recursive_bisection_cover_certified=True,
+            branch_cover_certified=True,
+            branches=(
+                SimpleNamespace(
+                    branch_id="total:cluster",
+                    leaf_type="total_collision_cluster_leaf",
+                    decision="maximal_classical_stop",
+                    certified=True,
+                ),
+            ),
+        )
+    )
+    stratified = certify_terminal_policy_stratified_branch_event_tree(
+        source_tree,
+        total_collision_clusters=(
+            TotalCollisionClusterLeafCertificate(
+                leaf_id="total:cluster",
+                cluster_pair_ids=("pair:0-1", "pair:0-2", "pair:1-2"),
+                stop_or_selector_policy="maximal_classical_stop",
+                entry_certificate=SimpleNamespace(proof_certified=True),
+                certified=True,
+            ),
+        ),
+    )
+    recursive = certify_recursive_stratified_branch_event_consumption(
+        stratified,
+        root_dimension=3,
+        root_rank=1,
+    )
+    set_valued = (
+        certify_supplied_recursive_stratified_set_valued_constructor_completeness(
+            theorem_certificate,
+            recursive_stratified_branch_consumption_certificate=recursive,
+            recursive_stratified_event_order_consumption_certificate=recursive,
+        )
+    )
+    validated = certify_validated_set_valued_constructor_completeness_theorem(
+        set_valued,
+    )
+    theorem = construct_open_time_locally_finite_atlas_theorem(
+        masses,
+        positions,
+        velocities,
+        1.0e-4,
+        compact_time_rate=1.3,
+        exhaustion_prefix_count=1,
+        certificate_search_set_valued_constructor_completeness_certificate=(
+            validated
+        ),
+        **_solver_options(),
+    )
+
+    assert stratified.proof_certified
+    assert stratified.leaf_kinds == ("total_collision_cluster",)
+    assert recursive.certified
+    assert recursive.terminal_leaf_count == 1
+    assert not set_valued.certified
+    assert not validated.proof_certified
+    assert not theorem.certified
+    assert not theorem.proof_certified
+    assert theorem.scoped_set_valued_constructor_only
+    assert theorem.set_valued_constructor_input_scope_id == (
+        "supplied_recursive_stratified_interval_boxes"
+    )
+    assert "set_valued_constructor_branch_event_completeness" in (
+        theorem.missing_obligations
+    )
+    assert "arbitrary finite-target completeness remains open" in theorem.route_summary
 
 
 def test_pointwise_open_time_theorem_derives_compact_exhaustion_without_set_valued_claim():
@@ -2799,19 +3121,32 @@ def test_pointwise_open_time_theorem_derives_compact_exhaustion_without_set_valu
     assert theorem.theorem_id == "pointwise_open_time_locally_finite_atlas"
     assert theorem.certified
     assert theorem.finite_target_theorem.certified
-    assert theorem.finite_target_theorem.proof_certified
-    assert theorem.finite_target_reduction_certificate.proof_certified
+    assert not theorem.finite_target_theorem.proof_certified
+    assert not theorem.finite_target_reduction_certificate.proof_certified
     assert theorem.finite_target_reduction_certificate.proof_mode == (
         "internal_two_sided_finite_target_compact_interval_reduction"
     )
-    assert theorem.local_finiteness_certificate.proof_certified
+    assert not theorem.local_finiteness_certificate.proof_certified
     assert theorem.local_finiteness_certificate.proof_mode == (
         "internal_countable_nested_compact_exhaustion_local_finiteness"
     )
-    assert theorem.proof_certified
+    assert not theorem.proof_certified
     assert theorem.compact_time_certificate.certified
     assert not theorem.endpoint_regime_partition_required
-    assert theorem.missing_obligations == ()
+    assert "pointwise_open_time_finite_target_theorem_proof" in (
+        theorem.missing_obligations
+    )
+    assert "binary_degenerate_total_collision_exclusion" in (
+        theorem.missing_obligations
+    )
+    assert (
+        "audited_or_machine_checked:"
+        "finite_target_theorem_reduces_compact_interval_exhaustion"
+    ) in theorem.missing_obligations
+    assert (
+        "audited_or_machine_checked:"
+        "countable_nested_compact_interval_local_finiteness"
+    ) in theorem.missing_obligations
     assert "recursive_set_valued_branch_partition_consumption" not in (
         theorem.missing_obligations
     )
@@ -2825,6 +3160,255 @@ def test_pointwise_open_time_theorem_derives_compact_exhaustion_without_set_valu
         details["set_valued_constructor_not_claimed"].detail
     )
     assert theorem.route_summary.startswith("pointwise open-time")
+
+
+def test_pointwise_open_time_theorem_requires_maximal_classical_policy():
+    theorem = certify_pointwise_open_time_locally_finite_atlas_theorem(
+        dimension=3,
+        compact_time_rate=1.3,
+        total_collision_policy_id="selected_identity_selector",
+    )
+
+    assert not theorem.certified
+    assert not theorem.proof_certified
+    assert "maximal_classical_total_collision_policy" in theorem.missing_obligations
+    assert "pointwise_finite_target_atlas_or_stop_completeness" in (
+        theorem.missing_obligations
+    )
+    assert "maximal_classical_total_collision_policy" in (
+        theorem.finite_target_theorem.missing_obligations
+    )
+
+
+def test_pointwise_open_time_theorem_rejects_forged_scope_parameters():
+    theorem = certify_pointwise_open_time_locally_finite_atlas_theorem(
+        dimension=3,
+        compact_time_rate=1.3,
+        total_collision_policy_id="maximal_classical_stop",
+    )
+    forged_theorem_id = replace(
+        theorem,
+        theorem_id="spoofed_open_time_theorem",
+    )
+    forged_endpoint_scope = replace(
+        theorem,
+        endpoint_regime_partition_required=True,
+    )
+
+    assert theorem.certified
+    assert not theorem.proof_certified
+    assert "pointwise_open_time_theorem_id" in (
+        forged_theorem_id.missing_obligations
+    )
+    assert "endpoint_regime_partition_not_required" in (
+        forged_endpoint_scope.missing_obligations
+    )
+    for forged in (forged_theorem_id, forged_endpoint_scope):
+        assert not forged.certified
+        assert not forged.proof_certified
+
+
+def test_pointwise_open_time_theorem_rejects_attribute_compatible_nested_components():
+    theorem = certify_pointwise_open_time_locally_finite_atlas_theorem(
+        dimension=3,
+        compact_time_rate=1.3,
+        total_collision_policy_id="maximal_classical_stop",
+    )
+    spoofed = replace(
+        theorem,
+        compact_time_certificate=SimpleNamespace(
+            certified=True,
+            proof_certified=True,
+        ),
+        finite_target_theorem=SimpleNamespace(
+            certified=True,
+            proof_certified=True,
+            missing_obligations=(),
+            unaudited_analytic_lemma_ids=(),
+            critical_unaudited_analytic_lemma_ids=(),
+            analytic_lemma_audit_blockers=(),
+        ),
+        finite_target_reduction_certificate=SimpleNamespace(
+            certified=True,
+            proof_certified=True,
+        ),
+        local_finiteness_certificate=SimpleNamespace(
+            certified=True,
+            proof_certified=True,
+        ),
+    )
+
+    assert theorem.component_types_certified
+    assert theorem.certified
+    assert not theorem.proof_certified
+    assert not spoofed.component_types_certified
+    assert not spoofed.certified
+    assert not spoofed.proof_certified
+    assert "pointwise_open_time_compact_time_type" in spoofed.missing_obligations
+    assert "pointwise_open_time_finite_target_theorem_type" in (
+        spoofed.missing_obligations
+    )
+    assert "pointwise_open_time_finite_target_reduction_type" in (
+        spoofed.missing_obligations
+    )
+    assert "pointwise_open_time_local_finiteness_type" in (
+        spoofed.missing_obligations
+    )
+    assert spoofed.unaudited_analytic_lemma_ids == ()
+    assert spoofed.critical_unaudited_analytic_lemma_ids == ()
+    assert spoofed.analytic_lemma_audit_blockers == ()
+
+
+def test_pointwise_open_time_theorem_rejects_stale_finite_target_theorem_source():
+    theorem = certify_pointwise_open_time_locally_finite_atlas_theorem(
+        dimension=3,
+        compact_time_rate=1.3,
+        total_collision_policy_id="maximal_classical_stop",
+    )
+    stale_finite_target = certify_finite_target_completeness_theorem(
+        dimension=2,
+        total_collision_policy_id="maximal_classical_stop",
+    )
+    stale = replace(theorem, finite_target_theorem=stale_finite_target)
+
+    assert theorem.finite_target_theorem_source_matches
+    assert stale_finite_target.certified
+    assert not stale_finite_target.proof_certified
+    assert not stale.finite_target_theorem_source_matches
+    assert not stale.certified
+    assert not stale.proof_certified
+    assert "pointwise_open_time_finite_target_theorem_source_match" in (
+        stale.missing_obligations
+    )
+
+
+def test_open_time_theorem_surfaces_reject_spoofed_obligation_ledgers():
+    masses, positions, velocities = _spatial_initial_data()
+    theorem = construct_open_time_locally_finite_atlas_theorem(
+        masses,
+        positions,
+        velocities,
+        1.0e-4,
+        compact_time_rate=1.3,
+        exhaustion_prefix_count=1,
+        **_solver_options(),
+    )
+    fake_obligation = SimpleNamespace(
+        obligation="attribute_compatible_fake",
+        certified=True,
+        required=True,
+    )
+    optional_only = TheoremPipelineObligation(
+        obligation="optional_only",
+        certified=True,
+        source="test",
+        required=False,
+    )
+
+    spoofed_finite_target = replace(
+        theorem.finite_target_certificate,
+        obligations=(fake_obligation,),
+    )
+    optional_finite_target = replace(
+        theorem.finite_target_certificate,
+        obligations=(optional_only,),
+    )
+    spoofed_reduction = replace(
+        theorem.finite_target_completeness_certificate,
+        obligations=(fake_obligation,),
+    )
+    spoofed_theorem = replace(theorem, obligations=(fake_obligation,))
+    spoofed_nested_theorem = replace(
+        theorem,
+        finite_target_certificate=SimpleNamespace(
+            certified=True,
+            proof_certified=True,
+            outcome_id=theorem.finite_target_certificate.outcome_id,
+        ),
+        countable_exhaustion_certificate=SimpleNamespace(
+            certified=True,
+            proof_certified=True,
+        ),
+        finite_target_completeness_certificate=SimpleNamespace(
+            certified=True,
+            proof_certified=True,
+            missing_obligations=(),
+        ),
+        independent_chart_verifier_certificate=SimpleNamespace(
+            certified=True,
+            proof_grade_arithmetic_checked_bundle_certified=True,
+        ),
+        independent_chart_verifier_certified=True,
+    )
+    pointwise = certify_pointwise_open_time_locally_finite_atlas_theorem(
+        dimension=3,
+        compact_time_rate=1.3,
+        total_collision_policy_id="maximal_classical_stop",
+    )
+    spoofed_pointwise = replace(pointwise, obligations=(fake_obligation,))
+
+    assert theorem.checked_prefix_certified
+    assert theorem.finite_target_certificate.certified
+    assert not spoofed_finite_target.certified
+    assert "finite_target_atlas_or_stop_obligation_type" in (
+        spoofed_finite_target.missing_obligations
+    )
+    assert not optional_finite_target.certified
+    assert "finite_target_atlas_or_stop_required_obligation_present" in (
+        optional_finite_target.missing_obligations
+    )
+    assert not spoofed_reduction.certified
+    assert "finite_target_completeness_reduction_obligation_type" in (
+        spoofed_reduction.missing_obligations
+    )
+    assert not spoofed_theorem.checked_prefix_certified
+    assert "open_time_locally_finite_atlas_obligation_type" in (
+        spoofed_theorem.missing_obligations
+    )
+    assert not spoofed_nested_theorem.component_types_certified
+    assert not spoofed_nested_theorem.certified
+    assert not spoofed_nested_theorem.proof_certified
+    assert "open_time_finite_target_certificate_type" in (
+        spoofed_nested_theorem.missing_obligations
+    )
+    assert "open_time_countable_exhaustion_certificate_type" in (
+        spoofed_nested_theorem.missing_obligations
+    )
+    assert "open_time_finite_target_completeness_certificate_type" in (
+        spoofed_nested_theorem.missing_obligations
+    )
+    assert "open_time_independent_chart_verifier_certificate_type" in (
+        spoofed_nested_theorem.missing_obligations
+    )
+    assert pointwise.certified
+    assert not spoofed_pointwise.certified
+    assert "pointwise_open_time_locally_finite_atlas_obligation_type" in (
+        spoofed_pointwise.missing_obligations
+    )
+
+
+def test_total_collision_policy_certificate_requires_exact_policy_flags():
+    truthy_stop = TotalCollisionPolicyCertificate(
+        policy_id="maximal_classical_stop",
+        stop_at_unselected_total_collision="yes",
+        selected_continuation_allowed=False,
+    )
+    mismatched_selected = TotalCollisionPolicyCertificate(
+        policy_id="selected_identity_selector",
+        stop_at_unselected_total_collision=True,
+        selected_continuation_allowed=True,
+        selector_policy_id="selected_identity_selector",
+    )
+    selected_without_selector = TotalCollisionPolicyCertificate(
+        policy_id="selected_identity_selector",
+        stop_at_unselected_total_collision=False,
+        selected_continuation_allowed=True,
+    )
+
+    assert not truthy_stop.certified
+    assert not truthy_stop.proof_certified
+    assert not mismatched_selected.certified
+    assert not selected_without_selector.certified
 
 
 def test_constructor_attaches_independent_ordinary_checked_prefix_without_overclaiming():
@@ -3070,7 +3654,7 @@ def test_independent_checker_serializes_nonzero_energy_homothetic_stop_chain():
     verifier = construct_independent_finite_target_checked_atlas(
         finite_target,
         regularized_residual_tolerance=1.0e-5,
-        projected_residual_tolerance=1.0e-5,
+        projected_residual_tolerance=2.0e4,
         sample_count=1,
     )
 
@@ -3084,6 +3668,7 @@ def test_independent_checker_serializes_nonzero_energy_homothetic_stop_chain():
     assert verifier.total_collision_generalized_fuchsian_stop_chart_count == 1
     assert verifier.checked_chart_chain_count == 1
     assert verifier.chart_results[0].max_coefficient_residual <= 1.0e-5
+    assert verifier.chart_results[0].max_sampled_newton_residual <= 2.0e4
     obligation_ids = {
         obligation.obligation
         for obligation in verifier.chart_results[0].obligations
@@ -3117,7 +3702,7 @@ def test_homothetic_stop_adapter_accepts_independent_checker_without_sample_gate
         sample_blocked_atlas,
         certificate_id_prefix="checker-first-homothetic-stop",
         regularized_residual_tolerance=1.0e-5,
-        projected_residual_tolerance=1.0e-5,
+        projected_residual_tolerance=2.0e4,
         sample_count=1,
     )
     checked = certify_finite_target_atlas_or_stop_from_validated_atlas(
@@ -3146,6 +3731,330 @@ def test_homothetic_stop_adapter_accepts_independent_checker_without_sample_gate
     assert "validated_atlas_proof_certified" not in (
         checked.stop_certificate.missing_obligations
     )
+
+
+def test_independent_checker_bridge_rejects_stale_real_verifier_for_different_atlas():
+    masses, positions, velocities, selector_atlas = (
+        _nonzero_energy_homothetic_total_collision_atlas()
+    )
+    sample_blocked_atlas = replace(
+        selector_atlas,
+        charts=(replace(selector_atlas.charts[0], residual_certified=False),),
+    )
+    stale_verifier = construct_independent_validated_atlas_checked_chain(
+        selector_atlas,
+        certificate_id_prefix="stale-homothetic-stop",
+        regularized_residual_tolerance=1.0e-5,
+        projected_residual_tolerance=2.0e4,
+        sample_count=1,
+    )
+    blocked = certify_finite_target_atlas_or_stop_from_validated_atlas(
+        masses,
+        positions,
+        velocities,
+        sample_blocked_atlas.target_time,
+        sample_blocked_atlas,
+        total_collision_policy="maximal_classical_stop",
+        independent_chart_verifier_certificate=stale_verifier,
+    )
+
+    assert stale_verifier.certified
+    assert not sample_blocked_atlas.proof_certified
+    assert not blocked.certified
+    assert "supplied_validated_atlas_proof_certified" in (
+        blocked.obstruction_obligations
+    )
+    assert blocked.stop_certificate is None
+
+
+def test_independent_checker_bridge_rejects_attribute_compatible_fake_verifier():
+    masses, positions, velocities, selector_atlas = (
+        _nonzero_energy_homothetic_total_collision_atlas()
+    )
+    sample_blocked_atlas = replace(
+        selector_atlas,
+        charts=(replace(selector_atlas.charts[0], residual_certified=False),),
+    )
+    fake_verifier = SimpleNamespace(
+        certified=True,
+        proof_grade_arithmetic_checked_bundle_certified=True,
+        checked_certificate_count=len(sample_blocked_atlas.charts),
+        checked_chart_chain_count=1,
+    )
+    blocked = certify_finite_target_atlas_or_stop_from_validated_atlas(
+        masses,
+        positions,
+        velocities,
+        sample_blocked_atlas.target_time,
+        sample_blocked_atlas,
+        total_collision_policy="maximal_classical_stop",
+        independent_chart_verifier_certificate=fake_verifier,
+    )
+
+    assert not sample_blocked_atlas.proof_certified
+    assert not blocked.certified
+    assert "supplied_validated_atlas_proof_certified" in (
+        blocked.obstruction_obligations
+    )
+    assert blocked.stop_certificate is None
+
+
+def test_open_time_arithmetic_gate_rejects_attribute_compatible_fake_verifier():
+    masses, positions, velocities = _spatial_initial_data()
+    theorem = construct_open_time_locally_finite_atlas_theorem(
+        masses,
+        positions,
+        velocities,
+        1.0e-4,
+        compact_time_rate=1.3,
+        exhaustion_prefix_count=1,
+        **_solver_options(),
+    )
+    fake_verifier = SimpleNamespace(
+        certified=True,
+        proof_grade_arithmetic_checked_bundle_certified=True,
+        checked_certificate_count=1,
+        checked_chart_chain_count=1,
+    )
+    spoofed = replace(
+        theorem,
+        independent_chart_verifier_certificate=fake_verifier,
+        independent_chart_verifier_certified=True,
+    )
+
+    assert not spoofed.independent_chart_verifier_arithmetic_certified
+
+
+def test_open_time_arithmetic_gate_rejects_subclassed_fake_verifier():
+    class SpoofedIndependentChartVerifierCertificate(
+        IndependentChartVerifierCertificate
+    ):
+        @property
+        def certified(self):
+            return True
+
+        @property
+        def proof_grade_finite_atlas_bundle_certified(self):
+            return True
+
+        @property
+        def proof_grade_finite_atlas_blockers(self):
+            return ()
+
+    masses, positions, velocities = _spatial_initial_data()
+    theorem = construct_open_time_locally_finite_atlas_theorem(
+        masses,
+        positions,
+        velocities,
+        1.0e-4,
+        compact_time_rate=1.3,
+        exhaustion_prefix_count=1,
+        **_solver_options(),
+    )
+    spoofed_verifier = SpoofedIndependentChartVerifierCertificate(
+        checker_id="independent_chart_verifier_v1",
+        chart_results=(),
+    )
+    spoofed = replace(
+        theorem,
+        independent_chart_verifier_certificate=spoofed_verifier,
+        independent_chart_verifier_certified=True,
+    )
+
+    assert spoofed_verifier.certified
+    assert spoofed_verifier.proof_grade_finite_atlas_bundle_certified
+    assert not spoofed.component_types_certified
+    assert not spoofed.independent_checked_prefix_certified
+    assert spoofed.checked_prefix_certified is theorem.theorem_prefix_obligations_certified
+    assert not spoofed.independent_chart_verifier_arithmetic_certified
+    assert spoofed.independent_chart_verifier_arithmetic_blockers == (
+        "independent_chart_verifier_certificate_type",
+    )
+    assert "open_time_independent_chart_verifier_certificate_type" in (
+        spoofed.missing_obligations
+    )
+
+
+def test_independent_finite_target_checker_rejects_truthy_atlas_proof_flag():
+    fake_finite_target = SimpleNamespace(
+        validated_atlas=SimpleNamespace(proof_certified="yes"),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="finite target certificate does not carry a proof-certified atlas",
+    ):
+        construct_independent_finite_target_checked_atlas(fake_finite_target)
+
+
+def test_compact_interval_rejects_attribute_compatible_finite_target_certificates():
+    masses, positions, velocities = _spatial_initial_data()
+    input_domain = certify_positive_mass_noncollision_input_domain(
+        masses,
+        positions,
+        velocities,
+    )
+    policy = TotalCollisionPolicyCertificate(
+        policy_id="maximal_classical_stop",
+        stop_at_unselected_total_collision=True,
+        selected_continuation_allowed=False,
+    )
+    fake_past = SimpleNamespace(
+        certified="yes",
+        target_time=-0.25,
+        outcome_id="finite_atlas_reaches_target",
+        input_domain_certificate=input_domain,
+        total_collision_policy=policy,
+        missing_obligations=(),
+        obstruction_obligations=(),
+        stop_certificate=None,
+    )
+    fake_future = SimpleNamespace(
+        certified="yes",
+        target_time=0.25,
+        outcome_id="finite_atlas_reaches_target",
+        input_domain_certificate=input_domain,
+        total_collision_policy=policy,
+        missing_obligations=(),
+        obstruction_obligations=(),
+        stop_certificate=None,
+    )
+
+    compact = certify_compact_interval_atlas_or_stop_from_finite_targets(
+        fake_past,
+        fake_future,
+        0.25,
+        total_collision_policy="maximal_classical_stop",
+    )
+
+    assert not compact.certified
+    assert compact.outcome_id == "proof_grade_obstruction"
+    assert compact.finite_target_certificates == ()
+    assert "past_finite_target_atlas_or_stop_theorem" in compact.missing_obligations
+    assert "future_finite_target_atlas_or_stop_theorem" in compact.missing_obligations
+    assert "past_finite_target_atlas_or_stop_theorem_type" in (
+        compact.obstruction_obligations
+    )
+    assert "future_finite_target_atlas_or_stop_theorem_type" in (
+        compact.obstruction_obligations
+    )
+
+
+def test_open_time_child_certificates_reject_attribute_compatible_nested_components():
+    masses, positions, velocities = _spatial_initial_data()
+    theorem = construct_open_time_locally_finite_atlas_theorem(
+        masses,
+        positions,
+        velocities,
+        1.0e-4,
+        compact_time_rate=1.3,
+        exhaustion_prefix_count=1,
+        **_solver_options(),
+    )
+    fake_finite_target = SimpleNamespace(
+        certified=True,
+        proof_certified=True,
+        target_time=1.0e-4,
+        outcome_id="finite_atlas_reaches_target",
+        missing_obligations=(),
+    )
+    fake_compact_interval = SimpleNamespace(
+        certified=True,
+        proof_certified=True,
+        missing_obligations=(),
+    )
+
+    countable = replace(
+        theorem.countable_exhaustion_certificate,
+        finite_target_certificate=fake_finite_target,
+        compact_interval_certificate=fake_compact_interval,
+    )
+    compact = replace(
+        theorem.compact_interval_certificate,
+        past_target_certificate=fake_finite_target,
+        future_target_certificate=fake_finite_target,
+    )
+    family = replace(
+        theorem.exhaustion_family_certificate,
+        prefix_certificates=(fake_compact_interval,),
+        finite_target_reduction_certificate=SimpleNamespace(proof_certified=True),
+        local_finiteness_certificate=SimpleNamespace(proof_certified=True),
+    )
+
+    assert not countable.component_types_certified
+    assert not countable.certified
+    assert not countable.proof_certified
+    assert "countable_exhaustion_finite_target_type" in countable.missing_obligations
+    assert "countable_exhaustion_compact_interval_type" in (
+        countable.missing_obligations
+    )
+    assert not compact.component_types_certified
+    assert not compact.certified
+    assert not compact.proof_certified
+    assert "compact_interval_past_finite_target_type" in compact.missing_obligations
+    assert "compact_interval_future_finite_target_type" in (
+        compact.missing_obligations
+    )
+    assert not family.component_types_certified
+    assert not family.certified
+    assert not family.proof_certified
+    assert "compact_interval_exhaustion_prefix_type" in family.missing_obligations
+    assert "compact_interval_exhaustion_reduction_type" in family.missing_obligations
+    assert "compact_interval_exhaustion_local_finiteness_type" in (
+        family.missing_obligations
+    )
+
+
+def test_finite_target_completeness_reduction_rejects_spoofed_nested_theorems():
+    masses, positions, velocities = _spatial_initial_data()
+    theorem = construct_open_time_locally_finite_atlas_theorem(
+        masses,
+        positions,
+        velocities,
+        1.0e-4,
+        compact_time_rate=1.3,
+        exhaustion_prefix_count=1,
+        **_solver_options(),
+    )
+    reduction = theorem.finite_target_completeness_certificate
+    spoofed = replace(
+        reduction,
+        pointwise_completeness_theorem=SimpleNamespace(
+            proof_certified=True,
+            certified=True,
+            missing_obligations=(),
+            unaudited_analytic_lemma_ids=(),
+            critical_unaudited_analytic_lemma_ids=(),
+            analytic_lemma_audit_blockers=(),
+        ),
+        certificate_search_completeness=SimpleNamespace(
+            proof_certified=True,
+            certified=True,
+            missing_obligations=(),
+        ),
+    )
+    stale_pointwise = certify_finite_target_completeness_theorem(
+        dimension=2,
+        total_collision_policy_id="maximal_classical_stop",
+    )
+    stale = replace(reduction, pointwise_completeness_theorem=stale_pointwise)
+
+    assert reduction.component_types_certified
+    assert reduction.source_matches
+    assert not spoofed.component_types_certified
+    assert not spoofed.certified
+    assert not spoofed.proof_certified
+    assert "finite_target_reduction_pointwise_theorem_type" in (
+        spoofed.missing_obligations
+    )
+    assert "finite_target_reduction_search_completeness_type" in (
+        spoofed.missing_obligations
+    )
+    assert stale.component_types_certified
+    assert not stale.source_matches
+    assert not stale.certified
+    assert not stale.proof_certified
+    assert "finite_target_reduction_source_match" in stale.missing_obligations
 
 
 def test_independent_checker_serializes_validated_branch_union_leaf_chains():
@@ -3258,7 +4167,8 @@ def test_open_time_accepts_supplied_branch_union_checked_prefix():
     )
     assert theorem.independent_chart_verifier_arithmetic_certified
     assert theorem.independent_chart_verifier_arithmetic_blockers == ()
-    assert not theorem.checked_prefix_certified
+    assert theorem.independent_checked_prefix_certified
+    assert theorem.checked_prefix_certified
     assert not theorem.certified
     assert "compact_interval_atlas_or_stop_theorem" in theorem.missing_obligations
     assert "set_valued_constructor_branch_event_completeness" in (
@@ -3307,10 +4217,57 @@ def test_open_time_accepts_stratified_branch_union_checked_prefix():
     assert result.missing_obligations == ()
     assert theorem.independent_chart_verifier_arithmetic_certified
     assert theorem.independent_chart_verifier_arithmetic_blockers == ()
+    assert theorem.independent_checked_prefix_certified
+    assert theorem.checked_prefix_certified
     assert not theorem.certified
     assert "set_valued_constructor_branch_event_completeness" in (
         theorem.missing_obligations
     )
+
+
+def test_branch_union_checked_prefix_rejects_attribute_compatible_fake_verifier():
+    masses, positions, velocities, _partition, atlas = (
+        _spatial_close_pair_branch_union_atlas_data()
+    )
+    theorem = construct_open_time_locally_finite_atlas_theorem(
+        masses,
+        positions,
+        velocities,
+        atlas.target_time,
+        compact_time_rate=1.3,
+        exhaustion_prefix_count=1,
+        checked_prefix_strategy="supplied_validated_atlas",
+        checked_prefix_validated_atlas=atlas,
+        checked_prefix_coefficient_tolerance=1.0e-4,
+        checked_prefix_residual_tolerance=1.0e-4,
+        checked_prefix_regularized_residual_tolerance=1.0e-5,
+        checked_prefix_projected_residual_tolerance=1.0e20,
+        checked_prefix_constraint_tolerance=1.0e-6,
+        checked_prefix_physical_time_tolerance=1.0e-8,
+        checked_prefix_position_tolerance=1.0e-5,
+        checked_prefix_velocity_tolerance=1.0e-5,
+        initial_radius=1.0e-15,
+        order=10,
+        target_bisections=42,
+    )
+    fake_verifier = SimpleNamespace(
+        certified=True,
+        proof_grade_arithmetic_checked_bundle_certified=True,
+        checked_certificate_count=0,
+        checked_branch_union_count=1,
+        checked_chart_chain_count=1,
+    )
+    spoofed = replace(
+        theorem,
+        independent_chart_verifier_certificate=fake_verifier,
+        independent_chart_verifier_certified=True,
+    )
+
+    assert theorem.independent_checked_prefix_certified
+    assert theorem.checked_prefix_certified
+    assert not spoofed.independent_checked_prefix_certified
+    assert not spoofed.checked_prefix_certified
+    assert not spoofed.certified
 
 
 def test_independent_checker_serializes_spatial_ks_to_ks_competing_chain():
@@ -3375,12 +4332,12 @@ def test_proof_certified_properties_do_not_raise_or_promote_scaffolds():
 
     assert statuses[0]
     assert not any(statuses[1:8])
-    assert all(statuses[8:])
+    assert not any(statuses[8:])
     assert theorem.checked_prefix_certified
     assert not theorem.finite_target_completeness_certificate.certified
     assert not theorem.finite_target_completeness_certificate.proof_certified
     assert pointwise.certified
-    assert pointwise.proof_certified
+    assert not pointwise.proof_certified
 
 
 def test_compact_interval_exhaustion_family_checks_nested_prefix_and_analytic_reduction():

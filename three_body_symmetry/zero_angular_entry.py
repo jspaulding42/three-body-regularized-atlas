@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Mapping
+from typing import Any, Mapping
 import numpy as np
 
 from .dynamics import accelerations
@@ -21,6 +21,59 @@ class CubicTimeEntryObligation:
     certified: bool
     detail: str
     required: bool = True
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "certified", self.certified is True)
+        object.__setattr__(
+            self,
+            "required",
+            self.required if type(self.required) is bool else True,
+        )
+
+
+def _cubic_time_obligation_ledger_certified(
+    obligations: tuple[Any, ...],
+) -> bool:
+    return bool(
+        obligations
+        and any(
+            isinstance(obligation, CubicTimeEntryObligation)
+            and obligation.required
+            for obligation in obligations
+        )
+        and all(
+            isinstance(obligation, CubicTimeEntryObligation)
+            for obligation in obligations
+        )
+        and all(
+            obligation.certified is True
+            for obligation in obligations
+            if obligation.required
+        )
+    )
+
+
+def _cubic_time_obligation_ledger_missing(
+    obligations: tuple[Any, ...],
+    *,
+    ledger_name: str,
+) -> tuple[str, ...]:
+    missing: list[str] = []
+    if not obligations:
+        missing.append(f"{ledger_name}_obligations_present")
+    if obligations and not any(
+        isinstance(obligation, CubicTimeEntryObligation)
+        and obligation.required
+        for obligation in obligations
+    ):
+        missing.append(f"{ledger_name}_required_obligation_present")
+    for obligation in obligations:
+        if not isinstance(obligation, CubicTimeEntryObligation):
+            missing.append(f"{ledger_name}_obligation_type")
+            continue
+        if obligation.required and obligation.certified is not True:
+            missing.append(obligation.obligation)
+    return tuple(dict.fromkeys(missing))
 
 
 @dataclass(frozen=True)
@@ -60,12 +113,7 @@ class CubicTimeLeadingJetEntryCertificate:
         return bool(
             self.statement
             and self.proof_sketch
-            and self.obligations
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
-            )
+            and _cubic_time_obligation_ledger_certified(self.obligations)
         )
 
     @property
@@ -74,10 +122,9 @@ class CubicTimeLeadingJetEntryCertificate:
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+        return _cubic_time_obligation_ledger_missing(
+            self.obligations,
+            ledger_name="cubic_time_leading_jet_entry",
         )
 
     @property
@@ -116,15 +163,14 @@ class CubicTimeCubicJetKernelCertificate:
     @property
     def certified(self) -> bool:
         return bool(
-            self.leading_certificate.certified
+            isinstance(
+                self.leading_certificate,
+                CubicTimeLeadingJetEntryCertificate,
+            )
+            and self.leading_certificate.certified is True
             and self.statement
             and self.proof_sketch
-            and self.obligations
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
-            )
+            and _cubic_time_obligation_ledger_certified(self.obligations)
         )
 
     @property
@@ -133,11 +179,21 @@ class CubicTimeCubicJetKernelCertificate:
 
     @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
+        missing: list[str] = []
+        if not isinstance(
+            self.leading_certificate,
+            CubicTimeLeadingJetEntryCertificate,
+        ):
+            missing.append("cubic_time_leading_jet_entry_certificate_type")
+        elif self.leading_certificate.certified is not True:
+            missing.extend(self.leading_certificate.missing_obligations)
+        missing.extend(
+            _cubic_time_obligation_ledger_missing(
+                self.obligations,
+                ledger_name="cubic_time_cubic_jet_kernel",
+            )
         )
+        return tuple(dict.fromkeys(missing))
 
     @property
     def arbitrary_fuchsian_entry_theorem_claimed(self) -> bool:
@@ -215,7 +271,9 @@ class FiniteJetIdentitySelectorEntryCertificate:
             len(self.masses) == 3
             and all(np.isfinite(mass) and mass > 0.0 for mass in self.masses)
             and self.coordinate_certificates
-            and all(certificate.certified for certificate in self.coordinate_certificates)
+            and _finite_jet_coordinate_certificates_certified(
+                self.coordinate_certificates,
+            )
             and np.isfinite(self.incoming_energy_limit)
             and np.isfinite(self.selected_energy_limit)
             and np.isfinite(self.energy_gap)
@@ -297,6 +355,10 @@ class FiniteJetSelectedBranchCertificate:
             and np.all(np.isfinite(coefficients))
             and _minimum_pair_distance(coefficients[0]) > 0.0
             and self.selector_specs
+            and _finite_jet_selector_specs_certified(
+                self.selector_specs,
+                coefficient_shape=coefficients.shape[1:],
+            )
             and {name for name, _value in self.selected_values}
             == {str(spec.name) for spec in self.selector_specs}
             and len(self.selector_operator_residual_bounds) == len(self.selector_specs)
@@ -336,8 +398,13 @@ class FiniteJetDerivedIdentitySelectorEntryCertificate:
     @property
     def certified(self) -> bool:
         return bool(
-            self.selected_branch.certified
-            and self.entry_certificate.certified
+            isinstance(self.selected_branch, FiniteJetSelectedBranchCertificate)
+            and self.selected_branch.certified is True
+            and isinstance(
+                self.entry_certificate,
+                FiniteJetIdentitySelectorEntryCertificate,
+            )
+            and self.entry_certificate.certified is True
             and self.recovered_selector_values == self.selected_branch.selected_values
         )
 
@@ -921,6 +988,48 @@ def _optional_central_coefficient_certified(coefficient: object | None) -> bool:
         and np.all(np.isfinite(coefficient_array))
         and _minimum_pair_distance(coefficient_array) > 0.0
     )
+
+
+def _finite_jet_coordinate_certificates_certified(
+    coordinate_certificates: tuple[object, ...],
+) -> bool:
+    return bool(
+        coordinate_certificates
+        and all(
+            isinstance(certificate, FiniteJetSelectorCoordinateCertificate)
+            and certificate.certified is True
+            for certificate in coordinate_certificates
+        )
+    )
+
+
+def _finite_jet_selector_specs_certified(
+    selector_specs: tuple[object, ...],
+    *,
+    coefficient_shape: tuple[int, ...],
+) -> bool:
+    for spec in selector_specs:
+        if not isinstance(spec, FiniteJetSelectorSpec):
+            return False
+        if not str(spec.name) or int(spec.degree) < 0:
+            return False
+        basis = np.asarray(spec.basis, dtype=float)
+        if basis.shape != coefficient_shape or not np.all(np.isfinite(basis)):
+            return False
+        if spec.reference_coefficients is not None:
+            reference = np.asarray(spec.reference_coefficients, dtype=float)
+            reference_is_row = reference.shape == coefficient_shape
+            reference_is_full_coefficient_array = (
+                reference.ndim == len(coefficient_shape) + 1
+                and reference.shape[1:] == coefficient_shape
+                and int(spec.degree) < reference.shape[0]
+            )
+            if (
+                not (reference_is_row or reference_is_full_coefficient_array)
+                or not np.all(np.isfinite(reference))
+            ):
+                return False
+    return bool(selector_specs)
 
 
 def _selector_coordinate(

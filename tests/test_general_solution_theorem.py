@@ -1,5 +1,6 @@
 from dataclasses import replace
 import math
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -30,6 +31,8 @@ from three_body_symmetry.event_regime_assembler import (
     LocalChartFamilyCauchyCertificate,
 )
 from three_body_symmetry.escape_endpoint import (
+    certify_positive_energy_homothetic_all_real_gluing,
+    construct_homothetic_escape_dyadic_recurrence,
     construct_two_ended_scattering_atlas_recurrence,
     derive_time_reversed_homothetic_escape_recurrence,
 )
@@ -2096,6 +2099,81 @@ def test_nonzero_angular_compact_finite_atlas_consumes_validated_solution():
     assert theorem.missing_obligations == ("global_regime_exhaustion",)
 
 
+def test_compact_finite_atlas_rejects_attribute_compatible_validated_atlas():
+    masses, positions, velocities = _rotating_triangle_data()
+    input_domain = certify_positive_mass_noncollision_input_domain(
+        masses,
+        positions,
+        velocities,
+    )
+    packed_initial = np.concatenate(
+        [positions.reshape(-1), velocities.reshape(-1)],
+    )
+    state_interval = np.asarray(
+        [FloatInterval.point(float(value)) for value in packed_initial],
+        dtype=object,
+    )
+    fake_validated_atlas = SimpleNamespace(
+        proof_certified=True,
+        certified=True,
+        masses=tuple(float(mass) for mass in masses),
+        target_time=1.0e-4,
+        target_time_certified=True,
+        initial_state_interval=state_interval,
+        target_state_interval=state_interval,
+        charts=(
+            SimpleNamespace(
+                chart_id="fake_chart",
+                chart_type="sundman",
+                dynamics_certified=True,
+                residual_certified=True,
+                projection_certified=True,
+                invariants_certified=True,
+                tail_certified=True,
+                tail_bound=0.0,
+                parameter_interval=FloatInterval(0.0, 1.0e-4),
+                physical_time_interval=FloatInterval(0.0, 1.0e-4),
+            ),
+        ),
+        transitions=(),
+        residual_budget=SimpleNamespace(
+            certified=True,
+            expected_chart_count=1,
+            certified_chart_count=1,
+        ),
+        invariants=SimpleNamespace(
+            certified=True,
+            expected_chart_count=1,
+            certified_chart_count=1,
+        ),
+        tail_budget=SimpleNamespace(certified=True, finite=True),
+        collision_policy=SimpleNamespace(
+            certified=True,
+            binary_policy="ordinary",
+            total_collision_policy="maximal_classical_stop",
+        ),
+        proof_ledger=SimpleNamespace(
+            certified=True,
+            entries=(
+                SimpleNamespace(name="target_time", certified=True),
+            ),
+        ),
+        selector_trace=None,
+    )
+
+    finite_certificate = certify_compact_nonzero_angular_finite_atlas(
+        input_domain_certificate=input_domain,
+        validated_atlas=fake_validated_atlas,
+    )
+
+    assert not finite_certificate.certified
+    assert "validated_atlas_solution" in finite_certificate.missing_obligations
+    obligation = {
+        item.obligation: item for item in finite_certificate.obligations
+    }["validated_atlas_solution"]
+    assert "actual ValidatedAtlasSolution" in obligation.detail
+
+
 def test_global_atlas_assembly_rejects_swapped_validated_atlas_object():
     masses, positions, velocities = _rotating_triangle_data()
     validated_atlas = evaluate_unrestricted_solution(
@@ -2777,6 +2855,30 @@ def test_zero_angular_compact_finite_atlas_requires_constructor_selector_entry()
         out_of_chart_atlas.classification.ordinary_gap_envelope.missing_obligations
     )
 
+    fake_selector = SimpleNamespace(
+        certified=True,
+        identity_selector_certified=True,
+        proof_certified=True,
+        masses=tuple(float(mass) for mass in masses),
+        selected_energy_limit=(
+            float(branch.energy_per_inertia) * float(branch.inertia)
+        ),
+        selected_central_coefficient=branch.quadratic_coefficient,
+        sample_taus=(-0.02, 0.02),
+    )
+    fake_selector_atlas = construct_zero_angular_compact_finite_atlas_with_selector(
+        masses=masses,
+        positions=positions,
+        velocities=velocities,
+        compact_time_rate=1.3,
+        validated_atlas=selector_atlas,
+        total_collision_selector_envelopes=(fake_selector,),
+    )
+    assert not fake_selector_atlas.certified
+    assert "finite_atlas_total_collision_selector_coverage" in (
+        fake_selector_atlas.classification.ordinary_gap_envelope.missing_obligations
+    )
+
 
 def test_parabolic_homothetic_total_collision_constructor_derives_selector_pipeline():
     branch = _parabolic_homothetic_total_collision_branch()
@@ -3096,6 +3198,147 @@ def test_positive_energy_homothetic_escape_feeds_global_atlas_from_initial_data(
     assert theorem.missing_obligations == ("global_regime_exhaustion",)
 
 
+def test_positive_energy_homothetic_escape_rejects_fake_majorant_and_selector_entry():
+    masses, positions, velocities = _equilateral_homothetic_escape_data()
+    atlas = construct_positive_energy_homothetic_escape_global_atlas(
+        masses=masses,
+        positions=positions,
+        velocities=velocities,
+        compact_time_rate=1.0e-8,
+        start_time=1.0e4,
+        tau_radius=0.1,
+        rho_radius=0.5,
+        x_radius=0.4,
+        retained_degree=0,
+    )
+    endpoint = atlas.escape_atlas.branch_certificate.endpoint
+    fake_majorant = SimpleNamespace(
+        certified=True,
+        cauchy_majorant=atlas.escape_atlas.recurrence.cauchy_majorant,
+        endpoint=endpoint,
+    )
+    fake_selector = SimpleNamespace(
+        certified=True,
+        identity_selector_certified=True,
+        proof_certified=True,
+        masses=tuple(float(mass) for mass in masses),
+        selected_energy_limit=(
+            atlas.escape_atlas.all_real_gluing.selector_entry.selected_energy_limit
+        ),
+        selected_central_coefficient=(
+            atlas.escape_atlas.all_real_gluing.selector_entry.selected_central_coefficient
+        ),
+        sample_taus=atlas.escape_atlas.all_real_gluing.selector_entry.sample_taus,
+    )
+
+    assert atlas.certified
+    assert atlas.escape_atlas.all_real_gluing.certified
+    with pytest.raises(
+        ValueError,
+        match="homothetic escape implicit Cauchy majorant",
+    ):
+        construct_homothetic_escape_dyadic_recurrence(
+            endpoint,
+            start_time=1.0e4,
+            tau_radius=0.1,
+            rho_radius=0.5,
+            cauchy_majorant=fake_majorant.cauchy_majorant,
+            retained_degree=0,
+            majorant_certificate=fake_majorant,
+        )
+    with pytest.raises(
+        ValueError,
+        match="certified finite-jet selector entry",
+    ):
+        certify_positive_energy_homothetic_all_real_gluing(
+            masses=masses,
+            positions=positions,
+            branch_certificate=atlas.escape_atlas.branch_certificate,
+            projection_invariant_certificate=(
+                atlas.escape_atlas.projection_invariant_certificate
+            ),
+            future_recurrence=atlas.escape_atlas.recurrence,
+            past_recurrence=atlas.escape_atlas.past_recurrence,
+            total_collision_atlas=atlas.escape_atlas.total_collision_atlas,
+            selector_entry=fake_selector,
+            compact_time_rate=1.0e-8,
+        )
+    assert not replace(
+        atlas.escape_atlas.all_real_gluing,
+        selector_entry=fake_selector,
+    ).collision_selector_certified
+    fake_middle_recurrence = SimpleNamespace(
+        certified=True,
+        proof_certified=True,
+        tail_budget_certified=True,
+        newton_residual_certified=True,
+    )
+    fake_total_collision_atlas = SimpleNamespace(
+        proof_certified=True,
+        evaluation=atlas.escape_atlas.total_collision_atlas.evaluation,
+    )
+    fake_branch = SimpleNamespace(
+        certified=True,
+        endpoint=endpoint,
+        energy=atlas.escape_atlas.branch_certificate.energy,
+        gravitational_parameter=(
+            atlas.escape_atlas.branch_certificate.gravitational_parameter
+        ),
+    )
+    fake_projection = SimpleNamespace(certified=True)
+    stale_middle = replace(
+        atlas.escape_atlas.all_real_gluing,
+        middle_recurrence=fake_middle_recurrence,
+    )
+    stale_collision_atlas = replace(
+        atlas.escape_atlas.all_real_gluing,
+        total_collision_atlas=fake_total_collision_atlas,
+    )
+    stale_source_inputs = replace(
+        atlas.escape_atlas.all_real_gluing,
+        branch_certificate=fake_branch,
+        projection_invariant_certificate=fake_projection,
+    )
+
+    assert not stale_middle.middle_recurrence_certified
+    assert not stale_middle.certified
+    assert "homothetic_finite_middle_recurrence" in stale_middle.missing_obligations
+    assert not stale_collision_atlas.collision_selector_certified
+    assert not stale_collision_atlas.certified
+    assert "homothetic_total_collision_selector_chart" in (
+        stale_collision_atlas.missing_obligations
+    )
+    assert not stale_source_inputs.source_inputs_certified
+    assert not stale_source_inputs.certified
+    assert "homothetic_source_inputs" in stale_source_inputs.missing_obligations
+    spoofed_escape_certificate = replace(
+        atlas.escape_atlas,
+        obligations=(
+            SimpleNamespace(
+                obligation="fake_positive_energy_homothetic_escape",
+                certified=True,
+                required=True,
+            ),
+        ),
+    )
+    optional_only_escape_certificate = replace(
+        atlas.escape_atlas,
+        obligations=tuple(
+            replace(obligation, required=False)
+            for obligation in atlas.escape_atlas.obligations
+        ),
+    )
+
+    assert not spoofed_escape_certificate.certified
+    assert "positive_energy_homothetic_escape_obligation_type" in (
+        spoofed_escape_certificate.missing_obligations
+    )
+    assert not optional_only_escape_certificate.certified
+    assert "positive_energy_homothetic_escape_required_obligation_present" in (
+        optional_only_escape_certificate.missing_obligations
+    )
+
+
 def test_positive_energy_homothetic_escape_classifier_rejects_foreign_input_domain():
     source_masses, source_positions, source_velocities = (
         _equilateral_homothetic_escape_data()
@@ -3261,6 +3504,27 @@ def test_general_solution_pipeline_rejects_raw_boolean_global_witnesses():
     assert not theorem.full_general_solution_certified
     assert "global_regime_exhaustion" in theorem.missing_obligations
     assert "full theorem accepts only a typed" in theorem.obligations[-1].detail
+
+
+def test_required_constructor_obligations_reject_truthy_attribute_fields():
+    classification = classify_global_regime(
+        input_domain_certificate=_input_domain(),
+        compact_time_certificate=certify_compact_time_real_line_coverage(1.3),
+        regime_id="uniformly_noncollision_bounded_tail",
+        ordinary_gap_envelope=SimpleNamespace(
+            certified="yes",
+            proof_certified="yes",
+        ),
+    )
+    atlas = construct_global_atlas_for_regime(
+        classification,
+        ordinary_gap_atlas=classification.ordinary_gap_envelope,
+    )
+
+    assert not classification.certified
+    assert "ordinary_gap_envelope" in classification.missing_obligations
+    assert not atlas.certified
+    assert "ordinary_gap_envelope" in atlas.missing_obligations
 
 
 def test_global_regime_exhaustion_constructor_reports_partition_theorem_gap():

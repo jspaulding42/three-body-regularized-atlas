@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from decimal import Decimal, ROUND_CEILING, ROUND_FLOOR, localcontext
+from functools import lru_cache
 from fractions import Fraction
 from numbers import Integral, Rational
 
@@ -66,6 +68,18 @@ class FloatInterval:
     def positive_power(self, exponent: float) -> "FloatInterval":
         if self.lower <= 0.0:
             raise ValueError("positive power requires a strictly positive interval")
+        if exponent in {-0.5, -1.5, -2.5}:
+            # These are the Newton/LC force exponents.  Avoid relying on an
+            # unspecified libm pow error bound: Decimal.sqrt and directed
+            # arithmetic start from the exact binary endpoint values.
+            return FloatInterval(
+                _directed_negative_half_integer_power(
+                    self.upper, exponent, upward=False
+                ),
+                _directed_negative_half_integer_power(
+                    self.lower, exponent, upward=True
+                ),
+            )
         values = (self.lower**exponent, self.upper**exponent)
         return FloatInterval(_round_down(min(values)), _round_up(max(values)))
 
@@ -161,6 +175,41 @@ def _round_down(value: float) -> float:
 
 def _round_up(value: float) -> float:
     return float(np.nextafter(float(value), np.inf))
+
+
+@lru_cache(maxsize=131072)
+def _directed_negative_half_integer_power(
+    value: float,
+    exponent: float,
+    *,
+    upward: bool,
+) -> float:
+    """Directed bound for x**(-1/2), x**(-3/2), or x**(-5/2)."""
+
+    if value <= 0.0 or not np.isfinite(value):
+        raise ValueError("finite positive power base required")
+    powers = {-0.5: 0, -1.5: 1, -2.5: 2}
+    if exponent not in powers:
+        raise ValueError("unsupported directed half-integer exponent")
+    denominator_direction = ROUND_FLOOR if upward else ROUND_CEILING
+    with localcontext() as context:
+        context.prec = 100
+        context.rounding = denominator_direction
+        base = Decimal.from_float(float(value))
+        denominator = context.sqrt(base)
+        for _ in range(powers[exponent]):
+            denominator = context.multiply(denominator, base)
+    with localcontext() as context:
+        context.prec = 100
+        context.rounding = ROUND_CEILING if upward else ROUND_FLOOR
+        result = context.divide(Decimal(1), denominator)
+    candidate = float(result)
+    candidate_decimal = Decimal.from_float(candidate)
+    if upward and candidate_decimal < result:
+        candidate = float(np.nextafter(candidate, np.inf))
+    elif not upward and candidate_decimal > result:
+        candidate = float(np.nextafter(candidate, -np.inf))
+    return candidate
 
 
 def interval_contains_zero(interval: FloatInterval) -> bool:

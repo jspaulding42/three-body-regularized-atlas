@@ -1,0 +1,33 @@
+cff-version: 1.2.0
+message: >-
+  If you use this software, please cite the software release and the
+  accompanying manuscript.
+title: "Three-Body Regularized Atlas: Validated Binary-Collision Certificates"
+type: software
+version: 0.1.0
+date-released: 2026-07-12
+authors:
+  - family-names: Spaulding
+    given-names: Jeffrey
+    affiliation: Independent Researcher
+    email: jspaulding42@hotmail.com
+repository-code: "https://github.com/jspaulding42/three-body-regularized-atlas"
+license: BSD-3-Clause
+abstract: >-
+  A reproducible certificate architecture and proof-of-concept validation of
+  one planar three-body Levi-Civita binary-collision passage, conditional on a
+  small interval-arithmetic trusted kernel. This software does not provide a
+  general closed-form solution of the three-body problem.
+keywords:
+  - three-body problem
+  - Levi-Civita regularization
+  - validated numerics
+  - computer-assisted proof
+  - interval arithmetic
+notes: >-
+  Jeffrey Spaulding conceived, prompted, and directed the project and is the
+  accountable human author. OpenAI GPT-5.5, GPT-5.5 Pro, and GPT-5.6 systems
+  contributed substantially to mathematical exploration, software
+  implementation, verification design, manuscript drafting, and critical
+  revision. The AI systems are credited as tools and contributors, not as
+  scholarly authors, and cannot accept responsibility for the work.

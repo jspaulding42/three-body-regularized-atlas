@@ -16,7 +16,61 @@ from .general_solution_theorem import (
     TheoremPipelineObligation,
     certify_positive_mass_noncollision_input_domain,
 )
-from .validated_atlas import ValidatedAtlasSolution
+from .validated_atlas import (
+    FiniteTimeChartSelectorTrace,
+    ProofLedgerEntry,
+    ValidatedAtlasSolution,
+)
+
+
+def _certificate_field(value: object, field_name: str = "certified") -> bool:
+    return getattr(value, field_name, False) is True
+
+
+def _finite_time_obligation_ledger_certified(
+    obligations: tuple[object, ...],
+) -> bool:
+    return bool(
+        obligations
+        and any(
+            isinstance(obligation, TheoremPipelineObligation)
+            and obligation.required is True
+            for obligation in obligations
+        )
+        and all(
+            isinstance(obligation, TheoremPipelineObligation)
+            for obligation in obligations
+        )
+        and all(
+            obligation.certified is True
+            for obligation in obligations
+            if isinstance(obligation, TheoremPipelineObligation)
+            and obligation.required is True
+        )
+    )
+
+
+def _finite_time_obligation_ledger_missing(
+    obligations: tuple[object, ...],
+    *,
+    ledger_name: str,
+) -> tuple[str, ...]:
+    missing: list[str] = []
+    if not obligations:
+        missing.append(f"{ledger_name}_obligations_present")
+    if obligations and not any(
+        isinstance(obligation, TheoremPipelineObligation)
+        and obligation.required is True
+        for obligation in obligations
+    ):
+        missing.append(f"{ledger_name}_required_obligation_present")
+    for obligation in obligations:
+        if not isinstance(obligation, TheoremPipelineObligation):
+            missing.append(f"{ledger_name}_obligation_type")
+            continue
+        if obligation.required is True and obligation.certified is not True:
+            missing.append(obligation.obligation)
+    return tuple(dict.fromkeys(missing))
 
 
 def _simultaneous_close_pair_branch_partition_from_object(value: object) -> object | None:
@@ -52,7 +106,10 @@ def _simultaneous_close_pair_branch_partition_from_object(value: object) -> obje
 def _input_domain_flat_state(
     certificate: PositiveMassNoncollisionInputDomainCertificate | None,
 ) -> np.ndarray | None:
-    if certificate is None or not getattr(certificate, "certified", False):
+    if (
+        not isinstance(certificate, PositiveMassNoncollisionInputDomainCertificate)
+        or not _certificate_field(certificate)
+    ):
         return None
     try:
         positions = np.asarray(certificate.positions, dtype=float)
@@ -141,7 +198,11 @@ def _validated_atlas_input_domain_matches_classifier(
 def _certified_proof_ledger_entry(atlas: object | None, name: str) -> object | None:
     proof_ledger = getattr(atlas, "proof_ledger", None)
     for entry in getattr(proof_ledger, "entries", ()):
-        if getattr(entry, "name", None) == name and bool(getattr(entry, "certified", False)):
+        if (
+            isinstance(entry, ProofLedgerEntry)
+            and entry.name == name
+            and entry.certified is True
+        ):
             return entry
     return None
 
@@ -208,7 +269,13 @@ class FiniteTimeRegimeClassificationCertificate:
 
     @property
     def input_domain_certified(self) -> bool:
-        return bool(getattr(self.input_domain_certificate, "certified", False))
+        return bool(
+            isinstance(
+                self.input_domain_certificate,
+                PositiveMassNoncollisionInputDomainCertificate,
+            )
+            and _certificate_field(self.input_domain_certificate)
+        )
 
     @property
     def target_time_certified(self) -> bool:
@@ -218,35 +285,30 @@ class FiniteTimeRegimeClassificationCertificate:
     def atlas_certified(self) -> bool:
         return bool(
             isinstance(self.validated_atlas, ValidatedAtlasSolution)
-            and getattr(self.validated_atlas, "proof_certified", False)
+            and getattr(self.validated_atlas, "proof_certified", False) is True
         )
 
     @property
     def selector_certified(self) -> bool:
-        return bool(getattr(self.selector_trace, "certified", False))
-
-    @property
-    def branch_partition_certified(self) -> bool:
-        return bool(getattr(self.branch_partition, "certified", False))
-
-    @property
-    def certified(self) -> bool:
         return bool(
-            self.obligations
-            and all(
-                obligation.certified
-                for obligation in self.obligations
-                if obligation.required
-            )
+            isinstance(self.selector_trace, FiniteTimeChartSelectorTrace)
+            and _certificate_field(self.selector_trace)
         )
 
     @property
+    def branch_partition_certified(self) -> bool:
+        return _certificate_field(self.branch_partition)
+
+    @property
+    def certified(self) -> bool:
+        return _finite_time_obligation_ledger_certified(self.obligations)
+
+    @property
     def missing_obligations(self) -> tuple[str, ...]:
-        return tuple(dict.fromkeys(
-            obligation.obligation
-            for obligation in self.obligations
-            if obligation.required and not obligation.certified
-        ))
+        return _finite_time_obligation_ledger_missing(
+            self.obligations,
+            ledger_name="finite_time_regime_classification",
+        )
 
     @property
     def chart_types(self) -> tuple[str, ...]:
@@ -260,7 +322,7 @@ def classify_finite_time_regime(
     masses: Any,
     positions: Any,
     velocities: Any,
-    target_time: float,
+    target_time: Any,
     **solver_options: Any,
 ) -> FiniteTimeRegimeClassificationCertificate:
     """Classify and construct the validated finite-time chart route.
@@ -273,7 +335,15 @@ def classify_finite_time_regime(
 
     if "method" in solver_options:
         raise ValueError("classify_finite_time_regime always uses method='validated_atlas'")
-    target_time = float(target_time)
+    raw_target_time = target_time
+    target_failure: str | None = None
+    try:
+        target_time = float(raw_target_time)
+    except (TypeError, ValueError, OverflowError):
+        target_time = float("nan")
+        target_failure = "target_time must be finite real"
+    if target_failure is None and not np.isfinite(target_time):
+        target_failure = "target_time must be finite real"
     input_domain: PositiveMassNoncollisionInputDomainCertificate | None
     input_failure: str | None = None
     try:
@@ -289,7 +359,13 @@ def classify_finite_time_regime(
     obligations = [
         TheoremPipelineObligation(
             obligation="positive_mass_noncollision_input_domain",
-            certified=bool(getattr(input_domain, "certified", False)),
+            certified=(
+                isinstance(
+                    input_domain,
+                    PositiveMassNoncollisionInputDomainCertificate,
+                )
+                and _certificate_field(input_domain)
+            ),
             source="certify_positive_mass_noncollision_input_domain",
             detail=input_failure or "finite-time classifier input domain",
         ),
@@ -297,13 +373,13 @@ def classify_finite_time_regime(
             obligation="finite_target_time",
             certified=bool(np.isfinite(target_time)),
             source="classify_finite_time_regime",
-            detail=f"target_time={target_time!r}",
+            detail=target_failure or f"target_time={target_time!r}",
         ),
     ]
     atlas: ValidatedAtlasSolution | None = None
     selector_trace: object | None = None
     selected_route_id: str | None = None
-    failure_reason: str | None = input_failure
+    failure_reason: str | None = input_failure or target_failure
     failure_obligations: tuple[str, ...] = ()
     branch_partition: object | None = None
     if input_domain is not None and np.isfinite(target_time):
@@ -353,9 +429,9 @@ def classify_finite_time_regime(
             ),
             TheoremPipelineObligation(
                 obligation="finite_time_validated_atlas",
-                certified=bool(
+                certified=(
                     isinstance(atlas, ValidatedAtlasSolution)
-                    and atlas.proof_certified
+                    and atlas.proof_certified is True
                 ),
                 source="evaluate_unrestricted_solution(method='validated_atlas')",
                 detail=(
@@ -387,7 +463,10 @@ def classify_finite_time_regime(
             ),
             TheoremPipelineObligation(
                 obligation="finite_time_chart_selector",
-                certified=bool(selector_trace is not None and selector_trace.certified),
+                certified=(
+                    isinstance(selector_trace, FiniteTimeChartSelectorTrace)
+                    and selector_trace.certified is True
+                ),
                 source=(
                     "FiniteTimeChartSelectorTrace"
                     if selector_trace is not None
@@ -405,7 +484,7 @@ def classify_finite_time_regime(
         obligations.append(
             TheoremPipelineObligation(
                 obligation="simultaneous_close_pair_partition",
-                certified=bool(getattr(branch_partition, "certified", False)),
+                certified=_certificate_field(branch_partition),
                 source="certify_simultaneous_close_pair_partition",
                 detail=(
                     f"branches={len(getattr(branch_partition, 'branches', ()))}; "
@@ -413,7 +492,7 @@ def classify_finite_time_regime(
                 ),
             )
         )
-        if getattr(branch_partition, "certified", False) and atlas is None:
+        if _certificate_field(branch_partition) and atlas is None:
             obligations.append(
                 TheoremPipelineObligation(
                     obligation="finite_time_branch_union_consumption",
