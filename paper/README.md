@@ -1,18 +1,17 @@
-# Paper draft
+# Paper review draft
 
 `main.tex` is a conservative manuscript for the repository's validated local
 planar binary-collision passage. It deliberately makes no general-solution or
 global-atlas claim.
 
-Before submission, the maintainer must replace every red `Editorial TODO`,
-verify primary references, add the author name, choose and record an
-open-source license, insert the canonical repository/release URL, and archive
-an immutable reproducibility release. The paper should then be compiled and
-proofread against the exact tagged code.
+The `v0.2.0-review` manuscript includes a verified bibliography, accountable
+author and AI-contribution disclosure, BSD-3-Clause software availability,
+and a canonical repository link. It has been compiled and visually checked
+against the tagged code. It remains a review manuscript pending independent
+expert mathematical assessment and an archival DOI.
 
-Suggested local build after those editorial steps:
+Suggested local build:
 
 ```bash
-pdflatex main.tex
-pdflatex main.tex
+tectonic main.tex
 ```

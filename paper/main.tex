@@ -14,7 +14,6 @@
 \newtheorem{remark}[theorem]{Remark}
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\norm}[1]{\left\lVert#1\right\rVert}
-\newcommand{\todo}[1]{\textcolor{red!70!black}{[Editorial TODO: #1]}}
 
 \title{A Checkable A Posteriori Certificate for a Planar\\
 Three-Body Binary-Collision Passage}
@@ -48,7 +47,8 @@ continuation, an explicit checked obligation.
 
 Binary collision is a coordinate singularity of the Newtonian equations but
 can be regularized in the planar problem by the classical Levi--Civita
-transformation.  Analytic regularization alone, however, does not certify that
+transformation~\cite{LeviCivita1920,SiegelMoser1995,Montgomery2024}.
+Analytic regularization alone, however, does not certify that
 a computed polynomial describes an exact orbit, that its two physical
 projections belong to one lifted initial-value problem, or that all required
 force denominators remain separated.  Those points matter when a numerical
@@ -76,12 +76,18 @@ theorem, or of termination and completeness of a global regularized atlas.
 Those statements require substantially different arguments.
 
 \paragraph{Relation to prior work.}
-Levi--Civita regularization and computer-assisted ODE validation are classical
-subjects.  A final submission should compare the certificate precisely with
-the standard regularization literature, interval Taylor methods, Lohner-type
-enclosures, and existing validated celestial-mechanics computations.
-\todo{Parent agent must verify and insert exact primary citations; placeholder
-entries are listed in Section~\ref{sec:bib}.}
+The present construction draws on classical Levi--Civita regularization
+\cite{LeviCivita1920,SiegelMoser1995,Montgomery2024} and established methods
+for validated integration and interval enclosures
+\cite{Lohner1987,NedialkovJacksonCorliss1999,MooreKearfottCloud2009}.
+Capi\'nski, Kepley, and Mireles James proved transverse collision and
+near-collision results by computer-assisted methods in the circular restricted
+three-body problem~\cite{CapinskiKepleyMirelesJames2023}.  Their results employ
+a different dynamical model and establish substantially stronger orbit-level
+conclusions.  By contrast, the present artifact treats one local passage in
+the full planar three-body model and remains conditional on its stated
+interval-arithmetic trusted kernel.  This comparison is intended to locate the
+work methodologically, not to assert novelty or priority.
 
 \section{Planar three-body and lifted LC equations}
 
@@ -135,7 +141,10 @@ implementation uses the same serialized masses in both coordinate systems.
 
 Let $F$ denote either the lifted field~\eqref{eq:lcfield} or the first-order
 ordinary Newtonian field, and let $\bar X$ be a polynomial on an interval of
-half-width $\ell$.  Suppose interval arithmetic proves, uniformly on the
+half-width $\ell$.  The validation follows the standard a posteriori and
+interval-enclosure viewpoint for ordinary differential equations
+\cite{Lohner1987,NedialkovJacksonCorliss1999,MooreKearfottCloud2009}.
+Suppose interval arithmetic proves, uniformly on the
 declared tube,
 \[
  \norm{\bar X'-F(\bar X)}_\infty\leq\delta,
@@ -369,9 +378,12 @@ public implementation.  Running
 \begin{verbatim}
 python scripts/certify_planar_binary_collision_passage.py
 \end{verbatim}
-returns a JSON object whose fields include
-\texttt{collision\_certified=true} and
-\texttt{passage\_certified=true}.  In the current fixture, the reported
+returns a JSON object in which both of the following Boolean fields are true:
+\begin{center}
+\texttt{collision\_certified}\qquad
+\texttt{passage\_certified}.
+\end{center}
+In the current fixture, the reported
 punctured $\rho$ lower bounds are approximately
 $9.99598\times10^{-5}$ on both sides.  These values are checker outputs, not
 errors estimated by sampling.
@@ -401,7 +413,10 @@ lock, command transcript, and machine-readable JSON witness.
 \section{Trusted kernel and limitations}
 
 The mathematical conclusion of Theorem~\ref{thm:passage} is conditional on
-sound outward-rounded interval arithmetic.  The present kernel comprises the
+sound outward-rounded interval arithmetic; IEEE~1788 is a historical standard
+for interval arithmetic, although the 2015 edition is now inactive-reserved
+\cite{IEEE1788_2015}, and a general reference is
+Moore, Kearfott, and Cloud~\cite{MooreKearfottCloud2009}.  The present kernel comprises the
 serialized Python checker, NumPy binary64 operations where explicitly
 enclosed, directed \texttt{nextafter} inflation, directed high-precision
 decimal square-root, reciprocal-power, and exponential bounds, exact rational
@@ -456,9 +471,9 @@ The implementation is available under the BSD-3-Clause license at
 \url{https://github.com/jspaulding42/three-body-regularized-atlas}.
 \end{center}
 The repository records the dependencies, reproduction commands, tests, and
-machine-readable witness.  A future archival release should add an immutable
-version identifier and DOI before this manuscript is treated as a citable
-final version.
+machine-readable witness.  This review manuscript accompanies the immutable
+tag \texttt{v0.2.0-review}; a future archival release should add a DOI before
+the manuscript is treated as a citable final version.
 The principal executable witness is
 \texttt{scripts/certify\_planar\_binary\_collision\_passage.py}; the independent
 algebra audit is
@@ -480,27 +495,58 @@ artifact whose mathematical claims remain subject to independent expert
 review.  No institutional endorsement or independent external mathematical
 review is asserted.
 
-\section{Bibliographic placeholders}\label{sec:bib}
+\begin{thebibliography}{99}
 
-The following list records the literature categories that a submission must
-cite.  Exact editions, titles, page ranges, and identifiers have intentionally
-not been fabricated in this draft.
-\begin{enumerate}
-\item \textbf{Levi--Civita regularization.}
-      \todo{Verify the primary Levi--Civita source and a modern celestial-
-      mechanics treatment using the same normalization.}
-\item \textbf{Generalized solutions and binary-collision continuation.}
-      \todo{Verify the standard definition and historical source appropriate
-      to the claimed ``LC generalized continuation'' terminology.}
-\item \textbf{Validated ODE integration and a posteriori enclosures.}
-      \todo{Insert primary references for interval Taylor methods,
-      Lohner-type methods, and the first-exit/Gr\"onwall tube argument.}
-\item \textbf{Computer-assisted celestial mechanics.}
-      \todo{Insert the closest existing validated collision/regularization
-      computations and explain the distinction from the present certificate.}
-\item \textbf{Interval arithmetic and directed rounding.}
-      \todo{Insert an authoritative interval-arithmetic standard or monograph
-      and documentation for the backend used in the archived release.}
-\end{enumerate}
+\bibitem{CapinskiKepleyMirelesJames2023}
+M.~J. Capi\'nski, S.~Kepley, and J.~D. Mireles James,
+``Computer assisted proofs for transverse collision and near collision orbits
+in the restricted three body problem,''
+\emph{Journal of Differential Equations}, vol.~366, pp.~132--191, 2023.
+\href{https://doi.org/10.1016/j.jde.2023.03.053}{doi:10.1016/j.jde.2023.03.053}.
+
+\bibitem{IEEE1788_2015}
+IEEE Standards Association,
+\emph{IEEE Standard for Interval Arithmetic}, IEEE Std 1788-2015, 2015.
+\href{https://doi.org/10.1109/IEEESTD.2015.7140721}{doi:10.1109/IEEESTD.2015.7140721}.
+
+\bibitem{LeviCivita1920}
+T.~Levi-Civita,
+``Sur la r\'egularisation du probl\`eme des trois corps,''
+\emph{Acta Mathematica}, vol.~42, pp.~99--144, 1920.
+\href{https://doi.org/10.1007/BF02404404}{doi:10.1007/BF02404404}.
+
+\bibitem{Lohner1987}
+R.~J. Lohner,
+``Enclosing the solutions of ordinary initial and boundary value problems,''
+in \emph{Computer Arithmetic: Scientific Computation and Programming
+Languages}, E.~Kaucher, U.~Kulisch, and C.~Ullrich, Eds. Stuttgart: Teubner,
+1987, pp.~255--286.
+
+\bibitem{Montgomery2024}
+R.~Montgomery,
+``Regularizing binary collisions,'' in \emph{Four Open Questions for the
+$N$-Body Problem}. Cambridge: Cambridge University Press, 2024,
+pp.~271--275.
+\url{https://doi.org/10.1017/9781009200608.017}.
+
+\bibitem{MooreKearfottCloud2009}
+R.~E. Moore, R.~B. Kearfott, and M.~J. Cloud,
+\emph{Introduction to Interval Analysis}. Philadelphia: Society for
+Industrial and Applied Mathematics, 2009.
+\href{https://doi.org/10.1137/1.9780898717716}{doi:10.1137/1.9780898717716}.
+
+\bibitem{NedialkovJacksonCorliss1999}
+N.~S. Nedialkov, K.~R. Jackson, and G.~F. Corliss,
+``Validated solutions of initial value problems for ordinary differential
+equations,'' \emph{Applied Mathematics and Computation}, vol.~105, no.~1,
+pp.~21--68, 1999.
+\href{https://doi.org/10.1016/S0096-3003(98)10083-8}{doi:10.1016/S0096-3003(98)10083-8}.
+
+\bibitem{SiegelMoser1995}
+C.~L. Siegel and J.~K. Moser,
+\emph{Lectures on Celestial Mechanics}. Berlin: Springer, 1995 reprint.
+\href{https://doi.org/10.1007/978-3-642-87284-6}{doi:10.1007/978-3-642-87284-6}.
+
+\end{thebibliography}
 
 \end{document}

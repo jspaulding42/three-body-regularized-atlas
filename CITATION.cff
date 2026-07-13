@@ -4,7 +4,7 @@ message: >-
   accompanying manuscript.
 title: "Three-Body Regularized Atlas: Validated Binary-Collision Certificates"
 type: software
-version: 0.1.0
+version: 0.2.0-review
 date-released: 2026-07-12
 authors:
   - family-names: Spaulding
