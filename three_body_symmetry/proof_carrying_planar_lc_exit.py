@@ -106,7 +106,8 @@ class RawGaugeAwarePlanarLCExitContainmentResult:
 
     def _snapshot_certified(self) -> bool:
         return bool(
-            type(self.checker_id) is str
+            type(self) is RawGaugeAwarePlanarLCExitContainmentResult
+            and type(self.checker_id) is str
             and self.checker_id == _CHECKER_ID
             and type(self.analytic_kernel_id) is str
             and self.analytic_kernel_id == _ANALYTIC_KERNEL_ID
@@ -156,7 +157,10 @@ class RawGaugeAwarePlanarLCExitContainmentResult:
         """Freshly replay all retained raw evidence and exact-compare results."""
 
         try:
-            if not self._snapshot_certified():
+            if (
+                type(self) is not RawGaugeAwarePlanarLCExitContainmentResult
+                or not self._snapshot_certified()
+            ):
                 return False
             fresh = check_raw_gauge_aware_planar_lc_exit_containment(
                 self.raw_entry_transition,

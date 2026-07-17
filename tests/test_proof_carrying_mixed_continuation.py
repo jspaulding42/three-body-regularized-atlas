@@ -31,6 +31,7 @@ from three_body_symmetry.proof_carrying_continuation import (
 )
 from three_body_symmetry.proof_carrying_mixed_continuation import (
     RawMixedPlanarContinuationCertificate,
+    RawMixedPlanarContinuationReplayResult,
     canonical_mixed_evidence_json,
     check_raw_mixed_planar_continuation,
     raw_mixed_continuation_evidence_sha256,
@@ -46,6 +47,11 @@ class _AlwaysEqual:
         return True
 
     def __bool__(self) -> bool:
+        return True
+
+
+class _RawMixedResultEqualitySpoof(RawMixedPlanarContinuationReplayResult):
+    def __eq__(self, other: object) -> bool:
         return True
 
 
@@ -628,6 +634,19 @@ def test_copied_ledgers_kernel_ids_and_derived_snapshots_cannot_spoof_replay():
     assert result.nested_exit_result is not None
     forged_nested = replace(result.nested_exit_result, checker_id=_AlwaysEqual())
     assert not replace(result, nested_exit_result=forged_nested).certified
+
+    assert result.maximum_final_component_width is not None
+    hostile = _RawMixedResultEqualitySpoof(
+        **{
+            **result.__dict__,
+            "maximum_final_component_width": (
+                result.maximum_final_component_width + Fraction(1)
+            ),
+        }
+    )
+    assert not hostile._snapshot_well_formed()
+    assert not hostile.replay_consistent
+    assert not hostile.certified
 
     outside = check_raw_mixed_planar_continuation(
         replace(

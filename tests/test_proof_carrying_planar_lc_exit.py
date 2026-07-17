@@ -51,6 +51,13 @@ class _AlwaysEqual:
         return True
 
 
+class _RawLCExitResultEqualitySpoof(
+    RawGaugeAwarePlanarLCExitContainmentResult
+):
+    def __eq__(self, other: object) -> bool:
+        return True
+
+
 @lru_cache(maxsize=1)
 def _fixture() -> _Fixture:
     step = 2.0**-20
@@ -442,3 +449,21 @@ def test_always_equal_nested_snapshot_fields_cannot_spoof_fresh_replay():
             + result.target_tube_result.obligations[1:],
         ),
     ).certified
+
+
+def test_result_subclass_cannot_spoof_fresh_replay_equality():
+    result = _check(_fixture())
+    assert result.certified
+    assert result.maximum_projected_anchor_gap is not None
+
+    hostile = _RawLCExitResultEqualitySpoof(
+        **{
+            **result.__dict__,
+            "maximum_projected_anchor_gap": (
+                result.maximum_projected_anchor_gap + Fraction(1)
+            ),
+        }
+    )
+
+    assert not hostile._snapshot_certified()
+    assert not hostile.certified

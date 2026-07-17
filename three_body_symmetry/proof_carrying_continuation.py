@@ -237,7 +237,8 @@ class RawOrdinaryContinuationReplayResult:
 
     def _snapshot_certified(self) -> bool:
         return bool(
-            type(self.schema_version) is int
+            type(self) is RawOrdinaryContinuationReplayResult
+            and type(self.schema_version) is int
             and self.schema_version == _SCHEMA_VERSION
             and type(self.checker_id) is str
             and self.checker_id == _CHECKER_ID
@@ -285,7 +286,10 @@ class RawOrdinaryContinuationReplayResult:
     def certified(self) -> bool:
         """Freshly replay the retained raw evidence and bind every result field."""
 
-        if not self._snapshot_certified():
+        if (
+            type(self) is not RawOrdinaryContinuationReplayResult
+            or not self._snapshot_certified()
+        ):
             return False
         try:
             fresh = check_raw_ordinary_continuation(self.raw_certificate)

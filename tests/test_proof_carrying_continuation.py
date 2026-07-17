@@ -23,6 +23,11 @@ from three_body_symmetry.proof_carrying_continuation import (
 from three_body_symmetry.series import construct_taylor_solution
 
 
+class _RawOrdinaryResultEqualitySpoof(RawOrdinaryContinuationReplayResult):
+    def __eq__(self, other: object) -> bool:
+        return True
+
+
 def _raw_ordinary_continuation_certificate(*, step: float = 0.02):
     masses = np.array([1.0, 0.8, 1.2])
     positions = np.array(
@@ -199,6 +204,23 @@ def test_success_result_is_bound_to_fresh_replay_in_every_field():
             for obligation in result.obligations
         ),
     ).certified
+
+
+def test_result_subclass_cannot_spoof_fresh_replay_equality():
+    result = check_raw_ordinary_continuation(
+        _raw_ordinary_continuation_certificate()
+    )
+    assert result.certified
+
+    hostile = _RawOrdinaryResultEqualitySpoof(
+        **{
+            **result.__dict__,
+            "covered_physical_time_interval": (0.0, 0.039),
+        }
+    )
+
+    assert not hostile._snapshot_certified()
+    assert not hostile.certified
 
 
 def test_all_true_result_built_from_scratch_cannot_spoof_certification():

@@ -166,7 +166,8 @@ class CarriedOrdinaryBridgeResult:
 
     def _snapshot_certified(self) -> bool:
         return bool(
-            type(self.transition_id) is str
+            type(self) is CarriedOrdinaryBridgeResult
+            and type(self.transition_id) is str
             and bool(self.transition_id)
             and type(self.checker_id) is str
             and self.checker_id == _CHECKER_ID
@@ -209,7 +210,10 @@ class CarriedOrdinaryBridgeResult:
         """Freshly replay the raw bridge and exact-compare its full snapshot."""
 
         try:
-            if not self._snapshot_certified():
+            if (
+                type(self) is not CarriedOrdinaryBridgeResult
+                or not self._snapshot_certified()
+            ):
                 return False
             fresh = check_carried_ordinary_bridge(
                 self.raw_transition,

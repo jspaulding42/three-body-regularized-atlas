@@ -294,7 +294,9 @@ class RawMixedPlanarContinuationReplayResult:
 
     def _snapshot_well_formed(self) -> bool:
         if not (
-            type(self.raw_certificate) is RawMixedPlanarContinuationCertificate
+            type(self) is RawMixedPlanarContinuationReplayResult
+            and type(self.raw_certificate)
+            is RawMixedPlanarContinuationCertificate
             and type(self.certificate_id) is str
             and self.certificate_id
             == (
@@ -449,7 +451,10 @@ class RawMixedPlanarContinuationReplayResult:
         """Whether a fresh replay reproduces this success or failure exactly."""
 
         try:
-            if not self._snapshot_well_formed():
+            if (
+                type(self) is not RawMixedPlanarContinuationReplayResult
+                or not self._snapshot_well_formed()
+            ):
                 return False
             fresh = check_raw_mixed_planar_continuation(self.raw_certificate)
             return bool(

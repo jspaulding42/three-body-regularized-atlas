@@ -29,6 +29,11 @@ class _AlwaysEqual:
         return True
 
 
+class _OrdinaryBridgeResultEqualitySpoof(CarriedOrdinaryBridgeResult):
+    def __eq__(self, other: object) -> bool:
+        return True
+
+
 @dataclass(frozen=True)
 class _Fixture:
     transition: OrdinaryBridgeTransitionRecord
@@ -384,3 +389,14 @@ def test_changed_result_fields_and_python_equality_spoofs_do_not_certify():
         ),
     )
     assert not replace(result, target_tube_result=forged_target).certified
+
+    hostile = _OrdinaryBridgeResultEqualitySpoof(
+        **{
+            **result.__dict__,
+            "maximum_target_anchor_gap": (
+                result.maximum_target_anchor_gap + Fraction(1)
+            ),
+        }
+    )
+    assert not hostile._snapshot_certified()
+    assert not hostile.certified
