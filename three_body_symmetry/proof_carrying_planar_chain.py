@@ -1116,6 +1116,7 @@ def check_raw_planar_chain(
     )
 
     retained: tuple[PlanarChainRetainedRegion, ...]
+    prefix_ordinary_frontier: PlanarChainRetainedRegion | None = None
     if succeeded:
         retained = ()
     elif mathematical_to_t and final_enclosure is not None:
@@ -1132,7 +1133,7 @@ def check_raw_planar_chain(
             if failed_lc_segment is not None
             else None
         )
-        ordinary_frontier = _fresh_ordinary_right_frontier(
+        prefix_ordinary_frontier = _fresh_ordinary_right_frontier(
             current_chart,
             current_tube,
             current_clock,
@@ -1141,7 +1142,11 @@ def check_raw_planar_chain(
         retained = (
             (lc_frontier,)
             if lc_frontier is not None
-            else ((ordinary_frontier,) if ordinary_frontier is not None else ())
+            else (
+                (prefix_ordinary_frontier,)
+                if prefix_ordinary_frontier is not None
+                else ()
+            )
         )
     else:
         retained = ()
@@ -1152,7 +1157,11 @@ def check_raw_planar_chain(
         )
         covered: FractionInterval | tuple[()] = (initial_time, target)
     else:
-        covered = _covered_interval(certificate, retained)
+        covered = _covered_interval(
+            certificate,
+            retained,
+            prefix_ordinary_frontier,
+        )
 
     return RawPlanarChainReplayResult(
         certificate_id=(
@@ -1743,14 +1752,25 @@ def _final_retained_region(
 def _covered_interval(
     certificate: RawPlanarChainCertificate,
     retained: tuple[PlanarChainRetainedRegion, ...],
+    prefix_ordinary_frontier: PlanarChainRetainedRegion | None = None,
 ) -> FractionInterval | tuple[()]:
     try:
-        if not retained:
+        frontiers = retained + (
+            (prefix_ordinary_frontier,)
+            if prefix_ordinary_frontier is not None
+            else ()
+        )
+        if not frontiers:
             return ()
         initial = Fraction.from_float(certificate.root_binding.initial_time)
-        frontier = retained[0].physical_time_interval[0]
-        if frontier < initial:
-            return ()
+        # A frontier time interval encloses an unknown actual endpoint.  Only
+        # its lower endpoint is guaranteed to have been reached.  Take the
+        # furthest such lower endpoint among independently certified prefix
+        # frontiers, never an upper endpoint.
+        frontier = max(
+            initial,
+            *(item.physical_time_interval[0] for item in frontiers),
+        )
         return initial, frontier
     except Exception:
         return ()
@@ -2071,6 +2091,12 @@ def _prefix_ledgers_bind_raw(result: RawPlanarChainReplayResult) -> bool:
                     return False
                 source_chart_id = segment.target_chart.chart_id
             elif type(segment) is PlanarLCPassageV1Segment:
+                source_right = Fraction.from_float(
+                    segment.entry_transition.source_right_parameter
+                )
+                target_anchor = Fraction.from_float(
+                    segment.exit_transition.target_parameter
+                )
                 if not (
                     result.certified_transition_checker_ids[index]
                     == _LC_CHECKER_ID
@@ -2087,6 +2113,18 @@ def _prefix_ledgers_bind_raw(result: RawPlanarChainReplayResult) -> bool:
                     and cocycle.canonical_pair == segment.lc_chart.pair
                     and cocycle.source_clock_origin_interval
                     == source_clock.clock_origin_interval
+                    and cocycle.entry_time_interval
+                    == (
+                        source_right
+                        + source_clock.clock_origin_interval[0],
+                        source_right
+                        + source_clock.clock_origin_interval[1],
+                    )
+                    and cocycle.target_clock_origin_interval
+                    == (
+                        cocycle.exit_time_interval[0] - target_anchor,
+                        cocycle.exit_time_interval[1] - target_anchor,
+                    )
                     and cocycle.target_clock_origin_interval
                     == target_clock.clock_origin_interval
                     and target_clock.chart_id == segment.target_chart.chart_id
