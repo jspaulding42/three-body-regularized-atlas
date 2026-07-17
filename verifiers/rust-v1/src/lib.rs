@@ -15,8 +15,10 @@ mod error;
 mod exp;
 mod interval;
 mod json_number;
+mod ordinary_defect;
 mod ordinary_field;
 pub mod outward_mass;
+mod polynomial;
 mod rational_input;
 pub mod raw_schema;
 mod sqrt;
@@ -37,8 +39,16 @@ pub use json_number::{
     CheckedJsonBinary64, JsonNumberKind, JsonNumberLimits, ParsedJsonNumber,
     DEFAULT_JSON_NUMBER_LIMITS,
 };
+pub use ordinary_defect::{
+    evaluate_planar_three_body_ordinary_polynomial_defect, OrdinaryPolynomialDefectEnclosure,
+    OrdinaryPolynomialDefectError,
+};
 pub use ordinary_field::{
     evaluate_planar_three_body_ordinary_field, OrdinaryFieldEnclosure, OrdinaryFieldError,
+};
+pub use polynomial::{
+    ExactRationalPolynomial, PolynomialError, HARD_MAX_POLYNOMIAL_DEGREE,
+    HARD_MAX_POLYNOMIAL_DIMENSION, HARD_MAX_POLYNOMIAL_WORK_UNITS,
 };
 pub use rational_input::HARD_MAX_RATIONAL_COMPONENT_BITS;
 pub use sqrt::{sqrt_enclosure_dyadic, DyadicSqrtEnclosure, HARD_MAX_SQRT_PRECISION_BITS};

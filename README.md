@@ -107,34 +107,41 @@ and the [`v0.4 release gates`](docs/v0.4-independent-verification-release-gates.
 The standalone [`Rust v1 crate`](verifiers/rust-v1/) now has a resource-bounded
 strict JSON and canonical-byte layer, exact binary64/dyadic decoding,
 bounded canonical rational admission, checked rational intervals and Horner
-evaluation, a bounded first-order rational interval-dual primitive with a
-64-coordinate cap, checked value/gradient algebra, and reciprocal and
-square-root chain rules. That primitive now drives an independent planar
+evaluation, bounded nonempty rectangular degree-major exact-rational vector
+polynomials with interval Horner and exact formal derivative evaluation, and a
+bounded first-order rational interval-dual primitive with a 64-coordinate cap,
+checked value/gradient algebra, and reciprocal and square-root chain rules.
+That primitive now drives an independent planar
 12-state Newton RHS and a 12-by-12 rational-interval Jacobian, including an
 exact infinity-row-sum Lipschitz upper bound, fixed-pair separation, exact
 positive-mass preflight, and an unequal-mass conservation regression. The
-foundation also includes exact-postcondition dyadic square-root enclosures and
-an explicit `V03Compatible` typed decoder for the complete finite v0.3 record
-grammar, plus an exact rational exponential enclosure
-using range reduction, a Taylor partial sum with a geometric tail, full
-witness replay, and hard work/storage budgets, plus exact outward binary64
-mass coefficients for all eight raw-v1 mass formulas with hand-derived and
-stress-tested nearest-even endpoints. The crate currently passes 109 Rust unit
-tests and two corpus tests; `cargo fmt --check` and warning-denying Clippy are
-clean. The implementation-neutral
+field and polynomial kernels now compose into a direct enclosure of the 12
+ordinary residuals, ordered as `q' - v` and `v' - a(q)`, with an exact rational
+maximum over the absolute values of all residual interval endpoints.
+Direct-defect regressions cover unequal masses, an acceleration-block maximum,
+and early mass/precision preflight. The foundation also includes dyadic
+square-root enclosures with exact postconditions and an explicit
+`V03Compatible` typed decoder for the complete finite v0.3 record grammar,
+plus an exact rational exponential enclosure using range reduction, a Taylor
+partial sum with a geometric tail, full witness replay, and hard work/storage
+budgets, plus exact outward binary64 mass coefficients for all eight raw-v1
+mass formulas with hand-derived and stress-tested nearest-even endpoints. The
+crate currently passes 121 Rust unit tests and two corpus tests;
+`cargo fmt --check` and warning-denying Clippy are clean. The implementation-neutral
 [`raw-v1 seed corpus`](conformance/raw-v1/README.md) currently contains two
 accepted baseline payloads and sixteen isolated rejection mutations. The
 public Python admission API and the independent Rust integration suite both
 enforce those 18 parser classifications.
 
 This remains foundation work, **not yet an independent certificate verifier**.
-The Rust crate still has no raw SHA-256 layer. Its interval-dual primitive is
-connected to the ordinary point/interval field and Jacobian, but not to the
-ordinary polynomial or chart recurrence, residual/defect evaluation,
-tube/Grönwall check, root/bridge/fixed-time semantics, any LC field, or
-certificate replay. Chart/tube/transition checks, chain fold, clock or gauge
-logic, obligation ledger, and semantic result serialization also remain
-unimplemented. The corpus is marked
+The Rust crate still has no raw SHA-256 layer. Its exact polynomial and direct
+ordinary-defect kernels are arithmetic-only and have no raw-certificate or
+schema coupling. Primitive ordinary-chart recurrence and Taylor-model
+residual/tail replay, semantic chart decoding, complete tube collision and
+analytic Lipschitz and Grönwall acceptance, root/bridge/fixed-time semantics,
+every LC field, and certificate replay remain absent. Chart/tube/transition checks,
+chain fold, clock or gauge logic, obligation ledger, and semantic result
+serialization also remain unimplemented. The corpus is marked
 `seed_incomplete` and lacks
 the required semantic, numeric-boundary, and fold-boundary coverage.
 Cross-language numeric canonical rendering and the Rust toolchain pin also

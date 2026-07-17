@@ -590,23 +590,68 @@ In exact order:
 5. `ordinary_tube_lipschitz_within_cap`
 6. `ordinary_tube_gronwall_self_consistent`
 
-Replay reconstructs an outward polynomial defect, a nominal pair-distance
-floor, the radius-reduced tube pair-distance floor, and a Newton-field
-Lipschitz bound.  The direct defect and Lipschitz values MUST not exceed the
-declared caps and the complete tube MUST be collision-free.  With
-`h = max(|left-anchor|,|right-anchor|)`, initial error `eps`, defect `delta`,
-and Lipschitz bound `L`, the
-outward Gronwall error
+Let `I` be the chart's parameter interval and let
+
+\[
+P(s)=(q(s),v(s))
+\]
+
+be the serialized polynomial in the 12-state `q`-then-`v` order of Section
+3.1.  Every serialized coefficient is interpreted as the exact dyadic value
+of its binary64 encoding.  If `p_n` is a component coefficient, the
+corresponding derivative coefficient is the exact rational product
+`(n + 1) * p[n + 1]`; replay MUST NOT first round that product through
+binary64.  Writing `[P](I)` and `[P'](I)` for outward componentwise
+interval-Horner enclosures and `[F]` for an outward interval extension of the
+ordinary Newton field, replay forms
+
+\[
+[R](I)=[P'](I)-[F]([P](I))
+\]
+
+and takes `delta` to be an outward upper enclosure of
+
+\[
+\sup_{s\in I}\lVert P'(s)-F(P(s))\rVert_\infty,
+\]
+
+namely the maximum, over the 12 components of `[R](I)`, of the absolute
+values of both interval endpoints.  This is the direct defect of the
+serialized finite polynomial.  The chart's `tail_bound`, which belongs to the
+primitive Taylor recurrence/residual ledger in Section 4.1, MUST NOT be added
+to this direct tube defect.
+
+The scalar initial error `eps` and tube radius `r` are radii in the state
+ℓ∞ norm on all 12 coordinates.  The collision and Lipschitz domain is
+
+\[
+P(I)+[-r,r]^{12};
+\]
+
+replay may enclose it by the componentwise box `[P](I)+[-r,r]^12`.  In
+particular, the same `r` is the position radius used in the pair-distance
+reduction below.  Replay reconstructs the direct defect, a downward nominal
+pair-distance floor, the radius-reduced tube pair-distance floor, and a
+Newton-field Lipschitz bound on this complete domain.  Collision freedom
+requires a strictly positive tube pair-distance floor.
+
+The declared `max_defect_bound` and `max_lipschitz_bound` are untrusted
+binary64 fields interpreted as exact dyadic caps, not witnesses.  The
+recomputed outward `delta` and `L` MUST not exceed those caps.  With the exact
+dyadic horizon `h = max(|left-anchor|,|right-anchor|)`, the outward Gronwall
+error
 
 \[
 E=e^{Lh}\epsilon+\delta\,{e^{Lh}-1\over L}
 \]
 
-(with the continuous `L=0` interpretation) MUST be strictly less than the
-tube radius.
+(with the continuous `L=0` interpretation) MUST satisfy the strict inequality
+`E < r`.  Equality does not establish self-consistency.
 
-In the v0.3 profile, if `r` is the position radius and `d=2`, the tube
-pair-distance floor is the downward enclosure of
+In the v0.3 profile, `d_nominal` is a downward enclosure of the minimum
+Euclidean distance between any pair of bodies over the nominal position box
+`[q](I)`.  With `d=2`, the tube pair-distance floor is the downward enclosure
+of
 
 \[
 d_{tube}=d_{nominal}-2\sqrt d\,r.
@@ -619,6 +664,26 @@ For body `i`, the acceleration-Jacobian upper bound is the upward enclosure of
 \]
 
 and `L` is the maximum of `1` and the three body bounds.
+
+A v0.3-conformance replay MUST use this published analytic pair-floor and
+Lipschitz construction.  It MUST NOT silently substitute an automatic-
+differentiation Jacobian row-sum, even if that row-sum is independently proved
+to be a sound Lipschitz bound.  Such a bound may define a separately named,
+versioned arithmetic profile.  This requirement fixes the v0.3 formula family;
+the low-level status-parity questions about outward operations, square roots,
+and exponentials remain those recorded in OPEN-V1-08.
+
+Exhaustion of an implementation's declared arithmetic resources or of the
+precision needed to prove separation, a cap comparison, or the strict
+Gronwall inequality produces `UNRESOLVED` (or a separately reported
+non-semantic resource status).  It is neither parser rejection nor
+certification; see OPEN-V1-17.
+
+An ordinary-tube result establishes this conditional a-posteriori estimate.
+It does not by itself prove that a particular IVP lies in the initial ball.
+The chain root must discharge that premise through the validated binding in
+Section 4.6, and an ordinary bridge must discharge it through the complete
+endpoint handoff in Section 5.2.
 
 ### 4.5 Planar LC a-posteriori tube
 

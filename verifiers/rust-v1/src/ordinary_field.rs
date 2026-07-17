@@ -92,14 +92,7 @@ pub fn evaluate_planar_three_body_ordinary_field(
     masses: &[BigRational; BODY_COUNT],
     sqrt_precision_bits: usize,
 ) -> Result<OrdinaryFieldEnclosure, OrdinaryFieldError> {
-    validate_masses(masses)?;
-    if sqrt_precision_bits > HARD_MAX_SQRT_PRECISION_BITS {
-        return Err(NumericError::SquareRootPrecisionBitLimitExceeded {
-            precision_bits: sqrt_precision_bits,
-            limit: HARD_MAX_SQRT_PRECISION_BITS,
-        }
-        .into());
-    }
+    preflight_planar_three_body_ordinary_field(masses, sqrt_precision_bits)?;
 
     let variables = seed_state_variables(state)?;
     let zero = RationalInterval::try_point(BigRational::zero())?;
@@ -164,6 +157,21 @@ pub fn evaluate_planar_three_body_ordinary_field(
         jacobian,
         lipschitz_infinity_upper,
     })
+}
+
+pub(crate) fn preflight_planar_three_body_ordinary_field(
+    masses: &[BigRational; BODY_COUNT],
+    sqrt_precision_bits: usize,
+) -> Result<(), OrdinaryFieldError> {
+    validate_masses(masses)?;
+    if sqrt_precision_bits > HARD_MAX_SQRT_PRECISION_BITS {
+        return Err(NumericError::SquareRootPrecisionBitLimitExceeded {
+            precision_bits: sqrt_precision_bits,
+            limit: HARD_MAX_SQRT_PRECISION_BITS,
+        }
+        .into());
+    }
+    Ok(())
 }
 
 fn validate_masses(masses: &[BigRational; BODY_COUNT]) -> Result<(), OrdinaryFieldError> {

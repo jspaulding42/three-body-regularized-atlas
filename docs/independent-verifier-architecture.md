@@ -100,9 +100,28 @@ square-root chain rules. It now independently evaluates the planar ordinary
 12-state Newton RHS and a 12-by-12 rational-interval Jacobian, including an
 exact infinity-row-sum Lipschitz upper bound, fixed-pair separation, exact
 positive-mass preflight, and an unequal-mass conservation regression. This
-ordinary field/Jacobian slice is not yet connected to ordinary polynomial or
-chart recurrence, residual/defect evaluation, the tube/Grönwall check,
-root/bridge/fixed-time semantics, any LC field, or certificate replay.
+ordinary field/Jacobian slice now supplies the field enclosure used by the
+direct polynomial-defect kernel below, but neither API has raw-schema or
+certificate semantics.
+
+### Exact polynomials and direct ordinary defect
+
+The arithmetic foundation includes a bounded nonempty rectangular
+exact-rational vector polynomial in ascending degree-major order. It evaluates
+each component by rational interval Horner arithmetic and forms derivative
+coefficients by exact integer multiplication before either derivative
+construction or direct derivative evaluation. Dimension, degree, rational
+component size, and aggregate work are hard-capped.
+
+For six-component position and velocity polynomials, the direct ordinary
+defect kernel evaluates the 12 residual intervals in `q' - v`, `v' - a(q)`
+order over one rational parameter interval. It returns the exact rational
+maximum of the absolute values of all 24 interval endpoints. This is a
+numeric enclosure of the nominal finite polynomial's direct ODE defect. It is
+not the primitive chart coefficient-recurrence or Taylor-model residual/tail
+ledger, and it does not decode an `OrdinaryChartWire`, compare a certificate
+cap, or accept a tube. Regressions cover unequal masses, an acceleration-block
+maximum, and mass/precision preflight before polynomial evaluation.
 
 ## Implementation status at the current checkpoint
 
@@ -110,6 +129,9 @@ The standalone Rust crate now implements a strict, resource-bounded JSON byte
 layer, duplicate-key and canonical-byte rejection, exact decimal-to-binary64
 nearest-even validation, exact binary64-to-dyadic decoding, bounded canonical
 rational admission, checked rational intervals and Horner evaluation, a
+bounded exact-rational degree-major vector-polynomial kernel with exact formal
+differentiation and interval Horner evaluation, a direct 12-component ordinary
+polynomial-defect enclosure with an exact maximum-absolute-endpoint bound, a
 bounded first-order rational interval-dual primitive with a 64-coordinate cap,
 checked value/gradient algebra, and reciprocal and square-root chain rules,
 an independently evaluated planar 12-state Newton RHS, a 12-by-12
@@ -128,7 +150,7 @@ for the complete finite v0.3 raw-v1 record grammar. The record-by-record parser
 boundary is documented in the
 [`Rust schema map`](raw-v1-rust-schema-map.md).
 
-The current validation checkpoint is 109 passing Rust unit tests and two
+The current validation checkpoint is 121 passing Rust unit tests and two
 passing corpus tests, with `cargo fmt --check` and warning-denying Clippy clean.
 
 The implementation-neutral
@@ -144,14 +166,16 @@ release.
 Delivery slices 1 and 2 are therefore only partial. `OPEN-V1-01` remains open
 because the tested Rust float rendering path is not yet a portable normative
 shortest-decimal algorithm and the Rust toolchain is not pinned. Raw SHA-256,
-ordinary polynomial/chart recurrence, residual/defect evaluation, the
-tube/Grönwall check, root/bridge/fixed-time semantics, every LC field, all
-ordinary/LC chart, tube, and transition checks, chain-fold semantics, clock and
-gauge logic, the obligation ledger, and the semantic result serializer remain
-unimplemented. No certificate has been replayed by this crate. The corpus
-remains `seed_incomplete`, no slice beyond the byte/schema and partial numeric
-and ordinary-field foundations is complete, and neither the conformance gate
-nor the independent-verifier gate passes at this checkpoint.
+semantic ordinary-chart decoding, primitive chart recurrence and Taylor-model
+residual/tail replay, complete tube collision and analytic Lipschitz and Grönwall
+acceptance, root/bridge/fixed-time semantics, every LC field, all ordinary/LC
+chart, tube, and transition checks, chain-fold semantics, clock and gauge logic,
+the obligation ledger, and the semantic result serializer remain unimplemented.
+The polynomial and direct-defect APIs have no certificate/schema coupling. No
+certificate has been replayed by this crate. The corpus remains
+`seed_incomplete`, no slice beyond the byte/schema and partial numeric and
+ordinary-field foundations is complete, and neither the conformance gate nor
+the independent-verifier gate passes at this checkpoint.
 
 ## Delivery slices
 
