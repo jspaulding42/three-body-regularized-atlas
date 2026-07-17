@@ -3,20 +3,39 @@
 ## Status
 
 This document specifies Milestone 3 of the general certified computational
-solution goal.  It is an implementation contract, not a claim that the mixed
-checker already exists.  The checker may return `CERTIFIED_TO_T` only after
-all arithmetic prerequisites and all obligations below are implemented and
-freshly replayed.  Until then, mixed evidence remains `UNRESOLVED` outside the
-public proof surface.
+solution goal and records its implemented private theorem surface.  The
+version-1 checker in
+`three_body_symmetry/proof_carrying_mixed_continuation.py` may return
+`CERTIFIED_TO_T` only after every obligation below has been freshly replayed.
+It is a supplied-certificate soundness theorem, not a claim of public API
+stability or certificate-production completeness.
 
-Current implementation progress: the directed LC arithmetic prerequisites and
-the private raw-replaying exit-containment primitive are complete.  The latter
-retains and freshly rechecks the Stage-3 entry evidence, reconstructs the full
-fourteen-dimensional exit slice, proves positive exit \(\rho\), contains its
-complete Cartesian projection in the ordinary anchor, and derives \(D\) and
-\(B=D-a\).  The canonical top-level wire certificate, fixed-\(T\) evaluation,
-final width gate, and structured mixed result are not yet implemented; hence
-this progress does not produce a mixed `CERTIFIED_TO_T` result.
+The implementation retains and freshly rechecks the Stage-3 entry evidence,
+reconstructs the full fourteen-dimensional exit slice, proves positive exit
+\(\rho\), contains its complete Cartesian projection in the ordinary anchor,
+and derives the exact interval cocycles
+
+\[
+D=[d_-,d_+],\qquad B=D-a,\qquad
+J=T-B=a+T-D=[a+T-d_+,a+T-d_-].
+\]
+
+It then evaluates the target chart over all of \(J\), adds the freshly replayed
+ordinary-tube error, applies the exact rational component-width gate, and
+returns either an evidence-bound `CERTIFIED_TO_T` enclosure or a structured
+`UNRESOLVED` result.  Nonzero-anchor regression fixtures certify one passage
+for each canonical pair `(0, 1)`, `(0, 2)`, and `(1, 2)`.  Repeated passages
+and chains that change pairs remain the next implementation gap.
+
+The replay result pins the checker and trusted-kernel identities
+`raw_mixed_planar_continuation_replay_checker_v1`,
+`planar_newton_lc_mixed_analytic_kernel_v1`,
+`autonomous_target_clock_cocycle_kernel_v1`, and
+`exact_rational_horner_fixed_time_kernel_v1`.  Its nested exit result pins
+`raw_gauge_aware_planar_lc_exit_containment_checker_v1` and
+`planar_lc_analytic_kernel_v1`.  These names identify the reviewed finite
+arithmetic and analytic assumptions; they do not turn the analytic lemmas into
+machine-checked proofs.
 
 The first supported grammar is exactly
 
@@ -123,7 +142,7 @@ D=[d_-,d_+]\ni t_{\mathrm{exit}}.
 No endpoint, midpoint, or declared handoff time is promoted to the exact
 exit time.
 
-The new exit checker must consume and freshly recompute the six raw
+The private exit checker consumes and freshly recomputes the six raw
 gauge-aware entry primitives.  The existing legacy LC-to-ordinary checker,
 which accepts a supplied legacy entry-result type, is not a theorem-facing
 component of this construction.
@@ -191,9 +210,20 @@ After a successful entry, that prefix may be a lifted LC tube/time enclosure,
 not an `OrdinaryStateEnclosure`, because Cartesian velocity is undefined at an
 interior binary collision.
 
-## Arithmetic prerequisites
+The implemented result makes that frontier explicit with at most one typed
+region: `certified_ordinary_entry_slice`,
+`certified_lifted_lc_exit_slice`, or
+`certified_ordinary_target_right_frontier`.  If the full fixed-time enclosure
+is proved but only the requested width gate fails, it instead retains
+`certified_ordinary_fixed_time_enclosure`.  Each region carries exact rational
+physical-time and parameter intervals, complete component intervals, its
+coordinate system, and a pinned provenance checker.  It never relabels an LC
+frontier as an ordinary Cartesian state.
 
-The following are release blockers, not optional numerical improvements:
+## Directed-arithmetic constraints
+
+The implementation enforces the following soundness constraints; they are not
+optional numerical improvements:
 
 1. LC polynomial derivatives must form \(n a_n\) as exact rational products
    of the serialized binary64 coefficient before outward conversion.  A
@@ -210,10 +240,14 @@ The following are release blockers, not optional numerical improvements:
 5. Fixed-\(T\) parameter and state evaluation must be outward throughout;
    nominal chart times and sampled values are diagnostics only.
 
-After these prerequisites, adversarial tests must perturb every raw component,
-clock endpoint, gauge patch, mass, pair, exit parameter, target anchor, tube
-radius, and requested width.  Copied all-true ledgers and mutated result
-snapshots must fail fresh replay.
+The focused regressions in
+`tests/test_proof_carrying_mixed_continuation.py`, together with
+`tests/test_proof_carrying_planar_lc_exit.py` and
+`tests/test_lc_directed_arithmetic.py`, cover the three canonical pairs,
+inclusive clock/domain/width boundaries, mutation of each retained raw input,
+malformed and hostile wire values, typed prefix retention, copied all-true
+ledgers, changed kernel identifiers, and mutated derived snapshots.  Such
+mutations fail fresh replay rather than inheriting a prior success.
 
 Version 1 may therefore return `UNRESOLVED` for a valid positive mass triple
 whose required ratios are not exactly representable in the restricted
@@ -227,9 +261,10 @@ collision.
 
 ## Next generalization
 
-Once this exact three-segment theorem has a nontrivial positive fixture, a
-finite chain can alternate ordinary bridges with any of `LC_01`, `LC_02`, and
-`LC_12`.  The repeated checker should reuse this transition theorem, carry a
-forward interval clock-origin ledger, derive pair-indexed gauge graphs, and
-evaluate the final chart at fixed \(T\).  That later supplied-chain theorem
-still makes no arbitrary-input termination or completeness claim.
+With this exact three-segment theorem now exercised by nontrivial positive
+fixtures, the next checker must compose a finite chain that alternates ordinary
+bridges with any of `LC_01`, `LC_02`, and `LC_12`.  It should reuse this
+transition theorem, carry a forward interval clock-origin ledger, derive
+pair-indexed gauge graphs, and evaluate the final chart at fixed \(T\).  That
+later supplied-chain theorem still makes no arbitrary-input termination or
+completeness claim.

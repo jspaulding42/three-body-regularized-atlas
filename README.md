@@ -43,9 +43,9 @@ into the same target 14-dimensional \(L^\infty\) initial ball.  Branch metadata,
 reason strings, and supplied parity are not trusted; ambiguous and
 collision-containing boxes reject.  The legacy checker has a narrower exact
 clock gate but still trusts a prebuilt source result.  Raw Stage 3 is the
-adversarially replayable route.  No existing transition or `proof_certified`
-path consumes it, and none of these local results is a general or global
-solution.
+adversarially replayable route.  The private one-passage mixed checker below
+now consumes that raw evidence; no public `proof_certified` path does, and none
+of these local results is a general or global solution.
 
 The active strengthening program is now
 [`docs/general-certified-computational-solution-goal.md`](docs/general-certified-computational-solution-goal.md):
@@ -63,16 +63,24 @@ matches the canonical checker output exactly, and bounds the final component
 width using exact rational differences and outward binary64 conversion.  On
 failure, only the last consecutively certified ordinary-chart right endpoint
 is retained; an invalid initial binding, collided first chart, or failed first
-tube retains nothing.  This milestone does **not** support LC or mixed
-ordinary/LC chains, prove producer termination, or establish general/global
-completeness.  The reviewed Milestone-3 implementation contract is
+tube retains nothing.  This ordinary-only milestone does **not** itself support
+LC or mixed ordinary/LC chains, prove producer termination, or establish
+general/global completeness.  The reviewed Milestone-3 theorem and
+implementation record is
 [`docs/raw-mixed-planar-continuation-theorem.md`](docs/raw-mixed-planar-continuation-theorem.md).
 Its directed LC derivative, square-root, and Gronwall prerequisites are now
 implemented.  A private raw-replaying gauge-aware exit primitive now proves
 complete rho-positive LC endpoint projection into an ordinary anchor and
-derives the clock intervals `D` and `B=D-a`; it is not yet exported as a
-top-level certificate language.  The interval-clock fixed-time composition is
-still missing, so no mixed chain currently returns `CERTIFIED_TO_T`.
+derives the exact clock intervals `D` and `B=D-a`.  The private top-level
+`RawMixedPlanarContinuationCertificate` checker now freshly replays one
+`N -> LC_ij -> N` passage, derives `J=a+T-D`, evaluates the whole preimage with
+outward arithmetic, and returns either an evidence-bound `CERTIFIED_TO_T` or a
+structured `UNRESOLVED` result with the furthest replay-certified ordinary or
+lifted frontier.  Nonzero-anchor fixtures cover all three canonical binary
+pairs.  Results pin separate mixed-analytic, autonomous-clock, fixed-time, and
+nested LC kernel identifiers.  Repeated passages and mixed-pair chains are not
+yet implemented, and this supplied-chain result still makes no arbitrary-input
+production, total-collision, spatial, escape-completeness, or all-time claim.
 
 The broader historical research program and experimental machinery are
 retained below for auditability.
@@ -110,13 +118,14 @@ python -m pytest -q tests/test_lc_gauge_gluing.py \
 ```
 
 Run the focused exact-arithmetic, global-clock, problem-identity, and raw
-ordinary replay regressions for the new strengthening program:
+replay regressions for the new strengthening program:
 
 ```bash
 python -m pytest -q \
   tests/test_directed_arithmetic_kernel.py \
   tests/test_lc_directed_arithmetic.py \
   tests/test_proof_carrying_planar_lc_exit.py \
+  tests/test_proof_carrying_mixed_continuation.py \
   tests/test_certificate_checker_fraction_bounds.py \
   tests/test_certificate_language_clock_shift.py \
   tests/test_certificate_problem_identity.py \
