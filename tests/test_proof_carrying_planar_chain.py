@@ -406,6 +406,23 @@ def test_n_to_n_chain_replays_root_clock_fold_and_fixed_time_enclosure():
     assert result.retained_regions == ()
 
 
+def test_raw_chain_rejects_uncertified_initial_ordinary_chart():
+    certificate = _fixture().certificate
+    invalid_initial_chart = replace(
+        certificate.initial_chart,
+        coefficient_tolerance=-1.0,
+    )
+    invalid = replace(certificate, initial_chart=invalid_initial_chart)
+
+    result = check_raw_planar_chain(invalid)
+
+    assert result.status == UNRESOLVED
+    assert not result.certified
+    assert result.certified_segment_count == 0
+    assert result.first_failed_obligation == "root:finite_checker_tolerances"
+    assert result.retained_regions == ()
+
+
 def test_wire_round_trip_digest_and_strict_union_fields():
     certificate = _fixture().certificate
     wire = certificate.to_dict()

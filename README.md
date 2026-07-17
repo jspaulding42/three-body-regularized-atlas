@@ -97,6 +97,16 @@ python -m pytest -q \
   tests/test_planar_chain_review_artifact.py
 ```
 
+### v0.4 independent-verification work in progress
+
+The active successor work is defined by the
+[`independent-verifier architecture`](docs/independent-verifier-architecture.md),
+the normative [`raw-v1 certificate specification`](docs/raw-v1-certificate-specification.md),
+and the [`v0.4 release gates`](docs/v0.4-independent-verification-release-gates.md).
+The standalone [`Rust v1 crate`](verifiers/rust-v1/) currently implements only
+exact numeric primitives; it is **not yet an independent certificate
+verifier** and makes no certificate-level claim.
+
 The broader historical research program and experimental machinery are
 retained below for auditability.
 

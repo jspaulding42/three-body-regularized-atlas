@@ -465,15 +465,24 @@ recentering, adaptive precision, and subdivision diagnostics remain future
 extensions. The theorem is still supplied-chain soundness; producer
 termination remains open.
 
-### Current next milestone: tracked review and production bridge
+### Completed v0.3 baseline: tracked review bundle
 
-Export canonical raw chain evidence and fresh replay transcripts into a
-tracked review bundle, pin transport hashes and the source revision, exercise
-success and structured-failure paths, and obtain external mathematical and
-implementation review. The review script must label its result as
-same-implementation replay unless and until a genuinely independent verifier
-exists. After that audit, begin the untrusted adaptive producer and the
-initial-condition-family/wrapping-control work below.
+The publicly tagged `v0.3.0-review` release tracks canonical raw-chain
+evidence and fresh replay transcripts, pins transport hashes and the source
+revision, and exercises success and structured-failure paths.  It remains
+same-implementation replay, not independent verification.  A durable archive
+with a DOI and matching reproduction evidence from two clean environments
+remain open release gates.
+
+### Active successor milestone
+
+The v0.4 independent-verification work is tracked in the
+[`independent-verifier architecture`](independent-verifier-architecture.md),
+the normative [`raw-v1 certificate specification`](raw-v1-certificate-specification.md),
+the [`v0.4 release gates`](v0.4-independent-verification-release-gates.md),
+and the standalone [`Rust v1 crate`](../verifiers/rust-v1/).  The crate
+currently contains only exact numeric primitives; it is **not yet an
+independent certificate verifier** and makes no certificate-level claim.
 
 ### Milestone 5: initial-condition families and wrapping control
 

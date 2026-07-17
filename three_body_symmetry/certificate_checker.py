@@ -530,6 +530,7 @@ class ValidatedOrdinaryIVPChartCheckResult:
             and type(self.tube_result) is OrdinaryAposterioriTubeCheckResult
             and self.tube_result.certified
             and type(self.chart_result) is CertificateCheckResult
+            and self.chart_result.certified
             and self.chart_serialization_admissible is True
             and _check_obligation_ledger_certified(self.obligations)
         )
@@ -544,6 +545,7 @@ class ValidatedOrdinaryIVPChartCheckResult:
         )
         missing.extend(self.binding_result.missing_obligations)
         missing.extend(self.tube_result.missing_obligations)
+        missing.extend(self.chart_result.missing_obligations)
         return tuple(dict.fromkeys(missing))
 
 

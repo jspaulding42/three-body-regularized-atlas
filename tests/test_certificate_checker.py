@@ -1385,6 +1385,40 @@ def test_validated_ordinary_ivp_chart_encloses_bound_initial_value_problem():
     assert result.missing_obligations == ()
 
 
+def test_validated_ordinary_ivp_chart_requires_and_exposes_chart_certification():
+    chart = replace(_ordinary_chart_certificate(), coefficient_tolerance=-1.0)
+    binding = InitialValueProblemBindingCertificate(
+        binding_id="ivp-binding:uncertified-ordinary-chart",
+        chart_id=chart.chart_id,
+        masses=chart.masses,
+        initial_time=0.0,
+        chart_parameter=0.0,
+        positions=chart.position_coefficients[0],
+        velocities=chart.velocity_coefficients[0],
+        time_tolerance=0.0,
+        position_tolerance=0.0,
+        velocity_tolerance=0.0,
+    )
+    tube = OrdinaryAposterioriTubeCertificate(
+        tube_id="ordinary-tube:uncertified-ordinary-chart",
+        chart_id=chart.chart_id,
+        anchor_parameter=0.0,
+        initial_error_bound=0.0,
+        tube_radius=2.0e-2,
+        max_defect_bound=1.0e-1,
+        max_lipschitz_bound=70.0,
+    )
+
+    result = check_validated_ordinary_ivp_chart(binding, tube, chart)
+
+    assert result.binding_result.certified
+    assert result.tube_result.certified
+    assert not result.chart_result.certified
+    assert not result.certified
+    assert result.chart_result.missing_obligations[0] == "finite_checker_tolerances"
+    assert result.missing_obligations[0] == "finite_checker_tolerances"
+
+
 def test_weighted_ordinary_tube_recovers_scalar_case_with_equal_radii():
     chart = _ordinary_chart_certificate()
     result = check_weighted_ordinary_aposteriori_tube(
