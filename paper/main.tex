@@ -274,9 +274,9 @@ Equation~\eqref{eq:constraint} gives
 \]
 The equations for $R,U,y,V$ similarly give
 $R_t=U$, $R_{tt}=B$, $y_t=V$, and $y_{tt}=Y$; substituting the definitions of
-$B,Y,P$ reconstructs all three Newton equations.  Seven polynomial identities
-used in this reduction are also reduced to zero independently by the exact
-symbolic verification script.
+$B,Y,P$ reconstructs all three Newton equations.  The exact symbolic
+verification script independently reduces to zero twelve projection and gauge
+identities supporting this reduction and the gluing extension below.
 \end{proof}
 
 The constraint is essential.  Off $C=0$, the effective singular coefficient
@@ -400,11 +400,19 @@ The independent symbolic audit is run with
 \begin{verbatim}
 python scripts/verify_lc_projection_identities.py
 \end{verbatim}
-and verifies exactly seven LC projection identities.  The focused regression
-suite can be run with
+and verifies exactly twelve LC projection and gauge identities.  The focused
+regression suite can be run with
 \begin{verbatim}
 python -m pytest -q tests/test_certificate_checker.py \
   -k 'planar_lc or weighted_ordinary or two_sided'
+\end{verbatim}
+The exact gauge, derived-overlap/aggregate, and raw Stage~3 regressions can be
+run with
+\begin{verbatim}
+python -m pytest -q tests/test_lc_gauge_gluing.py \
+  tests/test_lc_exact_overlap.py tests/test_lc_exact_gauge_atlas.py \
+  tests/test_lc_gauge_aware_transition.py \
+  tests/test_lc_projection_identities.py
 \end{verbatim}
 The repository documentation records broader regression commands and current
 test status; a release submission should archive the exact commit, dependency
@@ -447,15 +455,162 @@ Accordingly, the scientifically useful claim is narrow: the artifact checks
 whether a supplied regularized chart describes one Newtonian solution passing
 through one isolated planar binary collision.
 
+\section{Exact anchored gauge gluing and raw gauge-aware entry}
+
+The implementation contains a separate, bounded extension for comparing
+already validated LC charts.  Define the deck action
+\[
+ \Gamma(z,w,h,R,U,y,V,t)=(-z,-w,h,R,U,y,V,t).
+\]
+Direct substitution gives $F(\Gamma X)=D\Gamma F(X)$.  An atlas vertex in this
+extension is one fixed chart, one zero-error tube, and that tube's anchor; a
+vertex identifier cannot be rebound to different data.
+
+\begin{proposition}[Exact same-IVP anchored overlap]
+Let two accepted zero-error LC tubes use the same positive masses and ordered
+pair, with chart intervals $I_u,I_v$ and anchors $a_u,a_v$.  Suppose
+\[
+ J=(I_u-a_u)\cap(I_v-a_v)
+\]
+is nondegenerate and exact rational evaluation of all fourteen coordinates
+gives
+\[
+ \bar X_v(a_v)=\Gamma^\sigma\bar X_u(a_u),
+ \qquad \sigma\in\mathbb{F}_2,
+\]
+where the $z$ and $w$ blocks are jointly equal or jointly antipodal and all
+other blocks, including physical time, agree.  Then the exact solutions
+selected by the tubes satisfy
+\[
+ X_v(a_v+r)=\Gamma^\sigma X_u(a_u+r),\qquad r\in J.
+\]
+For a finite connected graph made entirely from such exact comparisons of
+fixed vertices, the derived edge bits admit a global vertex-gauge assignment;
+their XOR on every cycle is zero.
+\end{proposition}
+
+\begin{proof}
+The curve $Y(r)=\Gamma^\sigma X_u(a_u+r)$ solves the same autonomous lifted
+equations as $X_v(a_v+r)$ by equivariance, and the exact anchor equality gives
+the same initial value at $r=0$.  The tube theorem supplies uniqueness, hence
+$Y=X_v$ throughout $J$.  Around a graph cycle, composition of the exact edge
+relations returns the fixed starting representative.  The checker accepts an
+edge only when the identity and antipodal relations are mutually exclusive,
+so the action is free on the compared anchor and the composed parity must be
+zero.  A root bit propagated along a spanning tree therefore satisfies every
+edge equation.
+\end{proof}
+
+The overlap checker derives $\sigma$; no parity bit occurs in its serialized
+input.  It reports the lifted same-IVP result separately from the stronger
+status requiring exact pair-energy constraints and exact mass-ratio arithmetic
+for a common punctured Newtonian projection, and separately records whether
+$J$ extends to both sides of the anchor.  The raw-evidence aggregate reruns
+the vertex tubes and overlap checks, constructs the derived edges, and then
+calls an exact $\mathbb{F}_2$ graph checker.  Thus an odd cycle remains a useful
+diagnostic for the generic supplied-label kernel, but cannot occur in a fully
+accepted free-action same-anchor aggregate.
+
+The implementation also contains a separate raw-evidence entry checker.  Its
+source inputs are a direct IVP binding, ordinary a-posteriori tube, and ordinary
+chart; it retains those inputs and recomputes the validated source internally.
+It accepts neither a prebuilt source result nor a continuation-chain source.
+
+\begin{theorem}[Canonical raw gauge-aware LC entry]
+\label{thm:gauge-entry}
+Let $S\subset\mathbb R^{12}$ be the ordinary source box reconstructed from
+exact rational chart evaluation and the freshly checked ordinary tube radius.
+For the ordered selected pair, let the relative-position projection be
+$[x_-,x_+]\times[y_-,y_+]$, and suppose it excludes collision.  Apply the
+following ordered grammar:
+\begin{enumerate}[label=(\roman*)]
+\item if $y_-\geq0$, take one closed-upper patch; otherwise, if $y_+\leq0$,
+      take one closed-lower patch; otherwise, if $x_->0$, take one right-half
+      patch;
+\item only if $y_-<0<y_+$ and $x_+<0$, take the closed-upper and closed-lower
+      patches and join them by a parity-one edge.
+\end{enumerate}
+Reject every other rectangle.  Let $B_p\subset\mathbb R^{13}$ be all lifted
+patch boxes emitted by the deterministic LC lift, and let the exact graph
+checker supply a compatible assignment $a_p\in\mathbb F_2$.  Enumerate that
+assignment and its one global complement.  Derive ordinary source time from
+the validated binding by
+\[
+ t_S=t_{\rm init}+s_S-s_{\rm bind}.
+\]
+If one of the two global assignments satisfies
+\[
+ \bigl(\Gamma^{a_p}B_p,t_S\bigr)
+ \subseteq \mathcal B_{14}(\bar X_*,\varepsilon)
+ \qquad\hbox{for every emitted patch }p,
+\]
+where the right side is one target LC tube's $L^\infty$ initial ball, then
+every actual physical source state in $S$ has a constrained selected LC lift
+in that target initial ball, and its corresponding lifted solution is enclosed
+by the accepted target tube.
+\end{theorem}
+
+\begin{proof}
+The ordered singleton cases cover their accepted source rectangles.  In the
+two-patch case,
+\[
+ P_+=S\cap\{y\geq0\},\qquad P_-=S\cap\{y\leq0\}
+\]
+cover $S$, and their intersection lies strictly on the negative axis.  There
+the principal square roots are $(0,+\sqrt{-x})$ and
+$(0,-\sqrt{-x})$; their velocity lifts are jointly antipodal.  Thus the edge
+parity is derived as one, and its only compatible assignments are the two
+global complements $(0,1)$ and $(1,0)$.  The singleton graph likewise has
+exactly its principal assignment and global complement.
+
+For each physical $X\in S$, patch coverage supplies a $p$ and the interval
+lift supplies a principal constrained representative $\ell_p(X)\in B_p$.
+The deck action $\Gamma$ preserves physical projection and the pair-energy
+constraint.  The assumed complete box and time containment therefore gives
+\[
+ \bigl(\Gamma^{a_p}\ell_p(X),t_S\bigr)
+ \in\mathcal B_{14}(\bar X_*,\varepsilon).
+\]
+The target a-posteriori theorem then encloses the exact lifted solution from
+that selected initial state.  Since the checker tests every emitted box under
+one graph assignment, no source state or patch is discarded and no patch bit
+is chosen independently.
+\end{proof}
+
+The checker reconstructs geometry and derives parity from raw rational
+endpoints; constructor branch booleans, names, reason strings, and parity
+metadata are not trusted.  Ambiguous and collision-containing source boxes
+reject.  Pair mass and weighted-center ratios are computed in exact rational
+arithmetic and converted to outward binary intervals before use in the lifted
+boxes.  Every transformed 13-dimensional endpoint and the binding-derived
+physical-time coordinate must fit the same target radius; a separate handoff
+cap cannot replace this fourteenth-coordinate test.  These close the three
+previously identified prerequisites: canonical boundary/parity handling,
+outward exact-rational mass coefficients, and clock-correct 14-dimensional
+containment.
+
+The legacy ordinary-to-LC checker is separately narrowed to direct validated
+results with exact equality of parameter and physical-time widths and zero
+binding time gap.  It nevertheless consumes a prebuilt source result and keeps
+that inherited trust boundary.  The raw checker in
+Theorem~\ref{thm:gauge-entry} is the adversarially replayable route.  Neither
+checker result is consumed by a pre-existing continuation or global-atlas
+proof-certification path.  This theorem does not certify recentered
+continuation chains, arbitrary-data coverage, or a general/global solution.
+
 \section{Directions for further work}
 
-A natural next stage is to define a stable, versioned JSON certificate format
-and a minimal checker independent of the candidate generator.  Replacing the
-floating-point interval layer with an audited arbitrary-precision backend
-would reduce the trusted base.  Batch generation could then produce certified
-families indexed by masses, collision energy, incoming data, and third-body
-state.  Such families could support rigorous studies of local collision
-scattering maps, periodic-orbit continuation, and bifurcation.
+The next proof-engineering stage is raw continuation-chain evidence: retain and
+replay every source binding, tube, chart, and ordinary handoff rather than
+passing a prebuilt continuation result.  Recentered LC handoffs then require
+exact parameter translations and compatible parameter-shift cocycles.  A
+stable serialized format and a checker independent of the candidate generator
+remain desirable.  Replacing the floating-point interval layer with an audited
+arbitrary-precision backend would reduce the trusted base.  Batch generation
+could then test whether this theorem yields nontrivial certified families
+indexed by masses, collision energy, incoming data, and third-body state.  Such
+families could support rigorous studies of local collision scattering maps,
+periodic-orbit continuation, and bifurcation.
 
 For practical pre-collision boxes, a parametric Krawczyk treatment of the
 Levi--Civita square-root branches may be sharper than the current conservative
@@ -471,9 +626,10 @@ The implementation is available under the BSD-3-Clause license at
 \url{https://github.com/jspaulding42/three-body-regularized-atlas}.
 \end{center}
 The repository records the dependencies, reproduction commands, tests, and
-machine-readable witness.  This review manuscript accompanies the immutable
-tag \texttt{v0.2.0-review}; a future archival release should add a DOI before
-the manuscript is treated as a citable final version.
+machine-readable witness.  The immutable tag \texttt{v0.2.0-review} contains
+the earlier collision-passage snapshot and predates the gauge-gluing additions
+described here.  This file is an unreleased working draft for a prospective
+\texttt{v0.3.0-review} release; no v0.3 tag or archival DOI is claimed.
 The principal executable witness is
 \texttt{scripts/certify\_planar\_binary\_collision\_passage.py}; the independent
 algebra audit is

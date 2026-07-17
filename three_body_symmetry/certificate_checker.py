@@ -25,6 +25,8 @@ from .certificate_language import (
     OrdinaryEnclosureTransitionCertificate,
     OrdinaryToPlanarLCEnclosureTransitionCertificate,
     PlanarLCToOrdinaryEnclosureTransitionCertificate,
+    PlanarLCExactOverlapAnchorCertificate,
+    PlanarLCExactGaugeAtlasCertificate,
     PlanarLCExactCollisionAnchorCertificate,
     PlanarLCTwoSidedCollisionPassageCertificate,
     ValidatedOrdinaryIVPChainCertificate,
@@ -38,6 +40,13 @@ from .certificate_language import (
     TotalCollisionFuchsianStopChartCertificate,
     TotalCollisionGeneralizedFuchsianStopChartCertificate,
     total_collision_generalized_fuchsian_stop_chart_certificate_from_branch,
+)
+from .lc_gauge_gluing import (
+    PlanarLCGaugeGluingCertificate,
+    PlanarLCGaugeGluingCheckResult,
+    PlanarLCGaugeGluingObligation,
+    PlanarLCGaugeOverlapEdge,
+    check_planar_lc_gauge_gluing,
 )
 from .binary_chart import (
     RegularizedBinaryCollisionChartState,
@@ -316,6 +325,59 @@ def _check_obligation_ledger_missing(
         if obligation.certified is not True:
             missing.append(obligation.obligation)
     return tuple(dict.fromkeys(missing))
+
+
+_PLANAR_LC_EXACT_OVERLAP_OBLIGATION_NAMES = (
+    "planar_lc_exact_overlap_identifiers_match",
+    "planar_lc_exact_overlap_distinct_charts_and_tubes",
+    "planar_lc_exact_overlap_anchor_parameters_match",
+    "planar_lc_exact_overlap_zero_error_centers",
+    "planar_lc_exact_overlap_masses_and_ordered_pair_match",
+    "planar_lc_exact_overlap_source_tube_certified",
+    "planar_lc_exact_overlap_target_tube_certified",
+    "planar_lc_exact_overlap_common_interval_nondegenerate",
+    "planar_lc_exact_overlap_exact_anchor_schema",
+    "planar_lc_exact_overlap_fixed_components_equal",
+    "planar_lc_exact_overlap_unique_deck_relation",
+)
+
+_PLANAR_LC_EXACT_GAUGE_ATLAS_OBLIGATION_NAMES = (
+    "planar_lc_exact_gauge_atlas_manifest_schema",
+    "planar_lc_exact_gauge_atlas_raw_ids_unique_and_positional",
+    "planar_lc_exact_gauge_atlas_vertex_bindings_match",
+    "planar_lc_exact_gauge_atlas_vertex_tubes_zero_error_certified",
+    "planar_lc_exact_gauge_atlas_global_problem_matches",
+    "planar_lc_exact_gauge_atlas_overlap_bindings_match_vertices",
+    "planar_lc_exact_gauge_atlas_overlaps_recomputed_and_certified",
+    "planar_lc_exact_gauge_atlas_derived_edges_match_results",
+    "planar_lc_exact_gauge_atlas_derived_graph_certified",
+)
+
+
+def _exact_certified_obligation_manifest(
+    obligations: object,
+    expected_names: tuple[str, ...],
+) -> bool:
+    return bool(
+        type(obligations) is tuple
+        and type(expected_names) is tuple
+        and all(type(name) is str and bool(name) for name in expected_names)
+        and len(obligations) == len(expected_names)
+        and all(
+            type(obligation) is CertificateCheckObligation
+            and type(obligation.obligation) is str
+            and bool(obligation.obligation)
+            and type(obligation.certified) is bool
+            and obligation.certified is True
+            and type(obligation.detail) is str
+            for obligation in obligations
+        )
+        and tuple(
+            obligation.obligation
+            for obligation in obligations
+        )
+        == expected_names
+    )
 
 
 @dataclass(frozen=True)
@@ -613,6 +675,611 @@ class PlanarLCAposterioriTubeCheckResult:
         )
 
 
+def _rejected_planar_lc_tube_result(
+    tube: PlanarLCAposterioriTubeCertificate,
+    chart: PlanarLeviCivitaBinaryChartCertificate,
+) -> PlanarLCAposterioriTubeCheckResult:
+    """Return a deterministic rejection for malformed exact-class inputs."""
+
+    return PlanarLCAposterioriTubeCheckResult(
+        tube_id=tube.tube_id if type(tube.tube_id) is str else "",
+        chart_id=chart.chart_id if type(chart.chart_id) is str else "",
+        checker_id="independent_planar_lc_aposteriori_tube_checker_v1",
+        obligations=(
+            CertificateCheckObligation(
+                "planar_lc_tube_malformed_exact_class_input",
+                False,
+                "malformed exact-class chart or tube fields were rejected",
+            ),
+        ),
+        defect_bound=np.inf,
+        lipschitz_bound=np.inf,
+        gronwall_error_bound=np.inf,
+        third_body_distance_floor=0.0,
+        anchor_pair_energy_constraint_residual=np.inf,
+        pair_energy_constraint_anchor_certified=False,
+        anchor_is_polynomial_center=False,
+    )
+
+
+def _check_planar_lc_tube_or_reject_malformed(
+    tube: PlanarLCAposterioriTubeCertificate,
+    chart: PlanarLeviCivitaBinaryChartCertificate,
+) -> PlanarLCAposterioriTubeCheckResult:
+    try:
+        return check_planar_lc_aposteriori_tube(tube, chart)
+    except (
+        AttributeError,
+        DecimalException,
+        FloatingPointError,
+        IndexError,
+        KeyError,
+        OverflowError,
+        TypeError,
+        ValueError,
+        ZeroDivisionError,
+    ):
+        return _rejected_planar_lc_tube_result(tube, chart)
+
+
+@dataclass(frozen=True)
+class PlanarLCExactOverlapAnchorCheckResult:
+    """Exact deck relation between two independently checked LC IVPs."""
+
+    overlap_id: str
+    checker_id: str
+    source_chart_id: str
+    target_chart_id: str
+    raw_overlap_certificate: PlanarLCExactOverlapAnchorCertificate
+    raw_source_tube: PlanarLCAposterioriTubeCertificate
+    raw_source_chart: PlanarLeviCivitaBinaryChartCertificate
+    raw_target_tube: PlanarLCAposterioriTubeCertificate
+    raw_target_chart: PlanarLeviCivitaBinaryChartCertificate
+    source_tube_result: PlanarLCAposterioriTubeCheckResult
+    target_tube_result: PlanarLCAposterioriTubeCheckResult
+    obligations: tuple[CertificateCheckObligation, ...]
+    source_exact_anchor: tuple[Fraction, ...]
+    target_exact_anchor: tuple[Fraction, ...]
+    common_parameter_offset_interval: tuple[Fraction, Fraction]
+    derived_edge: PlanarLCGaugeOverlapEdge | None
+    serialized_masses: tuple[float, ...]
+    selected_pair: tuple[int, int]
+    source_pair_energy_constraint_exact: bool
+    target_pair_energy_constraint_exact: bool
+    mass_ratio_arithmetic_exact: bool
+
+    def _anchor_relation_parity(self) -> int | None:
+        source = self.source_exact_anchor
+        target = self.target_exact_anchor
+        if not (
+            type(source) is tuple
+            and type(target) is tuple
+            and len(source) == len(target) == 14
+            and all(type(value) is Fraction for value in source + target)
+            and source[4:] == target[4:]
+        ):
+            return None
+        same = source[:4] == target[:4]
+        antipodal = target[:4] == tuple(-value for value in source[:4])
+        if same == antipodal:
+            return None
+        return 0 if same else 1
+
+    def _common_interval_valid(self) -> bool:
+        interval = self.common_parameter_offset_interval
+        return bool(
+            type(interval) is tuple
+            and len(interval) == 2
+            and all(type(value) is Fraction for value in interval)
+            and interval[0] < interval[1]
+            and interval[0] <= 0 <= interval[1]
+        )
+
+    def _exact_constraint_status(self) -> tuple[bool, bool] | None:
+        if not (
+            type(self.serialized_masses) is tuple
+            and len(self.serialized_masses) == 3
+            and all(type(value) is float and np.isfinite(value) and value > 0.0
+                    for value in self.serialized_masses)
+            and type(self.selected_pair) is tuple
+            and len(self.selected_pair) == 2
+            and all(type(index) is int for index in self.selected_pair)
+            and self.selected_pair[0] != self.selected_pair[1]
+            and set(self.selected_pair).issubset({0, 1, 2})
+            and type(self.source_exact_anchor) is tuple
+            and type(self.target_exact_anchor) is tuple
+            and len(self.source_exact_anchor) == 14
+            and len(self.target_exact_anchor) == 14
+            and all(
+                type(value) is Fraction
+                for value in self.source_exact_anchor + self.target_exact_anchor
+            )
+        ):
+            return None
+        pair_mass = sum(
+            Fraction.from_float(self.serialized_masses[index])
+            for index in self.selected_pair
+        )
+
+        def exact(anchor: tuple[Fraction, ...]) -> bool:
+            z = anchor[0:2]
+            w = anchor[2:4]
+            h = anchor[4]
+            return bool(
+                2 * sum(value * value for value in w)
+                - pair_mass
+                - sum(value * value for value in z) * h
+                == 0
+            )
+
+        try:
+            return exact(self.source_exact_anchor), exact(self.target_exact_anchor)
+        except (IndexError, TypeError, ValueError, ZeroDivisionError):
+            return None
+
+    def _snapshot_lifted_overlap_certified(self) -> bool:
+        parity = self._anchor_relation_parity()
+        edge = self.derived_edge
+        return bool(
+            type(self.checker_id) is str
+            and self.checker_id == "planar_lc_exact_overlap_anchor_checker_v1"
+            and type(self.overlap_id) is str
+            and bool(self.overlap_id)
+            and type(self.source_chart_id) is str
+            and type(self.target_chart_id) is str
+            and bool(self.source_chart_id)
+            and bool(self.target_chart_id)
+            and self.source_chart_id != self.target_chart_id
+            and type(self.raw_overlap_certificate)
+            is PlanarLCExactOverlapAnchorCertificate
+            and type(self.raw_source_tube) is PlanarLCAposterioriTubeCertificate
+            and type(self.raw_target_tube) is PlanarLCAposterioriTubeCertificate
+            and type(self.raw_source_chart)
+            is PlanarLeviCivitaBinaryChartCertificate
+            and type(self.raw_target_chart)
+            is PlanarLeviCivitaBinaryChartCertificate
+            and self.raw_overlap_certificate.overlap_id == self.overlap_id
+            and self.raw_overlap_certificate.source_chart_id
+            == self.source_chart_id
+            == self.raw_source_chart.chart_id
+            == self.raw_source_tube.chart_id
+            and self.raw_overlap_certificate.target_chart_id
+            == self.target_chart_id
+            == self.raw_target_chart.chart_id
+            == self.raw_target_tube.chart_id
+            and self.raw_overlap_certificate.source_tube_id
+            == self.raw_source_tube.tube_id
+            and self.raw_overlap_certificate.target_tube_id
+            == self.raw_target_tube.tube_id
+            and self.raw_source_chart.masses == self.raw_target_chart.masses
+            and self.raw_source_chart.pair == self.raw_target_chart.pair
+            and type(self.raw_source_tube.initial_error_bound) is float
+            and type(self.raw_target_tube.initial_error_bound) is float
+            and self.raw_source_tube.initial_error_bound == 0.0
+            and self.raw_target_tube.initial_error_bound == 0.0
+            and type(self.source_tube_result) is PlanarLCAposterioriTubeCheckResult
+            and type(self.target_tube_result) is PlanarLCAposterioriTubeCheckResult
+            and self.source_tube_result.checker_id
+            == "independent_planar_lc_aposteriori_tube_checker_v1"
+            and self.target_tube_result.checker_id
+            == "independent_planar_lc_aposteriori_tube_checker_v1"
+            and self.source_tube_result.chart_id == self.source_chart_id
+            and self.target_tube_result.chart_id == self.target_chart_id
+            and self.source_tube_result.tube_id == self.raw_source_tube.tube_id
+            and self.target_tube_result.tube_id == self.raw_target_tube.tube_id
+            and self.source_tube_result.certified
+            and self.target_tube_result.certified
+            and self.source_tube_result.anchor_is_polynomial_center
+            and self.target_tube_result.anchor_is_polynomial_center
+            and self._common_interval_valid()
+            and parity in (0, 1)
+            and type(edge) is PlanarLCGaugeOverlapEdge
+            and edge.overlap_id == self.overlap_id
+            and edge.source_chart_id == self.source_chart_id
+            and edge.target_chart_id == self.target_chart_id
+            and type(edge.parity) is int
+            and edge.parity == parity
+            and _exact_certified_obligation_manifest(
+                self.obligations,
+                _PLANAR_LC_EXACT_OVERLAP_OBLIGATION_NAMES,
+            )
+        )
+
+    @property
+    def lifted_overlap_certified(self) -> bool:
+        """Whether fresh raw evidence proves one exact LC deck relation."""
+
+        if not (
+            type(self.raw_overlap_certificate)
+            is PlanarLCExactOverlapAnchorCertificate
+            and type(self.raw_source_tube) is PlanarLCAposterioriTubeCertificate
+            and type(self.raw_target_tube) is PlanarLCAposterioriTubeCertificate
+            and type(self.raw_source_chart)
+            is PlanarLeviCivitaBinaryChartCertificate
+            and type(self.raw_target_chart)
+            is PlanarLeviCivitaBinaryChartCertificate
+        ):
+            return False
+        try:
+            fresh = check_planar_lc_exact_overlap_anchor(
+                self.raw_overlap_certificate,
+                self.raw_source_tube,
+                self.raw_source_chart,
+                self.raw_target_tube,
+                self.raw_target_chart,
+            )
+            return bool(
+                type(fresh) is PlanarLCExactOverlapAnchorCheckResult
+                and fresh == self
+                and self._snapshot_lifted_overlap_certified()
+            )
+        except Exception:
+            # Exact-class dataclass fields are untrusted serialized evidence.
+            # In particular, hostile equality objects and arrays must fail
+            # closed rather than escape through dataclass equality.
+            return False
+
+    @property
+    def certified(self) -> bool:
+        return self.lifted_overlap_certified
+
+    @property
+    def constrained_newtonian_overlap_certified(self) -> bool:
+        """Whether the overlap also represents one constrained Newtonian IVP."""
+
+        if not self.lifted_overlap_certified:
+            return False
+        constraint_status = self._exact_constraint_status()
+        try:
+            mass_ratio_exact = _planar_lc_mass_ratio_arithmetic_exact(
+                self.serialized_masses, self.selected_pair
+            )
+        except (IndexError, TypeError, ValueError, ZeroDivisionError):
+            mass_ratio_exact = False
+        return bool(
+            constraint_status is not None
+            and constraint_status == (True, True)
+            and self.source_pair_energy_constraint_exact is True
+            and self.target_pair_energy_constraint_exact is True
+            and mass_ratio_exact is True
+            and self.mass_ratio_arithmetic_exact is True
+            and self.source_tube_result.constrained_newtonian_lift_certified
+            and self.target_tube_result.constrained_newtonian_lift_certified
+        )
+
+    @property
+    def two_sided_overlap(self) -> bool:
+        """Whether the checked common domain extends on both sides of the anchor."""
+
+        interval = self.common_parameter_offset_interval
+        return bool(
+            self.lifted_overlap_certified
+            and interval[0] < 0 < interval[1]
+        )
+
+    @property
+    def two_sided_overlap_certified(self) -> bool:
+        return self.two_sided_overlap
+
+    @property
+    def missing_obligations(self) -> tuple[str, ...]:
+        return _check_obligation_ledger_missing(
+            self.obligations,
+            ledger_name=self.overlap_id or "planar_lc_exact_overlap_anchor",
+        )
+
+
+@dataclass(frozen=True)
+class PlanarLCExactGaugeAtlasCheckResult:
+    """Raw-evidence aggregate of exact LC overlaps and their derived gauge graph."""
+
+    atlas_id: str
+    checker_id: str
+    raw_atlas_certificate: PlanarLCExactGaugeAtlasCertificate
+    obligations: tuple[CertificateCheckObligation, ...]
+    chart_ids: tuple[str, ...]
+    tube_ids: tuple[str, ...]
+    overlap_ids: tuple[str, ...]
+    checked_charts: tuple[PlanarLeviCivitaBinaryChartCertificate, ...]
+    checked_tubes: tuple[PlanarLCAposterioriTubeCertificate, ...]
+    checked_overlap_certificates: tuple[
+        PlanarLCExactOverlapAnchorCertificate, ...
+    ]
+    vertex_tube_results: tuple[PlanarLCAposterioriTubeCheckResult, ...]
+    vertex_problem_data: tuple[
+        tuple[tuple[float, ...], tuple[int, int]], ...
+    ]
+    overlap_results: tuple[PlanarLCExactOverlapAnchorCheckResult, ...]
+    anchor_parameter_translations: tuple[
+        tuple[Fraction, Fraction, Fraction], ...
+    ]
+    derived_edges: tuple[PlanarLCGaugeOverlapEdge, ...]
+    gauge_result: PlanarLCGaugeGluingCheckResult | None
+
+    def _manifest_schema_valid(self) -> bool:
+        return bool(
+            type(self.raw_atlas_certificate)
+            is PlanarLCExactGaugeAtlasCertificate
+            and type(self.atlas_id) is str
+            and bool(self.atlas_id)
+            and self.raw_atlas_certificate.atlas_id == self.atlas_id
+            and type(self.chart_ids) is tuple
+            and bool(self.chart_ids)
+            and all(type(value) is str and bool(value) for value in self.chart_ids)
+            and len(set(self.chart_ids)) == len(self.chart_ids)
+            and type(self.tube_ids) is tuple
+            and len(self.tube_ids) == len(self.chart_ids)
+            and all(type(value) is str and bool(value) for value in self.tube_ids)
+            and len(set(self.tube_ids)) == len(self.tube_ids)
+            and type(self.overlap_ids) is tuple
+            and all(type(value) is str and bool(value) for value in self.overlap_ids)
+            and len(set(self.overlap_ids)) == len(self.overlap_ids)
+            and self.raw_atlas_certificate.chart_ids == self.chart_ids
+            and self.raw_atlas_certificate.tube_ids == self.tube_ids
+            and self.raw_atlas_certificate.overlap_ids == self.overlap_ids
+        )
+
+    def _vertices_self_check(self) -> bool:
+        if not self._manifest_schema_valid() or not (
+            type(self.checked_charts) is tuple
+            and len(self.checked_charts) == len(self.chart_ids)
+            and type(self.checked_tubes) is tuple
+            and len(self.checked_tubes) == len(self.chart_ids)
+            and type(self.vertex_tube_results) is tuple
+            and len(self.vertex_tube_results) == len(self.chart_ids)
+            and type(self.vertex_problem_data) is tuple
+            and len(self.vertex_problem_data) == len(self.chart_ids)
+        ):
+            return False
+        for index, result in enumerate(self.vertex_tube_results):
+            chart = self.checked_charts[index]
+            tube = self.checked_tubes[index]
+            if not (
+                type(chart) is PlanarLeviCivitaBinaryChartCertificate
+                and type(tube) is PlanarLCAposterioriTubeCertificate
+                and chart.chart_id == self.chart_ids[index]
+                and tube.tube_id == self.tube_ids[index]
+                and tube.chart_id == chart.chart_id
+                and type(tube.initial_error_bound) is float
+                and tube.initial_error_bound == 0.0
+                and type(result) is PlanarLCAposterioriTubeCheckResult
+                and result.checker_id
+                == "independent_planar_lc_aposteriori_tube_checker_v1"
+                and result.chart_id == self.chart_ids[index]
+                and result.tube_id == self.tube_ids[index]
+                and result.certified
+                and result.anchor_is_polynomial_center
+                and self.vertex_problem_data[index]
+                == (chart.masses, chart.pair)
+            ):
+                return False
+        first_problem = self.vertex_problem_data[0]
+        if not (
+            type(first_problem) is tuple
+            and len(first_problem) == 2
+            and type(first_problem[0]) is tuple
+            and len(first_problem[0]) == 3
+            and all(
+                type(value) is float and np.isfinite(value) and value > 0.0
+                for value in first_problem[0]
+            )
+            and type(first_problem[1]) is tuple
+            and len(first_problem[1]) == 2
+            and all(type(value) is int for value in first_problem[1])
+            and first_problem[1][0] != first_problem[1][1]
+            and set(first_problem[1]).issubset({0, 1, 2})
+        ):
+            return False
+        return all(problem == first_problem for problem in self.vertex_problem_data)
+
+    def _overlaps_self_check(self) -> bool:
+        if not self._vertices_self_check() or not (
+            type(self.checked_overlap_certificates) is tuple
+            and len(self.checked_overlap_certificates) == len(self.overlap_ids)
+            and type(self.overlap_results) is tuple
+            and len(self.overlap_results) == len(self.overlap_ids)
+            and type(self.derived_edges) is tuple
+            and len(self.derived_edges) == len(self.overlap_ids)
+            and type(self.anchor_parameter_translations) is tuple
+            and len(self.anchor_parameter_translations) == len(self.overlap_ids)
+        ):
+            return False
+        vertex_by_chart = {
+            chart_id: self.vertex_tube_results[index]
+            for index, chart_id in enumerate(self.chart_ids)
+        }
+        for index, result in enumerate(self.overlap_results):
+            certificate = self.checked_overlap_certificates[index]
+            translation = self.anchor_parameter_translations[index]
+            exact_endpoint_ids = bool(
+                type(certificate) is PlanarLCExactOverlapAnchorCertificate
+                and type(certificate.source_chart_id) is str
+                and type(certificate.target_chart_id) is str
+            )
+            source_tube = vertex_by_chart.get(
+                certificate.source_chart_id
+                if exact_endpoint_ids
+                else None
+            )
+            target_tube = vertex_by_chart.get(
+                certificate.target_chart_id
+                if exact_endpoint_ids
+                else None
+            )
+            source_index = (
+                self.chart_ids.index(certificate.source_chart_id)
+                if exact_endpoint_ids
+                and certificate.source_chart_id in self.chart_ids
+                else None
+            )
+            target_index = (
+                self.chart_ids.index(certificate.target_chart_id)
+                if exact_endpoint_ids
+                and certificate.target_chart_id in self.chart_ids
+                else None
+            )
+            translation_valid = False
+            if (
+                type(certificate) is PlanarLCExactOverlapAnchorCertificate
+                and source_tube is not None
+                and target_tube is not None
+                and type(certificate.source_anchor_parameter) is float
+                and type(certificate.target_anchor_parameter) is float
+                and np.isfinite(certificate.source_anchor_parameter)
+                and np.isfinite(certificate.target_anchor_parameter)
+            ):
+                source_q = Fraction.from_float(certificate.source_anchor_parameter)
+                target_q = Fraction.from_float(certificate.target_anchor_parameter)
+                translation_valid = bool(
+                    type(translation) is tuple
+                    and len(translation) == 3
+                    and translation == (source_q, target_q, target_q - source_q)
+                    and source_index is not None
+                    and target_index is not None
+                    and certificate.source_anchor_parameter
+                    == self.checked_tubes[source_index].anchor_parameter
+                    and certificate.target_anchor_parameter
+                    == self.checked_tubes[target_index].anchor_parameter
+                )
+            if not (
+                type(certificate) is PlanarLCExactOverlapAnchorCertificate
+                and certificate.overlap_id == self.overlap_ids[index]
+                and type(result) is PlanarLCExactOverlapAnchorCheckResult
+                and result.overlap_id == self.overlap_ids[index]
+                and result.certified
+                and source_index is not None
+                and target_index is not None
+                and result.raw_overlap_certificate == certificate
+                and result.raw_source_chart
+                == self.checked_charts[source_index]
+                and result.raw_target_chart
+                == self.checked_charts[target_index]
+                and result.raw_source_tube
+                == self.checked_tubes[source_index]
+                and result.raw_target_tube
+                == self.checked_tubes[target_index]
+                and type(result.derived_edge) is PlanarLCGaugeOverlapEdge
+                and type(self.derived_edges[index]) is PlanarLCGaugeOverlapEdge
+                and self.derived_edges[index] == result.derived_edge
+                and result.source_chart_id in vertex_by_chart
+                and result.target_chart_id in vertex_by_chart
+                and result.source_tube_result
+                == vertex_by_chart[result.source_chart_id]
+                and result.target_tube_result
+                == vertex_by_chart[result.target_chart_id]
+                and certificate.source_chart_id == result.source_chart_id
+                and certificate.target_chart_id == result.target_chart_id
+                and certificate.source_tube_id == result.source_tube_result.tube_id
+                and certificate.target_tube_id == result.target_tube_result.tube_id
+                and translation_valid
+            ):
+                return False
+        return True
+
+    def _graph_self_check(self) -> bool:
+        graph = self.gauge_result
+        return bool(
+            self._overlaps_self_check()
+            and type(graph) is PlanarLCGaugeGluingCheckResult
+            and graph.certificate_id == f"{self.atlas_id}:derived-gauge-graph"
+            and graph.chart_ids == self.chart_ids
+            and graph.checked_overlaps == self.derived_edges
+            and graph.certified
+        )
+
+    def _snapshot_lifted_atlas_certified(self) -> bool:
+        return bool(
+            type(self.checker_id) is str
+            and self.checker_id == "planar_lc_exact_gauge_atlas_checker_v1"
+            and self._graph_self_check()
+            and _exact_certified_obligation_manifest(
+                self.obligations,
+                _PLANAR_LC_EXACT_GAUGE_ATLAS_OBLIGATION_NAMES,
+            )
+        )
+
+    @property
+    def lifted_atlas_certified(self) -> bool:
+        """Whether fresh raw evidence reproduces this exact gauge atlas."""
+
+        if type(self.raw_atlas_certificate) is not PlanarLCExactGaugeAtlasCertificate:
+            return False
+        try:
+            fresh = check_planar_lc_exact_gauge_atlas(
+                self.raw_atlas_certificate,
+                self.checked_charts,
+                self.checked_tubes,
+                self.checked_overlap_certificates,
+            )
+            return bool(
+                type(fresh) is PlanarLCExactGaugeAtlasCheckResult
+                and fresh == self
+                and self._snapshot_lifted_atlas_certified()
+            )
+        except Exception:
+            # Recomputed dataclass equality is part of the fail-closed check;
+            # malformed exact-class fields may themselves define unsafe ==.
+            return False
+
+    @property
+    def certified(self) -> bool:
+        return self.lifted_atlas_certified
+
+    @property
+    def constrained_newtonian_atlas_certified(self) -> bool:
+        if not self.lifted_atlas_certified:
+            return False
+        masses, pair = self.vertex_problem_data[0]
+        try:
+            mass_arithmetic_exact = _planar_lc_mass_ratio_arithmetic_exact(
+                masses, pair
+            )
+        except (IndexError, TypeError, ValueError, ZeroDivisionError):
+            mass_arithmetic_exact = False
+        return bool(
+            mass_arithmetic_exact
+            and all(
+                result.constrained_newtonian_lift_certified
+                for result in self.vertex_tube_results
+            )
+            and all(
+                result.constrained_newtonian_overlap_certified
+                for result in self.overlap_results
+            )
+        )
+
+    @property
+    def all_overlaps_two_sided(self) -> bool:
+        return bool(
+            self.lifted_atlas_certified
+            and all(result.two_sided_overlap for result in self.overlap_results)
+        )
+
+    @property
+    def gauge_assignment(self) -> tuple[tuple[str, int], ...]:
+        if not self.lifted_atlas_certified or self.gauge_result is None:
+            return ()
+        return self.gauge_result.gauge_assignment
+
+    @property
+    def missing_obligations(self) -> tuple[str, ...]:
+        missing = list(
+            _check_obligation_ledger_missing(
+                self.obligations,
+                ledger_name=self.atlas_id or "planar_lc_exact_gauge_atlas",
+            )
+        )
+        for result in self.vertex_tube_results:
+            if type(result) is PlanarLCAposterioriTubeCheckResult:
+                missing.extend(result.missing_obligations)
+        for result in self.overlap_results:
+            if type(result) is PlanarLCExactOverlapAnchorCheckResult:
+                missing.extend(result.missing_obligations)
+        if type(self.gauge_result) is PlanarLCGaugeGluingCheckResult:
+            missing.extend(self.gauge_result.missing_obligations)
+        return tuple(dict.fromkeys(missing))
+
+
 @dataclass(frozen=True)
 class PlanarLCExactCollisionAnchorCheckResult:
     """Proof that one zero-error lifted IVP is anchored at binary collision."""
@@ -709,6 +1376,7 @@ class OrdinaryToPlanarLCEnclosureTransitionCheckResult:
     lift_branch_count: int
     max_lift_box_gap: float
     time_gap: float
+    target_initial_time_gap: float
     entry_lift_rho_lower_bound: float
 
     @property
@@ -740,6 +1408,749 @@ class OrdinaryToPlanarLCEnclosureTransitionCheckResult:
             )
         )
         missing.extend(self.target_tube_result.missing_obligations)
+        return tuple(dict.fromkeys(missing))
+
+
+_GAUGE_AWARE_ORDINARY_TO_PLANAR_LC_OBLIGATION_NAMES = (
+    "gauge_aware_ordinary_to_lc_exact_input_types",
+    "gauge_aware_ordinary_to_lc_identifiers_match",
+    "gauge_aware_ordinary_to_lc_source_exact_enclosure_certified",
+    "gauge_aware_ordinary_to_lc_common_masses_dimension_ordered_pair",
+    "gauge_aware_ordinary_to_lc_exact_mass_ratio_arithmetic",
+    "gauge_aware_ordinary_to_lc_parameters_inside_and_anchor_matches",
+    "gauge_aware_ordinary_to_lc_declared_handoff_time_cap",
+    "gauge_aware_ordinary_to_lc_target_lifted_tube_certified",
+    "gauge_aware_ordinary_to_lc_source_box_reconstructed",
+    "gauge_aware_ordinary_to_lc_selected_pair_collision_free",
+    "gauge_aware_ordinary_to_lc_canonical_branch_grammar",
+    "gauge_aware_ordinary_to_lc_canonical_lift_count",
+    "gauge_aware_ordinary_to_lc_derived_gauge_graph_certified",
+    "gauge_aware_ordinary_to_lc_entry_lift_rho_positive",
+    "gauge_aware_ordinary_to_lc_target_initial_error_contains_physical_time",
+    "gauge_aware_ordinary_to_lc_one_global_complement_contains_all_lifts",
+    "gauge_aware_ordinary_to_lc_existential_selected_lifts_constrained",
+)
+
+
+def _gauge_aware_raw_primitive_schema_valid(
+    certificate: OrdinaryToPlanarLCEnclosureTransitionCertificate,
+    source_binding: InitialValueProblemBindingCertificate,
+    source_tube: OrdinaryAposterioriTubeCertificate,
+    source_chart: OrdinaryTaylorChartCertificate,
+    target_chart: PlanarLeviCivitaBinaryChartCertificate,
+    target_tube: PlanarLCAposterioriTubeCertificate,
+) -> bool:
+    """Require canonical built-in primitives before any checker normalization."""
+
+    def nonempty_string(value: object) -> bool:
+        return type(value) is str and bool(value)
+
+    def finite_float(value: object) -> bool:
+        return type(value) is float and math.isfinite(value)
+
+    def float_tuple(
+        value: object,
+        *,
+        length: int | None = None,
+        nonempty: bool = False,
+    ) -> bool:
+        return bool(
+            type(value) is tuple
+            and (length is None or len(value) == length)
+            and (not nonempty or bool(value))
+            and all(finite_float(item) for item in value)
+        )
+
+    def float_matrix(value: object, rows: int, columns: int) -> bool:
+        return bool(
+            type(value) is tuple
+            and len(value) == rows
+            and all(float_tuple(row, length=columns) for row in value)
+        )
+
+    def ordinary_coefficient_series(value: object) -> bool:
+        return bool(
+            type(value) is tuple
+            and len(value) >= 2
+            and all(float_matrix(coefficient, 3, 2) for coefficient in value)
+        )
+
+    def vector_coefficient_series(value: object) -> bool:
+        return bool(
+            type(value) is tuple
+            and len(value) >= 2
+            and all(float_tuple(coefficient, length=2) for coefficient in value)
+        )
+
+    try:
+        source_position_series_ok = ordinary_coefficient_series(
+            source_chart.position_coefficients
+        )
+        source_velocity_series_ok = ordinary_coefficient_series(
+            source_chart.velocity_coefficients
+        )
+        source_order = (
+            len(source_chart.position_coefficients)
+            if source_position_series_ok
+            else -1
+        )
+
+        target_vector_series = (
+            target_chart.z_coefficients,
+            target_chart.z_velocity_coefficients,
+            target_chart.binary_center_coefficients,
+            target_chart.binary_center_velocity_coefficients,
+            target_chart.third_offset_coefficients,
+            target_chart.third_offset_velocity_coefficients,
+        )
+        target_vector_series_ok = all(
+            vector_coefficient_series(series) for series in target_vector_series
+        )
+        target_order = (
+            len(target_chart.z_coefficients)
+            if target_vector_series_ok
+            else -1
+        )
+
+        return bool(
+            all(
+                nonempty_string(value)
+                for value in (
+                    certificate.transition_id,
+                    certificate.source_chart_id,
+                    certificate.target_chart_id,
+                    certificate.source,
+                    source_binding.binding_id,
+                    source_binding.chart_id,
+                    source_binding.source,
+                    source_tube.tube_id,
+                    source_tube.chart_id,
+                    source_tube.source,
+                    source_chart.certificate_id,
+                    source_chart.chart_id,
+                    source_chart.chart_type,
+                    source_chart.source,
+                    target_chart.certificate_id,
+                    target_chart.chart_id,
+                    target_chart.chart_type,
+                    target_chart.source,
+                    target_tube.tube_id,
+                    target_tube.chart_id,
+                    target_tube.source,
+                )
+            )
+            and all(
+                finite_float(value)
+                for value in (
+                    certificate.source_parameter,
+                    certificate.target_parameter,
+                    certificate.handoff_time,
+                    certificate.max_time_gap,
+                    source_binding.initial_time,
+                    source_binding.chart_parameter,
+                    source_binding.time_tolerance,
+                    source_binding.position_tolerance,
+                    source_binding.velocity_tolerance,
+                    source_tube.anchor_parameter,
+                    source_tube.initial_error_bound,
+                    source_tube.tube_radius,
+                    source_tube.max_defect_bound,
+                    source_tube.max_lipschitz_bound,
+                    source_chart.coefficient_tolerance,
+                    source_chart.residual_tolerance,
+                    source_chart.tail_bound,
+                    target_chart.coefficient_tolerance,
+                    target_chart.regularized_residual_tolerance,
+                    target_chart.projected_residual_tolerance,
+                    target_chart.tail_bound,
+                    target_chart.projection_rho_lower_bound,
+                    target_tube.anchor_parameter,
+                    target_tube.initial_error_bound,
+                    target_tube.tube_radius,
+                    target_tube.max_defect_bound,
+                    target_tube.max_lipschitz_bound,
+                )
+            )
+            and float_tuple(source_binding.masses, length=3)
+            and float_matrix(source_binding.positions, 3, 2)
+            and float_matrix(source_binding.velocities, 3, 2)
+            and float_tuple(source_chart.masses, length=3)
+            and source_position_series_ok
+            and source_velocity_series_ok
+            and len(source_chart.velocity_coefficients) == source_order
+            and float_tuple(source_chart.parameter_interval, length=2)
+            and float_tuple(source_chart.physical_time_interval, length=2)
+            and type(source_chart.sample_count) is int
+            and float_tuple(target_chart.masses, length=3)
+            and type(target_chart.pair) is tuple
+            and len(target_chart.pair) == 2
+            and all(type(index) is int for index in target_chart.pair)
+            and target_vector_series_ok
+            and all(len(series) == target_order for series in target_vector_series)
+            and float_tuple(
+                target_chart.pair_energy_coefficients,
+                length=target_order,
+            )
+            and float_tuple(
+                target_chart.physical_time_coefficients,
+                length=target_order,
+            )
+            and float_tuple(target_chart.parameter_interval, length=2)
+            and float_tuple(target_chart.physical_time_interval, length=2)
+            and type(target_chart.sample_count) is int
+            and type(target_tube.require_pair_energy_constraint) is bool
+        )
+    except Exception:
+        return False
+
+
+def _gauge_aware_direct_ordinary_source_valid(
+    binding: InitialValueProblemBindingCertificate,
+    tube: OrdinaryAposterioriTubeCertificate,
+    source_chart: OrdinaryTaylorChartCertificate,
+    source_validation: ValidatedOrdinaryIVPChartCheckResult,
+) -> bool:
+    """Recompute and bind one direct ordinary IVP solely from raw evidence."""
+
+    try:
+        fresh = check_validated_ordinary_ivp_chart(binding, tube, source_chart)
+        return bool(
+            type(binding) is InitialValueProblemBindingCertificate
+            and type(tube) is OrdinaryAposterioriTubeCertificate
+            and type(source_chart) is OrdinaryTaylorChartCertificate
+            and type(source_validation) is ValidatedOrdinaryIVPChartCheckResult
+            and source_validation.checker_id
+            == "validated_ordinary_ivp_chart_checker_v1"
+            and binding.chart_id == tube.chart_id == source_chart.chart_id
+            and type(source_validation.binding_result)
+            is InitialValueBindingCheckResult
+            and type(source_validation.tube_result)
+            is OrdinaryAposterioriTubeCheckResult
+            and type(source_validation.chart_result) is CertificateCheckResult
+            and source_validation.binding_result.chart_id
+            == source_validation.tube_result.chart_id
+            == source_chart.chart_id
+            and source_validation.chart_result.certificate_id
+            == source_chart.certificate_id
+            and source_validation.certified
+            and type(fresh) is ValidatedOrdinaryIVPChartCheckResult
+            and fresh == source_validation
+        )
+    except Exception:
+        return False
+
+
+def _rejected_gauge_aware_direct_ordinary_source(
+    binding: InitialValueProblemBindingCertificate,
+    tube: OrdinaryAposterioriTubeCertificate,
+    chart: OrdinaryTaylorChartCertificate,
+) -> ValidatedOrdinaryIVPChartCheckResult:
+    """Deterministic fail-closed result for malformed exact-class raw inputs."""
+
+    chart_id = chart.chart_id if type(chart.chart_id) is str else ""
+    binding_id = binding.binding_id if type(binding.binding_id) is str else ""
+    tube_id = tube.tube_id if type(tube.tube_id) is str else ""
+    failed = CertificateCheckObligation(
+        "gauge_aware_direct_ordinary_source_malformed_raw_input",
+        False,
+        "direct ordinary source reconstruction raised and was rejected",
+    )
+    return ValidatedOrdinaryIVPChartCheckResult(
+        binding_result=InitialValueBindingCheckResult(
+            binding_id=binding_id,
+            chart_id=chart_id,
+            checker_id="independent_initial_value_binding_checker_v1",
+            obligations=(failed,),
+            max_position_gap=np.inf,
+            max_velocity_gap=np.inf,
+            time_gap=np.inf,
+        ),
+        tube_result=OrdinaryAposterioriTubeCheckResult(
+            tube_id=tube_id,
+            chart_id=chart_id,
+            checker_id="independent_ordinary_aposteriori_tube_checker_v1",
+            obligations=(failed,),
+            defect_bound=np.inf,
+            lipschitz_bound=np.inf,
+            gronwall_error_bound=np.inf,
+            nominal_pair_distance_floor=0.0,
+            tube_pair_distance_floor=0.0,
+        ),
+        chart_result=CertificateCheckResult(
+            certificate_id=(
+                chart.certificate_id
+                if type(chart.certificate_id) is str
+                else ""
+            ),
+            certificate_type="ordinary_taylor",
+            checker_id="independent_ordinary_chart_checker_v1",
+            obligations=(failed,),
+            max_coefficient_residual=np.inf,
+            max_sampled_newton_residual=np.inf,
+        ),
+        chart_serialization_admissible=False,
+        checker_id="validated_ordinary_ivp_chart_checker_v1",
+        obligations=(failed,),
+    )
+
+
+@dataclass(frozen=True)
+class GaugeAwareOrdinaryToPlanarLCEnclosureTransitionCheckResult:
+    """Opt-in ordinary-to-LC lift modulo one global deck transformation.
+
+    The result is intentionally separate from the legacy transition checker.
+    It retains all raw evidence and certifies only when fresh recomputation
+    reproduces the complete immutable snapshot exactly.
+    """
+
+    transition_id: str
+    checker_id: str
+    raw_transition_certificate: OrdinaryToPlanarLCEnclosureTransitionCertificate
+    raw_source_binding: InitialValueProblemBindingCertificate
+    raw_source_tube: OrdinaryAposterioriTubeCertificate
+    raw_source_chart: OrdinaryTaylorChartCertificate
+    raw_target_chart: PlanarLeviCivitaBinaryChartCertificate
+    source_validation: ValidatedOrdinaryIVPChartCheckResult
+    raw_target_tube: PlanarLCAposterioriTubeCertificate
+    target_tube_result: PlanarLCAposterioriTubeCheckResult
+    obligations: tuple[CertificateCheckObligation, ...]
+    source_state_box: tuple[tuple[Fraction, Fraction], ...]
+    relative_position_box: tuple[
+        tuple[Fraction, Fraction], tuple[Fraction, Fraction]
+    ]
+    canonical_lift_case: str
+    patch_vertex_ids: tuple[str, ...]
+    raw_patch_boxes: tuple[
+        tuple[tuple[Fraction, Fraction], ...], ...
+    ]
+    derived_edges: tuple[PlanarLCGaugeOverlapEdge, ...]
+    gauge_result: PlanarLCGaugeGluingCheckResult | None
+    tested_assignments: tuple[tuple[tuple[str, int], ...], ...]
+    tested_lift_max_gaps: tuple[Fraction, ...]
+    tested_containments: tuple[bool, ...]
+    selected_complement_index: int
+    selected_assignment: tuple[tuple[str, int], ...]
+    selected_transformed_patch_boxes: tuple[
+        tuple[tuple[Fraction, Fraction], ...], ...
+    ]
+    exact_declared_time_gap: Fraction
+    exact_source_target_time_gap: Fraction
+    entry_lift_rho_lower_bound: Fraction
+
+    def _snapshot_certified(self) -> bool:
+        def fraction_pair(value: object) -> bool:
+            return bool(
+                type(value) is tuple
+                and len(value) == 2
+                and type(value[0]) is Fraction
+                and type(value[1]) is Fraction
+                and value[0] <= value[1]
+            )
+
+        def fraction_box(value: object, dimension: int) -> bool:
+            return bool(
+                type(value) is tuple
+                and len(value) == dimension
+                and all(fraction_pair(item) for item in value)
+            )
+
+        def obligation_ledger_schema(value: object) -> bool:
+            return bool(
+                type(value) is tuple
+                and bool(value)
+                and all(
+                    type(item) is CertificateCheckObligation
+                    and type(item.obligation) is str
+                    and bool(item.obligation)
+                    and type(item.certified) is bool
+                    and type(item.detail) is str
+                    for item in value
+                )
+            )
+
+        source_nested_schema = bool(
+            type(self.source_validation) is ValidatedOrdinaryIVPChartCheckResult
+            and type(self.source_validation.checker_id) is str
+            and self.source_validation.checker_id
+            == "validated_ordinary_ivp_chart_checker_v1"
+            and type(self.source_validation.chart_serialization_admissible) is bool
+            and self.source_validation.chart_serialization_admissible is True
+            and obligation_ledger_schema(self.source_validation.obligations)
+            and type(self.source_validation.binding_result)
+            is InitialValueBindingCheckResult
+            and all(
+                type(value) is str and bool(value)
+                for value in (
+                    self.source_validation.binding_result.binding_id,
+                    self.source_validation.binding_result.chart_id,
+                    self.source_validation.binding_result.checker_id,
+                )
+            )
+            and self.source_validation.binding_result.checker_id
+            == "independent_initial_value_binding_checker_v1"
+            and obligation_ledger_schema(
+                self.source_validation.binding_result.obligations
+            )
+            and all(
+                type(value) is float and np.isfinite(value)
+                for value in (
+                    self.source_validation.binding_result.max_position_gap,
+                    self.source_validation.binding_result.max_velocity_gap,
+                    self.source_validation.binding_result.time_gap,
+                )
+            )
+            and type(self.source_validation.tube_result)
+            is OrdinaryAposterioriTubeCheckResult
+            and all(
+                type(value) is str and bool(value)
+                for value in (
+                    self.source_validation.tube_result.tube_id,
+                    self.source_validation.tube_result.chart_id,
+                    self.source_validation.tube_result.checker_id,
+                )
+            )
+            and self.source_validation.tube_result.checker_id
+            == "independent_ordinary_aposteriori_tube_checker_v1"
+            and obligation_ledger_schema(
+                self.source_validation.tube_result.obligations
+            )
+            and all(
+                type(value) is float and np.isfinite(value)
+                for value in (
+                    self.source_validation.tube_result.defect_bound,
+                    self.source_validation.tube_result.lipschitz_bound,
+                    self.source_validation.tube_result.gronwall_error_bound,
+                    self.source_validation.tube_result.nominal_pair_distance_floor,
+                    self.source_validation.tube_result.tube_pair_distance_floor,
+                )
+            )
+            and type(self.source_validation.chart_result) is CertificateCheckResult
+            and all(
+                type(value) is str and bool(value)
+                for value in (
+                    self.source_validation.chart_result.certificate_id,
+                    self.source_validation.chart_result.certificate_type,
+                    self.source_validation.chart_result.checker_id,
+                )
+            )
+            and self.source_validation.chart_result.checker_id
+            == "independent_ordinary_taylor_checker_interval_v2"
+            and obligation_ledger_schema(
+                self.source_validation.chart_result.obligations
+            )
+            and all(
+                type(value) is float and np.isfinite(value)
+                for value in (
+                    self.source_validation.chart_result.max_coefficient_residual,
+                    self.source_validation.chart_result.max_sampled_newton_residual,
+                )
+            )
+        )
+        target_nested_schema = bool(
+            type(self.target_tube_result) is PlanarLCAposterioriTubeCheckResult
+            and all(
+                type(value) is str and bool(value)
+                for value in (
+                    self.target_tube_result.tube_id,
+                    self.target_tube_result.chart_id,
+                    self.target_tube_result.checker_id,
+                )
+            )
+            and obligation_ledger_schema(self.target_tube_result.obligations)
+            and all(
+                type(value) is float and np.isfinite(value)
+                for value in (
+                    self.target_tube_result.defect_bound,
+                    self.target_tube_result.lipschitz_bound,
+                    self.target_tube_result.gronwall_error_bound,
+                    self.target_tube_result.third_body_distance_floor,
+                    self.target_tube_result.anchor_pair_energy_constraint_residual,
+                )
+            )
+            and type(
+                self.target_tube_result.pair_energy_constraint_anchor_certified
+            ) is bool
+            and type(self.target_tube_result.anchor_is_polynomial_center) is bool
+        )
+
+        def assignment(value: object) -> bool:
+            return bool(
+                type(value) is tuple
+                and len(value) == len(self.patch_vertex_ids)
+                and all(
+                    type(item) is tuple
+                    and len(item) == 2
+                    and type(item[0]) is str
+                    and type(item[1]) is int
+                    and item[1] in (0, 1)
+                    for item in value
+                )
+                and tuple(item[0] for item in value) == self.patch_vertex_ids
+            )
+
+        case_suffix = {
+            "closed_upper_singleton": ("upper",),
+            "closed_lower_singleton": ("lower",),
+            "right_half_singleton": ("right",),
+            "strict_negative_cut_two_patch": ("upper", "lower"),
+        }.get(self.canonical_lift_case)
+        if case_suffix is None:
+            return False
+        expected_patch_ids = tuple(
+            f"{self.transition_id}:patch:{index}-{suffix}"
+            for index, suffix in enumerate(case_suffix)
+        )
+        two_patch = len(expected_patch_ids) == 2
+        exact_edge_structure = False
+        if not two_patch:
+            exact_edge_structure = type(self.derived_edges) is tuple and not self.derived_edges
+        elif type(self.derived_edges) is tuple and len(self.derived_edges) == 1:
+            edge = self.derived_edges[0]
+            exact_edge_structure = bool(
+                type(edge) is PlanarLCGaugeOverlapEdge
+                and type(edge.overlap_id) is str
+                and edge.overlap_id
+                == f"{self.transition_id}:negative-axis-overlap"
+                and type(edge.source_chart_id) is str
+                and edge.source_chart_id == expected_patch_ids[0]
+                and type(edge.target_chart_id) is str
+                and edge.target_chart_id == expected_patch_ids[1]
+                and type(edge.parity) is int
+                and edge.parity == 1
+            )
+
+        selected_assignment_map = (
+            dict(self.selected_assignment)
+            if assignment(self.selected_assignment)
+            else {}
+        )
+        expected_transformed_boxes = tuple(
+            tuple(
+                (-upper, -lower)
+                if selected_assignment_map.get(self.patch_vertex_ids[index]) == 1
+                and component < 4
+                else (lower, upper)
+                for component, (lower, upper) in enumerate(box)
+            )
+            for index, box in enumerate(self.raw_patch_boxes)
+        ) if (
+            type(self.raw_patch_boxes) is tuple
+            and all(fraction_box(box, 13) for box in self.raw_patch_boxes)
+        ) else ()
+
+        return bool(
+            type(self.checker_id) is str
+            and self.checker_id
+            == "gauge_aware_ordinary_to_planar_lc_enclosure_transition_checker_v1"
+            and type(self.transition_id) is str
+            and bool(self.transition_id)
+            and type(self.raw_transition_certificate)
+            is OrdinaryToPlanarLCEnclosureTransitionCertificate
+            and type(self.raw_source_binding)
+            is InitialValueProblemBindingCertificate
+            and type(self.raw_source_tube) is OrdinaryAposterioriTubeCertificate
+            and type(self.raw_source_chart) is OrdinaryTaylorChartCertificate
+            and type(self.raw_target_chart)
+            is PlanarLeviCivitaBinaryChartCertificate
+            and type(self.source_validation)
+            is ValidatedOrdinaryIVPChartCheckResult
+            and type(self.raw_target_tube) is PlanarLCAposterioriTubeCertificate
+            and _gauge_aware_raw_primitive_schema_valid(
+                self.raw_transition_certificate,
+                self.raw_source_binding,
+                self.raw_source_tube,
+                self.raw_source_chart,
+                self.raw_target_chart,
+                self.raw_target_tube,
+            )
+            and type(self.raw_transition_certificate.transition_id) is str
+            and bool(self.raw_transition_certificate.transition_id)
+            and type(self.raw_transition_certificate.source_chart_id) is str
+            and bool(self.raw_transition_certificate.source_chart_id)
+            and type(self.raw_transition_certificate.target_chart_id) is str
+            and bool(self.raw_transition_certificate.target_chart_id)
+            and type(self.raw_source_binding.binding_id) is str
+            and bool(self.raw_source_binding.binding_id)
+            and type(self.raw_source_binding.chart_id) is str
+            and bool(self.raw_source_binding.chart_id)
+            and type(self.raw_source_tube.tube_id) is str
+            and bool(self.raw_source_tube.tube_id)
+            and type(self.raw_source_tube.chart_id) is str
+            and bool(self.raw_source_tube.chart_id)
+            and type(self.raw_source_chart.chart_id) is str
+            and bool(self.raw_source_chart.chart_id)
+            and type(self.raw_source_chart.certificate_id) is str
+            and bool(self.raw_source_chart.certificate_id)
+            and type(self.raw_target_chart.chart_id) is str
+            and bool(self.raw_target_chart.chart_id)
+            and type(self.raw_target_chart.certificate_id) is str
+            and bool(self.raw_target_chart.certificate_id)
+            and type(self.raw_target_tube.tube_id) is str
+            and bool(self.raw_target_tube.tube_id)
+            and type(self.raw_target_tube.chart_id) is str
+            and bool(self.raw_target_tube.chart_id)
+            and self.raw_transition_certificate.transition_id == self.transition_id
+            and self.raw_transition_certificate.source_chart_id
+            == self.raw_source_binding.chart_id
+            == self.raw_source_tube.chart_id
+            == self.raw_source_chart.chart_id
+            and self.raw_transition_certificate.target_chart_id
+            == self.raw_target_chart.chart_id
+            and self.raw_target_tube.chart_id == self.raw_target_chart.chart_id
+            and source_nested_schema
+            and self.source_validation.binding_result.binding_id
+            == self.raw_source_binding.binding_id
+            and self.source_validation.binding_result.chart_id
+            == self.raw_source_chart.chart_id
+            and self.source_validation.tube_result.tube_id
+            == self.raw_source_tube.tube_id
+            and self.source_validation.tube_result.chart_id
+            == self.raw_source_chart.chart_id
+            and self.source_validation.chart_result.certificate_id
+            == self.raw_source_chart.certificate_id
+            and _gauge_aware_direct_ordinary_source_valid(
+                self.raw_source_binding,
+                self.raw_source_tube,
+                self.raw_source_chart,
+                self.source_validation,
+            )
+            and target_nested_schema
+            and self.target_tube_result.checker_id
+            == "independent_planar_lc_aposteriori_tube_checker_v1"
+            and self.target_tube_result.chart_id == self.raw_target_chart.chart_id
+            and self.target_tube_result.tube_id == self.raw_target_tube.tube_id
+            and self.target_tube_result.certified
+            and _exact_certified_obligation_manifest(
+                self.obligations,
+                _GAUGE_AWARE_ORDINARY_TO_PLANAR_LC_OBLIGATION_NAMES,
+            )
+            and fraction_box(self.source_state_box, 12)
+            and fraction_box(self.relative_position_box, 2)
+            and type(self.canonical_lift_case) is str
+            and type(self.patch_vertex_ids) is tuple
+            and all(
+                type(patch_id) is str and bool(patch_id)
+                for patch_id in self.patch_vertex_ids
+            )
+            and self.patch_vertex_ids == expected_patch_ids
+            and len(set(self.patch_vertex_ids)) == len(self.patch_vertex_ids)
+            and type(self.raw_patch_boxes) is tuple
+            and len(self.raw_patch_boxes) == len(self.patch_vertex_ids)
+            and all(fraction_box(box, 13) for box in self.raw_patch_boxes)
+            and exact_edge_structure
+            and type(self.gauge_result) is PlanarLCGaugeGluingCheckResult
+            and type(self.gauge_result.certificate_id) is str
+            and self.gauge_result.certificate_id
+            == f"{self.transition_id}:derived-gauge-cover"
+            and type(self.gauge_result.checker_id) is str
+            and self.gauge_result.checker_id
+            == "planar_lc_z2_gauge_gluing_checker_v1"
+            and type(self.gauge_result.obligations) is tuple
+            and bool(self.gauge_result.obligations)
+            and all(
+                type(obligation) is PlanarLCGaugeGluingObligation
+                and type(obligation.obligation) is str
+                and bool(obligation.obligation)
+                and type(obligation.certified) is bool
+                and type(obligation.detail) is str
+                for obligation in self.gauge_result.obligations
+            )
+            and self.gauge_result.chart_ids == self.patch_vertex_ids
+            and self.gauge_result.checked_overlaps == self.derived_edges
+            and self.gauge_result.certified
+            and type(self.tested_assignments) is tuple
+            and len(self.tested_assignments) == 2
+            and all(assignment(item) for item in self.tested_assignments)
+            and self.tested_assignments[0] == self.gauge_result.gauge_assignment
+            and self.tested_assignments[1]
+            == tuple(
+                (chart_id, bit ^ 1)
+                for chart_id, bit in self.tested_assignments[0]
+            )
+            and type(self.tested_lift_max_gaps) is tuple
+            and len(self.tested_lift_max_gaps) == 2
+            and all(
+                type(gap) is Fraction and gap >= 0
+                for gap in self.tested_lift_max_gaps
+            )
+            and type(self.tested_containments) is tuple
+            and len(self.tested_containments) == 2
+            and all(type(value) is bool for value in self.tested_containments)
+            and type(self.selected_complement_index) is int
+            and self.selected_complement_index in (0, 1)
+            and assignment(self.selected_assignment)
+            and self.selected_assignment
+            == self.tested_assignments[self.selected_complement_index]
+            and self.tested_containments[self.selected_complement_index] is True
+            and type(self.selected_transformed_patch_boxes) is tuple
+            and len(self.selected_transformed_patch_boxes)
+            == len(self.patch_vertex_ids)
+            and all(
+                fraction_box(box, 13)
+                for box in self.selected_transformed_patch_boxes
+            )
+            and self.selected_transformed_patch_boxes
+            == expected_transformed_boxes
+            and type(self.exact_declared_time_gap) is Fraction
+            and self.exact_declared_time_gap >= 0
+            and type(self.exact_source_target_time_gap) is Fraction
+            and self.exact_source_target_time_gap >= 0
+            and type(self.entry_lift_rho_lower_bound) is Fraction
+            and self.entry_lift_rho_lower_bound > 0
+        )
+
+    @property
+    def certified(self) -> bool:
+        try:
+            if not self._snapshot_certified():
+                return False
+            fresh = check_gauge_aware_ordinary_to_planar_lc_enclosure_transition(
+                self.raw_transition_certificate,
+                self.raw_source_binding,
+                self.raw_source_tube,
+                self.raw_source_chart,
+                self.raw_target_chart,
+                self.raw_target_tube,
+            )
+            return bool(
+                type(fresh)
+                is GaugeAwareOrdinaryToPlanarLCEnclosureTransitionCheckResult
+                and fresh == self
+            )
+        except Exception:
+            # Raw serialized dataclass fields and equality implementations are
+            # untrusted.  Every exceptional path must fail closed.
+            return False
+
+    @property
+    def gauge_aware_lift_certified(self) -> bool:
+        return self.certified
+
+    @property
+    def constrained_newtonian_lift_certified(self) -> bool:
+        """Existential selected lifts, not every interval/tube point."""
+
+        return self.certified
+
+    @property
+    def physical_time_strictly_monotone_certified(self) -> bool:
+        return bool(self.certified and self.entry_lift_rho_lower_bound > 0)
+
+    @property
+    def missing_obligations(self) -> tuple[str, ...]:
+        missing = list(
+            _check_obligation_ledger_missing(
+                self.obligations,
+                ledger_name=self.transition_id
+                or "gauge_aware_ordinary_to_planar_lc_enclosure",
+            )
+        )
+        if type(self.target_tube_result) is PlanarLCAposterioriTubeCheckResult:
+            missing.extend(self.target_tube_result.missing_obligations)
+        if type(self.source_validation) is ValidatedOrdinaryIVPChartCheckResult:
+            missing.extend(self.source_validation.missing_obligations)
+        if type(self.gauge_result) is PlanarLCGaugeGluingCheckResult:
+            missing.extend(self.gauge_result.missing_obligations)
         return tuple(dict.fromkeys(missing))
 
 
@@ -4066,6 +5477,673 @@ def check_planar_lc_aposteriori_tube(
     )
 
 
+def check_planar_lc_exact_overlap_anchor(
+    certificate: PlanarLCExactOverlapAnchorCertificate,
+    source_tube: PlanarLCAposterioriTubeCertificate,
+    source_chart: PlanarLeviCivitaBinaryChartCertificate,
+    target_tube: PlanarLCAposterioriTubeCertificate,
+    target_chart: PlanarLeviCivitaBinaryChartCertificate,
+) -> PlanarLCExactOverlapAnchorCheckResult:
+    """Derive the exact LC deck bit relating two zero-error tube anchors.
+
+    The two tube checks are recomputed here.  No supplied parity is accepted:
+    the checker compares all fourteen exact binary-rational anchor components,
+    including physical time, and derives the unique identity or antipodal bit.
+    """
+
+    if type(certificate) is not PlanarLCExactOverlapAnchorCertificate:
+        raise TypeError("certificate must be an exact LC overlap-anchor certificate")
+    if type(source_tube) is not PlanarLCAposterioriTubeCertificate:
+        raise TypeError("source_tube must be an exact planar LC tube certificate")
+    if type(target_tube) is not PlanarLCAposterioriTubeCertificate:
+        raise TypeError("target_tube must be an exact planar LC tube certificate")
+    if type(source_chart) is not PlanarLeviCivitaBinaryChartCertificate:
+        raise TypeError("source_chart must be an exact planar LC chart certificate")
+    if type(target_chart) is not PlanarLeviCivitaBinaryChartCertificate:
+        raise TypeError("target_chart must be an exact planar LC chart certificate")
+
+    source_result = _check_planar_lc_tube_or_reject_malformed(
+        source_tube, source_chart
+    )
+    target_result = _check_planar_lc_tube_or_reject_malformed(
+        target_tube, target_chart
+    )
+
+    identifiers_match = bool(
+        type(certificate.overlap_id) is str
+        and bool(certificate.overlap_id)
+        and type(certificate.source_chart_id) is str
+        and type(certificate.source_tube_id) is str
+        and type(certificate.target_chart_id) is str
+        and type(certificate.target_tube_id) is str
+        and type(source_chart.chart_id) is str
+        and type(source_tube.chart_id) is str
+        and type(source_tube.tube_id) is str
+        and type(target_chart.chart_id) is str
+        and type(target_tube.chart_id) is str
+        and type(target_tube.tube_id) is str
+        and certificate.source_chart_id == source_chart.chart_id == source_tube.chart_id
+        and certificate.source_tube_id == source_tube.tube_id
+        and certificate.target_chart_id == target_chart.chart_id == target_tube.chart_id
+        and certificate.target_tube_id == target_tube.tube_id
+    )
+    distinct_charts_and_tubes = bool(
+        identifiers_match
+        and source_chart.chart_id != target_chart.chart_id
+        and source_tube.tube_id != target_tube.tube_id
+    )
+
+    def strict_finite_float(value: object) -> bool:
+        return type(value) is float and np.isfinite(value)
+
+    source_interval = source_chart.parameter_interval
+    target_interval = target_chart.parameter_interval
+    interval_schema = bool(
+        type(source_interval) is tuple
+        and type(target_interval) is tuple
+        and len(source_interval) == len(target_interval) == 2
+        and all(strict_finite_float(value) for value in source_interval + target_interval)
+        and source_interval[0] <= source_interval[1]
+        and target_interval[0] <= target_interval[1]
+    )
+    anchor_parameters_match = bool(
+        interval_schema
+        and strict_finite_float(certificate.source_anchor_parameter)
+        and strict_finite_float(certificate.target_anchor_parameter)
+        and strict_finite_float(source_tube.anchor_parameter)
+        and strict_finite_float(target_tube.anchor_parameter)
+        and certificate.source_anchor_parameter == source_tube.anchor_parameter
+        and certificate.target_anchor_parameter == target_tube.anchor_parameter
+        and source_interval[0]
+        <= certificate.source_anchor_parameter
+        <= source_interval[1]
+        and target_interval[0]
+        <= certificate.target_anchor_parameter
+        <= target_interval[1]
+    )
+    zero_error_centers = bool(
+        strict_finite_float(source_tube.initial_error_bound)
+        and strict_finite_float(target_tube.initial_error_bound)
+        and source_tube.initial_error_bound == 0.0
+        and target_tube.initial_error_bound == 0.0
+        and source_result.anchor_is_polynomial_center
+        and target_result.anchor_is_polynomial_center
+    )
+    masses_and_ordered_pair_match = bool(
+        type(source_chart.masses) is tuple
+        and type(target_chart.masses) is tuple
+        and len(source_chart.masses) == len(target_chart.masses) == 3
+        and all(
+            type(value) is float and np.isfinite(value) and value > 0.0
+            for value in source_chart.masses + target_chart.masses
+        )
+        and source_chart.masses == target_chart.masses
+        and type(source_chart.pair) is tuple
+        and type(target_chart.pair) is tuple
+        and len(source_chart.pair) == len(target_chart.pair) == 2
+        and all(type(index) is int for index in source_chart.pair + target_chart.pair)
+        and source_chart.pair == target_chart.pair
+        and source_chart.pair[0] != source_chart.pair[1]
+        and set(source_chart.pair).issubset({0, 1, 2})
+    )
+
+    common_interval: tuple[Fraction, Fraction] = (Fraction(0), Fraction(0))
+    common_interval_nondegenerate = False
+    source_anchor: tuple[Fraction, ...] = ()
+    target_anchor: tuple[Fraction, ...] = ()
+    exact_anchor_schema = False
+    fixed_components_equal = False
+    relation_parity: int | None = None
+    source_constraint_exact = False
+    target_constraint_exact = False
+    mass_ratio_arithmetic_exact = False
+    if anchor_parameters_match:
+        try:
+            source_parameter_q = Fraction.from_float(
+                certificate.source_anchor_parameter
+            )
+            target_parameter_q = Fraction.from_float(
+                certificate.target_anchor_parameter
+            )
+            source_relative = (
+                Fraction.from_float(source_interval[0]) - source_parameter_q,
+                Fraction.from_float(source_interval[1]) - source_parameter_q,
+            )
+            target_relative = (
+                Fraction.from_float(target_interval[0]) - target_parameter_q,
+                Fraction.from_float(target_interval[1]) - target_parameter_q,
+            )
+            common_interval = (
+                max(source_relative[0], target_relative[0]),
+                min(source_relative[1], target_relative[1]),
+            )
+            common_interval_nondegenerate = bool(
+                common_interval[0] < common_interval[1]
+                and common_interval[0] <= 0 <= common_interval[1]
+            )
+            source_anchor = (
+                _exact_rational_planar_lc_lifted_state_at_parameter(
+                    source_chart, source_parameter_q
+                )
+                + (
+                    _exact_rational_chart_physical_time_at_parameter(
+                        source_chart, source_parameter_q
+                    ),
+                )
+            )
+            target_anchor = (
+                _exact_rational_planar_lc_lifted_state_at_parameter(
+                    target_chart, target_parameter_q
+                )
+                + (
+                    _exact_rational_chart_physical_time_at_parameter(
+                        target_chart, target_parameter_q
+                    ),
+                )
+            )
+            exact_anchor_schema = bool(
+                len(source_anchor) == len(target_anchor) == 14
+                and all(
+                    type(value) is Fraction
+                    for value in source_anchor + target_anchor
+                )
+            )
+        except (IndexError, OverflowError, TypeError, ValueError, ZeroDivisionError):
+            pass
+
+    if exact_anchor_schema:
+        fixed_components_equal = source_anchor[4:] == target_anchor[4:]
+        same = source_anchor[:4] == target_anchor[:4]
+        antipodal = target_anchor[:4] == tuple(
+            -value for value in source_anchor[:4]
+        )
+        if fixed_components_equal and same != antipodal:
+            relation_parity = 0 if same else 1
+
+    if exact_anchor_schema and masses_and_ordered_pair_match:
+        pair_mass_q = sum(
+            Fraction.from_float(source_chart.masses[index])
+            for index in source_chart.pair
+        )
+
+        def constraint_exact(anchor: tuple[Fraction, ...]) -> bool:
+            z = anchor[0:2]
+            w = anchor[2:4]
+            return bool(
+                2 * sum(value * value for value in w)
+                - pair_mass_q
+                - sum(value * value for value in z) * anchor[4]
+                == 0
+            )
+
+        source_constraint_exact = constraint_exact(source_anchor)
+        target_constraint_exact = constraint_exact(target_anchor)
+        mass_ratio_arithmetic_exact = bool(
+            _planar_lc_mass_ratio_arithmetic_exact(
+                source_chart.masses, source_chart.pair
+            )
+            and _planar_lc_mass_ratio_arithmetic_exact(
+                target_chart.masses, target_chart.pair
+            )
+        )
+
+    lifted_prerequisites = bool(
+        identifiers_match
+        and distinct_charts_and_tubes
+        and anchor_parameters_match
+        and zero_error_centers
+        and masses_and_ordered_pair_match
+        and source_result.certified
+        and target_result.certified
+        and common_interval_nondegenerate
+        and exact_anchor_schema
+        and fixed_components_equal
+        and relation_parity in (0, 1)
+    )
+    edge = None
+    if lifted_prerequisites:
+        edge = PlanarLCGaugeOverlapEdge(
+            overlap_id=certificate.overlap_id,
+            source_chart_id=source_chart.chart_id,
+            target_chart_id=target_chart.chart_id,
+            parity=relation_parity,
+        )
+
+    obligations = (
+        CertificateCheckObligation(
+            "planar_lc_exact_overlap_identifiers_match",
+            identifiers_match,
+            f"overlap={certificate.overlap_id!r}",
+        ),
+        CertificateCheckObligation(
+            "planar_lc_exact_overlap_distinct_charts_and_tubes",
+            distinct_charts_and_tubes,
+            (
+                f"source_chart={source_chart.chart_id!r}; "
+                f"target_chart={target_chart.chart_id!r}"
+            ),
+        ),
+        CertificateCheckObligation(
+            "planar_lc_exact_overlap_anchor_parameters_match",
+            anchor_parameters_match,
+            (
+                f"source={certificate.source_anchor_parameter!r}; "
+                f"target={certificate.target_anchor_parameter!r}"
+            ),
+        ),
+        CertificateCheckObligation(
+            "planar_lc_exact_overlap_zero_error_centers",
+            zero_error_centers,
+            (
+                f"source_error={source_tube.initial_error_bound!r}; "
+                f"target_error={target_tube.initial_error_bound!r}"
+            ),
+        ),
+        CertificateCheckObligation(
+            "planar_lc_exact_overlap_masses_and_ordered_pair_match",
+            masses_and_ordered_pair_match,
+            f"source_pair={source_chart.pair!r}; target_pair={target_chart.pair!r}",
+        ),
+        CertificateCheckObligation(
+            "planar_lc_exact_overlap_source_tube_certified",
+            source_result.certified,
+            f"tube={source_tube.tube_id!r}",
+        ),
+        CertificateCheckObligation(
+            "planar_lc_exact_overlap_target_tube_certified",
+            target_result.certified,
+            f"tube={target_tube.tube_id!r}",
+        ),
+        CertificateCheckObligation(
+            "planar_lc_exact_overlap_common_interval_nondegenerate",
+            common_interval_nondegenerate,
+            f"relative_interval={common_interval!r}",
+        ),
+        CertificateCheckObligation(
+            "planar_lc_exact_overlap_exact_anchor_schema",
+            exact_anchor_schema,
+            (
+                f"source_dimension={len(source_anchor)}; "
+                f"target_dimension={len(target_anchor)}"
+            ),
+        ),
+        CertificateCheckObligation(
+            "planar_lc_exact_overlap_fixed_components_equal",
+            fixed_components_equal,
+            "the h,R,U,y,V,t anchor blocks agree exactly",
+        ),
+        CertificateCheckObligation(
+            "planar_lc_exact_overlap_unique_deck_relation",
+            relation_parity in (0, 1),
+            f"derived_parity={relation_parity!r}",
+        ),
+    )
+    return PlanarLCExactOverlapAnchorCheckResult(
+        overlap_id=certificate.overlap_id if type(certificate.overlap_id) is str else "",
+        checker_id="planar_lc_exact_overlap_anchor_checker_v1",
+        source_chart_id=(
+            source_chart.chart_id if type(source_chart.chart_id) is str else ""
+        ),
+        target_chart_id=(
+            target_chart.chart_id if type(target_chart.chart_id) is str else ""
+        ),
+        raw_overlap_certificate=certificate,
+        raw_source_tube=source_tube,
+        raw_source_chart=source_chart,
+        raw_target_tube=target_tube,
+        raw_target_chart=target_chart,
+        source_tube_result=source_result,
+        target_tube_result=target_result,
+        obligations=obligations,
+        source_exact_anchor=source_anchor,
+        target_exact_anchor=target_anchor,
+        common_parameter_offset_interval=common_interval,
+        derived_edge=edge,
+        serialized_masses=(
+            tuple(source_chart.masses)
+            if type(source_chart.masses) is tuple
+            else ()
+        ),
+        selected_pair=(
+            tuple(source_chart.pair) if type(source_chart.pair) is tuple else ()
+        ),
+        source_pair_energy_constraint_exact=source_constraint_exact,
+        target_pair_energy_constraint_exact=target_constraint_exact,
+        mass_ratio_arithmetic_exact=mass_ratio_arithmetic_exact,
+    )
+
+
+def check_planar_lc_exact_gauge_atlas(
+    certificate: PlanarLCExactGaugeAtlasCertificate,
+    charts: tuple[PlanarLeviCivitaBinaryChartCertificate, ...],
+    tubes: tuple[PlanarLCAposterioriTubeCertificate, ...],
+    overlaps: tuple[PlanarLCExactOverlapAnchorCertificate, ...],
+) -> PlanarLCExactGaugeAtlasCheckResult:
+    """Recompute an exact LC overlap graph from raw vertex and edge evidence.
+
+    No overlap result, gauge edge, or parity is accepted as an input.  Invalid
+    raw bindings stop before graph construction, keeping this aggregate wholly
+    separate from existing transition and ``proof_certified`` routes.
+    """
+
+    if type(certificate) is not PlanarLCExactGaugeAtlasCertificate:
+        raise TypeError("certificate must be an exact LC gauge-atlas certificate")
+    if not (
+        type(charts) is tuple
+        and all(type(chart) is PlanarLeviCivitaBinaryChartCertificate for chart in charts)
+    ):
+        raise TypeError("charts must be a tuple of exact planar LC chart certificates")
+    if not (
+        type(tubes) is tuple
+        and all(type(tube) is PlanarLCAposterioriTubeCertificate for tube in tubes)
+    ):
+        raise TypeError("tubes must be a tuple of exact planar LC tube certificates")
+    if not (
+        type(overlaps) is tuple
+        and all(
+            type(overlap) is PlanarLCExactOverlapAnchorCertificate
+            for overlap in overlaps
+        )
+    ):
+        raise TypeError("overlaps must be a tuple of raw exact-overlap certificates")
+
+    chart_ids = certificate.chart_ids
+    tube_ids = certificate.tube_ids
+    overlap_ids = certificate.overlap_ids
+
+    def exact_nonempty_string_tuple(value: object, *, nonempty: bool) -> bool:
+        return bool(
+            type(value) is tuple
+            and (bool(value) or not nonempty)
+            and all(type(item) is str and bool(item) for item in value)
+            and len(set(value)) == len(value)
+        )
+
+    manifest_schema = bool(
+        type(certificate.atlas_id) is str
+        and bool(certificate.atlas_id)
+        and exact_nonempty_string_tuple(chart_ids, nonempty=True)
+        and exact_nonempty_string_tuple(tube_ids, nonempty=True)
+        and exact_nonempty_string_tuple(overlap_ids, nonempty=False)
+        and len(chart_ids) == len(tube_ids)
+    )
+    raw_chart_ids = tuple(chart.chart_id for chart in charts)
+    raw_tube_ids = tuple(tube.tube_id for tube in tubes)
+    raw_overlap_ids = tuple(overlap.overlap_id for overlap in overlaps)
+    raw_ids_schema = bool(
+        charts
+        and all(type(value) is str and bool(value) for value in raw_chart_ids)
+        and len(set(raw_chart_ids)) == len(raw_chart_ids)
+        and len(tubes) == len(charts)
+        and all(type(value) is str and bool(value) for value in raw_tube_ids)
+        and len(set(raw_tube_ids)) == len(raw_tube_ids)
+        and all(type(value) is str and bool(value) for value in raw_overlap_ids)
+        and len(set(raw_overlap_ids)) == len(raw_overlap_ids)
+    )
+    manifest_matches_raw = bool(
+        manifest_schema
+        and raw_ids_schema
+        and chart_ids == raw_chart_ids
+        and tube_ids == raw_tube_ids
+        and overlap_ids == raw_overlap_ids
+    )
+    positional_vertex_binding = bool(
+        manifest_matches_raw
+        and len(charts) == len(tubes)
+        and all(
+            type(chart.chart_id) is str
+            and type(tube.chart_id) is str
+            and tube.chart_id == chart.chart_id
+            for chart, tube in zip(charts, tubes)
+        )
+    )
+
+    vertex_results: list[PlanarLCAposterioriTubeCheckResult] = []
+    if len(charts) == len(tubes):
+        for chart, tube in zip(charts, tubes):
+            vertex_results.append(
+                _check_planar_lc_tube_or_reject_malformed(tube, chart)
+            )
+    vertex_tubes_certified_zero_error = bool(
+        positional_vertex_binding
+        and len(vertex_results) == len(charts)
+        and all(
+            type(tube.initial_error_bound) is float
+            and tube.initial_error_bound == 0.0
+            and result.certified
+            and result.anchor_is_polynomial_center
+            and result.chart_id == chart.chart_id
+            and result.tube_id == tube.tube_id
+            for chart, tube, result in zip(charts, tubes, vertex_results)
+        )
+    )
+
+    def exact_problem(chart: PlanarLeviCivitaBinaryChartCertificate) -> bool:
+        return bool(
+            type(chart.masses) is tuple
+            and len(chart.masses) == 3
+            and all(
+                type(value) is float and np.isfinite(value) and value > 0.0
+                for value in chart.masses
+            )
+            and type(chart.pair) is tuple
+            and len(chart.pair) == 2
+            and all(type(index) is int for index in chart.pair)
+            and chart.pair[0] != chart.pair[1]
+            and set(chart.pair).issubset({0, 1, 2})
+        )
+
+    vertex_problem_data = tuple(
+        (tuple(chart.masses), tuple(chart.pair))
+        if exact_problem(chart)
+        else ((), ())
+        for chart in charts
+    )
+    globally_same_problem = bool(
+        charts
+        and all(exact_problem(chart) for chart in charts)
+        and all(problem == vertex_problem_data[0] for problem in vertex_problem_data)
+    )
+
+    chart_by_id = (
+        {chart.chart_id: chart for chart in charts} if raw_ids_schema else {}
+    )
+    tube_by_chart_id = (
+        {chart.chart_id: tube for chart, tube in zip(charts, tubes)}
+        if positional_vertex_binding
+        else {}
+    )
+    overlap_bindings_match_vertices = bool(
+        manifest_matches_raw
+        and all(
+            type(overlap.source_chart_id) is str
+            and type(overlap.target_chart_id) is str
+            and type(overlap.source_tube_id) is str
+            and type(overlap.target_tube_id) is str
+            and overlap.source_chart_id in chart_by_id
+            and overlap.target_chart_id in chart_by_id
+            and overlap.source_chart_id != overlap.target_chart_id
+            and overlap.source_tube_id
+            == tube_by_chart_id[overlap.source_chart_id].tube_id
+            and overlap.target_tube_id
+            == tube_by_chart_id[overlap.target_chart_id].tube_id
+            for overlap in overlaps
+        )
+    )
+
+    overlap_results: list[PlanarLCExactOverlapAnchorCheckResult] = []
+    if (
+        vertex_tubes_certified_zero_error
+        and globally_same_problem
+        and overlap_bindings_match_vertices
+    ):
+        for overlap in overlaps:
+            source_chart = chart_by_id[overlap.source_chart_id]
+            target_chart = chart_by_id[overlap.target_chart_id]
+            source_tube = tube_by_chart_id[overlap.source_chart_id]
+            target_tube = tube_by_chart_id[overlap.target_chart_id]
+            try:
+                overlap_results.append(
+                    check_planar_lc_exact_overlap_anchor(
+                        overlap,
+                        source_tube,
+                        source_chart,
+                        target_tube,
+                        target_chart,
+                    )
+                )
+            except (
+                AttributeError,
+                DecimalException,
+                FloatingPointError,
+                IndexError,
+                KeyError,
+                OverflowError,
+                TypeError,
+                ValueError,
+                ZeroDivisionError,
+            ):
+                break
+    all_overlaps_recomputed_and_certified = bool(
+        len(overlap_results) == len(overlaps)
+        and all(
+            result._snapshot_lifted_overlap_certified()
+            for result in overlap_results
+        )
+    )
+    anchor_parameter_translations: list[
+        tuple[Fraction, Fraction, Fraction]
+    ] = []
+    for overlap in overlaps:
+        if not (
+            type(overlap.source_anchor_parameter) is float
+            and type(overlap.target_anchor_parameter) is float
+            and np.isfinite(overlap.source_anchor_parameter)
+            and np.isfinite(overlap.target_anchor_parameter)
+        ):
+            break
+        source_q = Fraction.from_float(overlap.source_anchor_parameter)
+        target_q = Fraction.from_float(overlap.target_anchor_parameter)
+        anchor_parameter_translations.append(
+            (source_q, target_q, target_q - source_q)
+        )
+    anchor_translations_exact = bool(
+        len(anchor_parameter_translations) == len(overlaps)
+    )
+    derived_edges = tuple(
+        result.derived_edge
+        for result in overlap_results
+        if result._snapshot_lifted_overlap_certified()
+        and type(result.derived_edge) is PlanarLCGaugeOverlapEdge
+    )
+    derived_edges_match_results = bool(
+        all_overlaps_recomputed_and_certified
+        and len(derived_edges) == len(overlap_results)
+        and all(
+            type(result.derived_edge) is PlanarLCGaugeOverlapEdge
+            and edge == result.derived_edge
+            for edge, result in zip(derived_edges, overlap_results)
+        )
+    )
+
+    gauge_result: PlanarLCGaugeGluingCheckResult | None = None
+    ready_for_graph = bool(
+        manifest_matches_raw
+        and positional_vertex_binding
+        and vertex_tubes_certified_zero_error
+        and globally_same_problem
+        and overlap_bindings_match_vertices
+        and all_overlaps_recomputed_and_certified
+        and anchor_translations_exact
+        and derived_edges_match_results
+    )
+    if ready_for_graph:
+        gauge_result = check_planar_lc_gauge_gluing(
+            PlanarLCGaugeGluingCertificate(
+                certificate_id=f"{certificate.atlas_id}:derived-gauge-graph",
+                chart_ids=tuple(chart_ids),
+                overlaps=derived_edges,
+                source="derived_from_raw_exact_lc_overlap_anchors",
+            )
+        )
+    derived_graph_certified = bool(
+        type(gauge_result) is PlanarLCGaugeGluingCheckResult
+        and gauge_result.certified
+    )
+
+    obligations = (
+        CertificateCheckObligation(
+            "planar_lc_exact_gauge_atlas_manifest_schema",
+            manifest_schema,
+            f"atlas={certificate.atlas_id!r}",
+        ),
+        CertificateCheckObligation(
+            "planar_lc_exact_gauge_atlas_raw_ids_unique_and_positional",
+            bool(raw_ids_schema and manifest_matches_raw),
+            (
+                f"charts={raw_chart_ids!r}; tubes={raw_tube_ids!r}; "
+                f"overlaps={raw_overlap_ids!r}"
+            ),
+        ),
+        CertificateCheckObligation(
+            "planar_lc_exact_gauge_atlas_vertex_bindings_match",
+            positional_vertex_binding,
+            f"vertex_count={len(charts)}",
+        ),
+        CertificateCheckObligation(
+            "planar_lc_exact_gauge_atlas_vertex_tubes_zero_error_certified",
+            vertex_tubes_certified_zero_error,
+            f"checked_vertex_count={len(vertex_results)}",
+        ),
+        CertificateCheckObligation(
+            "planar_lc_exact_gauge_atlas_global_problem_matches",
+            globally_same_problem,
+            f"problems={vertex_problem_data!r}",
+        ),
+        CertificateCheckObligation(
+            "planar_lc_exact_gauge_atlas_overlap_bindings_match_vertices",
+            overlap_bindings_match_vertices,
+            f"raw_overlap_count={len(overlaps)}",
+        ),
+        CertificateCheckObligation(
+            "planar_lc_exact_gauge_atlas_overlaps_recomputed_and_certified",
+            all_overlaps_recomputed_and_certified,
+            f"checked_overlap_count={len(overlap_results)}",
+        ),
+        CertificateCheckObligation(
+            "planar_lc_exact_gauge_atlas_derived_edges_match_results",
+            bool(anchor_translations_exact and derived_edges_match_results),
+            (
+                f"derived_edge_count={len(derived_edges)}; "
+                f"anchor_translation_count={len(anchor_parameter_translations)}"
+            ),
+        ),
+        CertificateCheckObligation(
+            "planar_lc_exact_gauge_atlas_derived_graph_certified",
+            derived_graph_certified,
+            "the connected gauge graph was built only from recomputed overlap results",
+        ),
+    )
+    return PlanarLCExactGaugeAtlasCheckResult(
+        atlas_id=(certificate.atlas_id if type(certificate.atlas_id) is str else ""),
+        checker_id="planar_lc_exact_gauge_atlas_checker_v1",
+        raw_atlas_certificate=certificate,
+        obligations=obligations,
+        chart_ids=(tuple(chart_ids) if type(chart_ids) is tuple else ()),
+        tube_ids=(tuple(tube_ids) if type(tube_ids) is tuple else ()),
+        overlap_ids=(tuple(overlap_ids) if type(overlap_ids) is tuple else ()),
+        checked_charts=tuple(charts),
+        checked_tubes=tuple(tubes),
+        checked_overlap_certificates=tuple(overlaps),
+        vertex_tube_results=tuple(vertex_results),
+        vertex_problem_data=vertex_problem_data,
+        overlap_results=tuple(overlap_results),
+        anchor_parameter_translations=tuple(anchor_parameter_translations),
+        derived_edges=derived_edges,
+        gauge_result=gauge_result,
+    )
+
+
 def check_planar_lc_exact_collision_anchor(
     certificate: PlanarLCExactCollisionAnchorCertificate,
     tube: PlanarLCAposterioriTubeCertificate,
@@ -4447,12 +6525,58 @@ def check_ordinary_to_planar_lc_enclosure_transition(
         and _parameter_in_interval(target_chart.parameter_interval, target_parameter)
         and float(target_tube.anchor_parameter) == target_parameter
     )
+    source_physical_time_parameterization_exact = False
+    if type(source_validation) is ValidatedOrdinaryIVPChartCheckResult:
+        try:
+            parameter_interval_q = tuple(
+                Fraction.from_float(value)
+                for value in source_chart.parameter_interval
+                if type(value) is float and np.isfinite(value)
+            )
+            physical_time_interval_q = tuple(
+                Fraction.from_float(value)
+                for value in source_chart.physical_time_interval
+                if type(value) is float and np.isfinite(value)
+            )
+            binding_result = source_validation.binding_result
+            source_physical_time_parameterization_exact = bool(
+                len(parameter_interval_q) == 2
+                and len(physical_time_interval_q) == 2
+                and parameter_interval_q[1] - parameter_interval_q[0]
+                == physical_time_interval_q[1] - physical_time_interval_q[0]
+                and type(source_validation.checker_id) is str
+                and source_validation.checker_id
+                == "validated_ordinary_ivp_chart_checker_v1"
+                and type(binding_result) is InitialValueBindingCheckResult
+                and type(binding_result.binding_id) is str
+                and bool(binding_result.binding_id)
+                and type(binding_result.chart_id) is str
+                and type(source_tube_result)
+                is OrdinaryAposterioriTubeCheckResult
+                and binding_result.chart_id
+                == source_tube_result.chart_id
+                == source_chart.chart_id
+                and type(source_tube_result.tube_id) is str
+                and bool(source_tube_result.tube_id)
+                and type(source_tube_result.checker_id) is str
+                and source_tube_result.checker_id
+                == "independent_ordinary_aposteriori_tube_checker_v1"
+                and type(binding_result.checker_id) is str
+                and binding_result.checker_id
+                == "independent_initial_value_binding_checker_v1"
+                and type(binding_result.time_gap) is float
+                and binding_result.time_gap == 0.0
+            )
+        except Exception:
+            source_physical_time_parameterization_exact = False
     finite_time_cap = bool(np.isfinite(time_cap) and time_cap >= 0.0)
     branch_count = 0
     max_lift_gap = np.inf
     time_gap = np.inf
+    target_initial_time_gap = np.inf
     entry_rho_floor = 0.0
     time_matches = False
+    target_initial_time_contained = False
     lift_atlas_certified = False
     target_tube_contains_lift_atlas = False
     if (
@@ -4461,6 +6585,7 @@ def check_ordinary_to_planar_lc_enclosure_transition(
         and common_problem
         and mass_ratio_arithmetic_exact
         and parameters_inside
+        and source_physical_time_parameterization_exact
         and finite_time_cap
         and target_tube_result.certified
     ):
@@ -4481,6 +6606,14 @@ def check_ordinary_to_planar_lc_enclosure_transition(
             )
             time_gap = _fraction_upper_float(time_gap_q)
             time_matches = time_gap_q <= Fraction.from_float(time_cap)
+            target_initial_time_gap_q = abs(source_time_q - target_time_q)
+            target_initial_time_gap = _fraction_upper_float(
+                target_initial_time_gap_q
+            )
+            target_initial_time_contained = bool(
+                target_initial_time_gap_q
+                <= Fraction.from_float(float(target_tube.initial_error_bound))
+            )
 
             source_q, source_v = _exact_rational_chart_projected_state_at_parameter(
                 source_chart, source_parameter_q
@@ -4565,9 +6698,25 @@ def check_ordinary_to_planar_lc_enclosure_transition(
             f"source_parameter={source_parameter}; target_parameter={target_parameter}",
         ),
         CertificateCheckObligation(
+            "ordinary_to_lc_source_physical_time_parameterization_exact",
+            source_physical_time_parameterization_exact,
+            (
+                "direct validated ordinary IVP result has exact binding time, "
+                "matching source IDs, and equal exact parameter/time widths"
+            ),
+        ),
+        CertificateCheckObligation(
             "ordinary_to_lc_handoff_time_matches",
             time_matches,
             f"time_gap={time_gap}; cap={time_cap}",
+        ),
+        CertificateCheckObligation(
+            "ordinary_to_lc_target_initial_error_contains_physical_time",
+            target_initial_time_contained,
+            (
+                f"source_target_time_gap={target_initial_time_gap}; "
+                f"target_initial_error={target_tube.initial_error_bound}"
+            ),
         ),
         CertificateCheckObligation(
             "ordinary_to_lc_target_lifted_tube_certified",
@@ -4606,7 +6755,589 @@ def check_ordinary_to_planar_lc_enclosure_transition(
         lift_branch_count=int(branch_count),
         max_lift_box_gap=float(max_lift_gap),
         time_gap=float(time_gap),
+        target_initial_time_gap=float(target_initial_time_gap),
         entry_lift_rho_lower_bound=float(entry_rho_floor),
+    )
+
+
+def check_gauge_aware_ordinary_to_planar_lc_enclosure_transition(
+    certificate: OrdinaryToPlanarLCEnclosureTransitionCertificate,
+    source_binding: InitialValueProblemBindingCertificate,
+    source_tube: OrdinaryAposterioriTubeCertificate,
+    source_chart: OrdinaryTaylorChartCertificate,
+    target_chart: PlanarLeviCivitaBinaryChartCertificate,
+    target_tube: PlanarLCAposterioriTubeCertificate,
+) -> GaugeAwareOrdinaryToPlanarLCEnclosureTransitionCheckResult:
+    """Check an ordinary-to-LC lift modulo one global ``Z/2`` gauge.
+
+    This opt-in route derives its branch cover and sign graph from the exact
+    source box.  The direct ordinary IVP is recomputed from its retained raw
+    binding and tube certificates.  Continuation-result inputs are not in this
+    checker's scope.  Ordinary source time is derived from the validated raw
+    binding as ``initial_time + source_parameter - chart_parameter``; the
+    chart's approximate physical-time interval is not used as exact evidence.
+    It never changes, wraps, or promotes the legacy transition checker, and no
+    existing proof route consumes its result type.
+    """
+
+    if type(certificate) is not OrdinaryToPlanarLCEnclosureTransitionCertificate:
+        raise TypeError("certificate must have the exact ordinary-to-LC type")
+    if type(source_binding) is not InitialValueProblemBindingCertificate:
+        raise TypeError("source_binding must have the exact IVP binding type")
+    if type(source_tube) is not OrdinaryAposterioriTubeCertificate:
+        raise TypeError("source_tube must have the exact ordinary tube type")
+    if type(source_chart) is not OrdinaryTaylorChartCertificate:
+        raise TypeError("source_chart must have the exact ordinary chart type")
+    if type(target_chart) is not PlanarLeviCivitaBinaryChartCertificate:
+        raise TypeError("target_chart must have the exact planar LC chart type")
+    if type(target_tube) is not PlanarLCAposterioriTubeCertificate:
+        raise TypeError("target_tube must have the exact planar LC tube type")
+
+    raw_primitive_schema_valid = _gauge_aware_raw_primitive_schema_valid(
+        certificate,
+        source_binding,
+        source_tube,
+        source_chart,
+        target_chart,
+        target_tube,
+    )
+    if raw_primitive_schema_valid:
+        try:
+            source_validation = check_validated_ordinary_ivp_chart(
+                source_binding, source_tube, source_chart
+            )
+        except Exception:
+            source_validation = _rejected_gauge_aware_direct_ordinary_source(
+                source_binding, source_tube, source_chart
+            )
+        try:
+            target_tube_result = _check_planar_lc_tube_or_reject_malformed(
+                target_tube, target_chart
+            )
+        except Exception:
+            target_tube_result = _rejected_planar_lc_tube_result(
+                target_tube, target_chart
+            )
+    else:
+        source_validation = _rejected_gauge_aware_direct_ordinary_source(
+            source_binding, source_tube, source_chart
+        )
+        target_tube_result = _rejected_planar_lc_tube_result(
+            target_tube, target_chart
+        )
+    source_state_box: tuple[tuple[Fraction, Fraction], ...] = ()
+    relative_position_box = (
+        (Fraction(0), Fraction(0)),
+        (Fraction(0), Fraction(0)),
+    )
+    canonical_lift_case = ""
+    patch_vertex_ids: tuple[str, ...] = ()
+    raw_patch_boxes: tuple[
+        tuple[tuple[Fraction, Fraction], ...], ...
+    ] = ()
+    derived_edges: tuple[PlanarLCGaugeOverlapEdge, ...] = ()
+    gauge_result: PlanarLCGaugeGluingCheckResult | None = None
+    tested_assignments: tuple[tuple[tuple[str, int], ...], ...] = ()
+    tested_lift_max_gaps: tuple[Fraction, ...] = ()
+    tested_containments: tuple[bool, ...] = ()
+    selected_complement_index = -1
+    selected_assignment: tuple[tuple[str, int], ...] = ()
+    selected_transformed_patch_boxes: tuple[
+        tuple[tuple[Fraction, Fraction], ...], ...
+    ] = ()
+    exact_declared_time_gap = Fraction(0)
+    exact_source_target_time_gap = Fraction(0)
+    entry_lift_rho_lower_bound = Fraction(0)
+
+    identifiers_match = False
+    source_certified = False
+    common_problem = False
+    mass_ratio_arithmetic_exact = False
+    parameters_inside = False
+    declared_handoff_time_cap = False
+    target_tube_certified = False
+    source_box_reconstructed = False
+    selected_pair_collision_free = False
+    canonical_branch_grammar = False
+    canonical_lift_count = False
+    derived_gauge_graph_certified = False
+    entry_lift_rho_positive = False
+    target_initial_time_contained = False
+    one_global_complement_contains_all_lifts = False
+    existential_selected_lifts_constrained = False
+
+    def square_lower(bounds: tuple[Fraction, Fraction]) -> Fraction:
+        lower, upper = bounds
+        if lower <= 0 <= upper:
+            return Fraction(0)
+        return min(lower * lower, upper * upper)
+
+    def transform_patch_box(
+        box: tuple[tuple[Fraction, Fraction], ...], bit: int
+    ) -> tuple[tuple[Fraction, Fraction], ...]:
+        return tuple(
+            (-upper, -lower) if bit == 1 and index < 4 else (lower, upper)
+            for index, (lower, upper) in enumerate(box)
+        )
+
+    try:
+        if not raw_primitive_schema_valid:
+            raise ValueError("noncanonical raw primitive schema")
+        identifiers_match = bool(
+            type(certificate.transition_id) is str
+            and bool(certificate.transition_id)
+            and type(certificate.source_chart_id) is str
+            and type(certificate.target_chart_id) is str
+            and certificate.source_chart_id == source_chart.chart_id
+            and certificate.target_chart_id == target_chart.chart_id
+            and source_binding.chart_id == source_chart.chart_id
+            and source_tube.chart_id == source_chart.chart_id
+            and target_tube.chart_id == target_chart.chart_id
+        )
+        source_certified = _gauge_aware_direct_ordinary_source_valid(
+            source_binding, source_tube, source_chart, source_validation
+        )
+        ordered_pair = target_chart.pair
+        common_problem = bool(
+            type(source_chart.masses) is tuple
+            and type(target_chart.masses) is tuple
+            and source_chart.masses == target_chart.masses
+            and len(source_chart.masses) == 3
+            and all(
+                type(mass) is float and np.isfinite(mass) and mass > 0.0
+                for mass in source_chart.masses
+            )
+            and type(source_chart.dimension) is int
+            and source_chart.dimension == 2
+            and type(ordered_pair) is tuple
+            and len(ordered_pair) == 2
+            and all(type(index) is int for index in ordered_pair)
+            and ordered_pair[0] != ordered_pair[1]
+            and set(ordered_pair).issubset({0, 1, 2})
+        )
+        if common_problem:
+            mass_ratio_arithmetic_exact = _planar_lc_mass_ratio_arithmetic_exact(
+                target_chart.masses, ordered_pair
+            )
+
+        exact_scalar_fields = bool(
+            type(certificate.source_parameter) is float
+            and type(certificate.target_parameter) is float
+            and type(certificate.handoff_time) is float
+            and type(certificate.max_time_gap) is float
+            and type(source_binding.initial_time) is float
+            and type(source_binding.chart_parameter) is float
+            and type(target_tube.anchor_parameter) is float
+            and type(target_tube.initial_error_bound) is float
+            and all(
+                np.isfinite(value)
+                for value in (
+                    certificate.source_parameter,
+                    certificate.target_parameter,
+                    certificate.handoff_time,
+                    certificate.max_time_gap,
+                    source_binding.initial_time,
+                    source_binding.chart_parameter,
+                    target_tube.anchor_parameter,
+                    target_tube.initial_error_bound,
+                )
+            )
+            and certificate.max_time_gap >= 0.0
+            and target_tube.initial_error_bound >= 0.0
+        )
+        parameters_inside = bool(
+            exact_scalar_fields
+            and _parameter_in_interval(
+                source_chart.parameter_interval, certificate.source_parameter
+            )
+            and _parameter_in_interval(
+                target_chart.parameter_interval, certificate.target_parameter
+            )
+            and target_tube.anchor_parameter == certificate.target_parameter
+        )
+        target_tube_certified = bool(
+            type(target_tube_result) is PlanarLCAposterioriTubeCheckResult
+            and target_tube_result.checker_id
+            == "independent_planar_lc_aposteriori_tube_checker_v1"
+            and target_tube_result.chart_id == target_chart.chart_id
+            and target_tube_result.tube_id == target_tube.tube_id
+            and target_tube_result.certified
+        )
+
+        if parameters_inside:
+            source_parameter_q = Fraction.from_float(certificate.source_parameter)
+            target_parameter_q = Fraction.from_float(certificate.target_parameter)
+            handoff_time_q = Fraction.from_float(certificate.handoff_time)
+            source_time_q = (
+                Fraction.from_float(source_binding.initial_time)
+                + source_parameter_q
+                - Fraction.from_float(source_binding.chart_parameter)
+            )
+            target_time_q = _exact_rational_chart_physical_time_at_parameter(
+                target_chart, target_parameter_q
+            )
+            exact_source_target_time_gap = abs(source_time_q - target_time_q)
+            exact_declared_time_gap = max(
+                abs(source_time_q - handoff_time_q),
+                abs(target_time_q - handoff_time_q),
+                exact_source_target_time_gap,
+            )
+            declared_handoff_time_cap = bool(
+                exact_declared_time_gap
+                <= Fraction.from_float(certificate.max_time_gap)
+            )
+            target_initial_time_contained = bool(
+                exact_source_target_time_gap
+                <= Fraction.from_float(target_tube.initial_error_bound)
+            )
+
+        source_tube_result = source_validation.tube_result
+        if source_certified and parameters_inside and common_problem:
+            if not (
+                type(source_tube_result) is OrdinaryAposterioriTubeCheckResult
+                and type(source_tube_result.gronwall_error_bound) is float
+                and np.isfinite(source_tube_result.gronwall_error_bound)
+                and source_tube_result.gronwall_error_bound >= 0.0
+            ):
+                raise ValueError("source enclosure radius is not an exact finite float")
+            source_q, source_v = _exact_rational_chart_projected_state_at_parameter(
+                source_chart,
+                Fraction.from_float(certificate.source_parameter),
+            )
+            centers = tuple(
+                value
+                for array in (source_q, source_v)
+                for value in np.asarray(array, dtype=object).reshape(-1)
+            )
+            if len(centers) != 12 or not all(
+                type(value) is Fraction for value in centers
+            ):
+                raise ValueError("ordinary source state must have 12 exact components")
+            source_radius_q = Fraction.from_float(
+                source_tube_result.gronwall_error_bound
+            )
+            rebuilt_box = []
+            for center in centers:
+                lower_float = _fraction_lower_float(center - source_radius_q)
+                upper_float = _fraction_upper_float(center + source_radius_q)
+                rebuilt_box.append(
+                    (
+                        Fraction.from_float(lower_float),
+                        Fraction.from_float(upper_float),
+                    )
+                )
+            source_state_box = tuple(rebuilt_box)
+            source_box_reconstructed = bool(
+                len(source_state_box) == 12
+                and all(
+                    type(bounds) is tuple
+                    and len(bounds) == 2
+                    and all(type(value) is Fraction for value in bounds)
+                    and bounds[0] <= bounds[1]
+                    for bounds in source_state_box
+                )
+            )
+
+            first, second = ordered_pair
+            relative_position_box = tuple(
+                (
+                    source_state_box[2 * second + axis][0]
+                    - source_state_box[2 * first + axis][1],
+                    source_state_box[2 * second + axis][1]
+                    - source_state_box[2 * first + axis][0],
+                )
+                for axis in range(2)
+            )  # type: ignore[assignment]
+            selected_pair_collision_free = bool(
+                sum(square_lower(bounds) for bounds in relative_position_box) > 0
+            )
+
+            x_low, x_high = relative_position_box[0]
+            y_low, y_high = relative_position_box[1]
+            expected_branch_count = 0
+            if y_low >= 0:
+                canonical_lift_case = "closed_upper_singleton"
+                expected_branch_count = 1
+            elif y_high <= 0:
+                canonical_lift_case = "closed_lower_singleton"
+                expected_branch_count = 1
+            elif x_low > 0:
+                canonical_lift_case = "right_half_singleton"
+                expected_branch_count = 1
+            elif y_low < 0 < y_high and x_high < 0:
+                canonical_lift_case = "strict_negative_cut_two_patch"
+                expected_branch_count = 2
+            canonical_branch_grammar = expected_branch_count in (1, 2)
+
+            if canonical_branch_grammar and selected_pair_collision_free:
+                lift_atlas = (
+                    planar_interval_to_regularized_binary_collision_chart_atlas(
+                        tuple(
+                            (float(lower), float(upper))
+                            for lower, upper in source_state_box
+                        ),
+                        np.asarray(source_chart.masses, dtype=float),
+                        pair=ordered_pair,
+                    )
+                )
+                raw_patch_boxes = tuple(
+                    tuple(
+                        (
+                            Fraction.from_float(float(interval.lower)),
+                            Fraction.from_float(float(interval.upper)),
+                        )
+                        for interval in _flatten_interval_lc_state(branch)
+                    )
+                    for branch in lift_atlas
+                )
+                canonical_lift_count = bool(
+                    len(raw_patch_boxes) == expected_branch_count
+                    and all(len(box) == 13 for box in raw_patch_boxes)
+                )
+
+            if canonical_lift_count:
+                prefix = certificate.transition_id
+                if canonical_lift_case == "strict_negative_cut_two_patch":
+                    patch_vertex_ids = (
+                        f"{prefix}:patch:0-upper",
+                        f"{prefix}:patch:1-lower",
+                    )
+                    derived_edges = (
+                        PlanarLCGaugeOverlapEdge(
+                            overlap_id=f"{prefix}:negative-axis-overlap",
+                            source_chart_id=patch_vertex_ids[0],
+                            target_chart_id=patch_vertex_ids[1],
+                            parity=1,
+                        ),
+                    )
+                else:
+                    suffix = {
+                        "closed_upper_singleton": "upper",
+                        "closed_lower_singleton": "lower",
+                        "right_half_singleton": "right",
+                    }[canonical_lift_case]
+                    patch_vertex_ids = (f"{prefix}:patch:0-{suffix}",)
+                    derived_edges = ()
+                gauge_result = check_planar_lc_gauge_gluing(
+                    PlanarLCGaugeGluingCertificate(
+                        certificate_id=f"{prefix}:derived-gauge-cover",
+                        chart_ids=patch_vertex_ids,
+                        overlaps=derived_edges,
+                        source="derived_canonical_ordinary_to_lc_lift_cover",
+                    )
+                )
+                derived_gauge_graph_certified = bool(
+                    type(gauge_result) is PlanarLCGaugeGluingCheckResult
+                    and gauge_result.chart_ids == patch_vertex_ids
+                    and gauge_result.checked_overlaps == derived_edges
+                    and gauge_result.certified
+                )
+                entry_lift_rho_lower_bound = min(
+                    sum(square_lower(box[index]) for index in (0, 1))
+                    for box in raw_patch_boxes
+                )
+                entry_lift_rho_positive = entry_lift_rho_lower_bound > 0
+
+            if (
+                derived_gauge_graph_certified
+                and entry_lift_rho_positive
+                and target_tube_certified
+                and parameters_inside
+            ):
+                base_assignment = gauge_result.gauge_assignment  # type: ignore[union-attr]
+                complement_assignment = tuple(
+                    (chart_id, bit ^ 1) for chart_id, bit in base_assignment
+                )
+                tested_assignments = (base_assignment, complement_assignment)
+                target_anchor = _exact_rational_planar_lc_lifted_state_at_parameter(
+                    target_chart,
+                    Fraction.from_float(certificate.target_parameter),
+                )
+                target_radius_q = Fraction.from_float(
+                    target_tube.initial_error_bound
+                )
+                transformed_by_assignment = []
+                gaps = []
+                containments = []
+                for assignment in tested_assignments:
+                    assignment_by_id = dict(assignment)
+                    transformed_boxes = tuple(
+                        transform_patch_box(
+                            box, assignment_by_id[patch_vertex_ids[index]]
+                        )
+                        for index, box in enumerate(raw_patch_boxes)
+                    )
+                    gap = max(
+                        (
+                            max(abs(lower - center), abs(upper - center))
+                            for box in transformed_boxes
+                            for (lower, upper), center in zip(box, target_anchor)
+                        ),
+                        default=Fraction(0),
+                    )
+                    contained = bool(
+                        gap <= target_radius_q
+                        and exact_source_target_time_gap <= target_radius_q
+                    )
+                    transformed_by_assignment.append(transformed_boxes)
+                    gaps.append(gap)
+                    containments.append(contained)
+                tested_lift_max_gaps = tuple(gaps)
+                tested_containments = tuple(containments)
+                for index, contained in enumerate(tested_containments):
+                    if contained:
+                        selected_complement_index = index
+                        selected_assignment = tested_assignments[index]
+                        selected_transformed_patch_boxes = (
+                            transformed_by_assignment[index]
+                        )
+                        break
+                one_global_complement_contains_all_lifts = (
+                    selected_complement_index in (0, 1)
+                )
+                existential_selected_lifts_constrained = bool(
+                    one_global_complement_contains_all_lifts
+                    and mass_ratio_arithmetic_exact
+                    and selected_pair_collision_free
+                    and entry_lift_rho_positive
+                )
+    except Exception:
+        # Exact-class inputs still contain untrusted serialized fields.  Any
+        # malformed arithmetic, indexing, equality, or interval path rejects.
+        pass
+
+    obligations = (
+        CertificateCheckObligation(
+            _GAUGE_AWARE_ORDINARY_TO_PLANAR_LC_OBLIGATION_NAMES[0],
+            raw_primitive_schema_valid,
+            (
+                "all six inputs have exact public dataclass types and canonical "
+                "built-in primitive field schemas"
+            ),
+        ),
+        CertificateCheckObligation(
+            _GAUGE_AWARE_ORDINARY_TO_PLANAR_LC_OBLIGATION_NAMES[1],
+            identifiers_match,
+            "transition, source chart, target chart, and target tube identifiers match",
+        ),
+        CertificateCheckObligation(
+            _GAUGE_AWARE_ORDINARY_TO_PLANAR_LC_OBLIGATION_NAMES[2],
+            source_certified,
+            "the ordinary result is certified and bound to this exact source serialization",
+        ),
+        CertificateCheckObligation(
+            _GAUGE_AWARE_ORDINARY_TO_PLANAR_LC_OBLIGATION_NAMES[3],
+            common_problem,
+            "exact masses, planar dimension, and the ordered LC pair are admissible",
+        ),
+        CertificateCheckObligation(
+            _GAUGE_AWARE_ORDINARY_TO_PLANAR_LC_OBLIGATION_NAMES[4],
+            mass_ratio_arithmetic_exact,
+            "pair-mass ratios are exact in the proof-facing binary arithmetic gate",
+        ),
+        CertificateCheckObligation(
+            _GAUGE_AWARE_ORDINARY_TO_PLANAR_LC_OBLIGATION_NAMES[5],
+            parameters_inside,
+            "source and target parameters are inside and the target anchor matches",
+        ),
+        CertificateCheckObligation(
+            _GAUGE_AWARE_ORDINARY_TO_PLANAR_LC_OBLIGATION_NAMES[6],
+            declared_handoff_time_cap,
+            f"exact_declared_time_gap={exact_declared_time_gap!s}",
+        ),
+        CertificateCheckObligation(
+            _GAUGE_AWARE_ORDINARY_TO_PLANAR_LC_OBLIGATION_NAMES[7],
+            target_tube_certified,
+            "the target lifted a-posteriori tube was freshly checked",
+        ),
+        CertificateCheckObligation(
+            _GAUGE_AWARE_ORDINARY_TO_PLANAR_LC_OBLIGATION_NAMES[8],
+            source_box_reconstructed,
+            f"source_box_dimension={len(source_state_box)}",
+        ),
+        CertificateCheckObligation(
+            _GAUGE_AWARE_ORDINARY_TO_PLANAR_LC_OBLIGATION_NAMES[9],
+            selected_pair_collision_free,
+            f"relative_position_box={relative_position_box!s}",
+        ),
+        CertificateCheckObligation(
+            _GAUGE_AWARE_ORDINARY_TO_PLANAR_LC_OBLIGATION_NAMES[10],
+            canonical_branch_grammar,
+            f"canonical_lift_case={canonical_lift_case!r}",
+        ),
+        CertificateCheckObligation(
+            _GAUGE_AWARE_ORDINARY_TO_PLANAR_LC_OBLIGATION_NAMES[11],
+            canonical_lift_count,
+            f"derived_patch_count={len(raw_patch_boxes)}",
+        ),
+        CertificateCheckObligation(
+            _GAUGE_AWARE_ORDINARY_TO_PLANAR_LC_OBLIGATION_NAMES[12],
+            derived_gauge_graph_certified,
+            f"derived_edge_count={len(derived_edges)}",
+        ),
+        CertificateCheckObligation(
+            _GAUGE_AWARE_ORDINARY_TO_PLANAR_LC_OBLIGATION_NAMES[13],
+            entry_lift_rho_positive,
+            f"entry_lift_rho_lower_bound={entry_lift_rho_lower_bound!s}",
+        ),
+        CertificateCheckObligation(
+            _GAUGE_AWARE_ORDINARY_TO_PLANAR_LC_OBLIGATION_NAMES[14],
+            target_initial_time_contained,
+            f"exact_source_target_time_gap={exact_source_target_time_gap!s}",
+        ),
+        CertificateCheckObligation(
+            _GAUGE_AWARE_ORDINARY_TO_PLANAR_LC_OBLIGATION_NAMES[15],
+            one_global_complement_contains_all_lifts,
+            (
+                f"tested_lift_max_gaps={tested_lift_max_gaps!s}; "
+                f"selected_complement_index={selected_complement_index}"
+            ),
+        ),
+        CertificateCheckObligation(
+            _GAUGE_AWARE_ORDINARY_TO_PLANAR_LC_OBLIGATION_NAMES[16],
+            existential_selected_lifts_constrained,
+            (
+                "for each physical source state, the selected representative "
+                "satisfies h=.5|v|^2-M/rho and w=.25 L(z)^T v; this is not "
+                "a claim about every point of an interval box or target tube"
+            ),
+        ),
+    )
+    transition_id = (
+        certificate.transition_id
+        if type(certificate.transition_id) is str
+        else ""
+    )
+    return GaugeAwareOrdinaryToPlanarLCEnclosureTransitionCheckResult(
+        transition_id=transition_id,
+        checker_id=(
+            "gauge_aware_ordinary_to_planar_lc_enclosure_transition_checker_v1"
+        ),
+        raw_transition_certificate=certificate,
+        raw_source_binding=source_binding,
+        raw_source_tube=source_tube,
+        raw_source_chart=source_chart,
+        raw_target_chart=target_chart,
+        source_validation=source_validation,
+        raw_target_tube=target_tube,
+        target_tube_result=target_tube_result,
+        obligations=obligations,
+        source_state_box=source_state_box,
+        relative_position_box=relative_position_box,
+        canonical_lift_case=canonical_lift_case,
+        patch_vertex_ids=patch_vertex_ids,
+        raw_patch_boxes=raw_patch_boxes,
+        derived_edges=derived_edges,
+        gauge_result=gauge_result,
+        tested_assignments=tested_assignments,
+        tested_lift_max_gaps=tested_lift_max_gaps,
+        tested_containments=tested_containments,
+        selected_complement_index=selected_complement_index,
+        selected_assignment=selected_assignment,
+        selected_transformed_patch_boxes=selected_transformed_patch_boxes,
+        exact_declared_time_gap=exact_declared_time_gap,
+        exact_source_target_time_gap=exact_source_target_time_gap,
+        entry_lift_rho_lower_bound=entry_lift_rho_lower_bound,
     )
 
 

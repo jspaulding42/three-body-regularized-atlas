@@ -21,6 +21,31 @@ technical statements and their qualifications are documented in
 [`docs/validated-planar-binary-collision-passage.md`](docs/validated-planar-binary-collision-passage.md)
 and
 [`docs/validated-planar-lc-tube-theorem.md`](docs/validated-planar-lc-tube-theorem.md).
+The current strengthening program is the exact \(\mathbb F_2\) Levi-Civita
+gauge-gluing layer described in
+[`docs/lc-z2-gauge-gluing-research-goal.md`](docs/lc-z2-gauge-gluing-research-goal.md).
+Stage 1 is a standalone exact graph kernel for supplied overlap labels.  Stage
+2 derives a label rather than trusting one: it independently rechecks two
+zero-error LC tubes, compares their full fourteen-dimensional anchors up to
+the exact antipodal deck action, checks a nondegenerate common shifted
+parameter interval, proves the same-IVP relation by ODE uniqueness and
+equivariance, and emits the resulting edge.  A raw-evidence aggregate binds
+each vertex to one fixed chart/tube/anchor, derives every edge, and then calls
+the Stage 1 kernel.  Stage 3 is a separate opt-in raw ordinary-to-LC checker.
+It retains and rechecks a direct IVP binding, ordinary tube, source chart,
+target LC chart/tube, and transition; prebuilt source results and continuation
+chains are unsupported.  From the raw source box it accepts only the canonical
+closed-upper, closed-lower, or right-half-plane singleton, or a strict
+negative-cut two-patch cover whose parity-one edge it derives.  It enumerates
+both global complements and accepts only when one complement sends every
+13-dimensional lifted box plus the binding-derived physical-time coordinate
+into the same target 14-dimensional \(L^\infty\) initial ball.  Branch metadata,
+reason strings, and supplied parity are not trusted; ambiguous and
+collision-containing boxes reject.  The legacy checker has a narrower exact
+clock gate but still trusts a prebuilt source result.  Raw Stage 3 is the
+adversarially replayable route.  No existing transition or `proof_certified`
+path consumes it, and none of these local results is a general or global
+solution.
 The broader historical research program and experimental machinery are
 retained below for auditability.
 
@@ -44,6 +69,16 @@ Independently replay the exact symbolic Levi-Civita projection identities:
 
 ```bash
 python scripts/verify_lc_projection_identities.py
+```
+
+Run the exact gauge kernel, derived-overlap/aggregate, raw Stage 3, and symbolic
+regressions:
+
+```bash
+python -m pytest -q tests/test_lc_gauge_gluing.py \
+  tests/test_lc_exact_overlap.py tests/test_lc_exact_gauge_atlas.py \
+  tests/test_lc_gauge_aware_transition.py \
+  tests/test_lc_projection_identities.py
 ```
 
 Run the complete test suite with `python -m pytest`. Passing these checks

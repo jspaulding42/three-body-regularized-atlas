@@ -2389,6 +2389,172 @@ def test_ordinary_to_lc_transition_rejects_tube_smaller_than_lift_atlas():
     )
 
 
+def test_ordinary_to_lc_transition_requires_time_inside_14d_initial_ball():
+    charts, _ = _ordinary_to_lc_transition_bundle()
+    ordinary = replace(
+        charts[0],
+        parameter_interval=(0.0, 1.0e-6),
+        physical_time_interval=(0.0, 1.0e-6),
+        residual_tolerance=10.0,
+    )
+    time_shift = 2.0e-5
+    lc = replace(
+        charts[1],
+        parameter_interval=(0.0, 1.0e-6),
+        physical_time_coefficients=(
+            charts[1].physical_time_coefficients[0] + time_shift,
+        )
+        + charts[1].physical_time_coefficients[1:],
+    )
+    binding = InitialValueProblemBindingCertificate(
+        "ivp-binding:ordinary-to-lc-time-radius",
+        ordinary.chart_id,
+        ordinary.masses,
+        0.0,
+        0.0,
+        ordinary.position_coefficients[0],
+        ordinary.velocity_coefficients[0],
+        0.0,
+        0.0,
+        0.0,
+    )
+    source = check_validated_ordinary_ivp_chart(
+        binding,
+        OrdinaryAposterioriTubeCertificate(
+            "ordinary-tube:ordinary-to-lc-time-radius",
+            ordinary.chart_id,
+            0.0,
+            0.0,
+            1.0e-6,
+            10.0,
+            1.0e6,
+        ),
+        ordinary,
+    )
+    target_tube = PlanarLCAposterioriTubeCertificate(
+        "planar-lc-tube:ordinary-entry-time-radius",
+        lc.chart_id,
+        0.0,
+        1.0e-5,
+        1.0e-1,
+        10.0,
+        1.0e6,
+    )
+    transition = OrdinaryToPlanarLCEnclosureTransitionCertificate(
+        "ordinary-to-lc-enclosure:time-radius",
+        ordinary.chart_id,
+        lc.chart_id,
+        0.0,
+        0.0,
+        0.0,
+        time_shift,
+    )
+
+    result = check_ordinary_to_planar_lc_enclosure_transition(
+        transition,
+        ordinary,
+        lc,
+        source,
+        target_tube,
+    )
+    obligations = {
+        obligation.obligation: obligation.certified
+        for obligation in result.obligations
+    }
+
+    assert source.certified
+    assert result.target_tube_result.certified
+    assert obligations["ordinary_to_lc_handoff_time_matches"]
+    assert obligations["ordinary_to_lc_target_initial_error_contains_lift_atlas"]
+    assert not obligations[
+        "ordinary_to_lc_target_initial_error_contains_physical_time"
+    ]
+    assert result.target_initial_time_gap == time_shift
+    assert result.target_initial_time_gap > target_tube.initial_error_bound
+    assert not result.certified
+
+
+def test_legacy_ordinary_to_lc_rejects_offset_physical_time_parameterization():
+    """A permissive raw binding tolerance cannot redefine exact source time."""
+
+    charts, _ = _ordinary_to_lc_transition_bundle()
+    source_chart = replace(
+        charts[0],
+        parameter_interval=(0.0, 1.0e-6),
+        physical_time_interval=(2.0e-5, 2.1e-5),
+        residual_tolerance=10.0,
+    )
+    target_chart = replace(
+        charts[1],
+        parameter_interval=(0.0, 1.0e-6),
+        physical_time_coefficients=(
+            charts[1].physical_time_coefficients[0] + 2.0e-5,
+        )
+        + charts[1].physical_time_coefficients[1:],
+    )
+    source_validation = check_validated_ordinary_ivp_chart(
+        InitialValueProblemBindingCertificate(
+            "ivp-binding:ordinary-to-lc-offset-time",
+            source_chart.chart_id,
+            source_chart.masses,
+            0.0,
+            0.0,
+            source_chart.position_coefficients[0],
+            source_chart.velocity_coefficients[0],
+            2.0e-5,
+            0.0,
+            0.0,
+        ),
+        OrdinaryAposterioriTubeCertificate(
+            "ordinary-tube:ordinary-to-lc-offset-time",
+            source_chart.chart_id,
+            0.0,
+            0.0,
+            1.0e-6,
+            10.0,
+            1.0e6,
+        ),
+        source_chart,
+    )
+    target_tube = PlanarLCAposterioriTubeCertificate(
+        "planar-lc-tube:ordinary-entry-offset-time",
+        target_chart.chart_id,
+        0.0,
+        1.0e-5,
+        1.0e-1,
+        10.0,
+        1.0e6,
+    )
+    result = check_ordinary_to_planar_lc_enclosure_transition(
+        OrdinaryToPlanarLCEnclosureTransitionCertificate(
+            "ordinary-to-lc-enclosure:offset-time",
+            source_chart.chart_id,
+            target_chart.chart_id,
+            0.0,
+            0.0,
+            2.0e-5,
+            0.0,
+        ),
+        source_chart,
+        target_chart,
+        source_validation,
+        target_tube,
+    )
+    obligations = {
+        obligation.obligation: obligation.certified
+        for obligation in result.obligations
+    }
+
+    assert source_validation.certified
+    assert source_validation.binding_result.time_gap == 2.0e-5
+    assert result.target_tube_result.certified
+    assert obligations["ordinary_to_lc_parameters_inside_and_anchor_matches"]
+    assert not obligations[
+        "ordinary_to_lc_source_physical_time_parameterization_exact"
+    ]
+    assert not result.certified
+
+
 @pytest.mark.parametrize("target_initial_error, expected", [(2.0e-3, True), (1.0e-3, False)])
 def test_lc_to_ordinary_exit_projects_certified_punctured_enclosure(
     target_initial_error, expected

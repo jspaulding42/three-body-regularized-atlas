@@ -348,6 +348,105 @@ class PlanarLCAposterioriTubeCertificate:
 
 
 @dataclass(frozen=True)
+class PlanarLCExactOverlapAnchorCertificate:
+    """Bind two zero-error LC tubes at one exact gauge-related anchor."""
+
+    overlap_id: str
+    source_chart_id: str
+    source_tube_id: str
+    target_chart_id: str
+    target_tube_id: str
+    source_anchor_parameter: float
+    target_anchor_parameter: float
+    source: str = "serialized_planar_lc_exact_overlap_anchor"
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "overlap_id": self.overlap_id,
+            "source_chart_id": self.source_chart_id,
+            "source_tube_id": self.source_tube_id,
+            "target_chart_id": self.target_chart_id,
+            "target_tube_id": self.target_tube_id,
+            "source_anchor_parameter": self.source_anchor_parameter,
+            "target_anchor_parameter": self.target_anchor_parameter,
+            "source": self.source,
+        }
+
+    @classmethod
+    def from_dict(
+        cls, data: dict[str, Any]
+    ) -> "PlanarLCExactOverlapAnchorCertificate":
+        # Preserve malformed serialized values for the checker to reject.  In
+        # particular, do not coerce truthy objects, booleans, or numeric text
+        # into identifiers or anchor parameters.
+        return cls(
+            overlap_id=data.get("overlap_id", ""),
+            source_chart_id=data.get("source_chart_id", ""),
+            source_tube_id=data.get("source_tube_id", ""),
+            target_chart_id=data.get("target_chart_id", ""),
+            target_tube_id=data.get("target_tube_id", ""),
+            source_anchor_parameter=data.get("source_anchor_parameter", np.inf),
+            target_anchor_parameter=data.get("target_anchor_parameter", np.inf),
+            source=data.get(
+                "source", "serialized_planar_lc_exact_overlap_anchor"
+            ),
+        )
+
+
+@dataclass(frozen=True)
+class PlanarLCExactGaugeAtlasCertificate:
+    """Bind raw zero-error LC vertices and exact-overlap records into an atlas.
+
+    The three identifier sequences are positional manifests.  They carry no
+    supplied gauge bits: the checker must recompute every overlap and derive
+    the graph presented to the exact F2 kernel.
+    """
+
+    atlas_id: str
+    chart_ids: tuple[str, ...]
+    tube_ids: tuple[str, ...]
+    overlap_ids: tuple[str, ...]
+    source: str = "serialized_planar_lc_exact_gauge_atlas"
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "atlas_id": self.atlas_id,
+            "chart_ids": list(self.chart_ids)
+            if type(self.chart_ids) is tuple
+            else self.chart_ids,
+            "tube_ids": list(self.tube_ids)
+            if type(self.tube_ids) is tuple
+            else self.tube_ids,
+            "overlap_ids": list(self.overlap_ids)
+            if type(self.overlap_ids) is tuple
+            else self.overlap_ids,
+            "source": self.source,
+        }
+
+    @classmethod
+    def from_dict(
+        cls, data: dict[str, Any]
+    ) -> "PlanarLCExactGaugeAtlasCertificate":
+        # JSON arrays become tuples, but their members are deliberately not
+        # coerced.  Non-array values are preserved so the checker, rather than
+        # the parser, rejects malformed truthy stand-ins.
+        def positional_ids(value: object) -> object:
+            if type(value) is list or type(value) is tuple:
+                return tuple(value)
+            return value
+
+        return cls(
+            atlas_id=data.get("atlas_id", ""),
+            chart_ids=positional_ids(data.get("chart_ids", ())),  # type: ignore[arg-type]
+            tube_ids=positional_ids(data.get("tube_ids", ())),  # type: ignore[arg-type]
+            overlap_ids=positional_ids(data.get("overlap_ids", ())),  # type: ignore[arg-type]
+            source=data.get(
+                "source", "serialized_planar_lc_exact_gauge_atlas"
+            ),
+        )
+
+
+@dataclass(frozen=True)
 class PlanarLCExactCollisionAnchorCertificate:
     """Bind a zero-error LC tube to an exact isolated binary collision."""
 
