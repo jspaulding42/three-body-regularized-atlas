@@ -10,7 +10,10 @@ foundation. The current checkpoint contains:
   raw-v1 record grammar, with exact field sets, segment tags, and the legacy
   parser-versus-`UNRESOLVED` shape boundary documented in the
   [Rust schema map](../../docs/raw-v1-rust-schema-map.md);
-
+- a non-certifying semantic conversion from decoded ordinary chart/tube wires
+  to bounded exact-rational inputs, using every real's proved binary64 dyadic,
+  exact body-major coefficient shapes, and strictly increasing parameter and
+  physical-time intervals;
 - exact decoding of finite IEEE-754 binary64 bit patterns;
 - manual, resource-bounded RFC 8259 number parsing and exact nearest-even
   decimal-to-binary64 proof, retaining the exact decimal lexeme value
@@ -36,28 +39,34 @@ foundation. The current checkpoint contains:
   and a hard pre-allocation precision cap;
 - an exact rational exponential enclosure using range reduction, a Taylor
   partial sum with an explicit geometric-tail majorant, exact squaring, full
-  witness replay, and hard component/work/storage budgets; and
+  witness replay, and hard component/work/storage budgets;
 - exact outward binary64 mass coefficients for all eight raw-v1 Section 3.3
   mass formulas, with exact adjacency and nearest-even endpoint checks tested
-  against hand-derived boundaries and deterministic lattice stress cases.
+  against hand-derived boundaries and deterministic lattice stress cases; and
+- conditional replay of the six ordered ordinary-tube obligations under the
+  named `exact_rational_ordinary_tube_v04` profile. It uses the exact analytic
+  v0.3 pair-distance and Lipschitz formula family, 256-bit square-root
+  enclosures, a 32-bit upward dyadic enclosure of the exponential argument,
+  Taylor cutoff 32, and maximum reduced Taylor tail `2^-128`. All six ordinary
+  tubes in each baseline chain, twelve replays total, certify conditionally.
 
-At this checkpoint, 121 Rust unit tests and two raw-v1 corpus tests pass;
+At this checkpoint, 137 Rust unit tests and two raw-v1 corpus tests pass;
 `cargo fmt --check` and `cargo clippy --all-targets -- -D warnings` are clean.
 
 The checked-in [raw-v1 seed corpus](../../conformance/raw-v1/README.md) supplies
 two `ACCEPT` baselines and sixteen isolated `REJECT` mutations. It is
 `seed_incomplete`, not the complete release corpus.
 
-The crate stops before theorem-facing certificate replay: there is no raw
-SHA-256 layer. The exact polynomial and direct ordinary-defect APIs compose
-numeric kernels only; they do not decode or replay the raw certificate schema.
-Primitive ordinary-chart recurrence and Taylor-model residual/tail replay,
-semantic chart decoding, complete tube collision and analytic Lipschitz and
-Grönwall acceptance, root/bridge/fixed-time semantics, every LC field, and
-certificate replay remain absent. Chart/tube/transition checks, chain fold,
-clock/gauge logic, obligation ledger, and the semantic result serializer remain
-unimplemented. The crate does not call Python and makes no certificate-level
-or independent-replay claim.
+The crate still stops before theorem-facing certificate replay: there is no
+raw SHA-256 layer. The semantic ordinary-chart input is not primitive chart
+certification—it does not replay the coefficient recurrence or Taylor-model
+residual/tail obligations—and the ordinary-tube result proves only a
+conditional a-posteriori estimate, not root/IVP containment. Root/IVP binding,
+handoff/ordinary-bridge/fixed-time semantics, every LC field, full chain
+replay, clock/gauge logic, and the semantic result serializer remain
+unimplemented. `OPEN-V1-08` remains open for status parity between this exact
+rational profile and the historical binary64 outward profile. The crate does
+not call Python and makes no certificate-level or independent-replay claim.
 `OPEN-V1-01` also remains open: the current canonical float renderer is tested
 against the frozen fixtures but is not yet a language-neutral normative
 algorithm, and its Rust toolchain is not pinned.

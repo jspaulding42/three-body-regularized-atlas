@@ -673,6 +673,19 @@ versioned arithmetic profile.  This requirement fixes the v0.3 formula family;
 the low-level status-parity questions about outward operations, square roots,
 and exponentials remain those recorded in OPEN-V1-08.
 
+The current independent Rust checkpoint implements these same six ordered
+conditional obligations under the separately named
+`exact_rational_ordinary_tube_v04` arithmetic profile.  It retains the exact
+analytic v0.3 pair-floor and Lipschitz formula family, uses dyadic square-root
+precision 256, rounds the nonnegative exponential argument upward to a dyadic
+grid of precision 32, and uses Taylor cutoff 32 with a maximum reduced
+exponential tail of `2^-128`.  All six ordinary tubes in each of the two
+baseline chains, twelve tube replays in total, certify conditionally under
+that profile.  This checkpoint does not define v0.3 arithmetic status parity
+or close OPEN-V1-08, and its tube result does not discharge primitive
+ordinary-chart recurrence/Taylor-residual obligations, root/IVP binding,
+handoff, fixed-time, LC, chain, or result-serialization obligations.
+
 Exhaustion of an implementation's declared arithmetic resources or of the
 precision needed to prove separation, a cap comparison, or the strict
 Gronwall inequality produces `UNRESOLVED` (or a separately reported
@@ -746,9 +759,13 @@ using exact dyadic arithmetic.  A segment advances the state only when its
 entire nested obligation ledger is true.  Consequently the certified segment
 count is always the longest consecutive accepted prefix.
 
-The `physical_time_interval` field on later ordinary charts is checked for
-finite positive width and approximate unit speed, but it does not update or
-override this clock ledger.
+For a later ordinary chart used as an ordinary-bridge target, the bridge's
+finite schema checks only that the `parameter_interval` and
+`physical_time_interval` endpoints are finite and that both intervals have
+strictly positive width.  The approximate-unit-speed obligation in Section
+4.1 belongs to primitive ordinary-chart replay; the ordinary bridge does not
+consume that chart result or impose its unit-speed test on the target.  These
+metadata fields do not update or override the exact clock ledger `B`.
 
 ### 5.2 Ordinary bridge obligations
 

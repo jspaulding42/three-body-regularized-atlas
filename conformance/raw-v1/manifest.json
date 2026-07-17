@@ -12,7 +12,7 @@
     "source_artifact_manifest": "../../artifacts/v0.3.0-review/planar-chain/manifest.json",
     "source_artifact_manifest_sha256": "2b7e88bd8834fa68fb6a70d0b7e7b8ad2363a01f619ea450b880b791b6909976",
     "normative_specification": "../../docs/raw-v1-certificate-specification.md",
-    "normative_specification_sha256": "5a1ccc0162f81c0733ebe0a0519c3e1d9b83de5e5831ac678d3b5f0b5cbafae0",
+    "normative_specification_sha256": "59287cfe9fa739ec6b001deeb5ad522389f983babe428903d03b9e169623a91b",
     "expectation_method": "manual transcription and jq comparison against checked-in replay transcripts; no Python checker import",
     "rejection_tranche_method": "single mutations of inputs/success.raw.json; no-newline and invalid-UTF-8 fixtures generated mechanically, trailing-newline fixture created through apply_patch; exact operations live in paired expectations"
   },

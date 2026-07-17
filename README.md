@@ -126,28 +126,35 @@ plus an exact rational exponential enclosure using range reduction, a Taylor
 partial sum with a geometric tail, full witness replay, and hard work/storage
 budgets, plus exact outward binary64 mass coefficients for all eight raw-v1
 mass formulas with hand-derived and stress-tested nearest-even endpoints. The
-crate currently passes 121 Rust unit tests and two corpus tests;
-`cargo fmt --check` and warning-denying Clippy are clean. The implementation-neutral
+typed decoder now feeds a non-certifying finite ordinary chart/tube semantic
+adapter, which interprets every real through its proved binary64 dyadic and
+builds bounded exact-rational polynomial inputs. Those inputs drive a
+conditional replay of the six ordered Section 4.4 ordinary-tube obligations
+under the named `exact_rational_ordinary_tube_v04` profile. The profile retains
+the exact analytic v0.3 pair-floor and Lipschitz formula family and fixes
+square-root precision at 256 bits, the upward exponent dyadic grid at 32 bits,
+Taylor cutoff 32, and the maximum reduced exponential tail at `2^-128`. All
+six ordinary tubes in each of the two baseline chains, twelve tube replays in
+total, certify conditionally under this profile. The crate currently passes
+137 Rust unit tests and two corpus tests; `cargo fmt --check` and
+warning-denying Clippy are clean. The implementation-neutral
 [`raw-v1 seed corpus`](conformance/raw-v1/README.md) currently contains two
 accepted baseline payloads and sixteen isolated rejection mutations. The
 public Python admission API and the independent Rust integration suite both
 enforce those 18 parser classifications.
 
 This remains foundation work, **not yet an independent certificate verifier**.
-The Rust crate still has no raw SHA-256 layer. Its exact polynomial and direct
-ordinary-defect kernels are arithmetic-only and have no raw-certificate or
-schema coupling. Primitive ordinary-chart recurrence and Taylor-model
-residual/tail replay, semantic chart decoding, complete tube collision and
-analytic Lipschitz and Grönwall acceptance, root/bridge/fixed-time semantics,
-every LC field, and certificate replay remain absent. Chart/tube/transition checks,
-chain fold, clock or gauge logic, obligation ledger, and semantic result
-serialization also remain unimplemented. The corpus is marked
-`seed_incomplete` and lacks
-the required semantic, numeric-boundary, and fold-boundary coverage.
-Cross-language numeric canonical rendering and the Rust toolchain pin also
-remain open under `OPEN-V1-01`. The conformance and independent-verifier
-release gates therefore remain failed, and no certificate-level or
-independent-replay claim is made.
+The Rust crate still has no raw SHA-256 layer. Its ordinary semantic adapter
+does not certify the primitive coefficient recurrence or Taylor-model
+residual/tail ledger, and its six-obligation tube result is conditional: it
+does not prove that an IVP lies in the initial ball. Root/IVP binding,
+handoff/ordinary-bridge/fixed-time semantics, every LC field, full chain
+replay, clock and gauge logic, and the semantic result serializer remain
+unimplemented. Status parity with the historical binary64 tube checker
+remains open under `OPEN-V1-08`; cross-language numeric rendering and the Rust
+toolchain pin remain open under `OPEN-V1-01`. The corpus is still
+`seed_incomplete`, the conformance and independent-verifier release gates
+remain failed, and no certificate-level or independent-replay claim is made.
 
 The broader historical research program and experimental machinery are
 retained below for auditability.

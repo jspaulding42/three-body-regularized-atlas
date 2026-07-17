@@ -1,11 +1,10 @@
 //! Independent strict-wire and numeric primitives for the raw-v1 planar-chain
 //! verifier.
 //!
-//! This crate deliberately contains no Python bridge and does not yet replay
-//! certificate semantics. The public surface covers strict UTF-8 JSON parsing
-//! and canonicalization, exact binary64 decoding, rational interval algebra,
-//! certified dyadic square-root and rational exponential enclosures, and exact
-//! outward mass coefficients.
+//! This crate deliberately contains no Python bridge and is not yet a complete
+//! chain verifier. The public surface covers strict wire decoding, bounded
+//! exact arithmetic, non-certifying ordinary semantic inputs, and the six
+//! conditional ordinary-tube obligations under a named exact-rational profile.
 
 #![forbid(unsafe_code)]
 
@@ -17,6 +16,8 @@ mod interval;
 mod json_number;
 mod ordinary_defect;
 mod ordinary_field;
+mod ordinary_semantic;
+mod ordinary_tube;
 pub mod outward_mass;
 mod polynomial;
 mod rational_input;
@@ -45,6 +46,17 @@ pub use ordinary_defect::{
 };
 pub use ordinary_field::{
     evaluate_planar_three_body_ordinary_field, OrdinaryFieldEnclosure, OrdinaryFieldError,
+};
+pub use ordinary_semantic::{
+    ordinary_chart_input_from_wire, ordinary_tube_binding_status, ordinary_tube_input_from_wire,
+    OrdinaryChartInput, OrdinaryCoefficientKind, OrdinaryIntervalKind, OrdinarySemanticError,
+    OrdinarySemanticResource, OrdinaryTubeBindingStatus, OrdinaryTubeInput,
+    HARD_MAX_ORDINARY_SEMANTIC_COEFFICIENT_COUNT,
+};
+pub use ordinary_tube::{
+    replay_ordinary_tube_exact_rational_v04, ExactRationalOrdinaryTubeV04, OrdinaryTubeObligation,
+    OrdinaryTubeReplay, OrdinaryTubeReplayError, EXACT_RATIONAL_ORDINARY_TUBE_V04_PROFILE_ID,
+    ORDINARY_TUBE_OBLIGATION_IDS,
 };
 pub use polynomial::{
     ExactRationalPolynomial, PolynomialError, HARD_MAX_POLYNOMIAL_DEGREE,

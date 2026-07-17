@@ -119,9 +119,38 @@ order over one rational parameter interval. It returns the exact rational
 maximum of the absolute values of all 24 interval endpoints. This is a
 numeric enclosure of the nominal finite polynomial's direct ODE defect. It is
 not the primitive chart coefficient-recurrence or Taylor-model residual/tail
-ledger, and it does not decode an `OrdinaryChartWire`, compare a certificate
-cap, or accept a tube. Regressions cover unequal masses, an acceleration-block
-maximum, and mass/precision preflight before polynomial evaluation.
+ledger. By itself it does not decode an `OrdinaryChartWire`, compare a
+certificate cap, or accept a tube; the conditional semantic layer below is
+the only current theorem-facing consumer. Regressions cover unequal masses,
+an acceleration-block maximum, and mass/precision preflight before polynomial
+evaluation.
+
+### Ordinary semantic inputs and conditional tube replay
+
+The `V03Compatible` wire decoder now feeds a non-certifying semantic adapter
+for finite ordinary chart and tube records. Every real is taken from its
+proved binary64 bits as an exact dyadic, coefficient tensors are checked and
+flattened in body-major `q`/`v` order into bounded exact-rational polynomials,
+and both chart intervals must be strictly increasing. This adapter deliberately
+does not replay the primitive coefficient recurrence or Taylor-model
+residual/tail obligations.
+
+The adapter and direct-defect kernel feed a conditional replay of the six
+ordered Section 4.4 tube obligations under the named arithmetic profile
+`exact_rational_ordinary_tube_v04`. The profile preserves the exact analytic
+v0.3 formula family for the nominal pair floor,
+`d_tube = d_nominal - 2 sqrt(2) r`, the three body Lipschitz bounds, and
+`L = max(1,L_0,L_1,L_2)`. It fixes square-root precision at 256 bits, rounds
+the exact nonnegative exponential argument upward to the `2^-32` dyadic grid,
+uses Taylor cutoff 32, and requires the reduced exponential tail to be at most
+`2^-128`. Exact dyadic cap comparisons and the strict Gronwall inequality are
+then evaluated without host floating-point arithmetic.
+
+All six ordinary tubes embedded in each of the two baseline chains, twelve
+replays total, satisfy all six obligations under this profile. This is only a
+conditional a-posteriori tube result: it does not prove that either baseline's
+IVP lies in the initial ball, and it does not establish status parity with the
+historical binary64 checker. That parity question remains `OPEN-V1-08`.
 
 ## Implementation status at the current checkpoint
 
@@ -150,8 +179,12 @@ for the complete finite v0.3 raw-v1 record grammar. The record-by-record parser
 boundary is documented in the
 [`Rust schema map`](raw-v1-rust-schema-map.md).
 
-The current validation checkpoint is 121 passing Rust unit tests and two
-passing corpus tests, with `cargo fmt --check` and warning-denying Clippy clean.
+The semantic adapter and conditional ordinary-tube replay described above now
+couple the decoded ordinary chart/tube records to the exact polynomial,
+square-root, exponential, defect, collision, analytic Lipschitz, cap, and
+strict Gronwall kernels. The current validation checkpoint is 137 passing Rust
+unit tests and two passing corpus tests, with `cargo fmt --check` and
+warning-denying Clippy clean.
 
 The implementation-neutral
 [`raw-v1 seed corpus`](../conformance/raw-v1/README.md) contains two accepted
@@ -163,19 +196,18 @@ yet cover semantic failures, numeric boundaries, or the
 root/fold/LC-entry/LC-tube/LC-exit/fixed-time result boundaries required for
 release.
 
-Delivery slices 1 and 2 are therefore only partial. `OPEN-V1-01` remains open
-because the tested Rust float rendering path is not yet a portable normative
-shortest-decimal algorithm and the Rust toolchain is not pinned. Raw SHA-256,
-semantic ordinary-chart decoding, primitive chart recurrence and Taylor-model
-residual/tail replay, complete tube collision and analytic Lipschitz and Grönwall
-acceptance, root/bridge/fixed-time semantics, every LC field, all ordinary/LC
-chart, tube, and transition checks, chain-fold semantics, clock and gauge logic,
-the obligation ledger, and the semantic result serializer remain unimplemented.
-The polynomial and direct-defect APIs have no certificate/schema coupling. No
-certificate has been replayed by this crate. The corpus remains
-`seed_incomplete`, no slice beyond the byte/schema and partial numeric and
-ordinary-field foundations is complete, and neither the conformance gate nor
-the independent-verifier gate passes at this checkpoint.
+Delivery slices 1 and 2 remain partial, and only the conditional ordinary-tube
+part of slice 3 has begun. `OPEN-V1-01` remains open because the tested Rust
+float rendering path is not yet a portable normative shortest-decimal
+algorithm and the Rust toolchain is not pinned. `OPEN-V1-08` remains open
+because the new exact-rational tube profile does not claim status parity with
+the historical binary64 outward profile. Raw SHA-256, primitive ordinary-chart
+recurrence and Taylor-model residual/tail replay, root/IVP binding,
+handoff/ordinary-bridge/fixed-time semantics, every LC field, full chain
+replay, clock and gauge logic, and the semantic result serializer remain
+unimplemented. No complete certificate has been replayed by this crate. The
+corpus remains `seed_incomplete`, and neither the conformance gate nor the
+independent-verifier gate passes at this checkpoint.
 
 ## Delivery slices
 
