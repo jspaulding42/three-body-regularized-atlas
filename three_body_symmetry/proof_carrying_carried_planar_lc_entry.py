@@ -48,7 +48,6 @@ from .certificate_checker import (
     _flatten_interval_lc_state,
     _fraction_lower_float,
     _fraction_upper_float,
-    _planar_lc_mass_ratio_arithmetic_exact,
     check_ordinary_aposteriori_tube,
     check_ordinary_taylor_chart,
     check_planar_lc_aposteriori_tube,
@@ -67,15 +66,19 @@ from .lc_gauge_gluing import (
     PlanarLCGaugeOverlapEdge,
     check_planar_lc_gauge_gluing,
 )
+from .planar_lc_mass_coefficients import (
+    PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID,
+    derive_planar_lc_mass_coefficient_witness,
+)
 
 
 _SCHEMA_VERSION = 1
 _RECORD_TYPE = "carried_planar_lc_entry_transition"
 _RECORD_SOURCE = "private_carried_planar_lc_entry_v1"
-_CHECKER_ID = "carried_planar_lc_entry_checker_v1"
+_CHECKER_ID = "carried_planar_lc_entry_checker_v2"
 _ANALYTIC_KERNEL_ID = "planar_lc_constrained_lift_deck_gauge_kernel_v1"
 _ORDINARY_TUBE_CHECKER_ID = "independent_ordinary_aposteriori_tube_checker_v1"
-_LC_TUBE_CHECKER_ID = "independent_planar_lc_aposteriori_tube_checker_v1"
+_LC_TUBE_CHECKER_ID = "independent_planar_lc_aposteriori_tube_checker_v2"
 _GAUGE_CHECKER_ID = "planar_lc_z2_gauge_gluing_checker_v1"
 _OBLIGATION_NAMES = (
     "carried_lc_entry_exact_raw_schemas",
@@ -88,7 +91,7 @@ _OBLIGATION_NAMES = (
     "carried_lc_entry_target_lc_tube_freshly_certified",
     "carried_lc_entry_common_planar_mass_problem",
     "carried_lc_entry_pair_is_canonical_ascending",
-    "carried_lc_entry_mass_ratio_arithmetic_exact",
+    "carried_lc_entry_outward_mass_arithmetic_certified",
     "carried_lc_entry_exact_source_right_to_lc_left_anchor",
     "carried_lc_entry_complete_source_endpoint_box_reconstructed",
     "carried_lc_entry_selected_pair_collision_free",
@@ -201,6 +204,7 @@ class CarriedPlanarLCEntryResult:
     transition_id: str
     checker_id: str
     analytic_kernel_id: str
+    mass_arithmetic_kernel_id: str
     raw_transition: CarriedPlanarLCEntryTransitionRecord
     raw_source_chart: OrdinaryTaylorChartCertificate
     raw_source_tube: OrdinaryAposterioriTubeCertificate
@@ -291,6 +295,9 @@ class CarriedPlanarLCEntryResult:
             and self.checker_id == _CHECKER_ID
             and type(self.analytic_kernel_id) is str
             and self.analytic_kernel_id == _ANALYTIC_KERNEL_ID
+            and type(self.mass_arithmetic_kernel_id) is str
+            and self.mass_arithmetic_kernel_id
+            == PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID
             and type(self.raw_transition) is CarriedPlanarLCEntryTransitionRecord
             and _transition_schema(self.raw_transition)
             and self.transition_id == self.raw_transition.transition_id
@@ -514,15 +521,13 @@ def check_carried_planar_lc_entry(
         raw_schemas and target_chart.pair in ((0, 1), (0, 2), (1, 2))
     )
     try:
-        exact_mass_ratio = bool(
-            canonical_pair
-            and _planar_lc_mass_ratio_arithmetic_exact(
-                target_chart.masses,
-                target_chart.pair,
-            )
+        mass_witness = derive_planar_lc_mass_coefficient_witness(
+            target_chart.masses,
+            target_chart.pair,
         )
+        outward_mass_arithmetic = bool(canonical_pair and mass_witness.certified)
     except Exception:
-        exact_mass_ratio = False
+        outward_mass_arithmetic = False
     endpoints = _exact_endpoint_handoff(
         transition,
         source_chart,
@@ -626,7 +631,7 @@ def check_carried_planar_lc_entry(
         target_certified,
         common_problem,
         canonical_pair,
-        exact_mass_ratio,
+        outward_mass_arithmetic,
         endpoints,
     )
     if all(prerequisites):
@@ -794,7 +799,7 @@ def check_carried_planar_lc_entry(
                 and atlas_reconstructed
                 and graph_certified
                 and rho_positive
-                and exact_mass_ratio
+                and outward_mass_arithmetic
             )
             if analytic_kernel and target_anchor_reconstructed:
                 if gauge_result is None:
@@ -918,9 +923,13 @@ def check_carried_planar_lc_entry(
             f"pair={target_chart.pair!r}",
         ),
         _obligation(
-            "carried_lc_entry_mass_ratio_arithmetic_exact",
-            exact_mass_ratio,
-            "all binary64 LC mass ratios equal exact serialized rationals",
+            "carried_lc_entry_outward_mass_arithmetic_certified",
+            outward_mass_arithmetic,
+            (
+                "all LC mass coefficients are freshly derived as exact "
+                "Fractions and tightly enclosed outward; "
+                f"kernel={PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID}"
+            ),
         ),
         _obligation(
             "carried_lc_entry_exact_source_right_to_lc_left_anchor",
@@ -998,6 +1007,7 @@ def check_carried_planar_lc_entry(
         transition_id=transition_id,
         checker_id=_CHECKER_ID,
         analytic_kernel_id=_ANALYTIC_KERNEL_ID,
+        mass_arithmetic_kernel_id=PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID,
         raw_transition=transition,
         raw_source_chart=source_chart,
         raw_source_tube=source_tube,
@@ -1373,6 +1383,9 @@ def _canonical_lc_tube_result(
         and result.chart_id == raw_chart.chart_id == raw_tube.chart_id
         and type(result.checker_id) is str
         and result.checker_id == _LC_TUBE_CHECKER_ID
+        and type(result.mass_arithmetic_kernel_id) is str
+        and result.mass_arithmetic_kernel_id
+        == PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID
         and _canonical_obligations(result.obligations)
         and all(
             _finite_float(value)

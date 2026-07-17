@@ -485,5 +485,5 @@ def test_malformed_exact_class_chart_or_tube_rejects_without_raising(
     if malformed != "tube-id":
         assert not result.source_tube_result.certified
     assert result.source_tube_result.checker_id == (
-        "independent_planar_lc_aposteriori_tube_checker_v1"
+        "independent_planar_lc_aposteriori_tube_checker_v2"
     )

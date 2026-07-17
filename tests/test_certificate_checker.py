@@ -93,6 +93,9 @@ from three_body_symmetry.binary_chart import (
 from three_body_symmetry.binary_chart import regularized_binary_collision_chart_to_planar
 from three_body_symmetry.binary_series import construct_regularized_binary_taylor_solution
 from three_body_symmetry.ks_binary_chart import SpatialKSBinaryChartState, ks_binary_chart_to_spatial
+from three_body_symmetry.planar_lc_mass_coefficients import (
+    PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID,
+)
 from three_body_symmetry.ks_binary_chart import spatial_to_ks_binary_chart
 from three_body_symmetry.ks_binary_series import construct_spatial_ks_binary_taylor_solution
 from three_body_symmetry.ks_binary_series import (
@@ -2041,6 +2044,22 @@ def test_planar_lc_aposteriori_tube_encloses_lifted_solution():
 
     assert type(result) is PlanarLCAposterioriTubeCheckResult
     assert result.certified
+    assert result.checker_id == "independent_planar_lc_aposteriori_tube_checker_v2"
+    assert result.mass_arithmetic_kernel_id == (
+        PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID
+    )
+    assert "planar_lc_tube_outward_mass_arithmetic_certified" in {
+        obligation.obligation for obligation in result.obligations
+    }
+    assert not replace(
+        result,
+        mass_arithmetic_kernel_id="wrong-mass-kernel",
+    ).certified
+
+    class _ForgedTubeResult(PlanarLCAposterioriTubeCheckResult):
+        pass
+
+    assert not _ForgedTubeResult(**result.__dict__).certified
     assert result.lifted_exact_solution_enclosure_certified
     assert result.third_body_distance_floor > 0.0
     assert result.gronwall_error_bound < tube.tube_radius

@@ -23,6 +23,9 @@ from three_body_symmetry.binary_chart import (
 from three_body_symmetry.binary_series import (
     construct_regularized_binary_taylor_solution,
 )
+from three_body_symmetry.certificate_checker import (
+    _planar_lc_mass_ratio_arithmetic_exact,
+)
 from three_body_symmetry.proof_carrying_carried_planar_lc_entry import (
     CarriedPlanarLCEntryTransitionRecord,
 )
@@ -45,6 +48,9 @@ from three_body_symmetry.proof_carrying_planar_chain import (
     canonical_planar_chain_evidence_json,
     check_raw_planar_chain,
     raw_planar_chain_evidence_sha256,
+)
+from three_body_symmetry.planar_lc_mass_coefficients import (
+    PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID,
 )
 from three_body_symmetry.series import construct_taylor_solution
 
@@ -172,9 +178,9 @@ def _fixture() -> _Fixture:
 
 @lru_cache(maxsize=1)
 def _all_pair_fixture() -> _AllPairFixture:
-    """A real carried prefix visiting LC_01, LC_02, then LC_12."""
+    """A decimal-mass prefix visiting LC_01, LC_02, LC_12, then LC_01."""
 
-    masses = np.ones(3)
+    masses = np.asarray((0.1, 0.2, 0.3))
     step = 2.0**-20
     positions = np.asarray(((0.0, 0.0), (1.0, 0.5), (-0.5, 1.5)))
     velocities = np.asarray(((0.01, 0.0), (-0.005, 0.01), (0.0, -0.01)))
@@ -209,16 +215,18 @@ def _all_pair_fixture() -> _AllPairFixture:
     clock = (Fraction(0), Fraction(0))
     segments: list[PlanarLCPassageV1Segment] = []
     settings = (
-        ((0, 1), 1.0e-7, 2.3856507494479656e-7, step),
-        ((0, 2), 1.0e-6, 2.8931194858805582e-6, step),
-        ((1, 2), 1.0e-5, 2.8078958597577145e-5, 1.0e-4),
+        ((0, 1), 1.0e-7, 1.0e-6, step),
+        ((0, 2), 3.0e-6, 2.0e-5, step),
+        ((1, 2), 8.0e-5, 3.0e-4, 1.0e-3),
+        ((0, 1), 2.0e-3, 1.0e-2, 1.0e-2),
     )
     for index, (pair, lc_initial, target_initial, target_right) in enumerate(
         settings
     ):
+        source_right = float(current_chart.parameter_interval[1])
         lifted = planar_to_regularized_binary_collision_chart(
-            solution.positions_at(step),
-            solution.velocities_at(step),
+            solution.positions_at(source_right),
+            solution.velocities_at(source_right),
             masses,
             pair=pair,
         )
@@ -226,7 +234,7 @@ def _all_pair_fixture() -> _AllPairFixture:
             lifted,
             order=12,
         )
-        physical_shift = 0.5 * float(clock[0] + clock[1]) + step
+        physical_shift = 0.5 * float(clock[0] + clock[1]) + source_right
         lc_chart = planar_levi_civita_binary_chart_certificate_from_solution(
             lc_solution,
             certificate_id=f"all-pair-lc-certificate:{index}",
@@ -255,7 +263,7 @@ def _all_pair_fixture() -> _AllPairFixture:
             source_tube_id=current_tube.tube_id,
             target_chart_id=lc_chart.chart_id,
             target_tube_id=lc_tube.tube_id,
-            source_right_parameter=step,
+            source_right_parameter=source_right,
             target_left_parameter=0.0,
         )
         target_positions, target_velocities = (
@@ -310,7 +318,18 @@ def _all_pair_fixture() -> _AllPairFixture:
             target_tube,
             clock,
         )
-        assert passage.certified
+        assert passage.certified, (
+            passage.missing_obligations,
+            (
+                passage.entry_result.missing_obligations,
+                passage.entry_result.tested_lift_max_gaps,
+                lc_initial,
+            )
+            if passage.entry_result is not None
+            else None,
+            passage.maximum_projected_anchor_gap,
+            target_initial,
+        )
         segments.append(
             PlanarLCPassageV1Segment(
                 entry_transition=entry,
@@ -346,7 +365,7 @@ def _all_pair_fixture() -> _AllPairFixture:
             initial_tube=initial_tube,
             segments=tuple(segments),
             requested_target_time=float(clock[1]),
-            requested_maximum_component_width=1.0e-3,
+            requested_maximum_component_width=1.0e-1,
         )
     )
 
@@ -357,6 +376,9 @@ def test_n_to_n_chain_replays_root_clock_fold_and_fixed_time_enclosure():
 
     assert result.status == CERTIFIED_TO_T
     assert result.certified
+    assert result.mass_arithmetic_kernel_id == (
+        PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID
+    )
     assert result.certified_segment_count == 1
     assert result.first_failed_obligation is None
     assert result.failed_segment_index is None
@@ -527,7 +549,7 @@ def test_raw_mutation_changes_digest_and_exact_result_snapshot():
     assert not forged.replay_consistent
 
 
-def test_repeated_chain_visits_all_three_lc_pairs_and_keeps_each_gauge():
+def test_decimal_chain_visits_all_pairs_revisits_01_and_keeps_each_gauge():
     certificate = _all_pair_fixture().certificate
     rebuilt = RawPlanarChainCertificate.from_dict(certificate.to_dict())
     result = check_raw_planar_chain(rebuilt)
@@ -535,11 +557,22 @@ def test_repeated_chain_visits_all_three_lc_pairs_and_keeps_each_gauge():
     assert rebuilt == certificate
     assert result.status == CERTIFIED_TO_T
     assert result.certified
-    assert result.certified_segment_count == 3
-    assert len(result.clock_origin_ledger) == 4
+    assert result.mass_arithmetic_kernel_id == (
+        PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID
+    )
+    assert not _planar_lc_mass_ratio_arithmetic_exact(
+        certificate.initial_chart.masses,
+        (0, 1),
+    )
+    assert not _planar_lc_mass_ratio_arithmetic_exact(
+        certificate.initial_chart.masses,
+        (0, 2),
+    )
+    assert result.certified_segment_count == 4
+    assert len(result.clock_origin_ledger) == 5
     assert result.certified_transition_checker_ids == (
-        "carried_planar_lc_exit_checker_v1",
-    ) * 3
+        "carried_planar_lc_exit_checker_v2",
+    ) * 4
     assert all(
         type(record) is PlanarLCPassageCocycleRecord
         for record in result.cocycle_records
@@ -548,11 +581,13 @@ def test_repeated_chain_visits_all_three_lc_pairs_and_keeps_each_gauge():
         (0, 1),
         (0, 2),
         (1, 2),
+        (0, 1),
     )
     assignments = tuple(
         record.gauge_assignment for record in result.cocycle_records
     )
     assert all(assignments)
+    assert assignments[0] != assignments[3]
     assert len(
         {
             patch_id
@@ -582,7 +617,7 @@ def test_repeated_chain_visits_all_three_lc_pairs_and_keeps_each_gauge():
     assert result.target_parameter_preimage_interval[1] > 0
 
 
-def test_failed_third_exit_retains_typed_lc_right_maximal_prefix():
+def test_failed_revisit_exit_retains_typed_lc_right_maximal_prefix():
     certificate = _all_pair_fixture().certificate
     final_segment = certificate.segments[-1]
     broken_final = replace(
@@ -599,9 +634,9 @@ def test_failed_third_exit_retains_typed_lc_right_maximal_prefix():
     result = check_raw_planar_chain(broken)
 
     assert result.status == UNRESOLVED
-    assert result.certified_segment_count == 2
-    assert result.failed_segment_index == 2
-    assert result.first_failed_obligation.startswith("segment[2]:")
+    assert result.certified_segment_count == 3
+    assert result.failed_segment_index == 3
+    assert result.first_failed_obligation.startswith("segment[3]:")
     assert (
         "carried_lc_exit_target_initial_ball_contains_complete_projection"
         in result.failed_segment_missing_obligations
@@ -612,9 +647,9 @@ def test_failed_third_exit_retains_typed_lc_right_maximal_prefix():
     assert retained.coordinate_system == "planar_lc_lifted_14"
     assert len(retained.component_intervals) == 14
     assert retained.physical_time_interval == retained.component_intervals[13]
-    assert retained.certified_segment_count == 2
+    assert retained.certified_segment_count == 3
     current_right = Fraction.from_float(
-        broken.segments[1].target_chart.parameter_interval[1]
+        broken.segments[2].target_chart.parameter_interval[1]
     )
     expected_covered_right = max(
         Fraction.from_float(broken.root_binding.initial_time),
@@ -667,6 +702,14 @@ def test_lc_cocycle_and_clock_ledger_mutations_cannot_certify():
     assert forged_result._snapshot_well_formed()
     assert not forged_result.replay_consistent
     assert not forged_result.certified
+
+    wrong_kernel = replace(
+        result,
+        mass_arithmetic_kernel_id="wrong-mass-kernel",
+    )
+    assert not wrong_kernel._snapshot_well_formed()
+    assert not wrong_kernel.replay_consistent
+    assert not wrong_kernel.certified
 
     ledger_entry = result.clock_origin_ledger[1]
     shifted_clock = (

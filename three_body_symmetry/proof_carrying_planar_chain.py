@@ -43,6 +43,7 @@ from .certificate_language import (
 )
 from .intervals import RationalInterval
 from .lc_gauge_gluing import PlanarLCGaugeOverlapEdge
+from .planar_lc_mass_coefficients import PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID
 from .proof_carrying_carried_planar_lc_entry import (
     CarriedPlanarLCEntryResult,
     CarriedPlanarLCEntryTransitionRecord,
@@ -79,10 +80,10 @@ _CERTIFICATE_TYPE = "raw_planar_continuation_chain"
 _CERTIFICATE_SOURCE = "raw_planar_continuation_chain_v1"
 _ORDINARY_SEGMENT_TYPE = "ordinary_bridge_v1"
 _LC_SEGMENT_TYPE = "planar_lc_passage_v1"
-_CHECKER_ID = "raw_planar_continuation_chain_replay_checker_v1"
+_CHECKER_ID = "raw_planar_continuation_chain_replay_checker_v2"
 _ROOT_CHECKER_ID = "validated_ordinary_ivp_chart_checker_v1"
 _ORDINARY_CHECKER_ID = "carried_ordinary_bridge_checker_v1"
-_LC_CHECKER_ID = "carried_planar_lc_exit_checker_v1"
+_LC_CHECKER_ID = "carried_planar_lc_exit_checker_v2"
 _FIXED_TIME_KERNEL_ID = "exact_rational_horner_fixed_time_kernel_v1"
 _CLOCK_LEDGER_ID = "forward_interval_clock_origin_ledger_v1"
 _INDUCTION_KERNEL_ID = (
@@ -445,6 +446,7 @@ class RawPlanarChainReplayResult:
     induction_kernel_id: str = _INDUCTION_KERNEL_ID
     fixed_time_kernel_id: str = _FIXED_TIME_KERNEL_ID
     clock_ledger_id: str = _CLOCK_LEDGER_ID
+    mass_arithmetic_kernel_id: str = PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID
 
     def _snapshot_well_formed(self) -> bool:
         if not (
@@ -464,6 +466,9 @@ class RawPlanarChainReplayResult:
             and self.fixed_time_kernel_id == _FIXED_TIME_KERNEL_ID
             and type(self.clock_ledger_id) is str
             and self.clock_ledger_id == _CLOCK_LEDGER_ID
+            and type(self.mass_arithmetic_kernel_id) is str
+            and self.mass_arithmetic_kernel_id
+            == PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID
             and _sha256_hex(self.evidence_sha256)
             and _obligation_ledger_schema(self.obligations)
             and type(self.certified_segment_count) is int
@@ -1480,6 +1485,9 @@ def _fresh_lc_advance_certified(
         return bool(
             type(result) is CarriedPlanarLCExitResult
             and result.checker_id == _LC_CHECKER_ID
+            and type(result.mass_arithmetic_kernel_id) is str
+            and result.mass_arithmetic_kernel_id
+            == PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID
             and result.raw_entry_transition is segment.entry_transition
             and result.raw_source_chart is source_chart
             and result.raw_source_tube is source_tube
@@ -1490,6 +1498,8 @@ def _fresh_lc_advance_certified(
             and result.raw_target_tube is segment.target_tube
             and result.parent_source_clock_origin_interval == source_clock
             and type(result.entry_result) is CarriedPlanarLCEntryResult
+            and result.entry_result.mass_arithmetic_kernel_id
+            == PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID
             and result.entry_result.raw_transition is segment.entry_transition
             and result.entry_result.parent_source_clock_origin_interval
             == source_clock
@@ -1690,8 +1700,14 @@ def _fresh_lc_right_frontier(
             and entry.raw_target_chart is segment.lc_chart
             and entry.raw_target_tube is segment.lc_tube
             and entry.parent_source_clock_origin_interval == source_clock
+            and entry.mass_arithmetic_kernel_id
+            == PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID
             and entry.certified
             and type(lc_replay) is PlanarLCAposterioriTubeCheckResult
+            and lc_replay.checker_id
+            == "independent_planar_lc_aposteriori_tube_checker_v2"
+            and lc_replay.mass_arithmetic_kernel_id
+            == PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID
             and lc_replay.tube_id == segment.lc_tube.tube_id
             and lc_replay.chart_id == segment.lc_chart.chart_id
             and lc_replay.certified

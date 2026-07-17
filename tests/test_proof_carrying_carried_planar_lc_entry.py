@@ -8,6 +8,9 @@ import math
 import numpy as np
 import pytest
 
+from three_body_symmetry.certificate_checker import (
+    _planar_lc_mass_ratio_arithmetic_exact,
+)
 from three_body_symmetry.binary_chart import (
     planar_to_regularized_binary_collision_chart,
 )
@@ -26,6 +29,9 @@ from three_body_symmetry.proof_carrying_carried_planar_lc_entry import (
     CarriedOrdinaryToPlanarLCEntryResult,
     CarriedPlanarLCEntryTransitionRecord,
     check_carried_ordinary_to_planar_lc_entry,
+)
+from three_body_symmetry.planar_lc_mass_coefficients import (
+    PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID,
 )
 from three_body_symmetry.series import construct_taylor_solution
 
@@ -63,9 +69,10 @@ def _negate_vector_coefficients(
 def _fixture(
     pair: tuple[int, int] = (0, 1),
     antipodal_target: bool = False,
+    serialized_masses: tuple[float, float, float] = (1.0, 1.0, 1.0),
 ) -> _Fixture:
     step = 2.0**-20
-    masses = np.ones(3)
+    masses = np.asarray(serialized_masses)
     # Pair 01 lies on the negative branch cut and exercises the two-patch
     # atlas.  The other two canonical pairs exercise singleton cases.
     positions = np.asarray(((0.0, 0.0), (-1.0, 0.0), (3.0, 1.0)))
@@ -76,7 +83,11 @@ def _fixture(
         masses,
         order=10,
     )
-    tag = f"{pair[0]}{pair[1]}-{'anti' if antipodal_target else 'base'}"
+    mass_tag = "decimal" if serialized_masses == (0.1, 0.2, 0.3) else "unit"
+    tag = (
+        f"{pair[0]}{pair[1]}-"
+        f"{'anti' if antipodal_target else 'base'}-{mass_tag}"
+    )
     source_chart = ordinary_taylor_chart_certificate_from_solution(
         source_solution,
         certificate_id=f"carried-entry-source-certificate:{tag}",
@@ -177,6 +188,13 @@ def test_conditional_entry_supports_all_canonical_pairs_and_carries_clock(pair):
     result = _check(fixture)
 
     assert result.certified
+    assert result.mass_arithmetic_kernel_id == (
+        PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID
+    )
+    assert result.target_tube_result is not None
+    assert result.target_tube_result.mass_arithmetic_kernel_id == (
+        PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID
+    )
     assert result.conditional_containment_certified
     assert result.constrained_newtonian_lift_certified
     assert result.physical_time_strictly_monotone_certified
@@ -203,6 +221,19 @@ def test_conditional_entry_supports_all_canonical_pairs_and_carries_clock(pair):
     assert result.tested_assignments[1] == tuple(
         (chart_id, bit ^ 1)
         for chart_id, bit in result.tested_assignments[0]
+    )
+
+
+def test_conditional_entry_accepts_decimal_masses_rejected_by_legacy_ratio_gate():
+    masses = (0.1, 0.2, 0.3)
+    fixture = _fixture((0, 1), serialized_masses=masses)
+    result = _check(fixture)
+
+    assert not _planar_lc_mass_ratio_arithmetic_exact(masses, (0, 1))
+    assert result.certified
+    assert (
+        "carried_lc_entry_outward_mass_arithmetic_certified"
+        not in result.missing_obligations
     )
 
 
@@ -453,6 +484,7 @@ def test_raw_identifiers_cannot_collide_with_deterministic_gauge_namespace():
         "entry_rho_lower_bound",
         "source_chart_result",
         "target_chart_result",
+        "mass_arithmetic_kernel_id",
     ),
 )
 def test_mutated_derived_snapshot_fields_never_certify(field_name: str):
@@ -524,6 +556,14 @@ def test_mutated_raw_and_nested_results_never_certify_via_python_equality():
         result,
         target_tube_result=forged_target_result,
     ).certified
+    forged_target_kernel = replace(
+        result.target_tube_result,
+        mass_arithmetic_kernel_id="wrong-mass-kernel",
+    )
+    assert not replace(
+        result,
+        target_tube_result=forged_target_kernel,
+    ).certified
     assert not replace(
         result,
         obligations=(forged_obligation,) + result.obligations[1:],
@@ -531,3 +571,25 @@ def test_mutated_raw_and_nested_results_never_certify_via_python_equality():
     assert not replace(result, patch_vertex_ids=embedded_patch_id).certified
     assert not replace(result, gauge_result=forged_gauge).certified
     assert not subclass_spoof.certified
+
+
+def test_extreme_or_nonbinary64_mass_payload_fails_outward_obligation():
+    fixture = _fixture()
+    cases = (
+        (float.fromhex("0x1.fffffffffffffp+1023"), 1.0, 1.0),
+        (1, 1.0, 1.0),
+    )
+    for masses in cases:
+        with np.errstate(over="ignore", invalid="ignore"):
+            result = _check(
+                replace(
+                    fixture,
+                    source_chart=replace(fixture.source_chart, masses=masses),
+                    target_chart=replace(fixture.target_chart, masses=masses),
+                )
+            )
+        assert not result.certified
+        assert (
+            "carried_lc_entry_outward_mass_arithmetic_certified"
+            in result.missing_obligations
+        )

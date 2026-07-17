@@ -44,6 +44,7 @@ from .certificate_language import (
     PlanarLeviCivitaBinaryChartCertificate,
 )
 from .intervals import FloatInterval
+from .planar_lc_mass_coefficients import PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID
 
 
 _CHECKER_ID = "raw_gauge_aware_planar_lc_exit_containment_checker_v1"
@@ -585,7 +586,10 @@ def _canonical_lc_tube_result(
         and result.chart_id == raw_chart.chart_id == raw_tube.chart_id
         and type(result.checker_id) is str
         and result.checker_id
-        == "independent_planar_lc_aposteriori_tube_checker_v1"
+        == "independent_planar_lc_aposteriori_tube_checker_v2"
+        and type(result.mass_arithmetic_kernel_id) is str
+        and result.mass_arithmetic_kernel_id
+        == PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID
         and _canonical_nested_obligations(result.obligations)
         and all(
             type(value) is float and math.isfinite(value)

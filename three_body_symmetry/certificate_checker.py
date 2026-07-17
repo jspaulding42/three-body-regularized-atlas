@@ -96,6 +96,7 @@ from .ks_binary_series import (
     regularized_rhs_coefficients as ks_regularized_rhs_coefficients,
 )
 from .planar_lc_mass_coefficients import (
+    PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID,
     derive_planar_lc_mass_coefficient_witness,
 )
 from .series import acceleration_coefficients
@@ -640,6 +641,7 @@ class PlanarLCAposterioriTubeCheckResult:
     tube_id: str
     chart_id: str
     checker_id: str
+    mass_arithmetic_kernel_id: str
     obligations: tuple[CertificateCheckObligation, ...]
     defect_bound: float
     lipschitz_bound: float
@@ -651,7 +653,16 @@ class PlanarLCAposterioriTubeCheckResult:
 
     @property
     def certified(self) -> bool:
-        return _check_obligation_ledger_certified(self.obligations)
+        return bool(
+            type(self) is PlanarLCAposterioriTubeCheckResult
+            and type(self.checker_id) is str
+            and self.checker_id
+            == "independent_planar_lc_aposteriori_tube_checker_v2"
+            and type(self.mass_arithmetic_kernel_id) is str
+            and self.mass_arithmetic_kernel_id
+            == PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID
+            and _check_obligation_ledger_certified(self.obligations)
+        )
 
     @property
     def lifted_exact_solution_enclosure_certified(self) -> bool:
@@ -688,12 +699,18 @@ def _rejected_planar_lc_tube_result(
     return PlanarLCAposterioriTubeCheckResult(
         tube_id=tube.tube_id if type(tube.tube_id) is str else "",
         chart_id=chart.chart_id if type(chart.chart_id) is str else "",
-        checker_id="independent_planar_lc_aposteriori_tube_checker_v1",
+        checker_id="independent_planar_lc_aposteriori_tube_checker_v2",
+        mass_arithmetic_kernel_id=PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID,
         obligations=(
             CertificateCheckObligation(
                 "planar_lc_tube_malformed_exact_class_input",
                 False,
                 "malformed exact-class chart or tube fields were rejected",
+            ),
+            CertificateCheckObligation(
+                "planar_lc_tube_outward_mass_arithmetic_certified",
+                False,
+                f"kernel={PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID}",
             ),
         ),
         defect_bound=np.inf,
@@ -864,9 +881,13 @@ class PlanarLCExactOverlapAnchorCheckResult:
             and type(self.source_tube_result) is PlanarLCAposterioriTubeCheckResult
             and type(self.target_tube_result) is PlanarLCAposterioriTubeCheckResult
             and self.source_tube_result.checker_id
-            == "independent_planar_lc_aposteriori_tube_checker_v1"
+            == "independent_planar_lc_aposteriori_tube_checker_v2"
             and self.target_tube_result.checker_id
-            == "independent_planar_lc_aposteriori_tube_checker_v1"
+            == "independent_planar_lc_aposteriori_tube_checker_v2"
+            and self.source_tube_result.mass_arithmetic_kernel_id
+            == PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID
+            and self.target_tube_result.mass_arithmetic_kernel_id
+            == PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID
             and self.source_tube_result.chart_id == self.source_chart_id
             and self.target_tube_result.chart_id == self.target_chart_id
             and self.source_tube_result.tube_id == self.raw_source_tube.tube_id
@@ -1048,7 +1069,9 @@ class PlanarLCExactGaugeAtlasCheckResult:
                 and tube.initial_error_bound == 0.0
                 and type(result) is PlanarLCAposterioriTubeCheckResult
                 and result.checker_id
-                == "independent_planar_lc_aposteriori_tube_checker_v1"
+                == "independent_planar_lc_aposteriori_tube_checker_v2"
+                and result.mass_arithmetic_kernel_id
+                == PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID
                 and result.chart_id == self.chart_ids[index]
                 and result.tube_id == self.tube_ids[index]
                 and result.certified
@@ -2020,7 +2043,9 @@ class GaugeAwareOrdinaryToPlanarLCEnclosureTransitionCheckResult:
             )
             and target_nested_schema
             and self.target_tube_result.checker_id
-            == "independent_planar_lc_aposteriori_tube_checker_v1"
+            == "independent_planar_lc_aposteriori_tube_checker_v2"
+            and self.target_tube_result.mass_arithmetic_kernel_id
+            == PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID
             and self.target_tube_result.chart_id == self.raw_target_chart.chart_id
             and self.target_tube_result.tube_id == self.raw_target_tube.tube_id
             and self.target_tube_result.certified
@@ -5355,7 +5380,21 @@ def check_planar_lc_aposteriori_tube(
     self_consistent = False
     constraint_residual = np.inf
     constraint_anchor_certified = False
-    if identity_matches and finite_inputs and lifted_serialization_admissible:
+    outward_mass_arithmetic_certified = False
+    try:
+        mass_witness = derive_planar_lc_mass_coefficient_witness(
+            chart.masses,
+            chart.pair,
+        )
+        outward_mass_arithmetic_certified = mass_witness.certified
+    except Exception:
+        outward_mass_arithmetic_certified = False
+    if (
+        identity_matches
+        and finite_inputs
+        and lifted_serialization_admissible
+        and outward_mass_arithmetic_certified
+    ):
         try:
             anchor_q = Fraction.from_float(anchor)
             z_anchor = _evaluate_fraction_coefficients(
@@ -5381,7 +5420,12 @@ def check_planar_lc_aposteriori_tube(
             constraint_anchor_certified = constraint_q == 0
         except (OverflowError, ValueError, ZeroDivisionError):
             pass
-    if identity_matches and finite_inputs and lifted_serialization_admissible:
+    if (
+        identity_matches
+        and finite_inputs
+        and lifted_serialization_admissible
+        and outward_mass_arithmetic_certified
+    ):
         try:
             defect, lipschitz, third_floor = (
                 _planar_lc_direct_defect_and_lipschitz(
@@ -5431,6 +5475,11 @@ def check_planar_lc_aposteriori_tube(
             ),
         ),
         CertificateCheckObligation(
+            "planar_lc_tube_outward_mass_arithmetic_certified",
+            outward_mass_arithmetic_certified,
+            f"kernel={PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID}",
+        ),
+        CertificateCheckObligation(
             "planar_lc_tube_inputs_finite",
             finite_inputs,
             f"anchor={anchor}; initial_error={initial_error}; radius={radius}",
@@ -5470,7 +5519,8 @@ def check_planar_lc_aposteriori_tube(
     return PlanarLCAposterioriTubeCheckResult(
         tube_id=str(certificate.tube_id),
         chart_id=str(certificate.chart_id),
-        checker_id="independent_planar_lc_aposteriori_tube_checker_v1",
+        checker_id="independent_planar_lc_aposteriori_tube_checker_v2",
+        mass_arithmetic_kernel_id=PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID,
         obligations=obligations,
         defect_bound=float(defect),
         lipschitz_bound=float(lipschitz),
@@ -6963,7 +7013,9 @@ def check_gauge_aware_ordinary_to_planar_lc_enclosure_transition(
         target_tube_certified = bool(
             type(target_tube_result) is PlanarLCAposterioriTubeCheckResult
             and target_tube_result.checker_id
-            == "independent_planar_lc_aposteriori_tube_checker_v1"
+            == "independent_planar_lc_aposteriori_tube_checker_v2"
+            and target_tube_result.mass_arithmetic_kernel_id
+            == PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID
             and target_tube_result.chart_id == target_chart.chart_id
             and target_tube_result.tube_id == target_tube.tube_id
             and target_tube_result.certified

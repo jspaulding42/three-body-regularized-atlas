@@ -8,6 +8,9 @@ import math
 import numpy as np
 import pytest
 
+from three_body_symmetry.certificate_checker import (
+    _planar_lc_mass_ratio_arithmetic_exact,
+)
 from three_body_symmetry.binary_chart import (
     planar_to_regularized_binary_collision_chart,
     regularized_binary_collision_chart_to_planar,
@@ -30,6 +33,9 @@ from three_body_symmetry.proof_carrying_carried_planar_lc_entry import (
 from three_body_symmetry.proof_carrying_carried_planar_lc_exit import (
     CarriedPlanarLCExitResult,
     check_carried_planar_lc_exit,
+)
+from three_body_symmetry.planar_lc_mass_coefficients import (
+    PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID,
 )
 from three_body_symmetry.series import construct_taylor_solution
 
@@ -63,9 +69,12 @@ class _Fixture:
 
 
 @lru_cache(maxsize=None)
-def _fixture(pair: tuple[int, int] = (0, 1)) -> _Fixture:
+def _fixture(
+    pair: tuple[int, int] = (0, 1),
+    serialized_masses: tuple[float, float, float] = (1.0, 1.0, 1.0),
+) -> _Fixture:
     step = 2.0**-20
-    masses = np.ones(3)
+    masses = np.asarray(serialized_masses)
     positions = np.asarray(((0.0, 0.0), (-1.0, 0.0), (3.0, 1.0)))
     velocities = np.zeros((3, 2))
     source_solution = construct_taylor_solution(
@@ -74,7 +83,8 @@ def _fixture(pair: tuple[int, int] = (0, 1)) -> _Fixture:
         masses,
         order=10,
     )
-    tag = f"{pair[0]}{pair[1]}"
+    mass_tag = "decimal" if serialized_masses == (0.1, 0.2, 0.3) else "unit"
+    tag = f"{pair[0]}{pair[1]}-{mass_tag}"
     source_chart = ordinary_taylor_chart_certificate_from_solution(
         source_solution,
         certificate_id=f"carried-exit-source-certificate:{tag}",
@@ -208,6 +218,9 @@ def test_carried_exit_supports_all_pairs_and_replays_clock(pair):
     result = _check(fixture)
 
     assert result.certified
+    assert result.mass_arithmetic_kernel_id == (
+        PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID
+    )
     assert result.missing_obligations == ()
     assert result.entry_result is not None
     assert result.entry_result.certified
@@ -228,6 +241,21 @@ def test_carried_exit_supports_all_pairs_and_replays_clock(pair):
     assert result.maximum_projected_anchor_gap is not None
     assert result.maximum_projected_anchor_gap <= Fraction.from_float(
         fixture.target_tube.initial_error_bound
+    )
+
+
+def test_carried_exit_accepts_decimal_masses_rejected_by_legacy_ratio_gate():
+    masses = (0.1, 0.2, 0.3)
+    fixture = _fixture((0, 1), serialized_masses=masses)
+    result = _check(fixture)
+
+    assert not _planar_lc_mass_ratio_arithmetic_exact(masses, (0, 1))
+    assert result.certified
+    assert result.entry_result is not None
+    assert result.entry_result.certified
+    assert result.lc_tube_result is not None
+    assert result.lc_tube_result.mass_arithmetic_kernel_id == (
+        PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID
     )
 
 
@@ -262,7 +290,7 @@ def test_target_containment_and_endpoint_fail_closed():
     assert endpoint.lifted_exit_slice == ()
 
 
-def test_parent_clock_raw_types_pair_and_mass_arithmetic_fail_closed():
+def test_parent_clock_raw_types_pair_and_extreme_mass_arithmetic_fail_closed():
     fixture = _fixture()
     reversed_clock = replace(
         fixture,
@@ -286,17 +314,22 @@ def test_parent_clock_raw_types_pair_and_mass_arithmetic_fail_closed():
         in pair_result.missing_obligations
     )
 
-    inexact_masses = (0.1, 0.2, 0.3)
+    extreme_masses = (
+        float.fromhex("0x1.fffffffffffffp+1023"),
+        1.0,
+        1.0,
+    )
     ratio_fixture = replace(
         fixture,
-        source_chart=replace(fixture.source_chart, masses=inexact_masses),
-        lc_chart=replace(fixture.lc_chart, masses=inexact_masses),
-        target_chart=replace(fixture.target_chart, masses=inexact_masses),
+        source_chart=replace(fixture.source_chart, masses=extreme_masses),
+        lc_chart=replace(fixture.lc_chart, masses=extreme_masses),
+        target_chart=replace(fixture.target_chart, masses=extreme_masses),
     )
-    ratio_result = _check(ratio_fixture)
+    with np.errstate(over="ignore", invalid="ignore"):
+        ratio_result = _check(ratio_fixture)
     assert not ratio_result.certified
     assert (
-        "carried_lc_exit_mass_ratio_arithmetic_exact"
+        "carried_lc_exit_outward_mass_arithmetic_certified"
         in ratio_result.missing_obligations
     )
 
@@ -339,6 +372,10 @@ def test_rho_and_full_result_snapshot_mutations_cannot_certify():
     ).certified
     assert not replace(result, checker_id=_AlwaysEqual()).certified
     assert not replace(result, analytic_kernel_id="unreviewed-kernel").certified
+    assert not replace(
+        result,
+        mass_arithmetic_kernel_id="wrong-mass-kernel",
+    ).certified
     assert not replace(result, parent_source_invariant_id=_AlwaysEqual()).certified
 
     false_obligation = replace(result.obligations[0], certified=False)
@@ -363,6 +400,11 @@ def test_rho_and_full_result_snapshot_mutations_cannot_certify():
         analytic_kernel_id="unreviewed-entry-kernel",
     )
     assert not replace(result, entry_result=forged_entry_kernel).certified
+    forged_entry_mass_kernel = replace(
+        result.entry_result,
+        mass_arithmetic_kernel_id="wrong-mass-kernel",
+    )
+    assert not replace(result, entry_result=forged_entry_mass_kernel).certified
     nonmonotone_entry = replace(
         result.entry_result,
         entry_rho_lower_bound=Fraction(0),
@@ -380,6 +422,11 @@ def test_rho_and_full_result_snapshot_mutations_cannot_certify():
     assert result.lc_tube_result is not None
     forged_lc = replace(result.lc_tube_result, defect_bound=_AlwaysEqual())
     assert not replace(result, lc_tube_result=forged_lc).certified
+    forged_lc_kernel = replace(
+        result.lc_tube_result,
+        mass_arithmetic_kernel_id=_AlwaysEqual(),
+    )
+    assert not replace(result, lc_tube_result=forged_lc_kernel).certified
     assert result.target_tube_result is not None
     forged_target = replace(result.target_tube_result, checker_id=_AlwaysEqual())
     assert not replace(result, target_tube_result=forged_target).certified

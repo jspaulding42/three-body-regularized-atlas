@@ -26,7 +26,6 @@ from .certificate_checker import (
     OrdinaryAposterioriTubeCheckResult,
     PlanarLCAposterioriTubeCheckResult,
     _exact_rational_chart_projected_state_at_parameter,
-    _planar_lc_mass_ratio_arithmetic_exact,
     _planar_lc_state_intervals,
     _project_interval_planar_lc_state,
     _regularized_binary_solution_from_certificate,
@@ -41,6 +40,10 @@ from .certificate_language import (
     PlanarLeviCivitaBinaryChartCertificate,
 )
 from .intervals import FloatInterval
+from .planar_lc_mass_coefficients import (
+    PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID,
+    derive_planar_lc_mass_coefficient_witness,
+)
 from .proof_carrying_carried_planar_lc_entry import (
     CarriedPlanarLCEntryResult,
     CarriedPlanarLCEntryTransitionRecord,
@@ -48,7 +51,7 @@ from .proof_carrying_carried_planar_lc_entry import (
 )
 
 
-_CHECKER_ID = "carried_planar_lc_exit_checker_v1"
+_CHECKER_ID = "carried_planar_lc_exit_checker_v2"
 _ANALYTIC_KERNEL_ID = "planar_lc_analytic_kernel_v1"
 _PARENT_INVARIANT_ID = "parent_carried_ordinary_solution_invariant_v1"
 _OBLIGATION_NAMES = (
@@ -58,7 +61,7 @@ _OBLIGATION_NAMES = (
     "carried_lc_exit_entry_freshly_replayed_and_certified",
     "carried_lc_exit_common_planar_mass_problem",
     "carried_lc_exit_pair_is_canonical_ascending",
-    "carried_lc_exit_mass_ratio_arithmetic_exact",
+    "carried_lc_exit_outward_mass_arithmetic_certified",
     "carried_lc_exit_exact_right_to_left_endpoint_handoff",
     "carried_lc_exit_constrained_entry_branch_carried",
     "carried_lc_exit_constraint_invariance_kernel",
@@ -86,6 +89,7 @@ class CarriedPlanarLCExitResult:
     transition_id: str
     checker_id: str
     analytic_kernel_id: str
+    mass_arithmetic_kernel_id: str
     parent_source_invariant_id: str
     raw_entry_transition: CarriedPlanarLCEntryTransitionRecord
     raw_source_chart: OrdinaryTaylorChartCertificate
@@ -117,6 +121,9 @@ class CarriedPlanarLCExitResult:
             and self.checker_id == _CHECKER_ID
             and type(self.analytic_kernel_id) is str
             and self.analytic_kernel_id == _ANALYTIC_KERNEL_ID
+            and type(self.mass_arithmetic_kernel_id) is str
+            and self.mass_arithmetic_kernel_id
+            == PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID
             and type(self.parent_source_invariant_id) is str
             and self.parent_source_invariant_id == _PARENT_INVARIANT_ID
             and type(self.raw_entry_transition)
@@ -259,15 +266,13 @@ def check_carried_planar_lc_exit(
         and lc_chart.pair in ((0, 1), (0, 2), (1, 2))
     )
     try:
-        exact_ratio = bool(
-            canonical_pair
-            and _planar_lc_mass_ratio_arithmetic_exact(
-                lc_chart.masses,
-                lc_chart.pair,
-            )
+        mass_witness = derive_planar_lc_mass_coefficient_witness(
+            lc_chart.masses,
+            lc_chart.pair,
         )
+        outward_mass_arithmetic = bool(canonical_pair and mass_witness.certified)
     except Exception:
-        exact_ratio = False
+        outward_mass_arithmetic = False
     endpoint_handoff = _exact_endpoint_handoff(
         entry_transition,
         source_chart,
@@ -372,7 +377,7 @@ def check_carried_planar_lc_exit(
             entry_certified,
             common_problem,
             canonical_pair,
-            exact_ratio,
+            outward_mass_arithmetic,
             endpoint_handoff,
             constrained_entry,
             constraint_kernel,
@@ -453,7 +458,7 @@ def check_carried_planar_lc_exit(
                     constraint_kernel
                     and rho_positive
                     and projection_reconstructed
-                    and exact_ratio
+                    and outward_mass_arithmetic
                 )
         except Exception:
             pass
@@ -494,9 +499,13 @@ def check_carried_planar_lc_exit(
             f"pair={lc_chart.pair!r}",
         ),
         _obligation(
-            "carried_lc_exit_mass_ratio_arithmetic_exact",
-            exact_ratio,
-            "all point mass ratios used by LC projection equal exact rationals",
+            "carried_lc_exit_outward_mass_arithmetic_certified",
+            outward_mass_arithmetic,
+            (
+                "all LC projection/field mass coefficients are freshly "
+                "derived and tightly enclosed outward; "
+                f"kernel={PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID}"
+            ),
         ),
         _obligation(
             "carried_lc_exit_exact_right_to_left_endpoint_handoff",
@@ -584,6 +593,7 @@ def check_carried_planar_lc_exit(
         transition_id=transition_id,
         checker_id=_CHECKER_ID,
         analytic_kernel_id=_ANALYTIC_KERNEL_ID,
+        mass_arithmetic_kernel_id=PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID,
         parent_source_invariant_id=_PARENT_INVARIANT_ID,
         raw_entry_transition=entry_transition,
         raw_source_chart=source_chart,
@@ -673,10 +683,13 @@ def _canonical_entry_result(
         return bool(
             type(value) is CarriedPlanarLCEntryResult
             and type(value.checker_id) is str
-            and value.checker_id == "carried_planar_lc_entry_checker_v1"
+            and value.checker_id == "carried_planar_lc_entry_checker_v2"
             and type(value.analytic_kernel_id) is str
             and value.analytic_kernel_id
             == "planar_lc_constrained_lift_deck_gauge_kernel_v1"
+            and type(value.mass_arithmetic_kernel_id) is str
+            and value.mass_arithmetic_kernel_id
+            == PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID
             and type(value.raw_transition)
             is CarriedPlanarLCEntryTransitionRecord
             and value.raw_transition == raw_transition
@@ -727,7 +740,10 @@ def _canonical_lc_tube_result(
         and result.chart_id == raw_chart.chart_id == raw_tube.chart_id
         and type(result.checker_id) is str
         and result.checker_id
-        == "independent_planar_lc_aposteriori_tube_checker_v1"
+        == "independent_planar_lc_aposteriori_tube_checker_v2"
+        and type(result.mass_arithmetic_kernel_id) is str
+        and result.mass_arithmetic_kernel_id
+        == PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID
         and _canonical_nested_obligations(result.obligations)
         and all(
             type(value) is float and math.isfinite(value)
