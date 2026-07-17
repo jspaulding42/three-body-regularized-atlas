@@ -2,10 +2,10 @@ cff-version: 1.2.0
 message: >-
   If you use this software, please cite the software release and the
   accompanying manuscript.
-title: "Three-Body Regularized Atlas: Validated Binary-Collision Certificates"
+title: "Three-Body Regularized Atlas: Proof-Carrying Finite Planar Continuation"
 type: software
-version: 0.2.0-review
-date-released: 2026-07-12
+version: 0.3.0-review
+date-released: 2026-07-17
 authors:
   - family-names: Spaulding
     given-names: Jeffrey
@@ -14,10 +14,14 @@ authors:
 repository-code: "https://github.com/jspaulding42/three-body-regularized-atlas"
 license: BSD-3-Clause
 abstract: >-
-  A reproducible certificate architecture and proof-of-concept validation of
-  one planar three-body Levi-Civita binary-collision passage, conditional on a
-  small interval-arithmetic trusted kernel. This software does not provide a
-  general closed-form solution of the three-body problem.
+  A reproducible proof-carrying checker for a supplied finite planar
+  three-body point-IVP continuation chain. The checker freshly replays
+  ordinary bridges and repeated Levi-Civita passages for all three canonical
+  binary pairs, propagates clock and local gauge ledgers, and returns either a
+  fixed-time enclosure or a typed unresolved prefix, conditional on its
+  stated arithmetic and analytic trusted kernel. It is not a complete
+  certificate producer, an independently implemented verifier, or a general
+  closed-form solution of the three-body problem.
 keywords:
   - three-body problem
   - Levi-Civita regularization

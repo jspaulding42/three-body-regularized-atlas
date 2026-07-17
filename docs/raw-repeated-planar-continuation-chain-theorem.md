@@ -359,11 +359,40 @@ admits only `carried_ordinary_bridge_checker_v1` and
 v2 carried entry and v2 LC tube results.
 
 This is exact-self replay by the same implementation, not verification by an
-independent checker or proof assistant.  A tracked review bundle is intended
-under `artifacts/v0.3.0-review/planar-chain/`, containing canonical raw JSON,
-fresh replay transcripts, and transport hashes.  Until those files are
-exported and checked, this document asserts no particular artifact digest or
-fixture result.
+independent checker or proof assistant.  The tracked review bundle at
+[`artifacts/v0.3.0-review/planar-chain/`](../artifacts/v0.3.0-review/planar-chain/)
+contains canonical raw JSON, fresh replay transcripts, and a manifest of
+transport hashes and pinned checker/kernel identifiers.
+
+The successful raw fixture has theorem-evidence SHA-256
+`ede15b0f35cf741f542a6cd260470a93ee5ff85dc5ae2371db1b88819b821f11`.
+Fresh replay returns `CERTIFIED_TO_T` after five accepted segments: one
+ordinary bridge followed by LC pair word
+
+\[
+(0,1),(0,2),(1,2),(0,1).
+\]
+
+The failed-revisit raw fixture has theorem-evidence SHA-256
+`c6830919726c22fbca6e45d5781b2465e54876bfa89c25bc26e97284ff918727`.
+Fresh replay returns `UNRESOLVED`, with `certified_segment_count = 4`,
+`failed_segment_index = 4`, and first failed obligation
+`segment[4]:carried_lc_exit_target_initial_ball_contains_complete_projection`.
+Thus the certified prefix comprises the ordinary bridge and the first three
+LC passages; the failed final `(0,1)` revisit is not added to that prefix. Its
+entry and LC tube do replay, so the result retains the typed fourteen-
+dimensional lifted LC right frontier rather than claiming a Cartesian exit.
+
+Run
+
+```bash
+python scripts/certify_repeated_planar_chain.py verify-bundle
+```
+
+to verify the recorded transport hashes and require freshly generated
+same-implementation transcripts to match the tracked transcripts exactly.
+Neither fixture is an independent-verifier result, and the occurrence of an
+LC chart in either fixture is not a collision witness.
 
 ## Trusted kernel
 

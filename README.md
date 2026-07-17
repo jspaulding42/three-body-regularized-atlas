@@ -80,6 +80,23 @@ independent verifier, automatic collision detector, complete producer,
 arbitrary-input theorem, total-collision continuation, spatial result, escape
 classification, or all-time solution.
 
+The canonical v0.3.0 review evidence is tracked in
+[`artifacts/v0.3.0-review/planar-chain/`](artifacts/v0.3.0-review/planar-chain/).
+Verify its transport hashes and exact-match fresh replay transcripts with:
+
+```bash
+python scripts/certify_repeated_planar_chain.py verify-bundle
+```
+
+Run the focused theorem-surface and artifact regressions with:
+
+```bash
+python -m pytest -q \
+  tests/test_planar_lc_mass_coefficients.py \
+  tests/test_proof_carrying_planar_chain.py \
+  tests/test_planar_chain_review_artifact.py
+```
+
 The broader historical research program and experimental machinery are
 retained below for auditability.
 
