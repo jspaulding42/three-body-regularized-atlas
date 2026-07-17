@@ -21,8 +21,8 @@ technical statements and their qualifications are documented in
 [`docs/validated-planar-binary-collision-passage.md`](docs/validated-planar-binary-collision-passage.md)
 and
 [`docs/validated-planar-lc-tube-theorem.md`](docs/validated-planar-lc-tube-theorem.md).
-The current strengthening program is the exact \(\mathbb F_2\) Levi-Civita
-gauge-gluing layer described in
+The completed three-stage exact \(\mathbb F_2\) Levi-Civita gauge-gluing
+program is described in
 [`docs/lc-z2-gauge-gluing-research-goal.md`](docs/lc-z2-gauge-gluing-research-goal.md).
 Stage 1 is a standalone exact graph kernel for supplied overlap labels.  Stage
 2 derives a label rather than trusting one: it independently rechecks two
@@ -46,6 +46,27 @@ clock gate but still trusts a prebuilt source result.  Raw Stage 3 is the
 adversarially replayable route.  No existing transition or `proof_certified`
 path consumes it, and none of these local results is a general or global
 solution.
+
+The active strengthening program is now
+[`docs/general-certified-computational-solution-goal.md`](docs/general-certified-computational-solution-goal.md):
+a proof-carrying finite-time planar integrator that returns either
+`CERTIFIED_TO_T` with replay-checked coverage and a final enclosure, or
+`UNRESOLVED` with the first failed obligation and a retained certified region.
+Its completed ordinary-only Milestone-2 vertical slice is raw replay v1.  A
+`RawOrdinaryContinuationCertificate` carries the raw exact-point IVP binding,
+ordered ordinary charts, tubes, transitions, a requested target time, and a
+finite nonnegative maximum final-component width.  The checker hashes strict
+canonical JSON, reconstructs the legacy chain manifest internally, and freshly
+reruns the binding/chart/tube/transition checks.  A successful result retains
+the exact raw certificate, replays it again whenever `certified` is queried,
+matches the canonical checker output exactly, and bounds the final component
+width using exact rational differences and outward binary64 conversion.  On
+failure, only the last consecutively certified ordinary-chart right endpoint
+is retained; an invalid initial binding, collided first chart, or failed first
+tube retains nothing.  This milestone does **not** support LC or mixed
+ordinary/LC chains, prove producer termination, or establish general/global
+completeness.
+
 The broader historical research program and experimental machinery are
 retained below for auditability.
 
@@ -79,6 +100,18 @@ python -m pytest -q tests/test_lc_gauge_gluing.py \
   tests/test_lc_exact_overlap.py tests/test_lc_exact_gauge_atlas.py \
   tests/test_lc_gauge_aware_transition.py \
   tests/test_lc_projection_identities.py
+```
+
+Run the focused exact-arithmetic, global-clock, problem-identity, and raw
+ordinary replay regressions for the new strengthening program:
+
+```bash
+python -m pytest -q \
+  tests/test_directed_arithmetic_kernel.py \
+  tests/test_certificate_checker_fraction_bounds.py \
+  tests/test_certificate_language_clock_shift.py \
+  tests/test_certificate_problem_identity.py \
+  tests/test_proof_carrying_continuation.py
 ```
 
 Run the complete test suite with `python -m pytest`. Passing these checks

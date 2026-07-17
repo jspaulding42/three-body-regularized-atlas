@@ -74,6 +74,7 @@ from .fuchsian import (
 from .intervals import (
     FloatInterval,
     RationalInterval,
+    interval_array_derivative_coefficients,
     interval_array_series_eval,
     interval_polyder,
     interval_polynomial_eval,
@@ -5054,19 +5055,22 @@ def check_ordinary_aposteriori_tube(
                 )
                 lipschitz = max(1.0, acceleration_lipschitz)
                 lipschitz_within_cap = lipschitz <= lipschitz_cap
-                h = max(
-                    abs(float(interval[0] - anchor_parameter)),
-                    abs(float(interval[1] - anchor_parameter)),
+                anchor_parameter_q = Fraction.from_float(anchor_parameter)
+                horizon_q = max(
+                    abs(Fraction.from_float(interval[0]) - anchor_parameter_q),
+                    abs(Fraction.from_float(interval[1]) - anchor_parameter_q),
                 )
-                exponent = _positive_product_upper(lipschitz, h)
+                lipschitz_q = Fraction.from_float(lipschitz)
+                exponent = _fraction_upper_float(lipschitz_q * horizon_q)
                 exponential = _exp_upper(exponent)
-                gronwall = float(
-                    np.nextafter(
-                        exponential * initial_error
-                        + defect * (exponential - 1.0) / lipschitz,
-                        np.inf,
-                    )
+                exponential_q = Fraction.from_float(exponential)
+                gronwall_q = (
+                    exponential_q * Fraction.from_float(initial_error)
+                    + Fraction.from_float(defect)
+                    * (exponential_q - Fraction(1))
+                    / lipschitz_q
                 )
+                gronwall = _fraction_upper_float(gronwall_q)
                 self_consistent = gronwall < radius
         except (
             DecimalException,
@@ -7919,7 +7923,14 @@ def _fraction_lower_float(value: Fraction) -> float:
 
 @lru_cache(maxsize=131072)
 def _fraction_sqrt_float(value: Fraction, *, upward: bool) -> float:
-    """Directed binary64 bound for sqrt of a nonnegative rational."""
+    """Directed binary64 bound for sqrt of a nonnegative rational.
+
+    Decimal division first encloses the exact rational in the requested input
+    direction.  ``Decimal.sqrt`` itself is correctly rounded to nearest rather
+    than by the context direction, so the adjacent context Decimal on the same
+    side supplies a rigorous square-root endpoint before outward binary64
+    conversion.
+    """
 
     value = Fraction(value)
     if value < 0:
@@ -7933,12 +7944,17 @@ def _fraction_sqrt_float(value: Fraction, *, upward: bool) -> float:
         decimal_value = context.divide(
             Decimal(value.numerator), Decimal(value.denominator)
         )
-        decimal_root = context.sqrt(decimal_value)
-    candidate = float(decimal_root)
+        nearest_root = context.sqrt(decimal_value)
+        decimal_endpoint = (
+            context.next_plus(nearest_root)
+            if upward
+            else context.next_minus(nearest_root)
+        )
+    candidate = float(decimal_endpoint)
     candidate_decimal = Decimal.from_float(candidate)
-    if upward and candidate_decimal < decimal_root:
+    if upward and candidate_decimal < decimal_endpoint:
         candidate = float(np.nextafter(candidate, np.inf))
-    elif not upward and candidate_decimal > decimal_root:
+    elif not upward and candidate_decimal > decimal_endpoint:
         candidate = float(np.nextafter(candidate, -np.inf))
     return candidate
 
@@ -8077,8 +8093,8 @@ def _newton_acceleration_lipschitz_upper(
     sqrt_dimension_upper = _fraction_sqrt_float(
         Fraction(int(dimension)), upward=True
     )
-    derivative_factor_upper = float(
-        np.nextafter(1.0 + 3.0 * sqrt_dimension_upper, np.inf)
+    derivative_factor_upper = _fraction_upper_float(
+        Fraction(1) + 3 * Fraction.from_float(sqrt_dimension_upper)
     )
     mass_sum = sum(
         (
@@ -8099,17 +8115,23 @@ def _newton_acceleration_lipschitz_upper(
 
 
 def _exp_upper(value: float) -> float:
-    """High-precision decimal upper bound converted outward to binary64."""
+    """Rigorous high-precision Decimal enclosure of exp converted upward.
+
+    Python's Decimal exponential is correctly rounded to nearest even when the
+    context requests ceiling.  The next context Decimal above that rounded
+    value therefore lies above the exact exponential; the final comparison and
+    ``nextafter`` convert that proven endpoint outward to binary64.
+    """
 
     if value < 0.0 or not np.isfinite(value):
         raise ValueError("finite nonnegative exponent required")
     with localcontext() as context:
         context.prec = 80
-        context.rounding = ROUND_CEILING
         decimal_value = Decimal.from_float(float(value))
-        decimal_exponential = context.exp(decimal_value)
-    candidate = float(decimal_exponential)
-    if Decimal.from_float(candidate) < decimal_exponential:
+        nearest_exponential = context.exp(decimal_value)
+        decimal_upper = context.next_plus(nearest_exponential)
+    candidate = float(decimal_upper)
+    if Decimal.from_float(candidate) < decimal_upper:
         candidate = float(np.nextafter(candidate, np.inf))
     return candidate
 
@@ -8591,6 +8613,44 @@ def check_validated_ordinary_ivp_chain(
     )
 
 
+def _serialized_chart_problem_identity(
+    chart: object,
+) -> tuple[tuple[float, float, float], int] | None:
+    """Return the exact serialized three-body problem identity for one chart."""
+
+    masses = getattr(chart, "masses", None)
+    if not (
+        type(masses) is tuple
+        and len(masses) == 3
+        and all(
+            type(mass) is float and np.isfinite(mass) and mass > 0.0
+            for mass in masses
+        )
+    ):
+        return None
+
+    if isinstance(chart, OrdinaryTaylorChartCertificate):
+        dimension = chart.dimension
+    elif isinstance(chart, PlanarLeviCivitaBinaryChartCertificate):
+        dimension = 2
+    elif isinstance(chart, SpatialKSBinaryChartCertificate):
+        dimension = 3
+    elif isinstance(
+        chart,
+        (
+            TotalCollisionFuchsianStopChartCertificate,
+            TotalCollisionGeneralizedFuchsianStopChartCertificate,
+        ),
+    ):
+        dimension = chart.dimension
+    else:
+        return None
+
+    if type(dimension) is not int or dimension <= 0:
+        return None
+    return masses, dimension
+
+
 def check_ordinary_chart_transition(
     transition: OrdinaryChartTransitionCertificate,
     charts: Iterable[OrdinaryTaylorChartCertificate],
@@ -8631,6 +8691,21 @@ def check_ordinary_chart_transition(
         and source_chart.chart_type == "ordinary_taylor"
         and target_chart.chart_type == "ordinary_taylor"
     )
+    source_problem_identity = (
+        _serialized_chart_problem_identity(source_chart)
+        if source_chart is not None
+        else None
+    )
+    target_problem_identity = (
+        _serialized_chart_problem_identity(target_chart)
+        if target_chart is not None
+        else None
+    )
+    common_problem_identity = bool(
+        endpoint_charts_present
+        and source_problem_identity is not None
+        and source_problem_identity == target_problem_identity
+    )
 
     max_position_gap = np.inf
     max_velocity_gap = np.inf
@@ -8640,6 +8715,7 @@ def check_ordinary_chart_transition(
     if (
         endpoint_charts_present
         and chart_types_supported
+        and common_problem_identity
         and transition_type_supported
         and finite_tolerances
         and handoff_inside
@@ -8706,6 +8782,14 @@ def check_ordinary_chart_transition(
             "transition_chart_types_supported",
             chart_types_supported,
             "ordinary transition checker currently supports ordinary_taylor endpoints",
+        ),
+        CertificateCheckObligation(
+            "transition_common_problem_identity",
+            common_problem_identity,
+            (
+                f"source_problem_identity={source_problem_identity!r}; "
+                f"target_problem_identity={target_problem_identity!r}"
+            ),
         ),
         CertificateCheckObligation(
             "transition_type_supported",
@@ -8820,6 +8904,21 @@ def check_planar_levi_civita_transition(
         and _time_in_interval(source_chart.physical_time_interval, handoff_time)
         and _time_in_interval(target_chart.physical_time_interval, handoff_time)
     )
+    source_problem_identity = (
+        _serialized_chart_problem_identity(source_chart)
+        if source_chart is not None
+        else None
+    )
+    target_problem_identity = (
+        _serialized_chart_problem_identity(target_chart)
+        if target_chart is not None
+        else None
+    )
+    common_problem_identity = bool(
+        endpoint_charts_present
+        and source_problem_identity is not None
+        and source_problem_identity == target_problem_identity
+    )
 
     max_physical_time_gap = np.inf
     physical_time_match_certified = False
@@ -8831,6 +8930,7 @@ def check_planar_levi_civita_transition(
     if (
         endpoint_charts_present
         and endpoint_types_supported
+        and common_problem_identity
         and transition_type_supported
         and finite_tolerances
         and parameters_inside
@@ -8899,6 +8999,14 @@ def check_planar_levi_civita_transition(
             "transition_chart_types_supported",
             endpoint_types_supported,
             "LC transition checker supports ordinary_taylor <-> planar_levi_civita_binary",
+        ),
+        CertificateCheckObligation(
+            "transition_common_problem_identity",
+            common_problem_identity,
+            (
+                f"source_problem_identity={source_problem_identity!r}; "
+                f"target_problem_identity={target_problem_identity!r}"
+            ),
         ),
         CertificateCheckObligation(
             "transition_type_supported",
@@ -9576,6 +9684,18 @@ def check_chart_chain(
             for index in range(len(transition_ids))
         )
     )
+    listed_problem_identities = tuple(
+        _serialized_chart_problem_identity(chart_by_id[chart_id])
+        for chart_id in chart_ids
+        if chart_id in chart_by_id
+    )
+    common_problem_identity = bool(
+        chart_ids_present
+        and charts_present
+        and len(listed_problem_identities) == len(chart_ids)
+        and all(identity is not None for identity in listed_problem_identities)
+        and len(set(listed_problem_identities)) == 1
+    )
     chart_intervals = tuple(
         tuple(float(value) for value in getattr(chart_by_id[chart_id], "physical_time_interval", ()))
         for chart_id in chart_ids
@@ -9655,6 +9775,11 @@ def check_chart_chain(
             "chart_chain_transition_adjacency",
             transition_adjacency,
             f"chart_ids={chart_ids}; transition_ids={transition_ids}",
+        ),
+        CertificateCheckObligation(
+            "chart_chain_common_problem_identity",
+            common_problem_identity,
+            f"listed_problem_identities={listed_problem_identities!r}",
         ),
         CertificateCheckObligation(
             "chart_chain_intervals_finite",
@@ -12100,11 +12225,11 @@ def _max_interval_ordinary_newton_residual(
     positions = interval_array_series_eval(q, variable)
     velocities = interval_array_series_eval(v, variable)
     position_derivative = interval_array_series_eval(
-        _derivative_coefficients(q),
+        interval_array_derivative_coefficients(q),
         variable,
     )
     velocity_derivative = interval_array_series_eval(
-        _derivative_coefficients(v),
+        interval_array_derivative_coefficients(v),
         variable,
     )
     acceleration = _interval_newton_accelerations(positions, masses)
@@ -12126,10 +12251,10 @@ def _interval_ordinary_newton_residual_blocks(
     positions = interval_array_series_eval(q, variable)
     velocities = interval_array_series_eval(v, variable)
     position_derivative = interval_array_series_eval(
-        _derivative_coefficients(q), variable
+        interval_array_derivative_coefficients(q), variable
     )
     velocity_derivative = interval_array_series_eval(
-        _derivative_coefficients(v), variable
+        interval_array_derivative_coefficients(v), variable
     )
     acceleration = _interval_newton_accelerations(positions, masses)
     return (

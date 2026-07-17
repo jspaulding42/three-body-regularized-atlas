@@ -1477,12 +1477,17 @@ def planar_levi_civita_binary_chart_certificate_from_solution(
     tail_bound: float = 0.0,
     sample_count: int = 7,
     projection_rho_lower_bound: float = 1.0e-12,
+    physical_time_shift: float = 0.0,
     source: str = "regularized_binary_solution_serialization",
 ) -> PlanarLeviCivitaBinaryChartCertificate:
     """Serialize a planar LC binary Taylor chart into the certificate language."""
 
     physical = (
-        _interval_physical_time_range(solution, parameter_interval)
+        _interval_physical_time_range(
+            solution,
+            parameter_interval,
+            physical_time_shift=physical_time_shift,
+        )
         if physical_time_interval is None
         else tuple(float(value) for value in physical_time_interval)
     )
@@ -1503,7 +1508,10 @@ def planar_levi_civita_binary_chart_certificate_from_solution(
         third_offset_velocity_coefficients=_array_to_vector_tuple(
             solution.third_offset_velocity,
         ),
-        physical_time_coefficients=_array_to_scalar_tuple(solution.physical_time),
+        physical_time_coefficients=_shifted_scalar_coefficients(
+            solution.physical_time,
+            physical_time_shift,
+        ),
         parameter_interval=tuple(float(value) for value in parameter_interval),
         physical_time_interval=physical,
         coefficient_tolerance=float(coefficient_tolerance),
@@ -1814,19 +1822,12 @@ def planar_hybrid_chart_chain_certificates_from_solution(
             )
             local_parameter_step = float(getattr(step, "parameter_step", np.nan))
             parameter_interval = _zero_based_interval(local_parameter_step)
-            checked_physical_interval = _padded_interval(
-                _union_interval(
-                    physical_interval,
-                    _interval_physical_time_range(solution, parameter_interval),
-                )
-            )
             charts.append(
                 planar_levi_civita_binary_chart_certificate_from_solution(
                     solution,
                     certificate_id=f"{prefix}-lc-chart-{index}",
                     chart_id=f"{prefix}-lc-{index}",
                     parameter_interval=parameter_interval,
-                    physical_time_interval=checked_physical_interval,
                     coefficient_tolerance=float(coefficient_tolerance),
                     regularized_residual_tolerance=float(
                         regularized_residual_tolerance
@@ -1835,6 +1836,7 @@ def planar_hybrid_chart_chain_certificates_from_solution(
                     tail_bound=tail_bound,
                     sample_count=int(sample_count),
                     projection_rho_lower_bound=float(projection_rho_lower_bound),
+                    physical_time_shift=start_time,
                     source=source,
                 )
             )
@@ -2068,22 +2070,6 @@ def _ordered_pair(left: float, right: float) -> tuple[float, float]:
     left = float(left)
     right = float(right)
     return (min(left, right), max(left, right))
-
-
-def _padded_interval(interval: tuple[float, float]) -> tuple[float, float]:
-    lower, upper = (float(interval[0]), float(interval[1]))
-    radius = 64.0 * np.finfo(float).eps * max(1.0, abs(lower), abs(upper))
-    return (lower - radius, upper + radius)
-
-
-def _union_interval(
-    left: tuple[float, float],
-    right: tuple[float, float],
-) -> tuple[float, float]:
-    return (
-        min(float(left[0]), float(right[0])),
-        max(float(left[1]), float(right[1])),
-    )
 
 
 def _zero_based_interval(width: float) -> tuple[float, float]:

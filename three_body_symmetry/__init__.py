@@ -238,6 +238,17 @@ from .certificate_checker import (
     check_total_collision_generalized_fuchsian_stop_chart,
     verify_chart_certificates,
 )
+from .proof_carrying_continuation import (
+    CERTIFIED_TO_T,
+    UNRESOLVED,
+    OrdinaryStateEnclosure,
+    RawOrdinaryContinuationCertificate,
+    RawOrdinaryContinuationObligation,
+    RawOrdinaryContinuationReplayResult,
+    canonical_evidence_json,
+    check_raw_ordinary_continuation,
+    raw_ordinary_continuation_evidence_sha256,
+)
 from .open_time_atlas import (
     AnalyticTheoremCertificate,
     CompactIntervalAtlasOrStopCertificate,
@@ -591,6 +602,15 @@ from .error_budget import (
 )
 
 __all__ = [
+    "CERTIFIED_TO_T",
+    "UNRESOLVED",
+    "OrdinaryStateEnclosure",
+    "RawOrdinaryContinuationCertificate",
+    "RawOrdinaryContinuationObligation",
+    "RawOrdinaryContinuationReplayResult",
+    "canonical_evidence_json",
+    "check_raw_ordinary_continuation",
+    "raw_ordinary_continuation_evidence_sha256",
     "GaugeAwareOrdinaryToPlanarLCEnclosureTransitionCheckResult",
     "check_gauge_aware_ordinary_to_planar_lc_enclosure_transition",
     "PlanarLCGaugeGluingCertificate",
