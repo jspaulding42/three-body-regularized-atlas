@@ -1,0 +1,303 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jspaulding42/three-body-regularized-atlas/conformance/raw-v1/expected-result.schema.json",
+  "title": "Raw-v1 seed conformance expectation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "expectation_schema",
+    "case_id",
+    "input_file",
+    "input_sha256",
+    "expected_parse_outcome",
+    "expected_replay_outcome",
+    "source_replay_transcript",
+    "source_replay_sha256",
+    "facts"
+  ],
+  "properties": {
+    "expectation_schema": {
+      "const": "raw-v1-seed-expectation-v1"
+    },
+    "case_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "input_file": {
+      "type": "string",
+      "pattern": "^inputs/[A-Za-z0-9._-]+\\.(json|bin)$"
+    },
+    "input_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "expected_parse_outcome": {
+      "enum": ["ACCEPT", "REJECT"]
+    },
+    "expected_replay_outcome": {
+      "enum": ["CERTIFIED_TO_T", "UNRESOLVED", null]
+    },
+    "source_replay_transcript": {
+      "type": ["string", "null"]
+    },
+    "source_replay_sha256": {
+      "anyOf": [
+        {"$ref": "#/$defs/sha256"},
+        {"type": "null"}
+      ]
+    },
+    "facts": {
+      "anyOf": [
+        {"$ref": "#/$defs/facts"},
+        {"type": "null"}
+      ]
+    },
+    "mutation": {
+      "anyOf": [
+        {"$ref": "#/$defs/mutation"},
+        {"type": "null"}
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {"expected_parse_outcome": {"const": "REJECT"}},
+        "required": ["expected_parse_outcome"]
+      },
+      "then": {
+        "required": ["mutation"],
+        "properties": {
+          "expected_replay_outcome": {"type": "null"},
+          "source_replay_transcript": {"type": "null"},
+          "source_replay_sha256": {"type": "null"},
+          "facts": {"type": "null"},
+          "mutation": {"$ref": "#/$defs/mutation"}
+        }
+      },
+      "else": {
+        "properties": {
+          "expected_replay_outcome": {
+            "enum": ["CERTIFIED_TO_T", "UNRESOLVED"]
+          },
+          "source_replay_transcript": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source_replay_sha256": {"$ref": "#/$defs/sha256"},
+          "facts": {"$ref": "#/$defs/facts"},
+          "mutation": {"type": "null"}
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "fraction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["numerator", "denominator"],
+      "properties": {
+        "numerator": {
+          "type": "string",
+          "pattern": "^-?(0|[1-9][0-9]*)$"
+        },
+        "denominator": {
+          "type": "string",
+          "pattern": "^[1-9][0-9]*$"
+        }
+      }
+    },
+    "interval": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "prefixItems": [
+        {"$ref": "#/$defs/fraction"},
+        {"$ref": "#/$defs/fraction"}
+      ],
+      "items": false
+    },
+    "nullableInterval": {
+      "anyOf": [
+        {"$ref": "#/$defs/interval"},
+        {"type": "null"}
+      ]
+    },
+    "obligation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["obligation", "certified"],
+      "properties": {
+        "obligation": {"type": "string", "minLength": 1},
+        "certified": {"type": "boolean"}
+      }
+    },
+    "finalEnclosureSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enclosure_type",
+        "physical_time_interval",
+        "parameter_preimage_interval",
+        "position_shape",
+        "velocity_shape"
+      ],
+      "properties": {
+        "enclosure_type": {"type": "string", "minLength": 1},
+        "physical_time_interval": {"$ref": "#/$defs/interval"},
+        "parameter_preimage_interval": {"$ref": "#/$defs/interval"},
+        "position_shape": {"const": [3, 2]},
+        "velocity_shape": {"const": [3, 2]}
+      }
+    },
+    "retainedRegionSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "region_type",
+        "coordinate_system",
+        "physical_time_interval",
+        "parameter_interval",
+        "component_count",
+        "certified_segment_count",
+        "provenance_checker_id"
+      ],
+      "properties": {
+        "region_type": {"type": "string", "minLength": 1},
+        "coordinate_system": {"type": "string", "minLength": 1},
+        "physical_time_interval": {"$ref": "#/$defs/interval"},
+        "parameter_interval": {"$ref": "#/$defs/interval"},
+        "component_count": {"type": "integer", "minimum": 1},
+        "certified_segment_count": {"type": "integer", "minimum": 0},
+        "provenance_checker_id": {"type": "string", "minLength": 1}
+      }
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target_physical_time", "maximum_component_width"],
+      "properties": {
+        "target_physical_time": {"$ref": "#/$defs/fraction"},
+        "maximum_component_width": {"$ref": "#/$defs/fraction"}
+      }
+    },
+    "mutation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "base_input",
+        "base_input_sha256",
+        "operation",
+        "minimality",
+        "syntax_valid_json",
+        "generation"
+      ],
+      "properties": {
+        "base_input": {
+          "const": "inputs/success.raw.json"
+        },
+        "base_input_sha256": {
+          "const": "ede15b0f35cf741f542a6cd260470a93ee5ff85dc5ae2371db1b88819b821f11"
+        },
+        "operation": {"type": "string", "minLength": 1},
+        "minimality": {"type": "string", "minLength": 1},
+        "syntax_valid_json": {"type": "boolean"},
+        "generation": {
+          "enum": [
+            "apply_patch_canonical_copy_mutation",
+            "mechanical_no_newline_canonical_mutation",
+            "mechanical_binary_mutation"
+          ]
+        }
+      }
+    },
+    "facts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "certificate_id",
+        "theorem_evidence_sha256",
+        "request",
+        "certified_segment_count",
+        "failed_segment_index",
+        "failed_segment_missing_obligations",
+        "first_failed_obligation",
+        "top_level_obligations",
+        "segment_checker_ids",
+        "clock_vertex_count",
+        "cocycle_kinds",
+        "cocycle_pairs",
+        "current_chart_id",
+        "current_clock_origin_interval",
+        "covered_physical_time_interval",
+        "target_parameter_preimage_interval",
+        "maximum_final_component_width_present",
+        "final_enclosure_summary",
+        "retained_region_summaries"
+      ],
+      "properties": {
+        "certificate_id": {"type": "string", "minLength": 1},
+        "theorem_evidence_sha256": {"$ref": "#/$defs/sha256"},
+        "request": {"$ref": "#/$defs/request"},
+        "certified_segment_count": {"type": "integer", "minimum": 0},
+        "failed_segment_index": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "failed_segment_missing_obligations": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        },
+        "first_failed_obligation": {"type": ["string", "null"]},
+        "top_level_obligations": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/obligation"}
+        },
+        "segment_checker_ids": {
+          "type": "array",
+          "items": {"type": "string", "minLength": 1}
+        },
+        "clock_vertex_count": {"type": "integer", "minimum": 0},
+        "cocycle_kinds": {
+          "type": "array",
+          "items": {
+            "enum": ["ordinary_bridge_v1", "planar_lc_passage_v1"]
+          }
+        },
+        "cocycle_pairs": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "prefixItems": [
+              {"type": "integer", "minimum": 0, "maximum": 2},
+              {"type": "integer", "minimum": 0, "maximum": 2}
+            ],
+            "items": false,
+            "minItems": 2,
+            "maxItems": 2
+          }
+        },
+        "current_chart_id": {"type": "string", "minLength": 1},
+        "current_clock_origin_interval": {"$ref": "#/$defs/interval"},
+        "covered_physical_time_interval": {"$ref": "#/$defs/interval"},
+        "target_parameter_preimage_interval": {
+          "$ref": "#/$defs/nullableInterval"
+        },
+        "maximum_final_component_width_present": {"type": "boolean"},
+        "final_enclosure_summary": {
+          "anyOf": [
+            {"$ref": "#/$defs/finalEnclosureSummary"},
+            {"type": "null"}
+          ]
+        },
+        "retained_region_summaries": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/retainedRegionSummary"}
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "expectation_schema": "raw-v1-seed-expectation-v1",
+  "case_id": "failed-revisit",
+  "input_file": "inputs/failed-revisit.raw.json",
+  "input_sha256": "c6830919726c22fbca6e45d5781b2465e54876bfa89c25bc26e97284ff918727",
+  "expected_parse_outcome": "ACCEPT",
+  "expected_replay_outcome": "UNRESOLVED",
+  "source_replay_transcript": "../../artifacts/v0.3.0-review/planar-chain/failed-revisit.replay.json",
+  "source_replay_sha256": "4416fb57383a09890f5a6c73a75898a5c53c190baf6cb55d3574d67589471b21",
+  "facts": {
+    "certificate_id": "review-v03:chain:failed-revisit",
+    "theorem_evidence_sha256": "c6830919726c22fbca6e45d5781b2465e54876bfa89c25bc26e97284ff918727",
+    "request": {
+      "target_physical_time": {
+        "numerator": "2308213854898857",
+        "denominator": "288230376151711744"
+      },
+      "maximum_component_width": {
+        "numerator": "3602879701896397",
+        "denominator": "36028797018963968"
+      }
+    },
+    "certified_segment_count": 4,
+    "failed_segment_index": 4,
+    "failed_segment_missing_obligations": [
+      "carried_lc_exit_target_initial_ball_contains_complete_projection"
+    ],
+    "first_failed_obligation": "segment[4]:carried_lc_exit_target_initial_ball_contains_complete_projection",
+    "top_level_obligations": [
+      {"obligation": "raw_planar_chain_outer_schema_exact", "certified": true},
+      {"obligation": "raw_planar_chain_global_identifier_namespace_unique", "certified": true},
+      {"obligation": "raw_planar_chain_canonical_evidence_serializable", "certified": true},
+      {"obligation": "raw_planar_chain_requested_target_finite", "certified": true},
+      {"obligation": "raw_planar_chain_requested_width_admissible", "certified": true},
+      {"obligation": "raw_planar_chain_root_exact_point_left_anchor", "certified": true},
+      {"obligation": "raw_planar_chain_root_freshly_certified", "certified": true},
+      {"obligation": "raw_planar_chain_all_segments_freshly_folded", "certified": false},
+      {"obligation": "raw_planar_chain_target_not_before_current_left_clock", "certified": false},
+      {"obligation": "raw_planar_chain_fixed_time_preimage_exactly_derived", "certified": false},
+      {"obligation": "raw_planar_chain_fixed_time_preimage_inside_forward_current_domain", "certified": false},
+      {"obligation": "raw_planar_chain_target_state_exactly_evaluated_and_inflated", "certified": false},
+      {"obligation": "raw_planar_chain_final_component_width_within_requested_bound", "certified": false}
+    ],
+    "segment_checker_ids": [
+      "carried_ordinary_bridge_checker_v1",
+      "carried_planar_lc_exit_checker_v2",
+      "carried_planar_lc_exit_checker_v2",
+      "carried_planar_lc_exit_checker_v2"
+    ],
+    "clock_vertex_count": 5,
+    "cocycle_kinds": [
+      "ordinary_bridge_v1",
+      "planar_lc_passage_v1",
+      "planar_lc_passage_v1",
+      "planar_lc_passage_v1"
+    ],
+    "cocycle_pairs": [[0, 1], [0, 2], [1, 2]],
+    "current_chart_id": "review-v03:n:chart:4",
+    "current_clock_origin_interval": [
+      {"numerator": "-2687537127277627", "denominator": "36893488147419103232"},
+      {"numerator": "3215439876808461", "denominator": "36893488147419103232"}
+    ],
+    "covered_physical_time_interval": [
+      {"numerator": "0", "denominator": "1"},
+      {"numerator": "34205951020141477", "denominator": "36893488147419103232"}
+    ],
+    "target_parameter_preimage_interval": null,
+    "maximum_final_component_width_present": false,
+    "final_enclosure_summary": null,
+    "retained_region_summaries": [
+      {
+        "region_type": "certified_lifted_lc_right_frontier",
+        "coordinate_system": "planar_lc_lifted_14",
+        "physical_time_interval": [
+          {"numerator": "-2286898727681121", "denominator": "2305843009213693952"},
+          {"numerator": "6936495793122387", "denominator": "2305843009213693952"}
+        ],
+        "parameter_interval": [
+          {"numerator": "1", "denominator": "1048576"},
+          {"numerator": "1", "denominator": "1048576"}
+        ],
+        "component_count": 14,
+        "certified_segment_count": 4,
+        "provenance_checker_id": "raw_planar_continuation_chain_replay_checker_v2"
+      }
+    ]
+  }
+}

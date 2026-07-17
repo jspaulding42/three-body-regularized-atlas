@@ -474,7 +474,12 @@ def strict_load_raw_planar_chain_bytes(
         certificate = RawPlanarChainCertificate.from_dict(value)
     except (TypeError, ValueError) as error:
         raise ReviewArtifactError(f"raw evidence schema rejected: {error}") from error
-    expected = canonical_planar_chain_evidence_json(certificate).encode("utf-8")
+    try:
+        expected = canonical_planar_chain_evidence_json(certificate).encode("utf-8")
+    except UnicodeEncodeError as error:
+        raise ReviewArtifactError(
+            "raw evidence contains a lone Unicode surrogate"
+        ) from error
     if canonical_payload != expected:
         raise ReviewArtifactError("raw evidence bytes are noncanonical")
     return certificate

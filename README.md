@@ -102,10 +102,25 @@ python -m pytest -q \
 The active successor work is defined by the
 [`independent-verifier architecture`](docs/independent-verifier-architecture.md),
 the normative [`raw-v1 certificate specification`](docs/raw-v1-certificate-specification.md),
+the [`Rust raw-v1 schema map`](docs/raw-v1-rust-schema-map.md),
 and the [`v0.4 release gates`](docs/v0.4-independent-verification-release-gates.md).
-The standalone [`Rust v1 crate`](verifiers/rust-v1/) currently implements only
-exact numeric primitives; it is **not yet an independent certificate
-verifier** and makes no certificate-level claim.
+The standalone [`Rust v1 crate`](verifiers/rust-v1/) now has a resource-bounded
+strict JSON and canonical-byte layer, exact binary64/dyadic and rational
+interval primitives, and an explicit `V03Compatible` typed decoder for the
+complete finite v0.3 record grammar. The implementation-neutral
+[`raw-v1 seed corpus`](conformance/raw-v1/README.md) currently contains two
+accepted baseline payloads and sixteen isolated rejection mutations. The
+public Python admission API and the independent Rust integration suite both
+enforce those 18 parser classifications.
+
+This remains foundation work, **not yet an independent certificate verifier**.
+The Rust crate does not replay the three-body equations, chart/tube or
+transition obligations, chain fold, hashes, semantic result, or obligation
+ledger. The corpus is marked `seed_incomplete` and lacks the required
+semantic, numeric-boundary, and fold-boundary coverage. Cross-language numeric
+canonical rendering and the Rust toolchain pin also remain open under
+`OPEN-V1-01`. The conformance and independent-verifier release gates therefore
+remain failed, and no certificate-level or independent-replay claim is made.
 
 The broader historical research program and experimental machinery are
 retained below for auditability.

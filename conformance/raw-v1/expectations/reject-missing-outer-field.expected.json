@@ -1,0 +1,19 @@
+{
+  "expectation_schema": "raw-v1-seed-expectation-v1",
+  "case_id": "reject-missing-outer-field",
+  "input_file": "inputs/reject-missing-outer-field.json",
+  "input_sha256": "4e2dcd608228a5b596c58e3d9deacb50eeb962df9ca3f7689848ef80b438737b",
+  "expected_parse_outcome": "REJECT",
+  "expected_replay_outcome": null,
+  "source_replay_transcript": null,
+  "source_replay_sha256": null,
+  "facts": null,
+  "mutation": {
+    "base_input": "inputs/success.raw.json",
+    "base_input_sha256": "ede15b0f35cf741f542a6cd260470a93ee5ff85dc5ae2371db1b88819b821f11",
+    "operation": "remove the final required outer source member",
+    "minimality": "one complete required outer member is removed",
+    "syntax_valid_json": true,
+    "generation": "mechanical_no_newline_canonical_mutation"
+  }
+}

@@ -1,0 +1,321 @@
+{
+  "manifest_schema": "raw-v1-seed-conformance-manifest-v1",
+  "corpus_version": "raw-v1-seed-1",
+  "certificate_schema_version": 1,
+  "expectation_schema": "raw-v1-seed-expectation-v1",
+  "status": "seed_incomplete",
+  "hash_algorithm": "sha256",
+  "hash_scope": "every corpus file except manifest.json; a manifest cannot contain its own stable cryptographic hash",
+  "manifest_self_hash": null,
+  "provenance": {
+    "source_artifact_version": "v0.3.0-review",
+    "source_artifact_manifest": "../../artifacts/v0.3.0-review/planar-chain/manifest.json",
+    "source_artifact_manifest_sha256": "2b7e88bd8834fa68fb6a70d0b7e7b8ad2363a01f619ea450b880b791b6909976",
+    "normative_specification": "../../docs/raw-v1-certificate-specification.md",
+    "normative_specification_sha256": "11ef39f43014e749bbd09427d6f677f26eeada072704ea7412e83911f19fd1db",
+    "expectation_method": "manual transcription and jq comparison against checked-in replay transcripts; no Python checker import",
+    "rejection_tranche_method": "single mutations of inputs/success.raw.json; no-newline and invalid-UTF-8 fixtures generated mechanically, trailing-newline fixture created through apply_patch; exact operations live in paired expectations"
+  },
+  "files": [
+    {
+      "path": "README.md",
+      "role": "corpus_documentation",
+      "bytes": 6476,
+      "sha256": "cb449eb09c44aa5ea771eb990ba7abbc1b60827520e64f3e102a869d13895907"
+    },
+    {
+      "path": "expected-result.schema.json",
+      "role": "neutral_expectation_schema",
+      "bytes": 8927,
+      "sha256": "c81eb681b87f313ef2465d85b8b86d099924f2b7756c1c64d625526f8e7de03b"
+    },
+    {
+      "path": "inputs/failed-revisit.raw.json",
+      "role": "canonical_raw_input",
+      "bytes": 51176,
+      "sha256": "c6830919726c22fbca6e45d5781b2465e54876bfa89c25bc26e97284ff918727",
+      "copied_from": "../../artifacts/v0.3.0-review/planar-chain/failed-revisit.raw.json",
+      "copy_identity": "byte-for-byte, including no trailing newline"
+    },
+    {
+      "path": "inputs/reject-alternate-real-spelling.json",
+      "role": "parser_rejection_input",
+      "bytes": 51186,
+      "sha256": "399149365959ce41413482232e78736e65db0a73b65e6d26466e7b3e85a7f0f2",
+      "base_input": "inputs/success.raw.json",
+      "mutation_expectation": "expectations/reject-alternate-real-spelling.expected.json",
+      "generation": "mechanical_no_newline_canonical_mutation"
+    },
+    {
+      "path": "inputs/reject-decoded-duplicate-unicode-key.json",
+      "role": "parser_rejection_input",
+      "bytes": 51219,
+      "sha256": "b195c5fbcc1b57486c92a5c99baee535e4104005061cfbda806605a55f5258f2",
+      "base_input": "inputs/success.raw.json",
+      "mutation_expectation": "expectations/reject-decoded-duplicate-unicode-key.expected.json",
+      "generation": "mechanical_no_newline_canonical_mutation"
+    },
+    {
+      "path": "inputs/reject-duplicate-outer-key.json",
+      "role": "parser_rejection_input",
+      "bytes": 51214,
+      "sha256": "5485eccfc8971dfc2ececd42a6a88387333703e6429254329d9bf279730e9ff5",
+      "base_input": "inputs/success.raw.json",
+      "mutation_expectation": "expectations/reject-duplicate-outer-key.expected.json",
+      "generation": "mechanical_no_newline_canonical_mutation"
+    },
+    {
+      "path": "inputs/reject-invalid-utf8.bin",
+      "role": "parser_rejection_input",
+      "bytes": 51170,
+      "sha256": "f83579f6b92fbcbf33eb86a7518ce15db8b484e15874de7d14c61b07c9e11766",
+      "base_input": "inputs/success.raw.json",
+      "mutation_expectation": "expectations/reject-invalid-utf8.expected.json",
+      "generation": "mechanical_binary_mutation"
+    },
+    {
+      "path": "inputs/reject-leading-whitespace.json",
+      "role": "parser_rejection_input",
+      "bytes": 51171,
+      "sha256": "c2a58237ffc72f493c98ea70c4f4faf2390b1fc339371ce1c7573628851cfa3c",
+      "base_input": "inputs/success.raw.json",
+      "mutation_expectation": "expectations/reject-leading-whitespace.expected.json",
+      "generation": "mechanical_no_newline_canonical_mutation"
+    },
+    {
+      "path": "inputs/reject-lone-surrogate.json",
+      "role": "parser_rejection_input",
+      "bytes": 51169,
+      "sha256": "4fe66de5abd9ee075f6132e274af7bdcdfbc0d97fbb7d44a3c58305e75d3a26c",
+      "base_input": "inputs/success.raw.json",
+      "mutation_expectation": "expectations/reject-lone-surrogate.expected.json",
+      "generation": "mechanical_no_newline_canonical_mutation"
+    },
+    {
+      "path": "inputs/reject-missing-outer-field.json",
+      "role": "parser_rejection_input",
+      "bytes": 51126,
+      "sha256": "4e2dcd608228a5b596c58e3d9deacb50eeb962df9ca3f7689848ef80b438737b",
+      "base_input": "inputs/success.raw.json",
+      "mutation_expectation": "expectations/reject-missing-outer-field.expected.json",
+      "generation": "mechanical_no_newline_canonical_mutation"
+    },
+    {
+      "path": "inputs/reject-nonfinite-token.json",
+      "role": "parser_rejection_input",
+      "bytes": 51153,
+      "sha256": "354eb40a7aba19d59f1cf1f207e4717fee856009288e00ad70b4815e60b78d1a",
+      "base_input": "inputs/success.raw.json",
+      "mutation_expectation": "expectations/reject-nonfinite-token.expected.json",
+      "generation": "mechanical_no_newline_canonical_mutation"
+    },
+    {
+      "path": "inputs/reject-overflow-real.json",
+      "role": "parser_rejection_input",
+      "bytes": 51155,
+      "sha256": "48f7bebf69f7a6232c815d66ed12e525eb6463bc80c95a79506448a042e28d3f",
+      "base_input": "inputs/success.raw.json",
+      "mutation_expectation": "expectations/reject-overflow-real.expected.json",
+      "generation": "mechanical_no_newline_canonical_mutation"
+    },
+    {
+      "path": "inputs/reject-trailing-newline.json",
+      "role": "parser_rejection_input",
+      "bytes": 51171,
+      "sha256": "9a9a364326af54d117c7a44b31df7c44606646d97a933a02c2e135f950c624a1",
+      "base_input": "inputs/success.raw.json",
+      "mutation_expectation": "expectations/reject-trailing-newline.expected.json",
+      "generation": "apply_patch_canonical_copy_mutation"
+    },
+    {
+      "path": "inputs/reject-unknown-outer-field.json",
+      "role": "parser_rejection_input",
+      "bytes": 51185,
+      "sha256": "914bef779c76598c74830895d1386ed6b20e81e47d84dc10c095864b86c1a5c8",
+      "base_input": "inputs/success.raw.json",
+      "mutation_expectation": "expectations/reject-unknown-outer-field.expected.json",
+      "generation": "mechanical_no_newline_canonical_mutation"
+    },
+    {
+      "path": "inputs/reject-unknown-segment-tag.json",
+      "role": "parser_rejection_input",
+      "bytes": 51170,
+      "sha256": "8cbfc2dc63ba20af2401cd0258c7d2b2a23061b2e11dd9a34ba4e8ace6ba81b2",
+      "base_input": "inputs/success.raw.json",
+      "mutation_expectation": "expectations/reject-unknown-segment-tag.expected.json",
+      "generation": "mechanical_no_newline_canonical_mutation"
+    },
+    {
+      "path": "inputs/reject-unsorted-outer-keys.json",
+      "role": "parser_rejection_input",
+      "bytes": 51170,
+      "sha256": "f9a18c276f5717925ce7e410bd69f6ccd6a4ff19829c74d8001e28c871473593",
+      "base_input": "inputs/success.raw.json",
+      "mutation_expectation": "expectations/reject-unsorted-outer-keys.expected.json",
+      "generation": "mechanical_no_newline_canonical_mutation"
+    },
+    {
+      "path": "inputs/reject-wrong-interval-length.json",
+      "role": "parser_rejection_input",
+      "bytes": 51148,
+      "sha256": "27d155afb4c524a3a8ba5a2860faf589a931bee403348836e110266dfbb22187",
+      "base_input": "inputs/success.raw.json",
+      "mutation_expectation": "expectations/reject-wrong-interval-length.expected.json",
+      "generation": "mechanical_no_newline_canonical_mutation"
+    },
+    {
+      "path": "inputs/reject-wrong-outer-scalar-class.json",
+      "role": "parser_rejection_input",
+      "bytes": 51172,
+      "sha256": "73ec6ec66de24bd8d3eee504bbe138f7b80fb78f71f22f5ff35b80e17bf1cdaa",
+      "base_input": "inputs/success.raw.json",
+      "mutation_expectation": "expectations/reject-wrong-outer-scalar-class.expected.json",
+      "generation": "mechanical_no_newline_canonical_mutation"
+    },
+    {
+      "path": "inputs/reject-wrong-pair-length.json",
+      "role": "parser_rejection_input",
+      "bytes": 51168,
+      "sha256": "80f98122d584ef736b0a03dfb97fa990a5351a67328cf6ca9f67097b87aa121c",
+      "base_input": "inputs/success.raw.json",
+      "mutation_expectation": "expectations/reject-wrong-pair-length.expected.json",
+      "generation": "mechanical_no_newline_canonical_mutation"
+    },
+    {
+      "path": "inputs/success.raw.json",
+      "role": "canonical_raw_input",
+      "bytes": 51170,
+      "sha256": "ede15b0f35cf741f542a6cd260470a93ee5ff85dc5ae2371db1b88819b821f11",
+      "copied_from": "../../artifacts/v0.3.0-review/planar-chain/success.raw.json",
+      "copy_identity": "byte-for-byte, including no trailing newline"
+    },
+    {
+      "path": "expectations/failed-revisit.expected.json",
+      "role": "hand_auditable_expectation",
+      "bytes": 4201,
+      "sha256": "0f6947756eceefa590121a854cc123dc2112a3f47ff033d5461cbc37879f7cfe",
+      "facts_transcribed_from": "../../artifacts/v0.3.0-review/planar-chain/failed-revisit.replay.json",
+      "source_replay_sha256": "4416fb57383a09890f5a6c73a75898a5c53c190baf6cb55d3574d67589471b21"
+    },
+    {
+      "path": "expectations/reject-alternate-real-spelling.expected.json",
+      "role": "parser_rejection_expectation",
+      "bytes": 845,
+      "sha256": "de7575000a732aca595c40888532907fd7056eeb9949ff8f98d24646b717441b",
+      "input_file": "inputs/reject-alternate-real-spelling.json"
+    },
+    {
+      "path": "expectations/reject-decoded-duplicate-unicode-key.expected.json",
+      "role": "parser_rejection_expectation",
+      "bytes": 870,
+      "sha256": "3516d24a7821cbf5ee76970339ae2896d43f272a6db192490c4749930533b6f1",
+      "input_file": "inputs/reject-decoded-duplicate-unicode-key.json"
+    },
+    {
+      "path": "expectations/reject-duplicate-outer-key.expected.json",
+      "role": "parser_rejection_expectation",
+      "bytes": 850,
+      "sha256": "3b8d02f1183a9aea2224a2184665637a432e98dfc5bace2df57cb78c5536f9f4",
+      "input_file": "inputs/reject-duplicate-outer-key.json"
+    },
+    {
+      "path": "expectations/reject-invalid-utf8.expected.json",
+      "role": "parser_rejection_expectation",
+      "bytes": 809,
+      "sha256": "b4ccc586d6dc857347c870d8bcda90f99b43111f6af78805dee80e9790a4e3bf",
+      "input_file": "inputs/reject-invalid-utf8.bin"
+    },
+    {
+      "path": "expectations/reject-leading-whitespace.expected.json",
+      "role": "parser_rejection_expectation",
+      "bytes": 796,
+      "sha256": "dde1909c4aa07a85507d5e7e11c0ffa93df706a4eed5110f29dc42516b5b151f",
+      "input_file": "inputs/reject-leading-whitespace.json"
+    },
+    {
+      "path": "expectations/reject-lone-surrogate.expected.json",
+      "role": "parser_rejection_expectation",
+      "bytes": 812,
+      "sha256": "759b76aeab526d8fa83839b6fad91b784b371c0839f9d235e93a1375c2027393",
+      "input_file": "inputs/reject-lone-surrogate.json"
+    },
+    {
+      "path": "expectations/reject-missing-outer-field.expected.json",
+      "role": "parser_rejection_expectation",
+      "bytes": 786,
+      "sha256": "12c309f3b4dab3d197b0b365619122a21184047cfaeffcba6db37fd81e85448e",
+      "input_file": "inputs/reject-missing-outer-field.json"
+    },
+    {
+      "path": "expectations/reject-nonfinite-token.expected.json",
+      "role": "parser_rejection_expectation",
+      "bytes": 805,
+      "sha256": "57527adda1155d4d20c40113a35daf7ed1572e403fdbcd73b608c39b7b1c1ebe",
+      "input_file": "inputs/reject-nonfinite-token.json"
+    },
+    {
+      "path": "expectations/reject-overflow-real.expected.json",
+      "role": "parser_rejection_expectation",
+      "bytes": 810,
+      "sha256": "d594d6073e578378c79be2ede2f458daef7d72540a509fcc87ebff26e60edfa7",
+      "input_file": "inputs/reject-overflow-real.json"
+    },
+    {
+      "path": "expectations/reject-trailing-newline.expected.json",
+      "role": "parser_rejection_expectation",
+      "bytes": 790,
+      "sha256": "1acceabd437f90d165cc17be7a690552cd18756dec3a22333f0d1cdb1737ea4d",
+      "input_file": "inputs/reject-trailing-newline.json"
+    },
+    {
+      "path": "expectations/reject-unknown-outer-field.expected.json",
+      "role": "parser_rejection_expectation",
+      "bytes": 816,
+      "sha256": "d6153cc7c67e868ccf0ad305b8db8a01ce9a409957c2bb9932a67c0e34f38a51",
+      "input_file": "inputs/reject-unknown-outer-field.json"
+    },
+    {
+      "path": "expectations/reject-unknown-segment-tag.expected.json",
+      "role": "parser_rejection_expectation",
+      "bytes": 824,
+      "sha256": "4640ca1a57d8396d592d9e2824403c87b05114903659c6011fc5b7e34ba19b84",
+      "input_file": "inputs/reject-unknown-segment-tag.json"
+    },
+    {
+      "path": "expectations/reject-unsorted-outer-keys.expected.json",
+      "role": "parser_rejection_expectation",
+      "bytes": 834,
+      "sha256": "351db82f9b64c732c81087203144eb6423f02cee5ceec56b97bca9756c466a6c",
+      "input_file": "inputs/reject-unsorted-outer-keys.json"
+    },
+    {
+      "path": "expectations/reject-wrong-interval-length.expected.json",
+      "role": "parser_rejection_expectation",
+      "bytes": 840,
+      "sha256": "9376f98bba1b22caada47cc51d0dc99f240e90eb1bec406e419b9629221dec06",
+      "input_file": "inputs/reject-wrong-interval-length.json"
+    },
+    {
+      "path": "expectations/reject-wrong-outer-scalar-class.expected.json",
+      "role": "parser_rejection_expectation",
+      "bytes": 830,
+      "sha256": "25486ebd9919046e4ba67a50f7dd619d38306a3920634cca4eade7623bb50a29",
+      "input_file": "inputs/reject-wrong-outer-scalar-class.json"
+    },
+    {
+      "path": "expectations/reject-wrong-pair-length.expected.json",
+      "role": "parser_rejection_expectation",
+      "bytes": 804,
+      "sha256": "afdb8f47dc01fa06c32e6c151ea7184c9710665e6d81f035b3fd6c9cd83b8374",
+      "input_file": "inputs/reject-wrong-pair-length.json"
+    },
+    {
+      "path": "expectations/success.expected.json",
+      "role": "hand_auditable_expectation",
+      "bytes": 4156,
+      "sha256": "a74a98e4ebe0668e310a30e9aa43e8f7babf80e8021f4e18c47f384dc157046b",
+      "facts_transcribed_from": "../../artifacts/v0.3.0-review/planar-chain/success.replay.json",
+      "source_replay_sha256": "4d1cfa50fdb14b2a4a1d19985c7435f974b63e381b02a3423be5ce88b234a25c"
+    }
+  ]
+}

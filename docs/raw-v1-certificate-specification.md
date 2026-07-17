@@ -55,9 +55,11 @@ parameters, tolerances, bounds, or radii are `F`.  `schema_version`,
 `B`.  JSON `null` is not admitted in any raw-v1 field.
 
 The strict byte loader MUST reject nonfinite numbers, including `NaN`,
-`Infinity`, and values whose parsing overflows to infinity.  Every accepted
-mass MUST be strictly positive.  Further sign requirements are stated with
-their obligations.
+`Infinity`, and values whose parsing overflows to infinity.  Mass positivity
+is a replay obligation, not byte grammar: a canonical negative finite `F`
+mass parses but MUST produce `UNRESOLVED`; every mass in a certified replay
+MUST be strictly positive.  Further sign requirements are likewise stated
+with their replay obligations unless a parser rule is named explicitly.
 
 ### 1.2 Canonical JSON evidence
 
@@ -125,12 +127,26 @@ remove the direct-object divergence or define it separately.
 
 The field sets and scalar/container classes below are parser grammar.  Array
 lengths and matrix dimensions shown in brackets are the shapes required for
-successful replay unless stated otherwise.  The v0.3 coercing parser preserves
-some nonconforming array lengths (notably mass, coefficient, and state
-matrices) through canonical round trip; those records parse and later become
-`UNRESOLVED`.  By contrast, wrong-length interval and pair helpers normalize
-to sentinels and consequently fail canonical round trip.  This uneven boundary
-is one reason OPEN-V1-12 calls for a formal parser schema.
+successful replay unless stated otherwise.  The v0.3-compatible boundary is:
+
+- mass arrays, root position/velocity matrices, ordinary coefficient tensors,
+  the six LC vector-coefficient blocks, and the two LC scalar-coefficient
+  series may have arbitrary or ragged array lengths at parse time; a shape
+  mismatch becomes `UNRESOLVED` during replay;
+- every chart parameter/physical-time interval and every LC pair must have
+  exactly two elements, because the v0.3 coercing helper otherwise substitutes
+  a sentinel and the required canonical round trip fails; and
+- the array nesting and the scalar class of every leaf remain parser grammar.
+  Replacing an expected nested array with a scalar/object, or an `F` leaf with
+  an `I`/`B`, is parser rejection rather than a wrong-length replay failure.
+
+The exhaustive field-by-field boundary and proposed Rust types are recorded
+in [`raw-v1-rust-schema-map.md`](raw-v1-rust-schema-map.md).  The v0.4 raw-v1
+release profile must retain this v0.3-compatible classification so parser
+rejection versus `UNRESOLVED` can be compared across implementations.  A
+strict-shape profile is an experimental raw-v2 candidate unless both
+verifiers and the frozen corpus are deliberately migrated together.  This
+historical unevenness is one reason OPEN-V1-12 remains a release gate.
 
 The complete chart grammar is
 
@@ -209,9 +225,20 @@ sample_count:I, source:S
 ```
 
 Here `d >= 2`; both coefficient arrays MUST have the same shape.
-`chart_type` MUST equal `ordinary_taylor`; identifiers and source MUST be
-nonempty; intervals MUST be strictly increasing; tolerances and tail bound
-MUST be nonnegative; and `sample_count >= 1`.
+For primitive ordinary-chart certification, `chart_type` MUST equal
+`ordinary_taylor`; identifiers and source MUST be nonempty; intervals MUST be
+strictly increasing; tolerances and tail bound MUST be nonnegative; and
+`sample_count >= 1`.  These are replay obligations, not byte grammar.
+
+The chain does not consume the primitive ordinary-chart ledger at every
+vertex.  In particular, an ordinary bridge proves local existence with its
+fresh a-posteriori tube and checks only the finite chart schema needed for
+that theorem; its schema admits finite negative declared chart tolerances.
+The v0.4 root consumes the primitive chart ledger after the OPEN-V1-05 repair,
+and LC entry explicitly consumes its source ordinary-chart ledger.  A
+cross-language verifier must reproduce the ledger actually required at each
+composition surface rather than silently promote every ordinary vertex to a
+primitive-chart claim.
 
 The outer coefficient index is the raw monomial degree:
 
@@ -986,9 +1013,13 @@ verifier MUST NOT silently invent answers to them and claim exact v0.3 parity.
    be made explicit in a future schema or the redundant field should be
    removed from chain vertices.
 8. **OPEN-V1-12 — parser schema.**  Nested Python `from_dict` coercions plus a
-   canonical round trip indirectly enforce scalar types.  A portable verifier
-   should be generated from a formal JSON Schema with explicit exact-length
-   array constraints.
+   canonical round trip indirectly enforce scalar types and impose the uneven
+   shape boundary enumerated in Section 2.  The implementation map
+   [`raw-v1-rust-schema-map.md`](raw-v1-rust-schema-map.md) now inventories
+   every field and classifies every array family, but this gap remains open
+   until the independent typed decoder and portable rejection/`UNRESOLVED`
+   corpus pass.  A schema that makes every displayed bracket length a parser
+   constraint would not be v0.3-compatible raw-v1.
 9. **OPEN-V1-13 — gauge tie-break.**  Gauge compatibility and existence of a
    containing complement are semantically defined, but the deterministic
    assignment choice used in review transcripts is not specified

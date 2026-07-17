@@ -95,6 +95,37 @@ dual value consists of one rational interval and a fixed-size interval
 gradient. Vector fields are expressed once over the dual operations so the
 Jacobian bound is derived independently from the Python implementation.
 
+## Implementation status at the current checkpoint
+
+The standalone Rust crate now implements a strict, resource-bounded JSON byte
+layer, duplicate-key and canonical-byte rejection, exact decimal-to-binary64
+nearest-even validation, exact binary64-to-dyadic decoding, arbitrary-size
+rational intervals and Horner evaluation, and exact-postcondition dyadic
+square-root enclosures. It also has an explicit `V03Compatible` typed decoder
+for the complete finite v0.3 raw-v1 record grammar. The record-by-record parser
+boundary is documented in the
+[`Rust schema map`](raw-v1-rust-schema-map.md).
+
+The implementation-neutral
+[`raw-v1 seed corpus`](../conformance/raw-v1/README.md) contains two accepted
+v0.3 baseline payloads and sixteen single-mutation rejection payloads, with
+neutral expectations and file hashes. The public Python admission API and an
+explicit Rust integration table both enforce the same 2-accept/16-reject
+classification. Its manifest deliberately says `seed_incomplete`: it does not
+yet cover semantic failures, numeric boundaries, or the
+root/fold/LC-entry/LC-tube/LC-exit/fixed-time result boundaries required for
+release.
+
+Delivery slices 1 and 2 are therefore only partial. `OPEN-V1-01` remains open
+because the tested Rust float rendering path is not yet a portable normative
+shortest-decimal algorithm and the Rust toolchain is not pinned. Raw SHA-256,
+the exponential and mass-coefficient kernels, interval automatic
+differentiation, all ordinary/LC equations and chart obligations, chain-fold
+semantics, clock and gauge logic, the obligation ledger, and the semantic
+result serializer are not implemented. No slice beyond the byte/schema and
+partial numeric foundations is complete, and neither the conformance gate nor
+the independent-verifier gate passes at this checkpoint.
+
 ## Delivery slices
 
 1. **Normative wire and arithmetic specification.** Freeze exact field sets,

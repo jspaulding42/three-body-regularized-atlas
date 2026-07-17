@@ -1,0 +1,87 @@
+{
+  "expectation_schema": "raw-v1-seed-expectation-v1",
+  "case_id": "success",
+  "input_file": "inputs/success.raw.json",
+  "input_sha256": "ede15b0f35cf741f542a6cd260470a93ee5ff85dc5ae2371db1b88819b821f11",
+  "expected_parse_outcome": "ACCEPT",
+  "expected_replay_outcome": "CERTIFIED_TO_T",
+  "source_replay_transcript": "../../artifacts/v0.3.0-review/planar-chain/success.replay.json",
+  "source_replay_sha256": "4d1cfa50fdb14b2a4a1d19985c7435f974b63e381b02a3423be5ce88b234a25c",
+  "facts": {
+    "certificate_id": "review-v03:chain:success",
+    "theorem_evidence_sha256": "ede15b0f35cf741f542a6cd260470a93ee5ff85dc5ae2371db1b88819b821f11",
+    "request": {
+      "target_physical_time": {
+        "numerator": "2308213854898857",
+        "denominator": "288230376151711744"
+      },
+      "maximum_component_width": {
+        "numerator": "3602879701896397",
+        "denominator": "36028797018963968"
+      }
+    },
+    "certified_segment_count": 5,
+    "failed_segment_index": null,
+    "failed_segment_missing_obligations": [],
+    "first_failed_obligation": null,
+    "top_level_obligations": [
+      {"obligation": "raw_planar_chain_outer_schema_exact", "certified": true},
+      {"obligation": "raw_planar_chain_global_identifier_namespace_unique", "certified": true},
+      {"obligation": "raw_planar_chain_canonical_evidence_serializable", "certified": true},
+      {"obligation": "raw_planar_chain_requested_target_finite", "certified": true},
+      {"obligation": "raw_planar_chain_requested_width_admissible", "certified": true},
+      {"obligation": "raw_planar_chain_root_exact_point_left_anchor", "certified": true},
+      {"obligation": "raw_planar_chain_root_freshly_certified", "certified": true},
+      {"obligation": "raw_planar_chain_all_segments_freshly_folded", "certified": true},
+      {"obligation": "raw_planar_chain_target_not_before_current_left_clock", "certified": true},
+      {"obligation": "raw_planar_chain_fixed_time_preimage_exactly_derived", "certified": true},
+      {"obligation": "raw_planar_chain_fixed_time_preimage_inside_forward_current_domain", "certified": true},
+      {"obligation": "raw_planar_chain_target_state_exactly_evaluated_and_inflated", "certified": true},
+      {"obligation": "raw_planar_chain_final_component_width_within_requested_bound", "certified": true}
+    ],
+    "segment_checker_ids": [
+      "carried_ordinary_bridge_checker_v1",
+      "carried_planar_lc_exit_checker_v2",
+      "carried_planar_lc_exit_checker_v2",
+      "carried_planar_lc_exit_checker_v2",
+      "carried_planar_lc_exit_checker_v2"
+    ],
+    "clock_vertex_count": 6,
+    "cocycle_kinds": [
+      "ordinary_bridge_v1",
+      "planar_lc_passage_v1",
+      "planar_lc_passage_v1",
+      "planar_lc_passage_v1",
+      "planar_lc_passage_v1"
+    ],
+    "cocycle_pairs": [[0, 1], [0, 2], [1, 2], [0, 1]],
+    "current_chart_id": "review-v03:n:chart:5",
+    "current_clock_origin_interval": [
+      {"numerator": "-2286898727681121", "denominator": "2305843009213693952"},
+      {"numerator": "6936495793122387", "denominator": "2305843009213693952"}
+    ],
+    "covered_physical_time_interval": [
+      {"numerator": "0", "denominator": "1"},
+      {"numerator": "2308213854898857", "denominator": "288230376151711744"}
+    ],
+    "target_parameter_preimage_interval": [
+      {"numerator": "11529215046068469", "denominator": "2305843009213693952"},
+      {"numerator": "20752609566871977", "denominator": "2305843009213693952"}
+    ],
+    "maximum_final_component_width_present": true,
+    "final_enclosure_summary": {
+      "enclosure_type": "validated_planar_chain_fixed_physical_time",
+      "physical_time_interval": [
+        {"numerator": "2308213854898857", "denominator": "288230376151711744"},
+        {"numerator": "2308213854898857", "denominator": "288230376151711744"}
+      ],
+      "parameter_preimage_interval": [
+        {"numerator": "11529215046068469", "denominator": "2305843009213693952"},
+        {"numerator": "20752609566871977", "denominator": "2305843009213693952"}
+      ],
+      "position_shape": [3, 2],
+      "velocity_shape": [3, 2]
+    },
+    "retained_region_summaries": []
+  }
+}

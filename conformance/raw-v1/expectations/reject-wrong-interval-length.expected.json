@@ -1,0 +1,19 @@
+{
+  "expectation_schema": "raw-v1-seed-expectation-v1",
+  "case_id": "reject-wrong-interval-length",
+  "input_file": "inputs/reject-wrong-interval-length.json",
+  "input_sha256": "27d155afb4c524a3a8ba5a2860faf589a931bee403348836e110266dfbb22187",
+  "expected_parse_outcome": "REJECT",
+  "expected_replay_outcome": null,
+  "source_replay_transcript": null,
+  "source_replay_sha256": null,
+  "facts": null,
+  "mutation": {
+    "base_input": "inputs/success.raw.json",
+    "base_input_sha256": "ede15b0f35cf741f542a6cd260470a93ee5ff85dc5ae2371db1b88819b821f11",
+    "operation": "remove the second entry from the initial chart parameter_interval",
+    "minimality": "one comma and one endpoint token are removed from one fixed-length interval",
+    "syntax_valid_json": true,
+    "generation": "mechanical_no_newline_canonical_mutation"
+  }
+}
