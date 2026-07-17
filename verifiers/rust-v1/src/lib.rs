@@ -15,6 +15,7 @@ mod error;
 mod exp;
 mod interval;
 mod json_number;
+mod ordinary_field;
 pub mod outward_mass;
 mod rational_input;
 pub mod raw_schema;
@@ -35,6 +36,9 @@ pub use json_number::{
     checked_real_binary64_from_json, parse_json_number_lexeme, verify_binary64_candidate,
     CheckedJsonBinary64, JsonNumberKind, JsonNumberLimits, ParsedJsonNumber,
     DEFAULT_JSON_NUMBER_LIMITS,
+};
+pub use ordinary_field::{
+    evaluate_planar_three_body_ordinary_field, OrdinaryFieldEnclosure, OrdinaryFieldError,
 };
 pub use rational_input::HARD_MAX_RATIONAL_COMPONENT_BITS;
 pub use sqrt::{sqrt_enclosure_dyadic, DyadicSqrtEnclosure, HARD_MAX_SQRT_PRECISION_BITS};

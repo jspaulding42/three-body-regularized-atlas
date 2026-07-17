@@ -109,13 +109,17 @@ strict JSON and canonical-byte layer, exact binary64/dyadic decoding,
 bounded canonical rational admission, checked rational intervals and Horner
 evaluation, a bounded first-order rational interval-dual primitive with a
 64-coordinate cap, checked value/gradient algebra, and reciprocal and
-square-root chain rules, exact-postcondition dyadic square-root enclosures, and
+square-root chain rules. That primitive now drives an independent planar
+12-state Newton RHS and a 12-by-12 rational-interval Jacobian, including an
+exact infinity-row-sum Lipschitz upper bound, fixed-pair separation, exact
+positive-mass preflight, and an unequal-mass conservation regression. The
+foundation also includes exact-postcondition dyadic square-root enclosures and
 an explicit `V03Compatible` typed decoder for the complete finite v0.3 record
-grammar. Its numeric foundation also includes an exact rational exponential enclosure
+grammar, plus an exact rational exponential enclosure
 using range reduction, a Taylor partial sum with a geometric tail, full
 witness replay, and hard work/storage budgets, plus exact outward binary64
 mass coefficients for all eight raw-v1 mass formulas with hand-derived and
-stress-tested nearest-even endpoints. The crate currently passes 98 Rust unit
+stress-tested nearest-even endpoints. The crate currently passes 109 Rust unit
 tests and two corpus tests; `cargo fmt --check` and warning-denying Clippy are
 clean. The implementation-neutral
 [`raw-v1 seed corpus`](conformance/raw-v1/README.md) currently contains two
@@ -124,11 +128,13 @@ public Python admission API and the independent Rust integration suite both
 enforce those 18 parser classifications.
 
 This remains foundation work, **not yet an independent certificate verifier**.
-The Rust crate still has no raw SHA-256 layer, and its interval-dual primitive
-is not yet connected to ordinary/LC vector fields, Jacobian bounds, or
-certificate semantics. Chart/tube/transition checks, chain fold, clock or
-gauge logic, fixed-time evaluation, obligation ledger, and semantic result
-serialization also remain unimplemented. The corpus is marked
+The Rust crate still has no raw SHA-256 layer. Its interval-dual primitive is
+connected to the ordinary point/interval field and Jacobian, but not to the
+ordinary polynomial or chart recurrence, residual/defect evaluation,
+tube/Grönwall check, root/bridge/fixed-time semantics, any LC field, or
+certificate replay. Chart/tube/transition checks, chain fold, clock or gauge
+logic, obligation ledger, and semantic result serialization also remain
+unimplemented. The corpus is marked
 `seed_incomplete` and lacks
 the required semantic, numeric-boundary, and fold-boundary coverage.
 Cross-language numeric canonical rendering and the Rust toolchain pin also

@@ -21,6 +21,10 @@ foundation. The current checkpoint contains:
 - a bounded first-order rational interval-dual primitive with at most 64
   gradient coordinates, checked value/gradient algebra, and reciprocal and
   square-root chain rules;
+- an independently evaluated planar 12-state Newton RHS and 12-by-12
+  rational-interval Jacobian, with an exact infinity-row-sum Lipschitz upper
+  bound, fixed-pair separation, exact positive-mass preflight, and an
+  unequal-mass conservation regression;
 - integer-arithmetic dyadic square-root enclosures with exact postconditions
   and a hard pre-allocation precision cap;
 - an exact rational exponential enclosure using range reduction, a Taylor
@@ -30,7 +34,7 @@ foundation. The current checkpoint contains:
   mass formulas, with exact adjacency and nearest-even endpoint checks tested
   against hand-derived boundaries and deterministic lattice stress cases.
 
-At this checkpoint, 98 Rust unit tests and two raw-v1 corpus tests pass;
+At this checkpoint, 109 Rust unit tests and two raw-v1 corpus tests pass;
 `cargo fmt --check` and `cargo clippy --all-targets -- -D warnings` are clean.
 
 The checked-in [raw-v1 seed corpus](../../conformance/raw-v1/README.md) supplies
@@ -38,11 +42,13 @@ two `ACCEPT` baselines and sixteen isolated `REJECT` mutations. It is
 `seed_incomplete`, not the complete release corpus.
 
 The crate stops before theorem-facing certificate replay: there is no raw
-SHA-256 layer, and the interval-dual primitive is not yet connected to
-ordinary/LC vector fields, Jacobian bounds, or certificate semantics.
-Chart/tube/transition checks, chain fold, clock/gauge/fixed-time logic,
-obligation ledger, and the semantic result serializer remain unimplemented.
-The crate does not call Python and makes no certificate-level or
-independent-replay claim. `OPEN-V1-01` also remains open: the current canonical
-float renderer is tested against the frozen fixtures but is not yet a
-language-neutral normative algorithm, and its Rust toolchain is not pinned.
+SHA-256 layer. The interval-dual primitive is connected to the ordinary
+point/interval field and Jacobian, but not to ordinary polynomial or chart
+recurrence, residual/defect evaluation, the tube/Grönwall check,
+root/bridge/fixed-time semantics, any LC field, or certificate replay.
+Chart/tube/transition checks, chain fold, clock/gauge logic, obligation ledger,
+and the semantic result serializer remain unimplemented. The crate does not
+call Python and makes no certificate-level or independent-replay claim.
+`OPEN-V1-01` also remains open: the current canonical float renderer is tested
+against the frozen fixtures but is not yet a language-neutral normative
+algorithm, and its Rust toolchain is not pinned.
