@@ -95,6 +95,9 @@ from .ks_binary_series import (
     ks_pair_energy_constraint_coefficients,
     regularized_rhs_coefficients as ks_regularized_rhs_coefficients,
 )
+from .planar_lc_mass_coefficients import (
+    derive_planar_lc_mass_coefficient_witness,
+)
 from .series import acceleration_coefficients
 from .stratified_branch_tree import SUPPORTED_STRATIFIED_LEAF_KINDS
 
@@ -7746,25 +7749,44 @@ def _project_interval_planar_lc_state(
         ],
         dtype=object,
     )
-    first, second = pair
-    third = ({0, 1, 2} - {first, second}).pop()
-    pair_mass = float(masses[first] + masses[second])
-    alpha = float(masses[second] / pair_mass)
-    beta = float(masses[first] / pair_mass)
+    coefficients = derive_planar_lc_mass_coefficient_witness(
+        _strict_planar_lc_binary64_mass_tuple(masses),
+        pair,
+    )
+    if not coefficients.certified:
+        raise ValueError("fresh planar LC mass-coefficient witness did not validate")
+    first, second = coefficients.pair
+    third = coefficients.third_index
     positions = _interval_zero_array((3, 2))
     velocities = _interval_zero_array((3, 2))
     positions[first] = _interval_vector_sub(
-        center, _interval_vector_scale(relative_position, alpha)
+        center,
+        _interval_vector_scale_by_interval(
+            relative_position,
+            coefficients.alpha_interval,
+        ),
     )
     positions[second] = _interval_vector_add(
-        center, _interval_vector_scale(relative_position, beta)
+        center,
+        _interval_vector_scale_by_interval(
+            relative_position,
+            coefficients.beta_interval,
+        ),
     )
     positions[third] = _interval_vector_add(center, third_offset)
     velocities[first] = _interval_vector_sub(
-        center_velocity, _interval_vector_scale(relative_velocity, alpha)
+        center_velocity,
+        _interval_vector_scale_by_interval(
+            relative_velocity,
+            coefficients.alpha_interval,
+        ),
     )
     velocities[second] = _interval_vector_add(
-        center_velocity, _interval_vector_scale(relative_velocity, beta)
+        center_velocity,
+        _interval_vector_scale_by_interval(
+            relative_velocity,
+            coefficients.beta_interval,
+        ),
     )
     velocities[third] = _interval_vector_add(center_velocity, third_velocity)
     return positions, velocities, physical_time, rho
@@ -7796,16 +7818,19 @@ def _planar_lc_dual_rhs(
     del center
     rho = x * x + y * y
     relative = (x * x - y * y, (x * y).scale(2.0))
-    first, second = pair
-    third = ({0, 1, 2} - {first, second}).pop()
-    pair_mass = float(masses[first] + masses[second])
-    alpha = float(masses[second] / pair_mass)
-    beta = float(masses[first] / pair_mass)
+    coefficients = derive_planar_lc_mass_coefficient_witness(
+        _strict_planar_lc_binary64_mass_tuple(masses),
+        pair,
+    )
+    if not coefficients.certified:
+        raise ValueError("fresh planar LC mass-coefficient witness did not validate")
     d_first = tuple(
-        third_offset[k] + relative[k].scale(alpha) for k in range(2)
+        third_offset[k] + relative[k] * coefficients.alpha_interval
+        for k in range(2)
     )
     d_second = tuple(
-        third_offset[k] - relative[k].scale(beta) for k in range(2)
+        third_offset[k] - relative[k] * coefficients.beta_interval
+        for k in range(2)
     )
 
     def inverse_square(vector: tuple[_IntervalDual, _IntervalDual]) -> tuple[_IntervalDual, _IntervalDual]:
@@ -7818,22 +7843,17 @@ def _planar_lc_dual_rhs(
     field_first = inverse_square(d_first)
     field_second = inverse_square(d_second)
     center_acceleration = tuple(
-        (
-            field_first[k].scale(float(masses[first]))
-            + field_second[k].scale(float(masses[second]))
-        ).scale(float(masses[third] / pair_mass))
-        for k in range(2)
-    )
-    third_acceleration = tuple(
-        -field_first[k].scale(float(masses[first]))
-        - field_second[k].scale(float(masses[second]))
+        field_first[k] * coefficients.center_first_interval
+        + field_second[k] * coefficients.center_second_interval
         for k in range(2)
     )
     offset_acceleration = tuple(
-        third_acceleration[k] - center_acceleration[k] for k in range(2)
+        -field_first[k] * coefficients.offset_first_interval
+        - field_second[k] * coefficients.offset_second_interval
+        for k in range(2)
     )
     perturbation = tuple(
-        (field_second[k] - field_first[k]).scale(float(masses[third]))
+        (field_second[k] - field_first[k]) * coefficients.third_mass_interval
         for k in range(2)
     )
     at_perturbation = (
@@ -7881,6 +7901,20 @@ def _planar_lc_dual_rhs(
         ),
     )
     return tuple(rhs), float(third_floor)
+
+
+def _strict_planar_lc_binary64_mass_tuple(
+    masses: np.ndarray,
+) -> tuple[float, float, float]:
+    """Normalize only an exact native NumPy binary64 mass vector."""
+
+    if (
+        type(masses) is not np.ndarray
+        or masses.shape != (3,)
+        or masses.dtype != np.dtype(np.float64)
+    ):
+        raise ValueError("LC checker masses must be a native binary64 vector")
+    return (float(masses[0]), float(masses[1]), float(masses[2]))
 
 
 def _planar_lc_direct_defect_and_lipschitz(
@@ -7999,7 +8033,12 @@ def _planar_lc_mass_ratio_arithmetic_exact(
     masses: tuple[float, ...] | np.ndarray,
     pair: tuple[int, int],
 ) -> bool:
-    """Whether every binary64 mass ratio used by LC field/projection is exact."""
+    """Deprecated diagnostic for legacy point-valued LC mass arithmetic.
+
+    The outward LC field/projection kernel no longer requires this property.
+    Some higher proof schemas still expose the legacy diagnostic until their
+    obligation ledgers are versioned to carry the new coefficient witness.
+    """
 
     values = np.asarray(masses, dtype=float)
     if values.shape != (3,) or np.any(~np.isfinite(values)) or np.any(values <= 0):
