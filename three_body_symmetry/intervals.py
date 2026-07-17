@@ -178,6 +178,38 @@ def _round_up(value: float) -> float:
 
 
 @lru_cache(maxsize=131072)
+def directed_nonnegative_sqrt_endpoint(value: float, *, upward: bool) -> float:
+    """Return a directed binary64 endpoint for ``sqrt(value)``.
+
+    The input is the exact real number represented by the supplied finite
+    binary64 value.  ``Decimal.sqrt`` is correctly rounded to nearest rather
+    than according to the context direction, so an adjacent 100-digit Decimal
+    supplies a strict endpoint before the final directed binary64 conversion.
+    """
+
+    if not np.isfinite(value) or value < 0.0:
+        raise ValueError("square-root argument must be finite and nonnegative")
+    if value == 0.0:
+        return 0.0
+    with localcontext() as context:
+        context.prec = 100
+        exact_value = Decimal.from_float(float(value))
+        nearest_root = context.sqrt(exact_value)
+        decimal_endpoint = (
+            context.next_plus(nearest_root)
+            if upward
+            else context.next_minus(nearest_root)
+        )
+    candidate = float(decimal_endpoint)
+    candidate_decimal = Decimal.from_float(candidate)
+    if upward and candidate_decimal < decimal_endpoint:
+        candidate = float(np.nextafter(candidate, np.inf))
+    elif not upward and candidate_decimal > decimal_endpoint:
+        candidate = float(np.nextafter(candidate, -np.inf))
+    return candidate
+
+
+@lru_cache(maxsize=131072)
 def _directed_negative_half_integer_power(
     value: float,
     exponent: float,

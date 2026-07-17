@@ -15,7 +15,7 @@ from fractions import Fraction
 import numpy as np
 
 from .dynamics import accelerations
-from .intervals import FloatInterval
+from .intervals import FloatInterval, directed_nonnegative_sqrt_endpoint
 from .levi_civita import lc_matrix, lc_square, lc_velocity
 
 
@@ -194,8 +194,10 @@ def _interval_norm(vector: Array) -> FloatInterval:
     for value in np.asarray(vector, dtype=object).reshape(-1):
         total = total + _interval_square_bounds(_as_interval(value))
     return FloatInterval(
-        0.0 if total.lower <= 0.0 else float(np.nextafter(np.sqrt(total.lower), -np.inf)),
-        float(np.nextafter(np.sqrt(max(total.upper, 0.0)), np.inf)),
+        0.0
+        if total.lower <= 0.0
+        else directed_nonnegative_sqrt_endpoint(total.lower, upward=False),
+        directed_nonnegative_sqrt_endpoint(max(total.upper, 0.0), upward=True),
     )
 
 
@@ -204,8 +206,10 @@ def _interval_sqrt_nonnegative(value: FloatInterval) -> FloatInterval:
         raise ValueError("cannot take square root of a negative interval")
     lower = max(0.0, value.lower)
     return FloatInterval(
-        float(np.nextafter(np.sqrt(lower), -np.inf)) if lower > 0.0 else 0.0,
-        float(np.nextafter(np.sqrt(max(value.upper, 0.0)), np.inf)),
+        directed_nonnegative_sqrt_endpoint(lower, upward=False)
+        if lower > 0.0
+        else 0.0,
+        directed_nonnegative_sqrt_endpoint(max(value.upper, 0.0), upward=True),
     )
 
 

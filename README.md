@@ -65,7 +65,11 @@ failure, only the last consecutively certified ordinary-chart right endpoint
 is retained; an invalid initial binding, collided first chart, or failed first
 tube retains nothing.  This milestone does **not** support LC or mixed
 ordinary/LC chains, prove producer termination, or establish general/global
-completeness.
+completeness.  The reviewed Milestone-3 implementation contract is
+[`docs/raw-mixed-planar-continuation-theorem.md`](docs/raw-mixed-planar-continuation-theorem.md).
+Its directed LC derivative, square-root, and Gronwall prerequisites are now
+implemented, but the raw gauge-aware exit and interval-clock fixed-time
+composition are not; no mixed chain currently returns `CERTIFIED_TO_T`.
 
 The broader historical research program and experimental machinery are
 retained below for auditability.
@@ -108,6 +112,7 @@ ordinary replay regressions for the new strengthening program:
 ```bash
 python -m pytest -q \
   tests/test_directed_arithmetic_kernel.py \
+  tests/test_lc_directed_arithmetic.py \
   tests/test_certificate_checker_fraction_bounds.py \
   tests/test_certificate_language_clock_shift.py \
   tests/test_certificate_problem_identity.py \

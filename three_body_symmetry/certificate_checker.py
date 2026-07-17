@@ -5391,21 +5391,19 @@ def check_planar_lc_aposteriori_tube(
             lipschitz_within_cap = lipschitz <= lipschitz_cap
             separated_third_body = third_floor > 0.0
             if separated_third_body and np.isfinite(lipschitz):
-                h = max(abs(interval[0] - anchor), abs(interval[1] - anchor))
-                exponential = _exp_upper(_positive_product_upper(lipschitz, h))
-                if lipschitz > 0.0:
-                    gronwall = float(
-                        np.nextafter(
-                            exponential * initial_error
-                            + defect * (exponential - 1.0) / lipschitz,
-                            np.inf,
-                        )
-                    )
-                else:
-                    gronwall = float(
-                        np.nextafter(initial_error + defect * h, np.inf)
-                    )
-                self_consistent = gronwall < radius
+                anchor_q = Fraction.from_float(anchor)
+                horizon_q = max(
+                    abs(Fraction.from_float(interval[0]) - anchor_q),
+                    abs(Fraction.from_float(interval[1]) - anchor_q),
+                )
+                gronwall_q = _gronwall_error_upper_fraction(
+                    initial_error,
+                    defect,
+                    lipschitz,
+                    horizon_q,
+                )
+                gronwall = _fraction_upper_float(gronwall_q)
+                self_consistent = gronwall_q < Fraction.from_float(radius)
         except (
             DecimalException,
             FloatingPointError,
@@ -7677,20 +7675,40 @@ def _planar_lc_derivative_intervals(
 ) -> tuple[FloatInterval, ...]:
     variable = FloatInterval(*parameter_interval)
     blocks = (
-        interval_array_series_eval(_derivative_coefficients(solution.z), variable).reshape(-1),
-        interval_array_series_eval(_derivative_coefficients(solution.z_velocity), variable).reshape(-1),
+        interval_array_series_eval(
+            interval_array_derivative_coefficients(solution.z), variable
+        ).reshape(-1),
+        interval_array_series_eval(
+            interval_array_derivative_coefficients(solution.z_velocity), variable
+        ).reshape(-1),
         np.asarray([
             interval_polynomial_eval(
-                _derivative_scalar_coefficients(solution.pair_energy), variable
+                interval_array_derivative_coefficients(solution.pair_energy),
+                variable,
             )
         ], dtype=object),
-        interval_array_series_eval(_derivative_coefficients(solution.binary_center), variable).reshape(-1),
-        interval_array_series_eval(_derivative_coefficients(solution.binary_center_velocity), variable).reshape(-1),
-        interval_array_series_eval(_derivative_coefficients(solution.third_offset), variable).reshape(-1),
-        interval_array_series_eval(_derivative_coefficients(solution.third_offset_velocity), variable).reshape(-1),
+        interval_array_series_eval(
+            interval_array_derivative_coefficients(solution.binary_center),
+            variable,
+        ).reshape(-1),
+        interval_array_series_eval(
+            interval_array_derivative_coefficients(
+                solution.binary_center_velocity
+            ),
+            variable,
+        ).reshape(-1),
+        interval_array_series_eval(
+            interval_array_derivative_coefficients(solution.third_offset),
+            variable,
+        ).reshape(-1),
+        interval_array_series_eval(
+            interval_array_derivative_coefficients(solution.third_offset_velocity),
+            variable,
+        ).reshape(-1),
         np.asarray([
             interval_polynomial_eval(
-                _derivative_scalar_coefficients(solution.physical_time), variable
+                interval_array_derivative_coefficients(solution.physical_time),
+                variable,
             )
         ], dtype=object),
     )
@@ -8134,6 +8152,40 @@ def _exp_upper(value: float) -> float:
     if Decimal.from_float(candidate) < decimal_upper:
         candidate = float(np.nextafter(candidate, np.inf))
     return candidate
+
+
+def _gronwall_error_upper_fraction(
+    initial_error: float,
+    defect: float,
+    lipschitz: float,
+    horizon: Fraction,
+) -> Fraction:
+    """Compose the scalar Gronwall bound without binary64 intermediates.
+
+    The three serialized bounds are interpreted as their exact binary64
+    rationals.  Only the exponential itself is converted to binary64, through
+    the rigorous upper endpoint returned by :func:`_exp_upper`; all remaining
+    products, subtraction, division, and addition are exact ``Fraction``
+    operations.
+    """
+
+    values = (initial_error, defect, lipschitz)
+    if any(not np.isfinite(value) or value < 0.0 for value in values):
+        raise ValueError("finite nonnegative Gronwall inputs required")
+    horizon_q = Fraction(horizon)
+    if horizon_q < 0:
+        raise ValueError("nonnegative exact Gronwall horizon required")
+    initial_q = Fraction.from_float(float(initial_error))
+    defect_q = Fraction.from_float(float(defect))
+    lipschitz_q = Fraction.from_float(float(lipschitz))
+    if lipschitz_q == 0:
+        return initial_q + defect_q * horizon_q
+    exponent = _fraction_upper_float(lipschitz_q * horizon_q)
+    exponential_q = Fraction.from_float(_exp_upper(exponent))
+    return (
+        exponential_q * initial_q
+        + defect_q * (exponential_q - Fraction(1)) / lipschitz_q
+    )
 
 
 def check_validated_ordinary_ivp_chart(
