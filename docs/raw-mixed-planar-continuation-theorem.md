@@ -23,9 +23,18 @@ J=T-B=a+T-D=[a+T-d_+,a+T-d_-].
 It then evaluates the target chart over all of \(J\), adds the freshly replayed
 ordinary-tube error, applies the exact rational component-width gate, and
 returns either an evidence-bound `CERTIFIED_TO_T` enclosure or a structured
-`UNRESOLVED` result.  Nonzero-anchor regression fixtures certify one passage
-for each canonical pair `(0, 1)`, `(0, 2)`, and `(1, 2)`.  Repeated passages
-and chains that change pairs remain the next implementation gap.
+`UNRESOLVED` result. Nonzero-anchor regression fixtures certify one passage
+for each canonical pair `(0, 1)`, `(0, 2)`, and `(1, 2)`.
+
+This file describes the **legacy one-passage v1 surface**. Its successor is
+the carried-chain v2 checker documented in
+[`raw-repeated-planar-continuation-chain-theorem.md`](raw-repeated-planar-continuation-chain-theorem.md).
+The newer checker composes arbitrary finite ordinary bridges and LC passages,
+covers all three canonical pairs, exercises a same-pair revisit, propagates
+one conditional clock ledger, and retains separate pair-local gauge records.
+It also replaces the legacy exact-ratio acceptance gate on the theorem-facing
+LC-tube/carried-chain path with exact-`Fraction` coefficient derivation followed
+by tight outward binary64 enclosures.
 
 The replay result pins the checker and trusted-kernel identities
 `raw_mixed_planar_continuation_replay_checker_v1`,
@@ -222,8 +231,8 @@ frontier as an ordinary Cartesian state.
 
 ## Directed-arithmetic constraints
 
-The implementation enforces the following soundness constraints; they are not
-optional numerical improvements:
+The legacy one-passage implementation enforces the following soundness
+constraints; they are not optional numerical improvements:
 
 1. LC polynomial derivatives must form \(n a_n\) as exact rational products
    of the serialized binary64 coefficient before outward conversion.  A
@@ -249,22 +258,28 @@ malformed and hostile wire values, typed prefix retention, copied all-true
 ledgers, changed kernel identifiers, and mutated derived snapshots.  Such
 mutations fail fresh replay rather than inheriting a prior success.
 
-Version 1 may therefore return `UNRESOLVED` for a valid positive mass triple
-whose required ratios are not exactly representable in the restricted
-binary64 point-coefficient path.  This is checker incompleteness, not evidence
-that the physical continuation does not exist.
+The legacy one-passage v1 checker may therefore return `UNRESOLVED` for a
+valid positive mass triple whose required ratios are not exactly representable
+in its restricted binary64 point-coefficient path. This is checker
+incompleteness, not evidence that the physical continuation does not exist.
+The carried-chain v2 tube/entry/exit surface no longer has that exact-ratio
+restriction: it freshly derives the needed coefficients from the exact dyadic
+mass record and encloses them outward. That migration is scoped to the new
+tube/carried-chain surface and is not a claim about every legacy checker.
 
 The existing zero-error exact-collision-anchor and two-sided-passage checker
 is separate from this theorem.  A mixed certificate without an additional
 event witness makes no claim that its LC segment contains an actual binary
 collision.
 
-## Next generalization
+## Successor and remaining generalization
 
-With this exact three-segment theorem now exercised by nontrivial positive
-fixtures, the next checker must compose a finite chain that alternates ordinary
-bridges with any of `LC_01`, `LC_02`, and `LC_12`.  It should reuse this
-transition theorem, carry a forward interval clock-origin ledger, derive
-pair-indexed gauge graphs, and evaluate the final chart at fixed \(T\).  That
-later supplied-chain theorem still makes no arbitrary-input termination or
-completeness claim.
+The finite repeated all-pair successor is now implemented as
+`RawPlanarChainCertificate` / `check_raw_planar_chain(...)`; see the linked
+code-matched theorem for its exact induction invariant, fixed-time result, and
+typed-frontier semantics. The next work is a tracked canonical replay bundle
+and external review, followed by adaptive certificate production and
+initial-condition-family coverage. Neither the legacy checker nor its
+successor claims arbitrary-input termination, collision occurrence without an
+event witness, total-collision continuation, spatial motion, escape
+completeness, or all-time coverage.

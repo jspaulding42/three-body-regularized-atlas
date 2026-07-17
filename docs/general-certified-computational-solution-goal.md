@@ -1,6 +1,6 @@
 # Goal: A General Certified Computational Solution
 
-## Active operational goal
+## Long-term operational goal
 
 Build a proof-carrying planar three-body integrator with the following contract.
 For positive, exactly serialized masses, an exactly serialized planar initial
@@ -31,6 +31,25 @@ finite-time trajectory enclosure when the supplied evidence is sufficient,
 and otherwise expose exactly where certification stopped. It is not a request
 for an elementary formula for arbitrary three-body motion.
 
+## Implemented proof-bearing core
+
+Milestones 1--4 are implemented for one supplied exact planar **point** IVP.
+`RawPlanarChainCertificate` and `check_raw_planar_chain(...)` now provide a
+strict raw-v1 grammar for ordinary bridges and repeated
+`N -> LC_ij -> N` passages, exact root binding, conditional finite-chain
+induction, one propagated physical-clock ledger, pair-local derived gauge
+records, exact fixed-time evaluation, structured retained frontiers, and
+`CERTIFIED_TO_T`/`UNRESOLVED` semantics.  The chain accepts all three canonical
+pairs and revisits; the outward mass kernel derives LC coefficients from the
+exact binary64 dyadic mass record rather than requiring the ratios themselves
+to be binary64-exact.  The code-matched theorem is
+[`raw-repeated-planar-continuation-chain-theorem.md`](raw-repeated-planar-continuation-chain-theorem.md).
+
+This is the first proof-bearing core, not the finished general computational
+solution.  Same-pair LC-to-LC recentering, adaptive precision, automatic
+subdivision diagnostics, certificate production, and initial-condition-family
+coverage remain future work.
+
 ## Producer and checker boundary
 
 The numerical producer is untrusted. It may choose charts, step sizes,
@@ -39,9 +58,9 @@ It may use ordinary numerical integration, Taylor models, automatic
 differentiation, interval Newton methods, or any other heuristic. None of its
 success flags is evidence.
 
-The replay checker is small, deterministic, and fail-closed. It accepts only
-raw evidence and recomputes every theorem-facing quantity. In particular, a
-proof-bearing chain must retain:
+The replay checker is intended to remain small, deterministic, and
+fail-closed. It accepts only raw evidence and recomputes theorem-facing
+quantities. The long-term certificate format should retain:
 
 - the canonical problem record and its content digest;
 - every serialized chart and polynomial coefficient;
@@ -56,11 +75,12 @@ proof-bearing chain must retain:
 The checker must not accept prebuilt checker-result objects, inherited
 `certified` properties, `source` strings, reason prose, or producer-supplied
 gauge bits as hypotheses. Identifiers are navigation aids, not content
-bindings. All problem, chart, tube, transition, and chain identifiers must be
-nonempty and unique in their namespace, and every reference must additionally
-bind to a canonical digest of the exact serialized object. Reordering,
-substitution, or mutation of any raw component must change the aggregate
-digest or cause replay to reject.
+bindings. The implemented raw-v1 point-chain requires one globally unique
+namespace, canonical round trips, and one aggregate canonical-JSON SHA-256;
+reordering, substitution, or mutation changes that aggregate or causes replay
+to reject. Per-component content digests and a serialized arithmetic,
+precision, and evaluation-order manifest are long-term hardening targets, not
+claims about the current wire format.
 
 ## Exact problem model and arithmetic
 
@@ -85,17 +105,17 @@ M=m_i+m_j,\qquad
 \beta=\frac{m_i}{M}
 \]
 
-are derived from the exact mass record. They are then evaluated exactly where
-possible or enclosed by outward-rounded arbitrary-precision intervals. The
-current restriction that a derived mass ratio must itself be exactly
-representable in binary64 is not part of the target theorem. An accepted LC
-chart must be proved to implement the vector field for the original exact
-masses, not for rounded substitutes.
+are derived from the exact mass record. On the implemented LC-tube and carried
+finite-chain surface, the checker derives every required mass coefficient with
+`Fraction` and encloses it in a tight outward binary64 interval. A mass ratio
+therefore need not itself be exactly representable in binary64. This migration
+does not yet cover every legacy LC checker path.
 
-All interval operations are outward rounded. Bounds for elementary functions,
-including the exponential in a Gronwall estimate, are part of the audited
-arithmetic backend. Certificate-supplied bounds are admissible caps only; the
-checker recomputes or independently bounds the underlying expressions.
+The current backend mixes exact rational operations with directed binary64
+interval operations. Elementary-function and Gronwall bounds used by accepted
+local tubes are recomputed or independently bounded rather than accepted as
+producer success flags. Replacing this backend with an independently audited
+arbitrary-precision outward implementation remains a hardening target.
 
 ## Planar chart grammar
 
@@ -382,12 +402,12 @@ that a producer can find such a certificate for every input.
 
 ## Trusted kernel
 
-The intended trusted computing base consists of:
+The implemented point-chain trusted computing base consists of:
 
-- strict parsing of a versioned canonical format and content digests;
+- strict parsing of the raw-v1 canonical format and its aggregate digest;
 - exact integer and rational arithmetic;
-- audited arbitrary-precision outward interval arithmetic and elementary
-  functions;
+- the current directed binary64 interval and elementary-function primitives;
+- exact-Fraction derivation and outward enclosure of LC mass coefficients;
 - interval polynomial evaluation, differentiation, and automatic
   differentiation;
 - explicit Newtonian and planar LC vector fields, constraints, lifts,
@@ -398,46 +418,62 @@ The intended trusted computing base consists of:
   cocycle, and \(\mathbb F_2\) gauge kernels; and
 - finite chain induction and terminal evaluation.
 
-NumPy binary64 calculations, sampled residuals, heuristic chart selection,
-producer metadata, mutable object identity, and cached checker-result objects
-are not trusted theorem inputs.
+Sampled residuals, heuristic chart selection, producer metadata, inherited
+success properties, and cached checker-result objects are not trusted theorem
+inputs. Some reviewed scalar interval primitives and local model construction
+paths do use binary64, so the present theorem remains conditional on their
+directed-rounding correctness. An independent implementation or proof-assistant
+formalization is not yet supplied.
 
 ## Milestones
 
 ### Milestone 1: exact problem and clock binding
 
-Define the canonical point-IVP record, exact mass semantics, object digests,
-unique identities, and one replayed physical-clock language. Ordinary chart
-time must be derived as \(t=s+c\). Coverage must consume proven clock images,
-not free interval metadata. Establish deterministic `CERTIFIED_TO_T` and
-structured `UNRESOLVED` result schemas.
+**Implemented for the raw-v1 point-chain core.** The checker binds a
+zero-tolerance exact-dyadic point IVP at the initial ordinary left anchor,
+derives the initial clock origin, uses a global unique identifier namespace and
+aggregate digest, and returns deterministic success or structured unresolved
+results for constructed exact-class certificates. Strict parse/type failures
+may reject before a result object exists. Per-component digests remain future
+hardening.
 
 ### Milestone 2: raw ordinary replay chain
 
-Build a new top-level checker that accepts only raw IVP, ordinary charts,
-tubes, and transitions. It reruns every local check, proves complete handoff
-containment, propagates one global clock, computes the terminal enclosure at
-the exact requested \(T\), and returns `CERTIFIED_TO_T` only when the requested
-tolerance is met. This is the first vertical slice and the first publication-
-quality theorem.
+**Implemented.** The raw ordinary segment helper reruns local tube checks,
+proves complete endpoint containment, derives the exact ordinary parameter
+translation and clock update, and feeds exact fixed-\(T\) rational Horner
+evaluation plus fresh tube inflation.
 
 ### Milestone 3: one raw ordinary--LC--ordinary passage
 
-Consume raw ordinary source evidence rather than a prebuilt source result.
-Add quantifier-correct complete LC lift covers, derived gauge assignments,
-constraint-preserving entry, monotone LC physical-time images or isolated time
-slices, punctured complete projection on exit, and raw content binding for the
-entire aggregate. This milestone must close the current gap between a checked
-LC endpoint projection and an exact continuation result.
+**Implemented on the carried finite-chain surface.** The checker consumes raw
+ordinary source evidence, reconstructs the complete LC lift cover and coherent
+derived gauge, carries one constrained branch, checks the LC tube and strict
+physical clock, projects the complete rho-positive exit slice, and derives the
+target clock interval. An LC passage alone does not assert that a collision
+occurred.
 
 ### Milestone 4: repeated all-pair planar switching
 
-Instantiate the LC construction for \((0,1)\), \((0,2)\), and \((1,2)\), and
-accept arbitrary finite repetitions through certified ordinary bridges. Add
-pair-indexed gauge graphs, optional same-pair LC recentering, clock and
-parameter cocycle checks, adaptive precision, and subdivision diagnostics.
-The theorem remains supplied-chain soundness; producer termination remains
-open.
+**Implemented for arbitrary finite raw-v1 repetitions through ordinary
+bridges.** The grammar composes \((0,1)\), \((0,2)\), and \((1,2)\) in any
+finite order, including revisits, while retaining separate pair-local passage
+gauges and one forward clock ledger. Ordinary bridges carry exact parameter
+translations; an LC switch is related through physical time rather than a
+false additive cross-chart parameter shift. Optional same-pair LC-to-LC
+recentering, adaptive precision, and subdivision diagnostics remain future
+extensions. The theorem is still supplied-chain soundness; producer
+termination remains open.
+
+### Current next milestone: tracked review and production bridge
+
+Export canonical raw chain evidence and fresh replay transcripts into a
+tracked review bundle, pin transport hashes and the source revision, exercise
+success and structured-failure paths, and obtain external mathematical and
+implementation review. The review script must label its result as
+same-implementation replay unless and until a genuinely independent verifier
+exists. After that audit, begin the untrusted adaptive producer and the
+initial-condition-family/wrapping-control work below.
 
 ### Milestone 5: initial-condition families and wrapping control
 
@@ -456,7 +492,7 @@ asymptotic theorems.
 
 ## Explicit nonclaims
 
-Completion of the first four milestones would not establish:
+The implemented first four milestones do not establish:
 
 - an elementary or finite-expression closed form for the three-body problem;
 - that the producer succeeds or terminates for every exact input;
@@ -470,7 +506,9 @@ Completion of the first four milestones would not establish:
 - unconditional correctness without an audited outward-rounding and ODE-lemma
   kernel.
 
-The first meaningful success is smaller and stronger: a replay checker whose
-acceptance proves one exact finite planar IVP has been carried, without gaps or
-branch loss, through a finite raw chain of ordinary and pair-indexed LC charts
-to a rigorous enclosure at the requested time.
+The achieved proof-bearing core is smaller and stronger than the original
+closed-form aspiration: checker acceptance proves one exact finite planar IVP
+has been carried, without branch loss, through a supplied finite raw chain of
+ordinary and pair-indexed LC charts to a rigorous enclosure at the requested
+time. The next work is to make that result externally replayable and reviewed,
+then broaden construction and input coverage without weakening its soundness.
