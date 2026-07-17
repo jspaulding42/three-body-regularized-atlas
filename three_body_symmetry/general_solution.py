@@ -2975,7 +2975,6 @@ def _derive_initial_spatial_ks_selector(
         first, second = pair
         third = ({0, 1, 2} - set(pair)).pop()
         relative_position = positions[second] - positions[first]
-        relative_velocity = velocities[second] - velocities[first]
         distance = float(np.linalg.norm(relative_position))
         if (
             not np.isfinite(distance)

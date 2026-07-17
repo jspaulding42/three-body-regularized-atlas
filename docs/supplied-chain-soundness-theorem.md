@@ -1,5 +1,11 @@
 # Supplied-Chain Soundness Theorem: Specification and Gap Analysis
 
+> **Historical/superseded note.** This gap analysis records an earlier checker
+> stage and is retained for provenance; it is not the current theorem or
+> normative certificate specification. See the
+> [raw repeated planar continuation-chain theorem](raw-repeated-planar-continuation-chain-theorem.md)
+> and [raw-v1 certificate specification](raw-v1-certificate-specification.md).
+
 ## Purpose
 
 This document defines the first theorem the certificate checker should support.

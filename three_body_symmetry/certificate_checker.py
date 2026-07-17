@@ -49,7 +49,6 @@ from .lc_gauge_gluing import (
     check_planar_lc_gauge_gluing,
 )
 from .binary_chart import (
-    RegularizedBinaryCollisionChartState,
     planar_accelerations_from_regularized_chart_rhs,
     regularized_binary_collision_chart_rhs,
     regularized_binary_collision_chart_to_planar,
@@ -76,7 +75,6 @@ from .intervals import (
     RationalInterval,
     interval_array_derivative_coefficients,
     interval_array_series_eval,
-    interval_polyder,
     interval_polynomial_eval,
     interval_sign,
     rational_interval_polyder,
@@ -84,7 +82,6 @@ from .intervals import (
     rational_interval_sign,
 )
 from .ks_binary_chart import (
-    SpatialKSBinaryChartState,
     ks_binary_chart_to_spatial,
     regularized_ks_binary_chart_rhs,
     spatial_accelerations_from_ks_binary_rhs,
@@ -3006,7 +3003,6 @@ def check_ordinary_taylor_chart(
             max_coefficient_residual = np.inf
 
     max_sampled_newton_residual = np.inf
-    sampled_residual_certified = False
     max_interval_newton_residual = np.inf
     interval_residual_certified = False
     exact_rational_interval_residual_certified = False
@@ -3024,9 +3020,6 @@ def check_ordinary_taylor_chart(
                 masses,
                 parameter_interval,
                 sample_count=sample_count,
-            )
-            sampled_residual_certified = bool(
-                max_sampled_newton_residual <= residual_tolerance
             )
         except (FloatingPointError, ValueError):
             max_sampled_newton_residual = np.inf
@@ -3267,7 +3260,6 @@ def check_planar_levi_civita_binary_chart(
             max_constraint_residual = np.inf
 
     max_regularized_residual = np.inf
-    regularized_residual_certified = False
     max_interval_regularized_residual = np.inf
     interval_regularized_residual_certified = False
     exact_rational_regularized_residual_certified = False
@@ -3277,9 +3269,6 @@ def check_planar_levi_civita_binary_chart(
                 solution,
                 parameter_interval,
                 sample_count=sample_count,
-            )
-            regularized_residual_certified = bool(
-                max_regularized_residual <= regularized_residual_tolerance
             )
         except (FloatingPointError, ValueError):
             max_regularized_residual = np.inf
@@ -3302,7 +3291,6 @@ def check_planar_levi_civita_binary_chart(
 
     max_projected_residual = np.inf
     projected_sample_count = 0
-    projected_residual_certified = False
     max_interval_projected_residual = np.inf
     interval_projected_residual_certified = False
     if recurrence_certified and finite_intervals and finite_tolerances and sample_count >= 2:
@@ -3315,10 +3303,6 @@ def check_planar_levi_civita_binary_chart(
                 parameter_interval,
                 sample_count=sample_count,
                 rho_lower_bound=rho_lower_bound,
-            )
-            projected_residual_certified = bool(
-                projected_sample_count > 0
-                and max_projected_residual <= projected_residual_tolerance
             )
         except (FloatingPointError, ValueError):
             max_projected_residual = np.inf
@@ -3614,23 +3598,9 @@ def check_spatial_ks_binary_chart(
             max_interval_pair_energy_constraint = np.inf
             max_interval_horizontal_constraint = np.inf
 
-    max_regularized_residual = np.inf
-    regularized_residual_certified = False
     max_interval_regularized_residual = np.inf
     interval_regularized_residual_certified = False
     exact_rational_regularized_residual_certified = False
-    if recurrence_certified and finite_intervals and finite_tolerances and sample_count >= 2:
-        try:
-            max_regularized_residual = _max_sampled_spatial_ks_residual(
-                solution,
-                parameter_interval,
-                sample_count=sample_count,
-            )
-            regularized_residual_certified = bool(
-                max_regularized_residual <= regularized_residual_tolerance
-            )
-        except (FloatingPointError, ValueError):
-            max_regularized_residual = np.inf
     if recurrence_certified and finite_intervals and finite_tolerances:
         try:
             max_interval_regularized_residual = (
@@ -3650,7 +3620,6 @@ def check_spatial_ks_binary_chart(
 
     max_projected_residual = np.inf
     projected_sample_count = 0
-    projected_residual_certified = False
     max_interval_projected_residual = np.inf
     interval_projected_residual_certified = False
     if recurrence_certified and finite_intervals and finite_tolerances and sample_count >= 2:
@@ -3663,10 +3632,6 @@ def check_spatial_ks_binary_chart(
                 parameter_interval,
                 sample_count=sample_count,
                 rho_lower_bound=rho_lower_bound,
-            )
-            projected_residual_certified = bool(
-                projected_sample_count > 0
-                and max_projected_residual <= projected_residual_tolerance
             )
         except (FloatingPointError, ValueError):
             max_projected_residual = np.inf
@@ -3997,9 +3962,6 @@ def check_total_collision_fuchsian_stop_chart(
     interval_angular_detail = "primitive Cauchy inputs not supplied"
     interval_com_momentum_certified = False
     interval_com_momentum_detail = "primitive Cauchy inputs not supplied"
-    sampled_residual_certified = False
-    angular_certified = False
-    scaling_certified = False
     if (
         isolation_certified
         and tau_interval_straddles
@@ -4018,19 +3980,6 @@ def check_total_collision_fuchsian_stop_chart(
                 branch,
                 tau_interval,
                 sample_count=sample_count,
-            )
-            sampled_residual_certified = bool(
-                sampled_count > 0
-                and max_lifted_residual <= residual_tolerance
-                and max_projected_residual <= residual_tolerance
-            )
-            angular_certified = bool(
-                sampled_count > 0 and max_angular_momentum <= angular_tolerance
-            )
-            scaling_certified = bool(
-                sampled_count > 0
-                and np.isfinite(max_position_scale)
-                and max_position_scale > 0.0
             )
         except (FloatingPointError, ValueError):
             max_lifted_residual = np.inf
@@ -4485,7 +4434,6 @@ def check_total_collision_generalized_fuchsian_stop_chart(
     max_angular_momentum = np.inf
     max_position_scale = np.inf
     sampled_count = 0
-    sampled_residual_certified = False
     interval_lifted_residual_certified = False
     cauchy_projected_residual_certified = False
     interval_angular_certified = False
@@ -4494,8 +4442,6 @@ def check_total_collision_generalized_fuchsian_stop_chart(
     interval_projected_residual_detail = "remainder majorant not supplied"
     interval_angular_detail = "remainder majorant not supplied"
     interval_com_momentum_detail = "remainder majorant not supplied"
-    angular_certified = False
-    scaling_certified = False
     if (
         branch is not None
         and isolation_certified
@@ -4514,20 +4460,6 @@ def check_total_collision_generalized_fuchsian_stop_chart(
                 branch,
                 tau_interval,
                 sample_count=sample_count,
-            )
-            sampled_residual_certified = bool(
-                sampled_count > 0
-                and np.isfinite(max_lifted_residual)
-                and max_lifted_residual + float(majorant_checks["lifted_residual_tail_bound"])
-                <= residual_tolerance * (1.0 + 1.0e-12)
-            )
-            angular_certified = bool(
-                sampled_count > 0 and max_angular_momentum <= angular_tolerance
-            )
-            scaling_certified = bool(
-                sampled_count > 0
-                and np.isfinite(max_position_scale)
-                and max_position_scale > 0.0
             )
         except (FloatingPointError, ValueError):
             max_lifted_residual = np.inf
@@ -11760,15 +11692,7 @@ def _max_interval_planar_lc_projected_newton_residual(
     z_velocity = interval_array_series_eval(solution.z_velocity, variable)
     pair_energy = interval_polynomial_eval(solution.pair_energy, variable)
     binary_center = interval_array_series_eval(solution.binary_center, variable)
-    binary_center_velocity = interval_array_series_eval(
-        solution.binary_center_velocity,
-        variable,
-    )
     third_offset = interval_array_series_eval(solution.third_offset, variable)
-    third_offset_velocity = interval_array_series_eval(
-        solution.third_offset_velocity,
-        variable,
-    )
     rho = _interval_dot(z, z)
     if rho.lower <= max(0.0, float(rho_lower_bound)):
         return float("inf")
@@ -12934,69 +12858,6 @@ def _max_sampled_projected_binary_newton_residual(
         )
         checked += 1
     return float(worst if checked else np.inf), checked
-
-
-def _max_sampled_spatial_ks_residual(
-    solution: SpatialKSBinaryTaylorSolution,
-    parameter_interval: tuple[float, float],
-    *,
-    sample_count: int,
-) -> float:
-    derivatives = {
-        "u": _derivative_coefficients(solution.u),
-        "u_velocity": _derivative_coefficients(solution.u_velocity),
-        "pair_energy": _derivative_scalar_coefficients(solution.pair_energy),
-        "binary_center": _derivative_coefficients(solution.binary_center),
-        "binary_center_velocity": _derivative_coefficients(solution.binary_center_velocity),
-        "third_offset": _derivative_coefficients(solution.third_offset),
-        "third_offset_velocity": _derivative_coefficients(solution.third_offset_velocity),
-        "physical_time": _derivative_scalar_coefficients(solution.physical_time),
-    }
-    worst = 0.0
-    for parameter in np.linspace(
-        parameter_interval[0],
-        parameter_interval[1],
-        sample_count,
-    ):
-        s_value = float(parameter)
-        state = solution.state_at(s_value)
-        rhs = regularized_ks_binary_chart_rhs(state)
-        worst = max(
-            worst,
-            _array_sup_norm(_evaluate_coefficients(derivatives["u"], s_value) - rhs.u),
-            _array_sup_norm(
-                _evaluate_coefficients(derivatives["u_velocity"], s_value)
-                - rhs.u_velocity,
-            ),
-            abs(
-                _evaluate_scalar_coefficients(derivatives["pair_energy"], s_value)
-                - rhs.pair_energy
-            ),
-            _array_sup_norm(
-                _evaluate_coefficients(derivatives["binary_center"], s_value)
-                - rhs.binary_center,
-            ),
-            _array_sup_norm(
-                _evaluate_coefficients(derivatives["binary_center_velocity"], s_value)
-                - rhs.binary_center_velocity,
-            ),
-            _array_sup_norm(
-                _evaluate_coefficients(derivatives["third_offset"], s_value)
-                - rhs.third_offset,
-            ),
-            _array_sup_norm(
-                _evaluate_coefficients(
-                    derivatives["third_offset_velocity"],
-                    s_value,
-                )
-                - rhs.third_offset_velocity,
-            ),
-            abs(
-                _evaluate_scalar_coefficients(derivatives["physical_time"], s_value)
-                - rhs.physical_time
-            ),
-        )
-    return float(worst)
 
 
 def _max_sampled_spatial_ks_projected_newton_residual(

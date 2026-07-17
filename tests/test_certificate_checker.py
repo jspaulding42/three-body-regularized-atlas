@@ -20,7 +20,6 @@ from three_body_symmetry.certificate_checker import (
     OrdinaryEnclosureTransitionCheckResult,
     PlanarLCAposterioriTubeCheckResult,
     OrdinaryToPlanarLCEnclosureTransitionCheckResult,
-    PlanarLCToOrdinaryEnclosureTransitionCheckResult,
     PlanarLCExactCollisionAnchorCheckResult,
     PlanarLCTwoSidedCollisionPassageCheckResult,
     ValidatedOrdinaryIVPChainCheckResult,

@@ -47,7 +47,7 @@ from three_body_symmetry.ks_binary_series import (
     spatial_ordinary_entry_event_to_ks_chart_state,
     spatial_ordinary_entry_event_to_ks_chart_state_atlas,
 )
-from three_body_symmetry.intervals import FloatInterval, interval_array_series_eval
+from three_body_symmetry.intervals import FloatInterval
 from three_body_symmetry.series import (
     construct_interval_taylor_solution,
     construct_taylor_solution,
@@ -63,7 +63,6 @@ from three_body_symmetry.validated_atlas import (
     partition_ks_state_by_competing_event_order,
     certify_spatial_ks_to_ordinary_handoff_admissibility,
     validated_atlas_from_spatial_ks_competing_binary_handoff,
-    validated_atlas_from_spatial_ks_competing_binary_handoff_to_atlas,
     validated_atlas_from_spatial_ks_event_order_partition,
     validated_atlas_from_spatial_ordinary_ks_handoff,
     validated_atlas_from_spatial_ks_binary_chart,

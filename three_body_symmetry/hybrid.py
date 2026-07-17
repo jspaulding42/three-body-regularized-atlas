@@ -3305,7 +3305,7 @@ def continue_hybrid(
                     current_positions,
                     current_velocities,
                     physical_step,
-                    indicator,
+                    _truncation_indicator,
                     event_pair,
                     event_certificate,
                 ) = event_limited_ordinary_taylor_step(
@@ -3339,7 +3339,6 @@ def continue_hybrid(
                 )
                 current_positions = series.positions_at(physical_step)
                 current_velocities = series.velocities_at(physical_step)
-                indicator = truncation_indicator(series, physical_step)
                 event_certificate = _ordinary_binary_entry_event_certificate_for_interval(
                     series.position,
                     masses,
@@ -3561,7 +3560,6 @@ def continue_hybrid(
                 max_s_step=local_max_binary_s_step,
                 binary_exit_distance=binary_exit_distance,
             )
-            indicator = 0.0
             step_chart = "binary"
             exit_distance = _pair_distance(current_positions, pair)
             step_event = "exit_binary" if exit_distance >= binary_exit_distance * (1.0 - 1e-12) else None

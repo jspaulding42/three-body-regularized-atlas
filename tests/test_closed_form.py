@@ -1310,7 +1310,7 @@ def test_closed_form_audit_consumes_constructor_theorem_without_overclaiming():
         "sundman global series",
         general_theorem_certificate=theorem,
     )
-    atlas_certificate = certify_general_closed_form_solution_target(
+    _ = certify_general_closed_form_solution_target(
         "regularized locally finite atlas",
         general_theorem_certificate=theorem,
     )

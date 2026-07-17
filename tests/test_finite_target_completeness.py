@@ -69,7 +69,6 @@ from three_body_symmetry.stratified_branch_tree import (
     certify_taylor_model_decision_arrangement_stratified_branch_event_tree,
     certify_taylor_model_decision_stratified_branch_event_tree,
     derive_taylor_model_decision_arrangement_child_consumptions,
-    derive_polynomial_decision_child_consumptions,
     certify_rational_decision_arrangement_stratified_branch_event_tree,
     certify_rational_decision_stratified_branch_event_tree,
     certify_sturm_rational_decision_stratified_branch_event_tree,
@@ -1130,8 +1129,8 @@ def test_supplied_generalized_fuchsian_finite_row_tail_budget_requires_entry_cer
 
 def test_supplied_generalized_fuchsian_analytic_remainder_majorant_closes_contraction():
     branch = _supplied_generalized_fuchsian_branch()
-    entry = _supplied_generalized_entry_certificate()
-    finite_rows = _supplied_generalized_finite_row_tail_budget(branch.max_total_degree)
+    _ = _supplied_generalized_entry_certificate()
+    _ = _supplied_generalized_finite_row_tail_budget(branch.max_total_degree)
     majorant = _supplied_generalized_remainder_majorant()
 
     assert majorant.certified

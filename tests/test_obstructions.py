@@ -40,7 +40,6 @@ from three_body_symmetry.fuchsian import (
     derive_finite_fuchsian_log_branch_primitive_cauchy_inputs,
     construct_fuchsian_log_row_solution,
     construct_fuchsian_selector_continuation,
-    construct_fuchsian_shape_branch,
     construct_stable_log_selector_chain,
     derive_identity_finite_fuchsian_log_continuation_from_incoming_branch,
     derive_identity_fuchsian_selector_continuation_from_incoming_branch,
@@ -8454,7 +8453,7 @@ def test_regularized_second_jet_branch_gives_homothetic_continuation(shape):
 
     for regularized_time in (-0.31, -0.07, 0.05, 0.23):
         positions = branch.positions_at_tau(regularized_time)
-        velocities = branch.velocities_at_tau(regularized_time)
+        _ = branch.velocities_at_tau(regularized_time)
         expected_acceleration = -(2.0 / 9.0) * quadratic_coefficient * regularized_time**-4
         state = branch.state_at_tau(regularized_time)
         acceleration_residual = np.linalg.norm(
@@ -8526,7 +8525,7 @@ def test_energy_parameterized_homothetic_branch_records_energy_in_fourth_jet(
         central_lambda,
         energy_per_inertia=energy_per_inertia,
     )
-    coefficients = branch.coefficients
+    _ = branch.coefficients
     fourth_regularized_jet = branch.fourth_regularized_jet
     expected_fourth_jet = branch.expected_fourth_regularized_jet
     inertia = branch.inertia
@@ -8569,7 +8568,6 @@ def test_arbitrary_mass_equilateral_homothetic_branch_continues_through_collisio
 
     for regularized_time in (-0.13, 0.17):
         positions = quadratic_coefficient * regularized_time**2
-        velocities = (2.0 / 3.0) * quadratic_coefficient / regularized_time
         expected_acceleration = -(2.0 / 9.0) * quadratic_coefficient * regularized_time**-4
         state = branch.state_at_tau(regularized_time)
         acceleration_residual = np.linalg.norm(

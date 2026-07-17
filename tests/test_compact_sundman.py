@@ -6,7 +6,6 @@ import pytest
 from three_body_symmetry.compact_sundman import (
     certify_compactified_sundman_accelerated_future_envelope_cross_validation,
     certify_compactified_sundman_accelerated_future_envelope_holdout,
-    certify_compactified_sundman_accelerated_global_summability,
     certify_compactified_sundman_accelerated_induction_witness,
     certify_compactified_sundman_future_shell_induction_closure,
     certify_compactified_sundman_scalar_recurrence_induction,

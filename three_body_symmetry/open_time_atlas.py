@@ -1646,9 +1646,7 @@ def construct_compact_interval_atlas_or_stop(
     """
 
     radius = float(time_radius)
-    interval_lower = -radius
-    interval_upper = radius
-    policy = certify_explicit_total_collision_policy(
+    certify_explicit_total_collision_policy(
         total_collision_policy,
         selector_policy_id=selector_policy_id,
     )
