@@ -9,6 +9,15 @@ all arithmetic prerequisites and all obligations below are implemented and
 freshly replayed.  Until then, mixed evidence remains `UNRESOLVED` outside the
 public proof surface.
 
+Current implementation progress: the directed LC arithmetic prerequisites and
+the private raw-replaying exit-containment primitive are complete.  The latter
+retains and freshly rechecks the Stage-3 entry evidence, reconstructs the full
+fourteen-dimensional exit slice, proves positive exit \(\rho\), contains its
+complete Cartesian projection in the ordinary anchor, and derives \(D\) and
+\(B=D-a\).  The canonical top-level wire certificate, fixed-\(T\) evaluation,
+final width gate, and structured mixed result are not yet implemented; hence
+this progress does not produce a mixed `CERTIFIED_TO_T` result.
+
 The first supported grammar is exactly
 
 \[

@@ -68,8 +68,11 @@ ordinary/LC chains, prove producer termination, or establish general/global
 completeness.  The reviewed Milestone-3 implementation contract is
 [`docs/raw-mixed-planar-continuation-theorem.md`](docs/raw-mixed-planar-continuation-theorem.md).
 Its directed LC derivative, square-root, and Gronwall prerequisites are now
-implemented, but the raw gauge-aware exit and interval-clock fixed-time
-composition are not; no mixed chain currently returns `CERTIFIED_TO_T`.
+implemented.  A private raw-replaying gauge-aware exit primitive now proves
+complete rho-positive LC endpoint projection into an ordinary anchor and
+derives the clock intervals `D` and `B=D-a`; it is not yet exported as a
+top-level certificate language.  The interval-clock fixed-time composition is
+still missing, so no mixed chain currently returns `CERTIFIED_TO_T`.
 
 The broader historical research program and experimental machinery are
 retained below for auditability.
@@ -113,6 +116,7 @@ ordinary replay regressions for the new strengthening program:
 python -m pytest -q \
   tests/test_directed_arithmetic_kernel.py \
   tests/test_lc_directed_arithmetic.py \
+  tests/test_proof_carrying_planar_lc_exit.py \
   tests/test_certificate_checker_fraction_bounds.py \
   tests/test_certificate_language_clock_shift.py \
   tests/test_certificate_problem_identity.py \
