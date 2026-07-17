@@ -1,8 +1,14 @@
-use num_bigint::{BigInt, BigUint};
+use num_bigint::{BigInt, BigUint, Sign};
 use num_rational::BigRational;
-use num_traits::{One, Zero};
+use num_traits::One;
 
-use crate::{NumericError, RationalInterval};
+use crate::{rational_input::validate_public_rational, NumericError, RationalInterval};
+
+/// Non-configurable precision ceiling checked before every integer shift.
+///
+/// Together with the shared 65,536-bit rational-component ceiling, this keeps
+/// the scaled integer below 98,304 bits before the integer square root.
+pub const HARD_MAX_SQRT_PRECISION_BITS: usize = 16_384;
 
 /// A dyadic square-root enclosure and the grid precision used to build it.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -30,7 +36,13 @@ impl DyadicSqrtEnclosure {
 
     /// Recheck every theorem-facing postcondition with exact arithmetic.
     pub fn verifies(&self, radicand: &BigRational) -> bool {
-        if radicand < &BigRational::zero() || self.interval.lower() < &BigRational::zero() {
+        if validate_public_rational(radicand).is_err()
+            || validate_public_rational(self.interval.lower()).is_err()
+            || validate_public_rational(self.interval.upper()).is_err()
+            || self.precision_bits > HARD_MAX_SQRT_PRECISION_BITS
+            || radicand.numer().sign() == Sign::Minus
+            || self.interval.lower().numer().sign() == Sign::Minus
+        {
             return false;
         }
         let grid_denominator = BigInt::one() << self.precision_bits;
@@ -58,7 +70,14 @@ pub fn sqrt_enclosure_dyadic(
     radicand: &BigRational,
     precision_bits: usize,
 ) -> Result<DyadicSqrtEnclosure, NumericError> {
-    if radicand < &BigRational::zero() {
+    validate_public_rational(radicand)?;
+    if precision_bits > HARD_MAX_SQRT_PRECISION_BITS {
+        return Err(NumericError::SquareRootPrecisionBitLimitExceeded {
+            precision_bits,
+            limit: HARD_MAX_SQRT_PRECISION_BITS,
+        });
+    }
+    if radicand.numer().sign() == Sign::Minus {
         return Err(NumericError::NegativeSquareRoot);
     }
     let doubled_precision = precision_bits
@@ -68,11 +87,11 @@ pub fn sqrt_enclosure_dyadic(
     let numerator = radicand
         .numer()
         .to_biguint()
-        .expect("nonnegative rational has nonnegative numerator");
+        .ok_or(NumericError::InternalSquareRootPostconditionFailure)?;
     let denominator = radicand
         .denom()
         .to_biguint()
-        .expect("normalized rational has positive denominator");
+        .ok_or(NumericError::InternalSquareRootPostconditionFailure)?;
     let scaled_floor = (numerator << doubled_precision) / denominator;
     let lower_grid_numerator = integer_sqrt_floor(&scaled_floor);
 
@@ -122,6 +141,8 @@ fn integer_sqrt_floor(value: &BigUint) -> BigUint {
 
 #[cfg(test)]
 mod tests {
+    use num_traits::Zero;
+
     use super::*;
     use crate::rational_from_f64_bits;
 
@@ -168,7 +189,10 @@ mod tests {
             (rational(1, 1024), 12, rational(1, 32)),
         ] {
             let enclosure = sqrt_enclosure_dyadic(&radicand, precision).unwrap();
-            assert_eq!(enclosure.interval(), &RationalInterval::point(root));
+            assert_eq!(
+                enclosure.interval(),
+                &RationalInterval::try_point(root).unwrap()
+            );
             assert!(enclosure.verifies(&radicand));
             assert_eq!(enclosure.lower_square(), radicand);
             assert_eq!(enclosure.upper_square(), radicand);
@@ -213,7 +237,11 @@ mod tests {
         let exact_small_root = sqrt_enclosure_dyadic(&smallest_subnormal, 600).unwrap();
         assert_eq!(
             exact_small_root.interval(),
-            &RationalInterval::point(BigRational::new(BigInt::one(), BigInt::one() << 537_usize,))
+            &RationalInterval::try_point(BigRational::new(
+                BigInt::one(),
+                BigInt::one() << 537_usize,
+            ))
+            .unwrap()
         );
 
         let largest_finite = rational_from_f64_bits(0x7fef_ffff_ffff_ffff).unwrap();
@@ -227,5 +255,55 @@ mod tests {
             sqrt_enclosure_dyadic(&rational(-1, 100), 64),
             Err(NumericError::NegativeSquareRoot)
         );
+    }
+
+    #[test]
+    fn malformed_and_oversized_radicands_fail_without_panicking() {
+        let zero_denominator = BigRational::new_raw(BigInt::from(1), BigInt::from(0));
+        let negative_denominator = BigRational::new_raw(BigInt::from(1), BigInt::from(-2));
+        let unreduced = BigRational::new_raw(BigInt::from(2), BigInt::from(4));
+        let oversized = BigRational::from_integer(
+            BigInt::one() << crate::HARD_MAX_RATIONAL_COMPONENT_BITS as usize,
+        );
+
+        let result = std::panic::catch_unwind(|| sqrt_enclosure_dyadic(&zero_denominator, 64));
+        assert_eq!(
+            result.unwrap(),
+            Err(NumericError::InvalidRationalDenominator)
+        );
+        assert_eq!(
+            sqrt_enclosure_dyadic(&negative_denominator, 64),
+            Err(NumericError::InvalidRationalDenominator)
+        );
+        assert_eq!(
+            sqrt_enclosure_dyadic(&unreduced, 64),
+            Err(NumericError::NonCanonicalRational)
+        );
+        assert!(matches!(
+            sqrt_enclosure_dyadic(&oversized, 64),
+            Err(NumericError::RationalComponentBitLimitExceeded { .. })
+        ));
+
+        let enclosure = sqrt_enclosure_dyadic(&rational(2, 1), 64).unwrap();
+        assert!(!enclosure.verifies(&zero_denominator));
+        assert!(!enclosure.verifies(&negative_denominator));
+        assert!(!enclosure.verifies(&unreduced));
+        assert!(!enclosure.verifies(&oversized));
+    }
+
+    #[test]
+    fn precision_limit_is_checked_before_any_shift() {
+        assert_eq!(
+            sqrt_enclosure_dyadic(&BigRational::zero(), HARD_MAX_SQRT_PRECISION_BITS + 1,),
+            Err(NumericError::SquareRootPrecisionBitLimitExceeded {
+                precision_bits: HARD_MAX_SQRT_PRECISION_BITS + 1,
+                limit: HARD_MAX_SQRT_PRECISION_BITS,
+            })
+        );
+        assert!(sqrt_enclosure_dyadic(&BigRational::zero(), HARD_MAX_SQRT_PRECISION_BITS,).is_ok());
+
+        let mut enclosure = sqrt_enclosure_dyadic(&rational(2, 1), 8).unwrap();
+        enclosure.precision_bits = HARD_MAX_SQRT_PRECISION_BITS + 1;
+        assert!(!enclosure.verifies(&rational(2, 1)));
     }
 }

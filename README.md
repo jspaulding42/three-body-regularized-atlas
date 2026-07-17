@@ -105,22 +105,36 @@ the normative [`raw-v1 certificate specification`](docs/raw-v1-certificate-speci
 the [`Rust raw-v1 schema map`](docs/raw-v1-rust-schema-map.md),
 and the [`v0.4 release gates`](docs/v0.4-independent-verification-release-gates.md).
 The standalone [`Rust v1 crate`](verifiers/rust-v1/) now has a resource-bounded
-strict JSON and canonical-byte layer, exact binary64/dyadic and rational
-interval primitives, and an explicit `V03Compatible` typed decoder for the
-complete finite v0.3 record grammar. The implementation-neutral
+strict JSON and canonical-byte layer, exact binary64/dyadic decoding,
+bounded canonical rational admission, checked rational intervals and Horner
+evaluation, a bounded first-order rational interval-dual primitive with a
+64-coordinate cap, checked value/gradient algebra, and reciprocal and
+square-root chain rules, exact-postcondition dyadic square-root enclosures, and
+an explicit `V03Compatible` typed decoder for the complete finite v0.3 record
+grammar. Its numeric foundation also includes an exact rational exponential enclosure
+using range reduction, a Taylor partial sum with a geometric tail, full
+witness replay, and hard work/storage budgets, plus exact outward binary64
+mass coefficients for all eight raw-v1 mass formulas with hand-derived and
+stress-tested nearest-even endpoints. The crate currently passes 98 Rust unit
+tests and two corpus tests; `cargo fmt --check` and warning-denying Clippy are
+clean. The implementation-neutral
 [`raw-v1 seed corpus`](conformance/raw-v1/README.md) currently contains two
 accepted baseline payloads and sixteen isolated rejection mutations. The
 public Python admission API and the independent Rust integration suite both
 enforce those 18 parser classifications.
 
 This remains foundation work, **not yet an independent certificate verifier**.
-The Rust crate does not replay the three-body equations, chart/tube or
-transition obligations, chain fold, hashes, semantic result, or obligation
-ledger. The corpus is marked `seed_incomplete` and lacks the required
-semantic, numeric-boundary, and fold-boundary coverage. Cross-language numeric
-canonical rendering and the Rust toolchain pin also remain open under
-`OPEN-V1-01`. The conformance and independent-verifier release gates therefore
-remain failed, and no certificate-level or independent-replay claim is made.
+The Rust crate still has no raw SHA-256 layer, and its interval-dual primitive
+is not yet connected to ordinary/LC vector fields, Jacobian bounds, or
+certificate semantics. Chart/tube/transition checks, chain fold, clock or
+gauge logic, fixed-time evaluation, obligation ledger, and semantic result
+serialization also remain unimplemented. The corpus is marked
+`seed_incomplete` and lacks
+the required semantic, numeric-boundary, and fold-boundary coverage.
+Cross-language numeric canonical rendering and the Rust toolchain pin also
+remain open under `OPEN-V1-01`. The conformance and independent-verifier
+release gates therefore remain failed, and no certificate-level or
+independent-replay claim is made.
 
 The broader historical research program and experimental machinery are
 retained below for auditability.

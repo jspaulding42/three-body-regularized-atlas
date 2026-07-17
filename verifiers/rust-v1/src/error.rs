@@ -3,7 +3,9 @@ use core::fmt;
 /// Fail-closed errors from the exact numeric kernel.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum NumericError {
-    NonFiniteBinary64 { bits: u64 },
+    NonFiniteBinary64 {
+        bits: u64,
+    },
     MalformedJsonNumber,
     JsonNumberSignificandDigitLimitExceeded,
     JsonNumberExponentDigitLimitExceeded,
@@ -11,15 +13,45 @@ pub enum NumericError {
     JsonNumberEffectiveExponentLimitExceeded,
     JsonRealLexemeRequired,
     HostBinary64ParseRejected,
-    Binary64CandidateNonFinite { bits: u64 },
+    Binary64CandidateNonFinite {
+        bits: u64,
+    },
     Binary64Overflow,
     Binary64UnderflowSignMismatch,
     Binary64CandidateSignMismatch,
     Binary64NearestProofFailed,
+    RationalComponentBitLimitExceeded {
+        numerator_bits: u64,
+        denominator_bits: u64,
+        limit: u64,
+    },
+    InvalidRationalDenominator,
+    NonCanonicalRational,
+    PolynomialCoefficientCountLimitExceeded {
+        coefficient_count: usize,
+        limit: usize,
+    },
+    DualDimensionLimitExceeded {
+        dimension: usize,
+        limit: usize,
+    },
+    DualDimensionMismatch {
+        left_dimension: usize,
+        right_dimension: usize,
+    },
+    DualIndexOutOfBounds {
+        index: usize,
+        dimension: usize,
+    },
+    DualSquareRootRequiresStrictlyPositiveValue,
     InvalidIntervalBounds,
     DivisionByZeroInterval,
     NegativeSquareRoot,
     PrecisionOverflow,
+    SquareRootPrecisionBitLimitExceeded {
+        precision_bits: usize,
+        limit: usize,
+    },
     InternalSquareRootPostconditionFailure,
 }
 
@@ -68,6 +100,46 @@ impl fmt::Display for NumericError {
             Self::Binary64NearestProofFailed => formatter.write_str(
                 "binary64 candidate is not the exact nearest-even rounding of the decimal",
             ),
+            Self::RationalComponentBitLimitExceeded {
+                numerator_bits,
+                denominator_bits,
+                limit,
+            } => write!(
+                formatter,
+                "exact rational component limit exceeded: numerator={numerator_bits} bits, \
+                 denominator={denominator_bits} bits, limit={limit} bits"
+            ),
+            Self::InvalidRationalDenominator => formatter
+                .write_str("exact rational denominator must be strictly positive and nonzero"),
+            Self::NonCanonicalRational => {
+                formatter.write_str("exact rational must be in canonical reduced form")
+            }
+            Self::PolynomialCoefficientCountLimitExceeded {
+                coefficient_count,
+                limit,
+            } => write!(
+                formatter,
+                "polynomial coefficient count {coefficient_count} exceeds hard limit {limit}"
+            ),
+            Self::DualDimensionLimitExceeded { dimension, limit } => write!(
+                formatter,
+                "interval-dual dimension {dimension} exceeds hard limit {limit}"
+            ),
+            Self::DualDimensionMismatch {
+                left_dimension,
+                right_dimension,
+            } => write!(
+                formatter,
+                "interval-dual dimension mismatch: left={left_dimension}, \
+                 right={right_dimension}"
+            ),
+            Self::DualIndexOutOfBounds { index, dimension } => write!(
+                formatter,
+                "interval-dual index {index} is outside dimension {dimension}"
+            ),
+            Self::DualSquareRootRequiresStrictlyPositiveValue => formatter.write_str(
+                "interval-dual square-root derivative requires a strictly positive value interval",
+            ),
             Self::InvalidIntervalBounds => {
                 formatter.write_str("rational interval lower bound exceeds upper bound")
             }
@@ -80,6 +152,13 @@ impl fmt::Display for NumericError {
             Self::PrecisionOverflow => {
                 formatter.write_str("requested dyadic precision overflows its size type")
             }
+            Self::SquareRootPrecisionBitLimitExceeded {
+                precision_bits,
+                limit,
+            } => write!(
+                formatter,
+                "requested square-root precision {precision_bits} bits exceeds hard limit {limit}"
+            ),
             Self::InternalSquareRootPostconditionFailure => formatter.write_str(
                 "integer square-root construction failed an exact endpoint postcondition",
             ),

@@ -71,16 +71,18 @@ preimages, polynomial coefficients, and endpoint evaluations.
 
 ### Algebraic interval layer
 
-The principal interval type has arbitrary-size rational endpoints. Algebraic
-operations are exact; widening occurs only for genuinely irrational
+The principal interval type admits canonical rational endpoints under fixed
+component and operation-size ceilings. Algebraic operations are exact within
+those admitted bounds; widening occurs only for genuinely irrational
 operations or an explicitly selected precision boundary. This is a different
-arithmetic implementation from the Python binary64 interval backend and
-provides a useful higher-precision consistency check.
+arithmetic implementation from the Python binary64 interval backend, but the
+numeric separation alone is not certificate replay.
 
-For a nonnegative rational `x`, square root is enclosed by rational dyadic
-bisection at a declared precision, with the endpoint-square inequalities
-checked exactly. Reciprocal square-root powers are derived from that enclosure
-using exact interval multiplication and reciprocal operations.
+For a nonnegative rational `x`, square root is enclosed on a rational dyadic
+grid at a hard-capped declared precision using integer square root, with the
+endpoint-square inequalities checked exactly. Reciprocal square-root powers
+are derived from that enclosure using exact interval multiplication and
+reciprocal operations.
 
 For a nonnegative rational exponent, `exp(x)` is bounded using exact rational
 range reduction and a Taylor partial sum with an explicit geometric tail
@@ -90,21 +92,35 @@ previously accepted stable certificate.
 
 ### Automatic differentiation
 
-The verifier uses a locally implemented first-order interval-dual type. Each
-dual value consists of one rational interval and a fixed-size interval
-gradient. Vector fields are expressed once over the dual operations so the
-Jacobian bound is derived independently from the Python implementation.
+The numeric foundation now includes a locally implemented, bounded first-order
+rational interval-dual type. Each dual value consists of one checked rational
+interval and a checked interval gradient with at most 64 coordinates. The
+primitive implements checked value/gradient algebra and reciprocal and
+square-root chain rules. It is not yet connected to ordinary or LC vector
+fields, Jacobian bounds, or certificate semantics.
 
 ## Implementation status at the current checkpoint
 
 The standalone Rust crate now implements a strict, resource-bounded JSON byte
 layer, duplicate-key and canonical-byte rejection, exact decimal-to-binary64
-nearest-even validation, exact binary64-to-dyadic decoding, arbitrary-size
-rational intervals and Horner evaluation, and exact-postcondition dyadic
-square-root enclosures. It also has an explicit `V03Compatible` typed decoder
+nearest-even validation, exact binary64-to-dyadic decoding, bounded canonical
+rational admission, checked rational intervals and Horner evaluation, a
+bounded first-order rational interval-dual primitive with a 64-coordinate cap,
+checked value/gradient algebra, and reciprocal and square-root chain rules,
+and exact-postcondition dyadic square-root enclosures. It also implements an
+exact rational exponential enclosure with range reduction, a Taylor partial
+sum and geometric tail, exact squaring, full witness replay, and hard
+component/work/storage budgets. Its exact outward binary64 mass kernel derives
+all eight raw-v1 mass formulas and validates adjacent nearest-even endpoints;
+hand-derived boundary cases and deterministic lattice stress tests exercise
+that selection independently of host floating-point rounding. The crate also
+has an explicit `V03Compatible` typed decoder
 for the complete finite v0.3 raw-v1 record grammar. The record-by-record parser
 boundary is documented in the
 [`Rust schema map`](raw-v1-rust-schema-map.md).
+
+The current validation checkpoint is 98 passing Rust unit tests and two
+passing corpus tests, with `cargo fmt --check` and warning-denying Clippy clean.
 
 The implementation-neutral
 [`raw-v1 seed corpus`](../conformance/raw-v1/README.md) contains two accepted
@@ -119,12 +135,14 @@ release.
 Delivery slices 1 and 2 are therefore only partial. `OPEN-V1-01` remains open
 because the tested Rust float rendering path is not yet a portable normative
 shortest-decimal algorithm and the Rust toolchain is not pinned. Raw SHA-256,
-the exponential and mass-coefficient kernels, interval automatic
-differentiation, all ordinary/LC equations and chart obligations, chain-fold
-semantics, clock and gauge logic, the obligation ledger, and the semantic
-result serializer are not implemented. No slice beyond the byte/schema and
-partial numeric foundations is complete, and neither the conformance gate nor
-the independent-verifier gate passes at this checkpoint.
+the connection from the interval-dual primitive to ordinary/LC vector fields,
+Jacobian bounds, and certificate semantics, all ordinary/LC chart, tube, and
+transition checks, chain-fold semantics, clock and gauge logic, fixed-time
+evaluation, the obligation ledger, and the semantic result serializer are not
+implemented. No certificate has been replayed by this crate. The corpus
+remains `seed_incomplete`, no slice beyond the byte/schema and partial numeric
+foundations is complete, and neither the conformance gate nor the
+independent-verifier gate passes at this checkpoint.
 
 ## Delivery slices
 
