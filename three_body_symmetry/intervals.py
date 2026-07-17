@@ -178,25 +178,73 @@ def _round_up(value: float) -> float:
 
 
 @lru_cache(maxsize=131072)
+def directed_nonnegative_sqrt_endpoint(value: float, *, upward: bool) -> float:
+    """Return a directed binary64 endpoint for ``sqrt(value)``.
+
+    The input is the exact real number represented by the supplied finite
+    binary64 value.  ``Decimal.sqrt`` is correctly rounded to nearest rather
+    than according to the context direction, so an adjacent 100-digit Decimal
+    supplies a strict endpoint before the final directed binary64 conversion.
+    """
+
+    if not np.isfinite(value) or value < 0.0:
+        raise ValueError("square-root argument must be finite and nonnegative")
+    if value == 0.0:
+        return 0.0
+    with localcontext() as context:
+        context.prec = 100
+        exact_value = Decimal.from_float(float(value))
+        nearest_root = context.sqrt(exact_value)
+        decimal_endpoint = (
+            context.next_plus(nearest_root)
+            if upward
+            else context.next_minus(nearest_root)
+        )
+    candidate = float(decimal_endpoint)
+    candidate_decimal = Decimal.from_float(candidate)
+    if upward and candidate_decimal < decimal_endpoint:
+        candidate = float(np.nextafter(candidate, np.inf))
+    elif not upward and candidate_decimal > decimal_endpoint:
+        candidate = float(np.nextafter(candidate, -np.inf))
+    return candidate
+
+
+@lru_cache(maxsize=131072)
 def _directed_negative_half_integer_power(
     value: float,
     exponent: float,
     *,
     upward: bool,
 ) -> float:
-    """Directed bound for x**(-1/2), x**(-3/2), or x**(-5/2)."""
+    """Directed bound for x**(-1/2), x**(-3/2), or x**(-5/2).
+
+    ``Decimal.sqrt`` is correctly rounded to nearest, regardless of the
+    context's directed rounding mode.  Its adjacent context numbers therefore
+    bracket the exact square root.  An upper reciprocal uses the lower square-
+    root neighbor and downward denominator products; a lower reciprocal uses
+    the upper neighbor and upward denominator products.  The final division
+    and binary64 conversion are directed in the requested result direction.
+    """
 
     if value <= 0.0 or not np.isfinite(value):
         raise ValueError("finite positive power base required")
     powers = {-0.5: 0, -1.5: 1, -2.5: 2}
     if exponent not in powers:
         raise ValueError("unsupported directed half-integer exponent")
+    with localcontext() as context:
+        context.prec = 100
+        base = Decimal.from_float(float(value))
+        nearest_root = context.sqrt(base)
+        root_lower = context.next_minus(nearest_root)
+        root_upper = context.next_plus(nearest_root)
+    if root_lower <= 0:
+        raise ValueError("decimal precision did not prove a positive sqrt lower bound")
+
     denominator_direction = ROUND_FLOOR if upward else ROUND_CEILING
     with localcontext() as context:
         context.prec = 100
         context.rounding = denominator_direction
-        base = Decimal.from_float(float(value))
-        denominator = context.sqrt(base)
+        denominator = root_lower if upward else root_upper
         for _ in range(powers[exponent]):
             denominator = context.multiply(denominator, base)
     with localcontext() as context:
@@ -295,6 +343,40 @@ def interval_polyder(coefficients: np.ndarray | tuple[FloatInterval, ...]) -> tu
     if len(coefficient_intervals) <= 1:
         return ()
     return tuple(coefficient_intervals[index].scale(index) for index in range(1, len(coefficient_intervals)))
+
+
+def interval_array_derivative_coefficients(coefficients: np.ndarray) -> np.ndarray:
+    """Differentiate serialized float arrays before any binary64 product rounding.
+
+    Output coefficient ``n`` is the exact rational product
+    ``(n + 1) * Fraction.from_float(serialized[n + 1])``, enclosed by the
+    nearest outward binary64 endpoints.  This prevents a pre-rounded NumPy
+    derivative coefficient from being treated as an exact point interval.
+    """
+
+    serialized = np.asarray(coefficients, dtype=float)
+    if serialized.ndim < 1:
+        raise ValueError("coefficients must have a degree axis")
+    out = np.empty((max(0, serialized.shape[0] - 1), *serialized.shape[1:]), dtype=object)
+    for index in np.ndindex(out.shape):
+        degree = index[0] + 1
+        exact = Fraction(degree) * Fraction.from_float(
+            float(serialized[(degree, *index[1:])])
+        )
+        candidate = float(exact)
+        candidate_q = Fraction.from_float(candidate)
+        lower = (
+            candidate
+            if candidate_q <= exact
+            else float(np.nextafter(candidate, -np.inf))
+        )
+        upper = (
+            candidate
+            if candidate_q >= exact
+            else float(np.nextafter(candidate, np.inf))
+        )
+        out[index] = FloatInterval(lower, upper)
+    return out
 
 
 def rational_interval_polyder(

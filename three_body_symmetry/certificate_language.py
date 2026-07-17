@@ -348,6 +348,105 @@ class PlanarLCAposterioriTubeCertificate:
 
 
 @dataclass(frozen=True)
+class PlanarLCExactOverlapAnchorCertificate:
+    """Bind two zero-error LC tubes at one exact gauge-related anchor."""
+
+    overlap_id: str
+    source_chart_id: str
+    source_tube_id: str
+    target_chart_id: str
+    target_tube_id: str
+    source_anchor_parameter: float
+    target_anchor_parameter: float
+    source: str = "serialized_planar_lc_exact_overlap_anchor"
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "overlap_id": self.overlap_id,
+            "source_chart_id": self.source_chart_id,
+            "source_tube_id": self.source_tube_id,
+            "target_chart_id": self.target_chart_id,
+            "target_tube_id": self.target_tube_id,
+            "source_anchor_parameter": self.source_anchor_parameter,
+            "target_anchor_parameter": self.target_anchor_parameter,
+            "source": self.source,
+        }
+
+    @classmethod
+    def from_dict(
+        cls, data: dict[str, Any]
+    ) -> "PlanarLCExactOverlapAnchorCertificate":
+        # Preserve malformed serialized values for the checker to reject.  In
+        # particular, do not coerce truthy objects, booleans, or numeric text
+        # into identifiers or anchor parameters.
+        return cls(
+            overlap_id=data.get("overlap_id", ""),
+            source_chart_id=data.get("source_chart_id", ""),
+            source_tube_id=data.get("source_tube_id", ""),
+            target_chart_id=data.get("target_chart_id", ""),
+            target_tube_id=data.get("target_tube_id", ""),
+            source_anchor_parameter=data.get("source_anchor_parameter", np.inf),
+            target_anchor_parameter=data.get("target_anchor_parameter", np.inf),
+            source=data.get(
+                "source", "serialized_planar_lc_exact_overlap_anchor"
+            ),
+        )
+
+
+@dataclass(frozen=True)
+class PlanarLCExactGaugeAtlasCertificate:
+    """Bind raw zero-error LC vertices and exact-overlap records into an atlas.
+
+    The three identifier sequences are positional manifests.  They carry no
+    supplied gauge bits: the checker must recompute every overlap and derive
+    the graph presented to the exact F2 kernel.
+    """
+
+    atlas_id: str
+    chart_ids: tuple[str, ...]
+    tube_ids: tuple[str, ...]
+    overlap_ids: tuple[str, ...]
+    source: str = "serialized_planar_lc_exact_gauge_atlas"
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "atlas_id": self.atlas_id,
+            "chart_ids": list(self.chart_ids)
+            if type(self.chart_ids) is tuple
+            else self.chart_ids,
+            "tube_ids": list(self.tube_ids)
+            if type(self.tube_ids) is tuple
+            else self.tube_ids,
+            "overlap_ids": list(self.overlap_ids)
+            if type(self.overlap_ids) is tuple
+            else self.overlap_ids,
+            "source": self.source,
+        }
+
+    @classmethod
+    def from_dict(
+        cls, data: dict[str, Any]
+    ) -> "PlanarLCExactGaugeAtlasCertificate":
+        # JSON arrays become tuples, but their members are deliberately not
+        # coerced.  Non-array values are preserved so the checker, rather than
+        # the parser, rejects malformed truthy stand-ins.
+        def positional_ids(value: object) -> object:
+            if type(value) is list or type(value) is tuple:
+                return tuple(value)
+            return value
+
+        return cls(
+            atlas_id=data.get("atlas_id", ""),
+            chart_ids=positional_ids(data.get("chart_ids", ())),  # type: ignore[arg-type]
+            tube_ids=positional_ids(data.get("tube_ids", ())),  # type: ignore[arg-type]
+            overlap_ids=positional_ids(data.get("overlap_ids", ())),  # type: ignore[arg-type]
+            source=data.get(
+                "source", "serialized_planar_lc_exact_gauge_atlas"
+            ),
+        )
+
+
+@dataclass(frozen=True)
 class PlanarLCExactCollisionAnchorCertificate:
     """Bind a zero-error LC tube to an exact isolated binary collision."""
 
@@ -1378,12 +1477,17 @@ def planar_levi_civita_binary_chart_certificate_from_solution(
     tail_bound: float = 0.0,
     sample_count: int = 7,
     projection_rho_lower_bound: float = 1.0e-12,
+    physical_time_shift: float = 0.0,
     source: str = "regularized_binary_solution_serialization",
 ) -> PlanarLeviCivitaBinaryChartCertificate:
     """Serialize a planar LC binary Taylor chart into the certificate language."""
 
     physical = (
-        _interval_physical_time_range(solution, parameter_interval)
+        _interval_physical_time_range(
+            solution,
+            parameter_interval,
+            physical_time_shift=physical_time_shift,
+        )
         if physical_time_interval is None
         else tuple(float(value) for value in physical_time_interval)
     )
@@ -1404,7 +1508,10 @@ def planar_levi_civita_binary_chart_certificate_from_solution(
         third_offset_velocity_coefficients=_array_to_vector_tuple(
             solution.third_offset_velocity,
         ),
-        physical_time_coefficients=_array_to_scalar_tuple(solution.physical_time),
+        physical_time_coefficients=_shifted_scalar_coefficients(
+            solution.physical_time,
+            physical_time_shift,
+        ),
         parameter_interval=tuple(float(value) for value in parameter_interval),
         physical_time_interval=physical,
         coefficient_tolerance=float(coefficient_tolerance),
@@ -1715,19 +1822,12 @@ def planar_hybrid_chart_chain_certificates_from_solution(
             )
             local_parameter_step = float(getattr(step, "parameter_step", np.nan))
             parameter_interval = _zero_based_interval(local_parameter_step)
-            checked_physical_interval = _padded_interval(
-                _union_interval(
-                    physical_interval,
-                    _interval_physical_time_range(solution, parameter_interval),
-                )
-            )
             charts.append(
                 planar_levi_civita_binary_chart_certificate_from_solution(
                     solution,
                     certificate_id=f"{prefix}-lc-chart-{index}",
                     chart_id=f"{prefix}-lc-{index}",
                     parameter_interval=parameter_interval,
-                    physical_time_interval=checked_physical_interval,
                     coefficient_tolerance=float(coefficient_tolerance),
                     regularized_residual_tolerance=float(
                         regularized_residual_tolerance
@@ -1736,6 +1836,7 @@ def planar_hybrid_chart_chain_certificates_from_solution(
                     tail_bound=tail_bound,
                     sample_count=int(sample_count),
                     projection_rho_lower_bound=float(projection_rho_lower_bound),
+                    physical_time_shift=start_time,
                     source=source,
                 )
             )
@@ -1969,22 +2070,6 @@ def _ordered_pair(left: float, right: float) -> tuple[float, float]:
     left = float(left)
     right = float(right)
     return (min(left, right), max(left, right))
-
-
-def _padded_interval(interval: tuple[float, float]) -> tuple[float, float]:
-    lower, upper = (float(interval[0]), float(interval[1]))
-    radius = 64.0 * np.finfo(float).eps * max(1.0, abs(lower), abs(upper))
-    return (lower - radius, upper + radius)
-
-
-def _union_interval(
-    left: tuple[float, float],
-    right: tuple[float, float],
-) -> tuple[float, float]:
-    return (
-        min(float(left[0]), float(right[0])),
-        max(float(left[1]), float(right[1])),
-    )
 
 
 def _zero_based_interval(width: float) -> tuple[float, float]:

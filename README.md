@@ -1,26 +1,102 @@
 # Three-Body Regularized Atlas
 
 > [!IMPORTANT]
-> **Research status:** this repository is a proof-of-concept validation of
-> **one local planar Levi-Civita binary-collision passage**, conditional on the
-> correctness of its trusted interval-arithmetic kernel. It is **not a general
-> solution of the three-body problem**. Arbitrary-data construction, global
-> atlas completeness, and independent verification of the trusted kernel
-> remain open.
+> **Research status:** the strongest implemented core is a raw-replaying
+> **supplied finite planar point-IVP continuation chain** with ordinary
+> bridges, all three canonical Levi-Civita pair charts, and pair revisits.
+> Its soundness is conditional on the stated arithmetic and analytic kernel.
+> It is **not a general solution of the three-body problem**. Automatic
+> certificate production, arbitrary initial-data families, global/all-time
+> completeness, and independent verification remain open.
 
 This repository is a research and reproducibility harness for constructive,
 verifier-checkable regularized charts for the Newtonian three-body problem.
-Its strongest current result certifies, for one supplied planar fixture, an
-exact Levi-Civita-regularized initial-value problem anchored at an isolated
-binary collision. The certificate encloses the local regularized solution and
-connects its two punctured projections to ordinary Newtonian solution tubes on
-both sides of the collision.
+The current chain checker carries one exact serialized planar point IVP through
+a supplied finite word of ordinary and `N -> LC_ij -> N` segments to a fixed
+physical-time enclosure, or returns a structured unresolved prefix. The
+separate collision-anchored local certificate remains a genuine narrower
+result; an LC segment in the finite-chain grammar does not itself prove that a
+physical collision occurred.
 
 The accompanying manuscript is [`paper/main.tex`](paper/main.tex). The main
 technical statements and their qualifications are documented in
 [`docs/validated-planar-binary-collision-passage.md`](docs/validated-planar-binary-collision-passage.md)
 and
 [`docs/validated-planar-lc-tube-theorem.md`](docs/validated-planar-lc-tube-theorem.md).
+The completed three-stage exact \(\mathbb F_2\) Levi-Civita gauge-gluing
+program is described in
+[`docs/lc-z2-gauge-gluing-research-goal.md`](docs/lc-z2-gauge-gluing-research-goal.md).
+Stage 1 is a standalone exact graph kernel for supplied overlap labels.  Stage
+2 derives a label rather than trusting one: it independently rechecks two
+zero-error LC tubes, compares their full fourteen-dimensional anchors up to
+the exact antipodal deck action, checks a nondegenerate common shifted
+parameter interval, proves the same-IVP relation by ODE uniqueness and
+equivariance, and emits the resulting edge.  A raw-evidence aggregate binds
+each vertex to one fixed chart/tube/anchor, derives every edge, and then calls
+the Stage 1 kernel.  Stage 3 is a separate opt-in raw ordinary-to-LC checker.
+It retains and rechecks a direct IVP binding, ordinary tube, source chart,
+target LC chart/tube, and transition; prebuilt source results and continuation
+chains are unsupported.  From the raw source box it accepts only the canonical
+closed-upper, closed-lower, or right-half-plane singleton, or a strict
+negative-cut two-patch cover whose parity-one edge it derives.  It enumerates
+both global complements and accepts only when one complement sends every
+13-dimensional lifted box plus the binding-derived physical-time coordinate
+into the same target 14-dimensional \(L^\infty\) initial ball.  Branch metadata,
+reason strings, and supplied parity are not trusted; ambiguous and
+collision-containing boxes reject.  The legacy checker has a narrower exact
+clock gate but still trusts a prebuilt source result.  Raw Stage 3 is the
+adversarially replayable route. The legacy private one-passage checker consumes
+that raw evidence, while the newer carried-chain checker composes the same
+entry theorem through repeated passages. No public `proof_certified` path is
+promoted by either result, and neither is a general or global solution.
+
+The active strengthening program is now
+[`docs/general-certified-computational-solution-goal.md`](docs/general-certified-computational-solution-goal.md):
+a proof-carrying finite-time planar integrator that returns either
+`CERTIFIED_TO_T` with replay-checked coverage and a final enclosure, or
+`UNRESOLVED` with the first failed obligation and a retained certified region.
+Milestones 1--4 now have a proof-bearing supplied-point core.
+`RawPlanarChainCertificate` uses a strict raw-v1 tagged grammar with
+`ordinary_bridge_v1` and `planar_lc_passage_v1` arms. The checker starts from
+one exact-dyadic point binding, freshly folds complete endpoint containments,
+propagates one conditional physical-clock ledger, retains independent
+pair-local gauge records, and evaluates the final ordinary chart at exact
+physical time `T` by rational interval Horner arithmetic plus fresh tube
+inflation. The LC tube and carried transition surface derives mass
+coefficients exactly from the serialized dyadic masses and encloses them
+outward, so decimal-looking mass literals need not have binary64-exact derived
+ratios.
+
+The code-matched theorem is
+[`docs/raw-repeated-planar-continuation-chain-theorem.md`](docs/raw-repeated-planar-continuation-chain-theorem.md).
+Regression chains cover `(0,1) -> (0,2) -> (1,2) -> (0,1)`, including a
+same-pair revisit, and checker-obligation failures retain only a
+replay-certified typed ordinary or lifted frontier. The older one-passage v1
+restriction is preserved and
+distinguished in
+[`docs/raw-mixed-planar-continuation-theorem.md`](docs/raw-mixed-planar-continuation-theorem.md).
+This is same-implementation replay of a supplied certificate, not an
+independent verifier, automatic collision detector, complete producer,
+arbitrary-input theorem, total-collision continuation, spatial result, escape
+classification, or all-time solution.
+
+The canonical v0.3.0 review evidence is tracked in
+[`artifacts/v0.3.0-review/planar-chain/`](artifacts/v0.3.0-review/planar-chain/).
+Verify its transport hashes and exact-match fresh replay transcripts with:
+
+```bash
+python scripts/certify_repeated_planar_chain.py verify-bundle
+```
+
+Run the focused theorem-surface and artifact regressions with:
+
+```bash
+python -m pytest -q \
+  tests/test_planar_lc_mass_coefficients.py \
+  tests/test_proof_carrying_planar_chain.py \
+  tests/test_planar_chain_review_artifact.py
+```
+
 The broader historical research program and experimental machinery are
 retained below for auditability.
 
@@ -44,6 +120,31 @@ Independently replay the exact symbolic Levi-Civita projection identities:
 
 ```bash
 python scripts/verify_lc_projection_identities.py
+```
+
+Run the exact gauge kernel, derived-overlap/aggregate, raw Stage 3, and symbolic
+regressions:
+
+```bash
+python -m pytest -q tests/test_lc_gauge_gluing.py \
+  tests/test_lc_exact_overlap.py tests/test_lc_exact_gauge_atlas.py \
+  tests/test_lc_gauge_aware_transition.py \
+  tests/test_lc_projection_identities.py
+```
+
+Run the focused exact-arithmetic, global-clock, problem-identity, and raw
+replay regressions for the new strengthening program:
+
+```bash
+python -m pytest -q \
+  tests/test_directed_arithmetic_kernel.py \
+  tests/test_lc_directed_arithmetic.py \
+  tests/test_proof_carrying_planar_lc_exit.py \
+  tests/test_proof_carrying_mixed_continuation.py \
+  tests/test_certificate_checker_fraction_bounds.py \
+  tests/test_certificate_language_clock_shift.py \
+  tests/test_certificate_problem_identity.py \
+  tests/test_proof_carrying_continuation.py
 ```
 
 Run the complete test suite with `python -m pytest`. Passing these checks
@@ -127,6 +228,7 @@ remains open.
 
 ## Files
 
+- `three_body_symmetry/proof_carrying_planar_chain.py` and `three_body_symmetry/planar_lc_mass_coefficients.py` - strict raw-v1 finite planar point-chain replay. `check_raw_planar_chain(...)` folds ordinary bridges and repeated carried `N -> LC_ij -> N` passages for all canonical pairs, derives clock and pair-local gauge ledgers, returns a fixed-time ordinary enclosure or typed unresolved frontier, and pins an exact-dyadic-to-outward LC mass-coefficient kernel. See `docs/raw-repeated-planar-continuation-chain-theorem.md` for the formal scope and nonclaims.
 - `three_body_symmetry/dynamics.py` - Newtonian equations, integration, and invariants.
 - `three_body_symmetry/binary_chart.py` - planar three-body coordinates around a selected binary collision, including interval lifts into the regularized binary chart, exact-collision lifted interval starts with separated-third-body and collision-constraint certification, and Levi-Civita branch-atlas certificates.
 - `three_body_symmetry/ks_binary_chart.py` - spatial binary Kustaanheimo-Stiefel chart with the same `dt/ds=|u|^2` normalization as the planar Levi-Civita chart, including projection `q=K(u)`, horizontal physical-state lifts, gauge-fiber rotation, Kepler-parameter recovery, projected Newton acceleration checks, finite regularized RHS coefficients at exact binary collision, interval position branch certificates for the two algebraic KS gauges `r+x>0` and `r-x>0`, interval state lifts carrying `u'`, energy, and horizontal-gauge certificates, and point-level separated-third-body KS chart equations whose projection matches Newtonian accelerations away from collision. Taylor propagation, spatial interval-box entry, ordinary-to-KS entry isolation, rho-positive endpoint projection, and ordinary-handoff admissibility for this chart live in `three_body_symmetry/ks_binary_series.py` and `three_body_symmetry/validated_atlas.py`; local ordinary-to-KS handoffs now feed `ValidatedAtlasSolution`, stay in KS until ordinary Cauchy/residual/tail bounds certify a safe handoff, and can evaluate requested target times inside the regularized chart. The public finite-time evaluator can expose this route either from explicit spatial KS selector parameters or from an automatic local selector for a clearly closing, well-separated close pair, but a full spatial three-body binary continuation still needs long-chain set propagation and arbitrary-regime classification.

@@ -719,7 +719,9 @@ def test_binary_atlas_lifts_interval_state_union_when_hull_contains_collision():
         pair=(0, 1),
     )
 
-    assert len(atlas) == 3
+    # Each member lies on the closed real-axis boundary and now uses one
+    # canonical closed-half-plane patch instead of a redundant boundary copy.
+    assert len(atlas) == 2
     assert all(chart.branch_certificate is not None for chart in atlas)
     assert all(chart.branch_certificate.certified for chart in atlas)
 
@@ -1181,7 +1183,7 @@ def test_hybrid_uses_binary_charts_for_close_pair_and_matches_reference():
     assert continued.steps[0].interval_chart_pair == (0, 1)
     assert continued.steps[0].interval_chart_certified
     assert continued.steps[0].binary_interval_lift_certified
-    assert continued.steps[0].binary_lc_branch == "principal_right_half"
+    assert continued.steps[0].binary_lc_branch == "principal_upper_half"
     assert continued.steps[0].binary_lc_branch_certified
     assert continued.steps[0].binary_lc_atlas_chart_count == 1
     assert continued.steps[0].binary_lc_atlas_certified

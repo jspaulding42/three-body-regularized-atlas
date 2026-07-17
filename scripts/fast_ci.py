@@ -128,6 +128,17 @@ COMMANDS = (
         "-m",
         "pytest",
         "-q",
+        "tests/test_lc_gauge_gluing.py",
+        "tests/test_lc_exact_overlap.py",
+        "tests/test_lc_exact_gauge_atlas.py",
+        "tests/test_lc_gauge_aware_transition.py",
+        "tests/test_lc_projection_identities.py",
+    ),
+    (
+        sys.executable,
+        "-m",
+        "pytest",
+        "-q",
         "tests/test_last_pro_instructions.py",
     ),
     (

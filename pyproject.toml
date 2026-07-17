@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "three-body-regularized-atlas"
-version = "0.2.0"
-description = "Validated certificate tools for a planar three-body Levi-Civita binary-collision passage"
+version = "0.3.0"
+description = "Proof-carrying finite planar three-body continuation chains with replayed ordinary and Levi-Civita certificates"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }

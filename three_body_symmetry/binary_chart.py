@@ -10,11 +10,12 @@ separated third body.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from fractions import Fraction
 
 import numpy as np
 
 from .dynamics import accelerations
-from .intervals import FloatInterval
+from .intervals import FloatInterval, directed_nonnegative_sqrt_endpoint
 from .levi_civita import lc_matrix, lc_square, lc_velocity
 
 
@@ -193,8 +194,10 @@ def _interval_norm(vector: Array) -> FloatInterval:
     for value in np.asarray(vector, dtype=object).reshape(-1):
         total = total + _interval_square_bounds(_as_interval(value))
     return FloatInterval(
-        0.0 if total.lower <= 0.0 else float(np.nextafter(np.sqrt(total.lower), -np.inf)),
-        float(np.nextafter(np.sqrt(max(total.upper, 0.0)), np.inf)),
+        0.0
+        if total.lower <= 0.0
+        else directed_nonnegative_sqrt_endpoint(total.lower, upward=False),
+        directed_nonnegative_sqrt_endpoint(max(total.upper, 0.0), upward=True),
     )
 
 
@@ -203,8 +206,10 @@ def _interval_sqrt_nonnegative(value: FloatInterval) -> FloatInterval:
         raise ValueError("cannot take square root of a negative interval")
     lower = max(0.0, value.lower)
     return FloatInterval(
-        float(np.nextafter(np.sqrt(lower), -np.inf)) if lower > 0.0 else 0.0,
-        float(np.nextafter(np.sqrt(max(value.upper, 0.0)), np.inf)),
+        directed_nonnegative_sqrt_endpoint(lower, upward=False)
+        if lower > 0.0
+        else 0.0,
+        directed_nonnegative_sqrt_endpoint(max(value.upper, 0.0), upward=True),
     )
 
 
@@ -231,17 +236,17 @@ def levi_civita_branch_certificate(relative_position: Array) -> LeviCivitaBranch
 
     x = _as_interval(relative_position[0])
     y = _as_interval(relative_position[1])
-    if y.lower > 0.0:
+    if y.lower >= 0.0:
         return LeviCivitaBranchCertificate(
             branch="principal_upper_half",
             certified=True,
-            reason="relative-position interval lies strictly above the branch cut",
+            reason="relative-position interval lies in the closed upper half-plane",
         )
-    if y.upper < 0.0:
+    if y.upper <= 0.0:
         return LeviCivitaBranchCertificate(
             branch="principal_lower_half",
             certified=True,
-            reason="relative-position interval lies strictly below the branch cut",
+            reason="relative-position interval lies in the closed lower half-plane",
         )
     if x.lower > 0.0:
         return LeviCivitaBranchCertificate(
@@ -268,6 +273,42 @@ def _interval_lc_transpose_times(z: Array, vector: Array) -> Array:
     )
 
 
+def _exact_endpoint_interval_difference(
+    left: FloatInterval,
+    right: FloatInterval,
+) -> FloatInterval:
+    """Tight directed difference of binary-float interval endpoints.
+
+    The generic interval operation deliberately expands every subtraction by
+    one adjacent float.  Exact endpoint arithmetic avoids turning a proved
+    closed-half-plane boundary at zero into an artificial sign crossing.
+    """
+
+    lower_q = Fraction.from_float(left.lower) - Fraction.from_float(right.upper)
+    upper_q = Fraction.from_float(left.upper) - Fraction.from_float(right.lower)
+    lower = float(lower_q)
+    upper = float(upper_q)
+    if Fraction.from_float(lower) > lower_q:
+        lower = float(np.nextafter(lower, -np.inf))
+    if Fraction.from_float(upper) < upper_q:
+        upper = float(np.nextafter(upper, np.inf))
+    return FloatInterval(lower, upper)
+
+
+def _exact_fraction_interval(value: Fraction) -> FloatInterval:
+    """Tight binary-float interval enclosing one exact rational coefficient."""
+
+    candidate = float(value)
+    candidate_q = Fraction.from_float(candidate)
+    lower = candidate
+    upper = candidate
+    if candidate_q > value:
+        lower = float(np.nextafter(candidate, -np.inf))
+    elif candidate_q < value:
+        upper = float(np.nextafter(candidate, np.inf))
+    return FloatInterval(lower, upper)
+
+
 def _interval_planar_components(
     state_interval: tuple[tuple[float, float], ...],
     pair: tuple[int, int],
@@ -280,14 +321,18 @@ def _interval_planar_components(
     velocities = values[6:].reshape(3, 2)
     relative_position = np.array(
         [
-            positions[second, axis] - positions[first, axis]
+            _exact_endpoint_interval_difference(
+                positions[second, axis], positions[first, axis]
+            )
             for axis in range(2)
         ],
         dtype=object,
     )
     relative_velocity = np.array(
         [
-            velocities[second, axis] - velocities[first, axis]
+            _exact_endpoint_interval_difference(
+                velocities[second, axis], velocities[first, axis]
+            )
             for axis in range(2)
         ],
         dtype=object,
@@ -306,7 +351,12 @@ def _regularized_interval_chart_from_components(
 ) -> IntervalRegularizedBinaryCollisionChartState:
     first, second = pair
     third = _third_index(pair)
-    pair_mass = masses[first] + masses[second]
+    first_mass_q = Fraction.from_float(float(masses[first]))
+    second_mass_q = Fraction.from_float(float(masses[second]))
+    pair_mass_q = first_mass_q + second_mass_q
+    pair_mass = _exact_fraction_interval(pair_mass_q)
+    first_mass_ratio = _exact_fraction_interval(first_mass_q / pair_mass_q)
+    second_mass_ratio = _exact_fraction_interval(second_mass_q / pair_mass_q)
     radius = _interval_norm(relative_position)
     if radius.lower <= 0.0:
         raise ValueError("selected pair interval contains binary collision")
@@ -323,18 +373,20 @@ def _regularized_interval_chart_from_components(
     third_offset_velocity = np.empty(2, dtype=object)
     for axis in range(2):
         binary_center[axis] = (
-            positions[first, axis].scale(masses[first]) + positions[second, axis].scale(masses[second])
-        ).scale(1.0 / pair_mass)
+            positions[first, axis] * first_mass_ratio
+            + positions[second, axis] * second_mass_ratio
+        )
         binary_center_velocity[axis] = (
-            velocities[first, axis].scale(masses[first]) + velocities[second, axis].scale(masses[second])
-        ).scale(1.0 / pair_mass)
+            velocities[first, axis] * first_mass_ratio
+            + velocities[second, axis] * second_mass_ratio
+        )
         third_offset[axis] = positions[third, axis] - binary_center[axis]
         third_offset_velocity[axis] = velocities[third, axis] - binary_center_velocity[axis]
 
     speed_square = FloatInterval.point(0.0)
     for axis in range(2):
         speed_square = speed_square + _interval_square_bounds(relative_velocity[axis])
-    pair_energy = speed_square.scale(0.5) - radius.reciprocal().scale(pair_mass)
+    pair_energy = speed_square.scale(0.5) - radius.reciprocal() * pair_mass
 
     return IntervalRegularizedBinaryCollisionChartState(
         masses=masses,

@@ -1,3 +1,5 @@
+from fractions import Fraction
+
 import numpy as np
 
 from three_body_symmetry.binary_chart import (
@@ -22,6 +24,10 @@ from three_body_symmetry.binary_chart import (
     z_acceleration_from_relative_acceleration,
 )
 from three_body_symmetry.dynamics import accelerations
+from three_body_symmetry.certificate_checker import (
+    _planar_lc_mass_ratio_arithmetic_exact,
+)
+from three_body_symmetry.intervals import FloatInterval
 from three_body_symmetry.levi_civita import lc_square, levi_civita_mu
 
 
@@ -234,6 +240,139 @@ def test_interval_regularized_chart_atlas_splits_branch_cut_overlap():
     assert all(chart.branch_certificate is not None and chart.branch_certificate.certified for chart in atlas)
     assert any(chart.contains_point(upper_point) for chart in atlas)
     assert any(chart.contains_point(lower_point) for chart in atlas)
+
+
+def test_interval_regularized_chart_atlas_uses_one_closed_half_plane_patch():
+    masses = np.array([1.0, 1.0, 1.0])
+    cases = (
+        ((0.0, 0.2), "principal_upper_half"),
+        ((-0.2, 0.0), "principal_lower_half"),
+        ((0.0, 0.0), "principal_upper_half"),
+    )
+    for y_interval, expected_branch in cases:
+        state_interval = (
+            (0.0, 0.0),
+            (0.0, 0.0),
+            (-1.2, -0.8),
+            y_interval,
+            (3.0, 3.0),
+            (0.0, 0.0),
+        ) + ((0.0, 0.0),) * 6
+
+        atlas = planar_interval_to_regularized_binary_collision_chart_atlas(
+            state_interval,
+            masses,
+            pair=(0, 1),
+        )
+
+        assert len(atlas) == 1
+        assert atlas[0].branch_certificate is not None
+        assert atlas[0].branch_certificate.certified
+        assert atlas[0].branch_certificate.branch == expected_branch
+
+
+def test_interval_binary_center_uses_exact_gated_direct_mass_ratios():
+    masses = np.array([3.0, 3.0, 1.5])
+    assert _planar_lc_mass_ratio_arithmetic_exact(tuple(masses), (0, 1))
+    assert Fraction.from_float(1.0 / 6.0) != Fraction(1, 6)
+    state_interval = (
+        (0.1, 0.2),
+        (-0.1, 0.1),
+        (1.4, 1.5),
+        (0.2, 0.3),
+        (3.0, 3.1),
+        (0.4, 0.5),
+        (0.3, 0.4),
+        (-0.2, -0.1),
+        (-0.2, -0.1),
+        (0.5, 0.6),
+        (0.0, 0.1),
+        (-0.4, -0.3),
+    )
+
+    chart = planar_interval_to_regularized_binary_collision_chart(
+        state_interval,
+        masses,
+        pair=(0, 1),
+    )
+    expected_center_x = FloatInterval(*state_interval[0]).scale(0.5) + FloatInterval(
+        *state_interval[2]
+    ).scale(0.5)
+    expected_center_velocity_x = FloatInterval(*state_interval[6]).scale(
+        0.5
+    ) + FloatInterval(*state_interval[8]).scale(0.5)
+
+    assert chart.binary_center[0] == expected_center_x
+    assert chart.binary_center_velocity[0] == expected_center_velocity_x
+
+
+def test_interval_binary_center_encloses_nonrepresentable_exact_mass_ratio():
+    masses = np.array([1.0, 2.0, 1.5])
+    assert Fraction.from_float(1.0 / 3.0) != Fraction(1, 3)
+    positions = ((0.1, -0.1), (1.4, 0.2), (3.0, 0.4))
+    velocities = ((0.3, -0.2), (-0.2, 0.5), (0.0, -0.4))
+    state_values = tuple(
+        value
+        for matrix in (positions, velocities)
+        for row in matrix
+        for value in row
+    )
+    state_interval = tuple((value, value) for value in state_values)
+
+    chart = planar_interval_to_regularized_binary_collision_chart(
+        state_interval,
+        masses,
+        pair=(0, 1),
+    )
+    first_mass_q = Fraction.from_float(float(masses[0]))
+    second_mass_q = Fraction.from_float(float(masses[1]))
+    pair_mass_q = first_mass_q + second_mass_q
+
+    def exact_weighted(first_value: float, second_value: float) -> Fraction:
+        return (
+            first_mass_q * Fraction.from_float(first_value)
+            + second_mass_q * Fraction.from_float(second_value)
+        ) / pair_mass_q
+
+    for intervals, values in (
+        (chart.binary_center, positions),
+        (chart.binary_center_velocity, velocities),
+    ):
+        for axis in range(2):
+            exact = exact_weighted(values[0][axis], values[1][axis])
+            assert Fraction.from_float(intervals[axis].lower) <= exact
+            assert exact <= Fraction.from_float(intervals[axis].upper)
+
+
+def test_interval_pair_energy_encloses_nonrepresentable_exact_pair_mass():
+    masses = np.array([1.0, 2.0**-53, 1.5])
+    pair_mass_q = Fraction.from_float(float(masses[0])) + Fraction.from_float(
+        float(masses[1])
+    )
+    assert Fraction.from_float(float(masses[0] + masses[1])) != pair_mass_q
+    state_values = (
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        3.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+    )
+    chart = planar_interval_to_regularized_binary_collision_chart(
+        tuple((value, value) for value in state_values),
+        masses,
+        pair=(0, 1),
+    )
+    exact_pair_energy = -pair_mass_q  # rho=1 and relative velocity is zero.
+
+    assert Fraction.from_float(chart.pair_energy.lower) <= exact_pair_energy
+    assert exact_pair_energy <= Fraction.from_float(chart.pair_energy.upper)
 
 
 def test_regularized_chart_rhs_projects_to_newtonian_accelerations():
