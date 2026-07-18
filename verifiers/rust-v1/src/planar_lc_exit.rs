@@ -17,11 +17,11 @@ use crate::{
     raw_v1_defining_namespace_unique, replay_carried_planar_lc_entry_exact_rational_v04,
     replay_ordinary_tube_exact_rational_v04, replay_planar_lc_tube_exact_rational_v04,
     CanonicalRawV1Admission, CarriedPlanarLcEntryError, CarriedPlanarLcEntryReplay, NumericError,
-    OrdinarySemanticError, OrdinaryTubeReplay, OrdinaryTubeReplayError,
-    PlanarLcCartesianStateProjection, PlanarLcProjectionError, PlanarLcSemanticError,
-    PlanarLcStateError, PlanarLcStatePolynomial, PlanarLcTubeReplay, PlanarLcTubeReplayError,
-    PolynomialError, RationalInterval, PLANAR_LC_CONSTRAINED_LIFT_DECK_GAUGE_KERNEL_V1_ID,
-    PLANAR_LC_LIFTED_STATE_DIMENSION,
+    OrdinaryChartInput, OrdinarySemanticError, OrdinaryTubeInput, OrdinaryTubeReplay,
+    OrdinaryTubeReplayError, PlanarLcCartesianStateProjection, PlanarLcEntryInput,
+    PlanarLcProjectionError, PlanarLcSemanticError, PlanarLcStateError, PlanarLcStatePolynomial,
+    PlanarLcTubeReplay, PlanarLcTubeReplayError, PolynomialError, RationalInterval,
+    PLANAR_LC_CONSTRAINED_LIFT_DECK_GAUGE_KERNEL_V1_ID, PLANAR_LC_LIFTED_STATE_DIMENSION,
 };
 
 pub const EXACT_RATIONAL_CARRIED_PLANAR_LC_EXIT_V04_PROFILE_ID: &str =
@@ -191,6 +191,134 @@ impl From<PlanarLcStateError> for CarriedPlanarLcExitError {
     }
 }
 
+/// Admission-bound evidence that is sufficient to reconstruct the LC chart's
+/// complete inflated right slice without reading the ordinary exit target.
+///
+/// This is crate-private because it is a retention primitive, not another
+/// public certificate profile.  In particular, it does not establish the
+/// Cartesian exit containment or a chain commit.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(crate) struct AdmissionBoundPlanarLcRightReplay {
+    source_chart: OrdinaryChartInput,
+    source_tube: OrdinaryTubeInput,
+    entry: PlanarLcEntryInput,
+    entry_replay: CarriedPlanarLcEntryReplay,
+    lc_tube_replay: PlanarLcTubeReplay,
+    namespace: bool,
+    entry_handoff: bool,
+    entry_certified: bool,
+    constrained_entry: bool,
+    lc_certified: bool,
+    right_parameter: BigRational,
+    lifted_right_slice: Option<crate::PlanarLcIntervalState>,
+}
+
+impl AdmissionBoundPlanarLcRightReplay {
+    pub(crate) fn lc_chart_id(&self) -> &str {
+        self.entry.target_chart().chart_id()
+    }
+
+    pub(crate) fn pair(&self) -> [usize; 2] {
+        self.entry.target_chart().pair()
+    }
+
+    pub(crate) fn right_parameter(&self) -> &BigRational {
+        &self.right_parameter
+    }
+
+    pub(crate) fn lifted_right_slice(&self) -> Option<&crate::PlanarLcIntervalState> {
+        self.lifted_right_slice.as_ref()
+    }
+}
+
+/// Reconstruct only the independently supportable LC-right evidence for one
+/// admission-bound passage.  The target ordinary chart and tube are never
+/// parsed or consumed, so malformed later exit evidence cannot erase a
+/// freshly justified LC frontier.
+pub(crate) fn replay_admission_bound_planar_lc_right_exact_rational_v04(
+    admission: &CanonicalRawV1Admission,
+    segment_index: usize,
+    parent_source_clock_origin: &RationalInterval,
+) -> Result<AdmissionBoundPlanarLcRightReplay, CarriedPlanarLcExitError> {
+    let wire = admission.wire();
+    match wire.segments.get(segment_index) {
+        Some(SegmentWire::PlanarLcPassage(_)) => {}
+        Some(SegmentWire::OrdinaryBridge(_)) => {
+            return Err(CarriedPlanarLcExitError::SegmentNotPlanarLc { segment_index });
+        }
+        None => return Err(CarriedPlanarLcExitError::SegmentUnavailable { segment_index }),
+    }
+    let (source_chart_wire, source_tube_wire) = if segment_index == 0 {
+        (&wire.initial_chart, &wire.initial_tube)
+    } else {
+        match &wire.segments[segment_index - 1] {
+            SegmentWire::OrdinaryBridge(value) => (&value.target_chart, &value.target_tube),
+            SegmentWire::PlanarLcPassage(value) => (&value.target_chart, &value.target_tube),
+        }
+    };
+    let source_chart = ordinary_chart_input_from_wire(source_chart_wire)
+        .map_err(CarriedPlanarLcExitError::SourceSemantic)?;
+    let source_tube = ordinary_tube_input_from_wire(source_tube_wire);
+    let entry =
+        planar_lc_entry_input_from_admission(admission, segment_index, &source_chart, &source_tube)
+            .map_err(CarriedPlanarLcExitError::LcSemantic)?;
+    let entry_replay = replay_carried_planar_lc_entry_exact_rational_v04(
+        admission,
+        segment_index,
+        &source_chart,
+        &source_tube,
+        parent_source_clock_origin,
+    )
+    .map_err(CarriedPlanarLcExitError::Entry)?;
+    let lc_tube_replay =
+        replay_planar_lc_tube_exact_rational_v04(entry.target_chart(), entry.target_tube())
+            .map_err(CarriedPlanarLcExitError::LcTube)?;
+    let namespace =
+        raw_v1_defining_namespace_unique(admission).map_err(CarriedPlanarLcExitError::Entry)?;
+    let entry_handoff = entry.source_right_parameter() == source_chart.parameter_interval().upper()
+        && source_tube.anchor_parameter() == source_chart.parameter_interval().lower()
+        && entry.target_left_parameter() == entry.target_chart().parameter_interval().lower()
+        && entry.target_left_parameter() == entry.target_tube().anchor_parameter();
+    let right_parameter = entry.target_chart().parameter_interval().upper().clone();
+    let entry_certified = entry_replay.conditional_profile_satisfied();
+    let constrained_entry = entry_certified
+        && entry_replay.selected_assignment().is_some()
+        && entry_replay
+            .selected_transformed_patches()
+            .is_some_and(|patches| !patches.is_empty())
+        && entry_replay.analytic_kernel_id()
+            == Some(PLANAR_LC_CONSTRAINED_LIFT_DECK_GAUGE_KERNEL_V1_ID);
+    let lc_certified = lc_tube_replay.certified();
+    let slice_gate = entry_certified && entry_handoff && constrained_entry && lc_certified;
+    let lifted_right_slice = if slice_gate {
+        let right = RationalInterval::try_point(right_parameter.clone())?;
+        let polynomial = PlanarLcStatePolynomial::from_chart(entry.target_chart())?;
+        let state = polynomial.evaluate(&right)?.inflate(
+            lc_tube_replay
+                .gronwall_upper()
+                .ok_or(CarriedPlanarLcExitError::InternalShapeInvariant)?,
+        )?;
+        (state.components().len() == PLANAR_LC_LIFTED_STATE_DIMENSION).then_some(state)
+    } else {
+        None
+    };
+
+    Ok(AdmissionBoundPlanarLcRightReplay {
+        source_chart,
+        source_tube,
+        entry,
+        entry_replay,
+        lc_tube_replay,
+        namespace,
+        entry_handoff,
+        entry_certified,
+        constrained_entry,
+        lc_certified,
+        right_parameter,
+        lifted_right_slice,
+    })
+}
+
 /// Replay one admission-bound `N -> LC -> N` passage.  The parent clock is a
 /// conditional premise, not certificate evidence.
 pub fn replay_carried_planar_lc_exit_exact_rational_v04(
@@ -206,41 +334,33 @@ pub fn replay_carried_planar_lc_exit_exact_rational_v04(
         }
         None => return Err(CarriedPlanarLcExitError::SegmentUnavailable { segment_index }),
     };
-    let (source_chart_wire, source_tube_wire) = if segment_index == 0 {
-        (&wire.initial_chart, &wire.initial_tube)
-    } else {
-        match &wire.segments[segment_index - 1] {
-            SegmentWire::OrdinaryBridge(value) => (&value.target_chart, &value.target_tube),
-            SegmentWire::PlanarLcPassage(value) => (&value.target_chart, &value.target_tube),
-        }
-    };
-    let source_chart = ordinary_chart_input_from_wire(source_chart_wire)
-        .map_err(CarriedPlanarLcExitError::SourceSemantic)?;
-    let source_tube = ordinary_tube_input_from_wire(source_tube_wire);
-    let entry =
-        planar_lc_entry_input_from_admission(admission, segment_index, &source_chart, &source_tube)
-            .map_err(CarriedPlanarLcExitError::LcSemantic)?;
     let target_chart = ordinary_chart_input_from_wire(&passage.target_chart)
         .map_err(CarriedPlanarLcExitError::TargetSemantic)?;
     let target_tube = ordinary_tube_input_from_wire(&passage.target_tube);
-
-    let entry_replay = replay_carried_planar_lc_entry_exact_rational_v04(
+    let right_replay = replay_admission_bound_planar_lc_right_exact_rational_v04(
         admission,
         segment_index,
-        &source_chart,
-        &source_tube,
         parent_source_clock_origin,
-    )
-    .map_err(CarriedPlanarLcExitError::Entry)?;
-    let lc_tube_replay =
-        replay_planar_lc_tube_exact_rational_v04(entry.target_chart(), entry.target_tube())
-            .map_err(CarriedPlanarLcExitError::LcTube)?;
+    )?;
     let target_tube_replay = replay_ordinary_tube_exact_rational_v04(&target_chart, &target_tube)
         .map_err(CarriedPlanarLcExitError::TargetTube)?;
-
-    let namespace =
-        raw_v1_defining_namespace_unique(admission).map_err(CarriedPlanarLcExitError::Entry)?;
+    let AdmissionBoundPlanarLcRightReplay {
+        source_chart,
+        source_tube: _,
+        entry,
+        entry_replay,
+        lc_tube_replay,
+        namespace,
+        entry_handoff,
+        entry_certified,
+        constrained_entry,
+        lc_certified,
+        right_parameter: _,
+        lifted_right_slice,
+    } = right_replay;
     let exit = &passage.exit_transition;
+    let lc_right = exit.source_parameter.binary64_rational()
+        == entry.target_chart().parameter_interval().upper();
     let raw_schemas = passage.segment_type == "planar_lc_passage_v1"
         && !exit.source.is_empty()
         && !exit.transition_id.is_empty()
@@ -260,25 +380,10 @@ pub fn replay_carried_planar_lc_exit_exact_rational_v04(
     let pair = entry.target_chart().pair();
     let canonical_pair = pair[0] < pair[1] && pair[1] < 3;
     let mass_arithmetic = entry_replay.mass_kernel_id() == Some(PLANAR_LC_MASS_KERNEL_ID);
-    let entry_handoff = entry.source_right_parameter() == source_chart.parameter_interval().upper()
-        && source_tube.anchor_parameter() == source_chart.parameter_interval().lower()
-        && entry.target_left_parameter() == entry.target_chart().parameter_interval().lower()
-        && entry.target_left_parameter() == entry.target_tube().anchor_parameter();
-    let lc_right = exit.source_parameter.binary64_rational()
-        == entry.target_chart().parameter_interval().upper();
     let target_left = exit.target_parameter.binary64_rational()
         == target_chart.parameter_interval().lower()
         && exit.target_parameter.binary64_rational() == target_tube.anchor_parameter();
     let endpoints = entry_handoff && lc_right && target_left;
-    let entry_certified = entry_replay.conditional_profile_satisfied();
-    let constrained_entry = entry_certified
-        && entry_replay.selected_assignment().is_some()
-        && entry_replay
-            .selected_transformed_patches()
-            .is_some_and(|patches| !patches.is_empty())
-        && entry_replay.analytic_kernel_id()
-            == Some(PLANAR_LC_CONSTRAINED_LIFT_DECK_GAUGE_KERNEL_V1_ID);
-    let lc_certified = lc_tube_replay.certified();
     let constraint_kernel = constrained_entry && lc_certified;
     let third_body_separated = lc_certified
         && lc_tube_replay
@@ -307,9 +412,7 @@ pub fn replay_carried_planar_lc_exit_exact_rational_v04(
     // Reconstruct the LC right slice whenever its actual dependencies pass.
     // In particular, a false target-tube result suppresses only containment;
     // it must not discard independent LC slice, projection, or clock evidence.
-    let slice_gate =
-        entry_certified && entry_handoff && lc_right && constrained_entry && lc_certified;
-    if !slice_gate {
+    if lifted_right_slice.is_none() || !lc_right {
         return Ok(build_replay(
             preliminary,
             entry_replay,
@@ -326,13 +429,7 @@ pub fn replay_carried_planar_lc_exit_exact_rational_v04(
         ));
     }
 
-    let right = RationalInterval::try_point(exit.source_parameter.binary64_rational().clone())?;
-    let polynomial = PlanarLcStatePolynomial::from_chart(entry.target_chart())?;
-    let state = polynomial.evaluate(&right)?.inflate(
-        lc_tube_replay
-            .gronwall_upper()
-            .ok_or(CarriedPlanarLcExitError::InternalShapeInvariant)?,
-    )?;
+    let state = lifted_right_slice.ok_or(CarriedPlanarLcExitError::InternalShapeInvariant)?;
     let slice_arithmetic = state.components().len() == PLANAR_LC_LIFTED_STATE_DIMENSION;
     let slice_reconstructed = entry_certified
         && entry_handoff

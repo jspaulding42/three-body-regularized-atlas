@@ -2,7 +2,7 @@
 //! verifier.
 //!
 //! This crate deliberately contains no Python bridge and does not claim
-//! complete continuation-chain replay. The public surface covers strict wire
+//! complete raw-v1 certificate replay. The public surface covers strict wire
 //! decoding, fixed-limit opaque ownership of canonical bytes plus their typed
 //! decode, bounded exact arithmetic, non-certifying ordinary and planar-LC
 //! semantic inputs, exact 14-component LC state polynomial/interval
@@ -14,12 +14,16 @@
 //! inflated-slice Cartesian position/velocity projection,
 //! conditional ordinary chart and tube replay, exact planar
 //! initial-value binding, proof-oriented validated-root replay, and local
-//! parent-carried ordinary-bridge composition, and a bounded ordinary-only raw
-//! chain checkpoint for top-level obligations 6--13 under separately named
-//! exact-rational profiles. The ordinary-only chain checkpoint stops
-//! fail-closed at LC and is not outer-obligation or full-chain replay. The
-//! carried entry/exit results are conditional on parent IVP carry and prove no
-//! full-chain commit, complete replay, or fixed-time theorem.
+//! parent-carried ordinary-bridge composition, a bounded ordinary-only raw
+//! chain checkpoint, and a bounded admitted mixed ordinary/LC fold for
+//! top-level obligations 6--13 under separately named exact-rational profiles.
+//! The mixed fold transactionally commits freshly certified local results,
+//! derives its clock and cocycle ledgers, evaluates the ordinary fixed-time
+//! enclosure, and applies typed retained-frontier priority. The ordinary-only
+//! checkpoint still stops fail-closed at LC. Neither chain profile establishes
+//! outer obligations 1--5, raw SHA-256, result serialization or terminal
+//! status, frozen arithmetic parity, or verifier independence. The carried
+//! entry/exit component results remain conditional on parent IVP carry.
 
 #![forbid(unsafe_code)]
 
@@ -29,6 +33,7 @@ mod error;
 mod exp;
 mod interval;
 mod json_number;
+mod mixed_chain;
 mod ordinary_binding;
 mod ordinary_bridge;
 mod ordinary_chain;
@@ -70,6 +75,15 @@ pub use json_number::{
     checked_real_binary64_from_json, parse_json_number_lexeme, verify_binary64_candidate,
     CheckedJsonBinary64, JsonNumberKind, JsonNumberLimits, ParsedJsonNumber,
     DEFAULT_JSON_NUMBER_LIMITS,
+};
+pub use mixed_chain::{
+    replay_raw_mixed_planar_chain_exact_rational_v04, MixedChainClockLedgerEntry,
+    MixedChainCocycleLedgerEntry, MixedChainLiftedLcRightFrontier, MixedChainReplayFailure,
+    MixedChainRetainedRegion, MixedOrdinaryCocycle, MixedOrdinarySegmentReplay,
+    MixedPlanarLcCocycle, MixedPlanarLcSegmentReplay, MixedPlanarSegmentKind,
+    MixedPlanarSegmentReplay, RawMixedPlanarChainObligation, RawMixedPlanarChainReplay,
+    RawMixedPlanarChainReplayError, EXACT_RATIONAL_RAW_MIXED_PLANAR_CHAIN_V04_PROFILE_ID,
+    RAW_MIXED_PLANAR_CHAIN_OBLIGATION_IDS,
 };
 pub use ordinary_binding::{
     replay_initial_value_binding_exact_rational_v04,

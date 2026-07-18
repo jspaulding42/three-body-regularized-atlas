@@ -155,6 +155,20 @@ impl OrdinaryChainRightFrontier {
 }
 
 impl OrdinaryChainFinalEnclosure {
+    pub(crate) fn new(
+        physical_time: BigRational,
+        parameter_preimage: RationalInterval,
+        position_intervals: Vec<RationalInterval>,
+        velocity_intervals: Vec<RationalInterval>,
+    ) -> Self {
+        Self {
+            physical_time,
+            parameter_preimage,
+            position_intervals,
+            velocity_intervals,
+        }
+    }
+
     pub fn physical_time(&self) -> &BigRational {
         &self.physical_time
     }
@@ -562,12 +576,12 @@ pub fn replay_raw_ordinary_only_chain_exact_rational_v04(
                             validate_public_rational(&maximum_width)?;
                             width_within = &maximum_width
                                 <= chain.requested_maximum_component_width.binary64_rational();
-                            final_enclosure = Some(OrdinaryChainFinalEnclosure {
-                                physical_time: target.clone(),
-                                parameter_preimage: candidate,
+                            final_enclosure = Some(OrdinaryChainFinalEnclosure::new(
+                                target.clone(),
+                                candidate,
                                 position_intervals,
                                 velocity_intervals,
-                            });
+                            ));
                             maximum_component_width = Some(maximum_width);
                             state_evaluated = true;
                         }
@@ -597,45 +611,12 @@ pub fn replay_raw_ordinary_only_chain_exact_rational_v04(
                 .ok_or(RawOrdinaryOnlyChainReplayError::InternalInvariant {
                     detail: "certified ordinary prefix has no current clock",
                 })?;
-        let tube_replay = replay_ordinary_tube_exact_rational_v04(&current_chart, &current_tube)
-            .map_err(RawOrdinaryOnlyChainReplayError::FrontierTube)?;
-        if tube_replay.certified() {
-            let radius = tube_replay.gronwall_upper().ok_or(
-                RawOrdinaryOnlyChainReplayError::InternalInvariant {
-                    detail: "certified frontier tube has no Gronwall upper bound",
-                },
-            )?;
-            let right_parameter = current_chart.parameter_interval().upper().clone();
-            let argument = RationalInterval::try_point(right_parameter.clone())?;
-            let position_intervals =
-                evaluate_and_inflate(current_chart.position_polynomial(), &argument, radius, true)?;
-            let velocity_intervals = evaluate_and_inflate(
-                current_chart.velocity_polynomial(),
-                &argument,
-                radius,
-                false,
-            )?;
-            if position_intervals.len() != POSITION_DIMENSION
-                || velocity_intervals.len() != POSITION_DIMENSION
-            {
-                return Err(RawOrdinaryOnlyChainReplayError::InternalInvariant {
-                    detail: "ordinary frontier enclosure is not planar three-body",
-                });
-            }
-            let physical_time_interval = RationalInterval::new(
-                checked_add(&right_parameter, clock.lower())?,
-                checked_add(&right_parameter, clock.upper())?,
-            )?;
-            right_frontier = Some(OrdinaryChainRightFrontier {
-                committed_segment_count: certified_segment_count,
-                chart_id: current_chart.chart_id().to_owned(),
-                right_parameter,
-                physical_time_interval,
-                position_intervals,
-                velocity_intervals,
-                tube_replay,
-            });
-        }
+        right_frontier = reconstruct_ordinary_right_frontier_exact_rational_v04(
+            &current_chart,
+            &current_tube,
+            clock,
+            certified_segment_count,
+        )?;
     }
 
     let satisfaction = [
@@ -672,7 +653,7 @@ pub fn replay_raw_ordinary_only_chain_exact_rational_v04(
     })
 }
 
-fn strict_root_exact_gate(
+pub(crate) fn strict_root_exact_gate(
     chain: &RawPlanarChainWire,
     chart: &OrdinaryChartInput,
     tube: &OrdinaryTubeInput,
@@ -713,7 +694,7 @@ fn strict_root_exact_gate(
         && binding.chart_parameter.binary64_rational() == tube.anchor_parameter()
 }
 
-fn evaluate_and_inflate(
+pub(crate) fn evaluate_and_inflate(
     polynomial: &crate::ExactRationalPolynomial,
     argument: &RationalInterval,
     radius: &BigRational,
@@ -734,14 +715,14 @@ fn evaluate_and_inflate(
         .collect()
 }
 
-fn checked_add(
+pub(crate) fn checked_add(
     left: &BigRational,
     right: &BigRational,
 ) -> Result<BigRational, RawOrdinaryOnlyChainReplayError> {
     admit_rational(left + right)
 }
 
-fn checked_subtract(
+pub(crate) fn checked_subtract(
     left: &BigRational,
     right: &BigRational,
 ) -> Result<BigRational, RawOrdinaryOnlyChainReplayError> {
@@ -751,4 +732,52 @@ fn checked_subtract(
 fn admit_rational(value: BigRational) -> Result<BigRational, RawOrdinaryOnlyChainReplayError> {
     validate_public_rational(&value)?;
     Ok(value)
+}
+
+/// Freshly replay and reconstruct the right edge of one committed ordinary
+/// chart.  Both chain orchestrators share this exact implementation so
+/// retention semantics cannot drift.
+pub(crate) fn reconstruct_ordinary_right_frontier_exact_rational_v04(
+    chart: &OrdinaryChartInput,
+    tube: &OrdinaryTubeInput,
+    clock: &RationalInterval,
+    committed_segment_count: usize,
+) -> Result<Option<OrdinaryChainRightFrontier>, RawOrdinaryOnlyChainReplayError> {
+    let tube_replay = replay_ordinary_tube_exact_rational_v04(chart, tube)
+        .map_err(RawOrdinaryOnlyChainReplayError::FrontierTube)?;
+    if !tube_replay.certified() {
+        return Ok(None);
+    }
+    let radius =
+        tube_replay
+            .gronwall_upper()
+            .ok_or(RawOrdinaryOnlyChainReplayError::InternalInvariant {
+                detail: "certified frontier tube has no Gronwall upper bound",
+            })?;
+    let right_parameter = chart.parameter_interval().upper().clone();
+    let argument = RationalInterval::try_point(right_parameter.clone())?;
+    let position_intervals =
+        evaluate_and_inflate(chart.position_polynomial(), &argument, radius, true)?;
+    let velocity_intervals =
+        evaluate_and_inflate(chart.velocity_polynomial(), &argument, radius, false)?;
+    if position_intervals.len() != POSITION_DIMENSION
+        || velocity_intervals.len() != POSITION_DIMENSION
+    {
+        return Err(RawOrdinaryOnlyChainReplayError::InternalInvariant {
+            detail: "ordinary frontier enclosure is not planar three-body",
+        });
+    }
+    let physical_time_interval = RationalInterval::new(
+        checked_add(&right_parameter, clock.lower())?,
+        checked_add(&right_parameter, clock.upper())?,
+    )?;
+    Ok(Some(OrdinaryChainRightFrontier {
+        committed_segment_count,
+        chart_id: chart.chart_id().to_owned(),
+        right_parameter,
+        physical_time_interval,
+        position_intervals,
+        velocity_intervals,
+        tube_replay,
+    }))
 }
