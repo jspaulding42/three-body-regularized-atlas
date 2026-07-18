@@ -313,6 +313,33 @@ decoding.
 | LC tube | exact nine fields, including an exact Boolean | nonempty IDs/source; ordinary-tube anchor/sign rules; LC defect/separation/Jacobian/Gronwall checks; pair-energy constraint when flag is true |
 | LC-exit transition | exact six fields and scalar classes | all four strings nonempty; referenced identities and exact endpoint parameters; `source` is not pinned to a constant in raw-v1 |
 
+The current Rust checkpoint exposes two named component profiles after planar
+ordinary semantic admission. `exact_rational_initial_value_binding_v04`
+replays the eight direct Python binding obligations using exact binary64
+dyadics and exact rational polynomial/time evaluation. On that direct surface,
+`source` is not part of binding identity: clearing it does not make the
+eight-obligation profile false. This is intentionally only the admitted planar
+case, not direct-object API parity for the Python checker's three-dimensional
+inputs.
+
+`exact_rational_validated_ordinary_root_v04` composes that binding replay with
+`exact_rational_ordinary_tube_v04`. Its eight proof-oriented obligations are
+the historical six root-wrapper obligations strengthened by exact equality of
+the chart's parameter and physical-time interval widths and by exact agreement
+between the binding initial time and the chart's affine physical-time map at
+the binding parameter. It does not consume the
+`exact_rational_ordinary_chart_claimed_tail_v04` ledger. The actual initial
+error is computed whenever exact binding position and velocity gaps are
+available; the exact root clock origin is retained only when both exact unit
+speed and the exact physical-time anchor hold. Both canonical roots pass both
+named profiles.
+
+Neither profile is raw-chain root admission. Composition at the raw root must
+add the nonempty binding `source` rule, exact-zero time, position, and velocity
+tolerances, and exact equality of the binding parameter, chart left endpoint,
+and tube anchor. These component replays also provide no ordinary handoff,
+fixed-time, LC, chain-fold, or end-to-end independent-verifier result.
+
 The ordinary-chart row deliberately describes the raw planar-chain composition
 surface.  It is narrower than the frozen 13-obligation direct-object primitive:
 that primitive admits two- or three-dimensional coefficient blocks, tests no

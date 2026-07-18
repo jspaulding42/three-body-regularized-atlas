@@ -148,8 +148,17 @@ analytic v0.3 pair-floor and Lipschitz formula family and fixes square-root
 precision at 256 bits, the upward exponent dyadic grid at 32 bits, Taylor
 cutoff 32, and the maximum reduced exponential tail at `2^-128`. All six
 ordinary tubes in each of the two baseline chains, twelve tube replays in
-total, certify conditionally under this profile. The crate currently passes
-143 Rust unit tests and three integration tests; `cargo fmt --check` and
+total, certify conditionally under this profile. On admitted planar semantic
+inputs, `exact_rational_initial_value_binding_v04` now reproduces the eight
+direct Python binding obligations with exact rational evaluation; `source` is
+not part of direct binding identity. The separate eight-obligation
+`exact_rational_validated_ordinary_root_v04` profile strengthens the historical
+six-obligation wrapper with exact unit speed and an exact physical-time anchor,
+composes the exact binding and tube replays, and ignores the claimed-tail chart
+ledger. It computes the actual initial error whenever the binding gaps are
+available and retains the root clock only when both exact clock obligations
+hold. Both canonical roots pass both profiles. The crate currently passes
+150 Rust unit tests and four integration tests; `cargo fmt --check` and
 warning-denying Clippy are clean. The implementation-neutral
 [`raw-v1 seed corpus`](conformance/raw-v1/README.md) currently contains two
 accepted baseline payloads and sixteen isolated rejection mutations. The
@@ -169,12 +178,18 @@ The Rust crate still has no raw SHA-256 layer. Its 13-entry ordinary-chart
 result is conditional on the unproved claimed tail and does not establish a
 collision-free chart, a convergent Taylor representation, or a rigorous
 remainder bound. Its six-obligation tube result is also conditional: it does
-not prove that an IVP lies in the initial ball. Root/IVP binding,
+not by itself prove that an IVP lies in the initial ball. The new binding and
+local-root profiles establish that component only for admitted planar inputs;
+they are neither direct three-dimensional API parity nor raw-chain root
+admission. Raw-chain replay must additionally require a nonempty binding
+`source`, exact-zero binding tolerances, and equality of the binding parameter,
+chart left endpoint, and tube anchor. Raw-chain root admission,
 handoff/ordinary-bridge/fixed-time semantics, every LC field, full chain
-replay, clock and gauge logic, and the semantic result serializer remain
-unimplemented. Frozen-v0.3 primitive parity and `OPEN-V1-06` remain open, as
-does historical tube arithmetic parity under `OPEN-V1-08`; cross-language
-numeric rendering and the Rust toolchain pin remain open under `OPEN-V1-01`.
+replay, clock/gauge induction beyond the local root, and the semantic result
+serializer remain unimplemented. Frozen-v0.3 primitive parity and
+`OPEN-V1-06` remain open, as does historical tube arithmetic parity under
+`OPEN-V1-08`; cross-language numeric rendering and the Rust toolchain pin
+remain open under `OPEN-V1-01`.
 The corpus is still `seed_incomplete`, the conformance and independent-verifier
 release gates remain failed, and no complete-certificate or independent
 chain-replay claim is made.

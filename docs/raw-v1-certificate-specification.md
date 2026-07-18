@@ -661,6 +661,20 @@ dyadic-rational arithmetic.  Exact time, maximum position, and maximum
 velocity gaps MUST not exceed the corresponding supplied tolerances.  At the
 chain root those tolerances are zero.
 
+The current Rust checkpoint reproduces these eight direct obligations under
+the separately named `exact_rational_initial_value_binding_v04` profile, but
+only after its semantic adapter has admitted the referenced planar ordinary
+chart. It interprets every binary64 input as its exact dyadic and evaluates
+the chart polynomial and affine physical-time map with exact rational
+arithmetic. The direct obligation `initial_value_binding_identity_present`
+tests the binding and chart identifiers; it does not test `source`. Thus this
+profile is neither direct-object parity for the Python checker's admitted
+three-dimensional inputs nor the complete raw-chain root gate. The latter
+must separately require a nonempty binding `source`, exact-zero time,
+position, and velocity tolerances, and equality of the binding parameter with
+both the chart left endpoint and tube anchor. Both canonical raw-v1 roots
+satisfy all eight direct Rust obligations.
+
 ### 4.4 Ordinary a-posteriori tube
 
 In exact order:
@@ -764,9 +778,12 @@ grid of precision 32, and uses Taylor cutoff 32 with a maximum reduced
 exponential tail of `2^-128`.  All six ordinary tubes in each of the two
 baseline chains, twelve tube replays in total, certify conditionally under
 that profile.  This checkpoint does not define v0.3 arithmetic status parity
-or close OPEN-V1-08, and its tube result does not discharge primitive
-ordinary-chart recurrence/Taylor-residual obligations, root/IVP binding,
-handoff, fixed-time, LC, chain, or result-serialization obligations.
+or close OPEN-V1-08, and its tube result by itself does not discharge
+primitive ordinary-chart recurrence/Taylor-residual obligations, root/IVP
+binding, handoff, fixed-time, LC, chain, or result-serialization obligations.
+The separately named Rust root profile in Section 4.6 composes this
+conditional tube result with an exact planar IVP binding; that component
+composition does not make the tube profile alone a root theorem.
 
 Exhaustion of an implementation's declared arithmetic resources or of the
 precision needed to prove separation, a cap comparison, or the strict
@@ -803,7 +820,7 @@ the exact anchor polynomial center MUST satisfy `C = 0`.
 
 ### 4.6 Validated ordinary root wrapper
 
-In exact order:
+The historical v0.3 wrapper has six obligations, in exact order:
 
 1. `validated_ordinary_chart_serialization_admissible`
 2. `validated_ordinary_ivp_binding_checked`
@@ -822,6 +839,45 @@ chain root can be accepted despite false ordinary-chart obligations if the
 other aggregate conditions pass.  A sound independent verifier SHOULD return
 `UNRESOLVED` in that case; exact v0.3 status parity is unsafe.  See
 OPEN-V1-05.
+
+The current Rust checkpoint instead exposes the separately named
+`exact_rational_validated_ordinary_root_v04` profile with eight
+proof-oriented obligations, in exact order:
+
+1. `validated_ordinary_chart_serialization_admissible`
+2. `validated_ordinary_chart_exact_unit_speed`
+3. `validated_ordinary_root_exact_time_anchor`
+4. `validated_ordinary_ivp_binding_checked`
+5. `validated_ordinary_tube_checked`
+6. `validated_ordinary_component_chart_ids_match`
+7. `validated_ordinary_anchor_parameter_matches_binding`
+8. `validated_ordinary_actual_initial_error_covered`
+
+This profile strengthens the historical six-obligation interface by requiring
+exact equality between the chart's parameter-interval and physical-time-
+interval widths and an exact physical-time anchor: the chart's affine
+physical-time map at the binding parameter must equal the binding initial
+time. It composes `exact_rational_initial_value_binding_v04` with
+`exact_rational_ordinary_tube_v04`; construction of the admitted planar
+semantic chart supplies the serialization-admission witness. It deliberately
+does not replay or consume the claimed-tail ordinary-chart ledger.
+
+When the binding replay reaches exact polynomial evaluation, the wrapper
+computes the actual initial error as the maximum of the exact position and
+velocity gaps and tests it against the tube's initial-error bound. This error
+is available whenever those two gaps are available; it is not gated by the
+new clock obligations. The exact root clock origin
+`initial_time - chart_parameter` is retained only when both exact unit speed
+and the exact physical-time anchor hold. Both canonical raw-v1 roots satisfy
+all eight obligations.
+
+This named component profile is not Python direct-object parity in three
+dimensions and is not raw-chain root admission. Raw-chain composition must
+also enforce a nonempty binding `source`, all three binding tolerances equal to
+exact dyadic zero, and equality of the binding parameter, chart left endpoint,
+and tube anchor. It supplies no handoff, fixed-time, LC, chain-fold, or
+end-to-end independent-replay result, and it does not by itself close any
+OPEN-V1 release gate.
 
 ## 5. Chain induction and segment replay
 

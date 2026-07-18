@@ -125,7 +125,7 @@ the only current theorem-facing consumer. Regressions cover unequal masses,
 an acceleration-block maximum, and mass/precision preflight before polynomial
 evaluation.
 
-### Ordinary semantic inputs and conditional tube replay
+### Ordinary semantic inputs, conditional tube, and local root replay
 
 The `V03Compatible` wire decoder now feeds a non-certifying semantic adapter
 for finite ordinary chart and tube records. Every real is taken from its
@@ -148,9 +148,35 @@ then evaluated without host floating-point arithmetic.
 
 All six ordinary tubes embedded in each of the two baseline chains, twelve
 replays total, satisfy all six obligations under this profile. This is only a
-conditional a-posteriori tube result: it does not prove that either baseline's
-IVP lies in the initial ball, and it does not establish status parity with the
-historical binary64 checker. That parity question remains `OPEN-V1-08`.
+conditional a-posteriori tube result: by itself it does not prove that either
+baseline's IVP lies in the initial ball, and it does not establish status
+parity with the historical binary64 checker. That parity question remains
+`OPEN-V1-08`.
+
+The same planar semantic boundary now feeds
+`exact_rational_initial_value_binding_v04`. This profile reproduces the eight
+direct Python binding obligations with exact binary64 dyadics and exact
+rational polynomial and affine-time evaluation. It deliberately does not make
+`source` part of direct binding identity. Its scope is admitted planar inputs,
+not parity with the Python direct-object API on three-dimensional inputs. Both
+canonical roots satisfy all eight obligations.
+
+`exact_rational_validated_ordinary_root_v04` then composes that exact binding
+with the conditional ordinary-tube replay. Its eight proof-oriented
+obligations strengthen the historical six-obligation wrapper with exact chart
+unit speed and an exact physical-time anchor. It does not consume the
+claimed-tail ordinary-chart ledger. The implementation computes the actual
+initial error whenever the binding position and velocity gaps are available;
+it retains the exact root clock origin only when both exact unit speed and the
+exact physical-time anchor hold. Both canonical roots satisfy all eight
+obligations.
+
+These are component profiles, not raw-chain root admission. Raw-chain replay
+must additionally require a nonempty binding `source`, exact-zero time,
+position, and velocity tolerances, and equality of the binding parameter,
+chart left endpoint, and tube anchor. The profiles do not implement ordinary
+handoff, fixed-time evaluation, any LC record, chain folding, or end-to-end
+independent certificate replay.
 
 ## Implementation status at the current checkpoint
 
@@ -179,11 +205,12 @@ for the complete finite v0.3 raw-v1 record grammar. The record-by-record parser
 boundary is documented in the
 [`Rust schema map`](raw-v1-rust-schema-map.md).
 
-The semantic adapter and conditional ordinary-tube replay described above now
-couple the decoded ordinary chart/tube records to the exact polynomial,
-square-root, exponential, defect, collision, analytic Lipschitz, cap, and
-strict Gronwall kernels. The current validation checkpoint is 137 passing Rust
-unit tests and two passing corpus tests, with `cargo fmt --check` and
+The semantic adapter, conditional ordinary-tube replay, exact planar binding,
+and proof-oriented local-root composition described above now couple decoded
+ordinary records to the exact polynomial, square-root, exponential, defect,
+collision, analytic Lipschitz, cap, strict Gronwall, binding-gap, and local
+clock-anchor kernels. The current validation checkpoint is 150 passing Rust
+unit tests and four passing integration tests, with `cargo fmt --check` and
 warning-denying Clippy clean.
 
 The implementation-neutral
@@ -196,17 +223,22 @@ yet cover semantic failures, numeric boundaries, or the
 root/fold/LC-entry/LC-tube/LC-exit/fixed-time result boundaries required for
 release.
 
-Delivery slices 1 and 2 remain partial, and only the conditional ordinary-tube
-part of slice 3 has begun. `OPEN-V1-01` remains open because the tested Rust
+Delivery slices 1 and 2 remain partial. Slice 3 now includes the conditional
+ordinary tube, exact admitted-planar binding, and proof-oriented local-root
+components described above, but no raw-chain root or segment fold.
+`OPEN-V1-01` remains open because the tested Rust
 float rendering path is not yet a portable normative shortest-decimal
 algorithm and the Rust toolchain is not pinned. `OPEN-V1-08` remains open
 because the new exact-rational tube profile does not claim status parity with
-the historical binary64 outward profile. Raw SHA-256, primitive ordinary-chart
-recurrence and Taylor-model residual/tail replay, root/IVP binding,
+the historical binary64 outward profile. Raw SHA-256, frozen-v0.3 primitive
+ordinary-chart parity or a proof-grade verified-tail replay, raw-chain root
+admission,
 handoff/ordinary-bridge/fixed-time semantics, every LC field, full chain
-replay, clock and gauge logic, and the semantic result serializer remain
-unimplemented. No complete certificate has been replayed by this crate. The
-corpus remains `seed_incomplete`, and neither the conformance gate nor the
+replay, clock/gauge induction beyond the local root, and the semantic result
+serializer remain unimplemented. The local profiles provide neither direct
+three-dimensional API parity nor chain-level independence. No complete
+certificate has been replayed by this crate. The corpus remains
+`seed_incomplete`, and neither the conformance gate nor the
 independent-verifier gate passes at this checkpoint.
 
 ## Delivery slices

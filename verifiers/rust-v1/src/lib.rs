@@ -1,10 +1,12 @@
 //! Independent strict-wire and numeric primitives for the raw-v1 planar-chain
 //! verifier.
 //!
-//! This crate deliberately contains no Python bridge and is not yet a complete
-//! chain verifier. The public surface covers strict wire decoding, bounded
-//! exact arithmetic, non-certifying ordinary semantic inputs, and the six
-//! conditional ordinary-tube obligations under a named exact-rational profile.
+//! This crate deliberately contains no Python bridge and does not claim
+//! complete continuation-chain replay. The public surface covers strict wire
+//! decoding, bounded exact arithmetic, non-certifying ordinary semantic
+//! inputs, conditional ordinary chart and tube replay, exact planar
+//! initial-value binding, and proof-oriented validated-root replay under named
+//! exact-rational profiles.
 
 #![forbid(unsafe_code)]
 
@@ -14,6 +16,7 @@ mod error;
 mod exp;
 mod interval;
 mod json_number;
+mod ordinary_binding;
 mod ordinary_chart;
 mod ordinary_defect;
 mod ordinary_field;
@@ -40,6 +43,15 @@ pub use json_number::{
     checked_real_binary64_from_json, parse_json_number_lexeme, verify_binary64_candidate,
     CheckedJsonBinary64, JsonNumberKind, JsonNumberLimits, ParsedJsonNumber,
     DEFAULT_JSON_NUMBER_LIMITS,
+};
+pub use ordinary_binding::{
+    replay_initial_value_binding_exact_rational_v04,
+    replay_validated_ordinary_root_exact_rational_v04, InitialValueBindingObligation,
+    InitialValueBindingReplay, InitialValueBindingReplayError, ValidatedOrdinaryRootObligation,
+    ValidatedOrdinaryRootReplay, ValidatedOrdinaryRootReplayError,
+    EXACT_RATIONAL_INITIAL_VALUE_BINDING_V04_PROFILE_ID,
+    EXACT_RATIONAL_VALIDATED_ORDINARY_ROOT_V04_PROFILE_ID, INITIAL_VALUE_BINDING_OBLIGATION_IDS,
+    VALIDATED_ORDINARY_ROOT_OBLIGATION_IDS,
 };
 pub use ordinary_chart::{
     replay_ordinary_chart_exact_rational_claimed_tail_v04,

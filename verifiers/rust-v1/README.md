@@ -57,9 +57,24 @@ foundation. The current checkpoint contains:
   v0.3 pair-distance and Lipschitz formula family, 256-bit square-root
   enclosures, a 32-bit upward dyadic enclosure of the exponential argument,
   Taylor cutoff 32, and maximum reduced Taylor tail `2^-128`. All six ordinary
-  tubes in each baseline chain, twelve replays total, certify conditionally.
+  tubes in each baseline chain, twelve replays total, certify conditionally;
+- exact replay of the eight direct Python initial-value-binding obligations
+  under `exact_rational_initial_value_binding_v04`, after the ordinary semantic
+  adapter has admitted a planar chart. The profile evaluates the chart and its
+  affine physical-time map at the binding parameter with exact rational
+  arithmetic. It deliberately does not treat `source` as part of direct
+  binding identity. Both canonical roots satisfy all eight obligations; and
+- an eight-obligation proof-oriented root composition under
+  `exact_rational_validated_ordinary_root_v04`. This strengthens the historical
+  six-obligation wrapper with exact chart unit speed and an exact physical-time
+  anchor, composes the exact binding and exact ordinary-tube profiles, and does
+  not consume the claimed-tail chart ledger. It computes the actual initial
+  error whenever the binding position and velocity gaps are available, and it
+  retains the exact root clock origin only when both the unit-speed and
+  physical-time-anchor obligations hold. Both canonical roots satisfy all
+  eight obligations.
 
-At this checkpoint, 143 Rust unit tests and three integration tests pass;
+At this checkpoint, 150 Rust unit tests and four integration tests pass;
 `cargo fmt --check` and `cargo clippy --all-targets -- -D warnings` are clean.
 
 The checked-in [raw-v1 seed corpus](../../conformance/raw-v1/README.md) supplies
@@ -80,12 +95,19 @@ raw SHA-256 layer. The ordinary-chart profile's serialized `tail_bound` remains
 an unproved claimed allowance. It provides no interval-wide collision-free
 witness, no formal-series convergence proof, and no rigorous remainder
 witness; it is not frozen-v0.3 primitive parity and does not close
-`OPEN-V1-06`. The ordinary-tube result likewise proves only a conditional
-a-posteriori estimate, not root/IVP containment. Root/IVP binding,
-handoff/ordinary-bridge/fixed-time semantics, every LC field, full chain
-replay, clock/gauge logic, and the semantic result serializer remain
-unimplemented. `OPEN-V1-08` remains open for historical binary64 arithmetic
-status parity. The crate does not call Python and makes no complete-certificate
-or independent-chain-replay claim. `OPEN-V1-01` also remains open: the current
+`OPEN-V1-06`. The ordinary-tube result alone proves only a conditional
+a-posteriori estimate; the separately named binding and validated-root
+profiles now establish the corresponding exact local root obligations only
+for admitted planar semantic inputs. They are not parity with the Python
+direct-object API on three-dimensional inputs, and they are not raw-chain root
+admission. A raw-chain root must additionally require a nonempty binding
+`source`, exact-zero time/position/velocity tolerances, and equality of the
+binding parameter, chart left endpoint, and tube anchor. Raw-chain root
+admission, handoff/ordinary-bridge/fixed-time semantics, every LC field, full
+chain replay, clock/gauge induction beyond the local root, and the semantic
+result serializer remain unimplemented. `OPEN-V1-08` remains open for
+historical binary64 arithmetic status parity. The crate does not call Python
+and makes no complete-certificate, end-to-end independent-verifier, or
+independent-chain-replay claim. `OPEN-V1-01` also remains open: the current
 canonical float renderer is tested against the frozen fixtures but is not yet
 a language-neutral normative algorithm, and its Rust toolchain is not pinned.
