@@ -19,7 +19,8 @@
 //! top-level obligations 6--13 under separately named exact-rational profiles,
 //! plus an admitted-payload 13-row semantic outcome with SHA-256 and a
 //! deterministic exact-rational JSON projection when the bounded replay
-//! returns Boolean evidence.
+//! returns Boolean evidence, and a total byte-level execution envelope with a
+//! separately profile-labeled JSON classification.
 //! The mixed fold transactionally commits freshly certified local results,
 //! derives its clock and cocycle ledgers, evaluates the ordinary fixed-time
 //! enclosure, and applies typed retained-frontier priority. The ordinary-only
@@ -64,6 +65,7 @@ mod polynomial;
 mod rational_input;
 mod raw_admission;
 pub mod raw_schema;
+mod raw_v1_execution;
 mod raw_v1_outcome;
 mod sqrt;
 mod wire_json;
@@ -206,6 +208,11 @@ pub use polynomial::{
 };
 pub use rational_input::HARD_MAX_RATIONAL_COMPONENT_BITS;
 pub use raw_admission::{CanonicalRawV1Admission, CanonicalRawV1AdmissionError};
+pub use raw_v1_execution::{
+    execute_raw_v1_bytes_exact_rational_v04, RawV1EvaluationErrorStage, RawV1EvaluationOutcome,
+    RawV1Execution, RawV1ExecutionSerializationError, RawV1ParseOutcome, RawV1RejectionStage,
+    EXACT_RATIONAL_RAW_V1_EXECUTION_V04_PROFILE_ID, RAW_V1_RUST_EXECUTION_V1_SCHEMA_ID,
+};
 pub use raw_v1_outcome::{
     replay_admitted_raw_v1_outcome_exact_rational_v04, RawV1Outcome, RawV1OutcomeError,
     RawV1OutcomeObligation, RawV1OutcomeSegmentKind, RawV1OutcomeSegmentProfile,

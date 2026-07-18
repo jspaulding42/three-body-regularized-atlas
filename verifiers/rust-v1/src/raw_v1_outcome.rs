@@ -270,7 +270,7 @@ impl RawV1Outcome {
             .map_err(|source| RawV1OutcomeSerializationError { source })
     }
 
-    fn portable_projection(&self) -> PortableOutcomeProjection<'_> {
+    pub(crate) fn portable_projection(&self) -> PortableOutcomeProjection<'_> {
         let replay = &self.mixed_replay;
         PortableOutcomeProjection {
             schema: RAW_V1_RUST_SEMANTIC_OUTCOME_V1_SCHEMA_ID,
@@ -487,7 +487,7 @@ fn first_failed_obligation(
 }
 
 #[derive(Serialize)]
-struct PortableOutcomeProjection<'a> {
+pub(crate) struct PortableOutcomeProjection<'a> {
     schema: &'static str,
     profile: &'static str,
     status: &'static str,
