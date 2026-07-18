@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import subprocess
 import sys
+import threading
 
 import pytest
 
@@ -317,6 +318,14 @@ def write_fake_live_corpus(root: Path):
     input_root = root / "inputs"
     expectation_root.mkdir(parents=True)
     input_root.mkdir()
+    (root / "manifest.json").write_bytes(
+        json_bytes(
+            {
+                "manifest_schema": "synthetic-raw-v1-corpus-manifest-v1",
+                "status": "test-only",
+            }
+        )
+    )
     captures = {}
     rust_executions = {}
     for case_id, fixture in (
@@ -339,6 +348,21 @@ def write_fake_live_corpus(root: Path):
         )
         rust_executions[hashlib.sha256(input_bytes).hexdigest()] = rust_bytes
     return captures, rust_executions
+
+
+def write_fake_rust_executable(root: Path) -> Path:
+    executable = root / "fake-rust-verifier"
+    executable.write_bytes(b"deterministic-fake-rust-verifier-v1")
+    executable.chmod(0o755)
+    return executable
+
+
+def tree_file_bytes(root: Path) -> dict[str, bytes]:
+    return {
+        path.relative_to(root).as_posix(): path.read_bytes()
+        for path in root.rglob("*")
+        if path.is_file()
+    }
 
 
 @pytest.mark.parametrize(
@@ -910,6 +934,173 @@ def test_live_corpus_fake_adapters_are_fresh_bound_ordered_and_deterministic(
     assert "exception" not in lowered
 
 
+def test_live_evidence_bundle_is_deterministic_complete_and_fully_bound(
+    tmp_path,
+) -> None:
+    corpus = tmp_path / "corpus"
+    captures, rust_executions = write_fake_live_corpus(corpus)
+    executable = write_fake_rust_executable(tmp_path)
+    input_sha_to_case = {
+        hashlib.sha256(
+            (corpus / "inputs" / "synthetic.json").read_bytes()
+        ).hexdigest(): "synthetic-reject",
+        hashlib.sha256(
+            (corpus / "inputs" / "synthetic.raw.json").read_bytes()
+        ).hexdigest(): "synthetic-success",
+    }
+    lock = threading.Lock()
+    python_counts = dict.fromkeys(captures, 0)
+    rust_counts = dict.fromkeys(captures, 0)
+
+    def python_adapter(case_id, _input_bytes, _expected_parse):
+        with lock:
+            python_counts[case_id] += 1
+        return captures[case_id]
+
+    def rust_runner(_executable, input_path):
+        input_bytes = input_path.read_bytes()
+        input_sha = hashlib.sha256(input_bytes).hexdigest()
+        with lock:
+            rust_counts[input_sha_to_case[input_sha]] += 1
+        return rust_executions[input_sha]
+
+    bundle_a = tmp_path / "bundle-a"
+    bundle_b = tmp_path / "bundle-b"
+    report_a = gate.run_live_evidence_bundle(
+        corpus,
+        executable,
+        bundle_a,
+        jobs=2,
+        python_capture_adapter=python_adapter,
+        rust_execution_runner=rust_runner,
+    )
+    report_b = gate.run_live_evidence_bundle(
+        corpus,
+        executable,
+        bundle_b,
+        jobs=2,
+        python_capture_adapter=python_adapter,
+        rust_execution_runner=rust_runner,
+    )
+    assert report_a == report_b
+    assert python_counts == {"synthetic-success": 2, "synthetic-reject": 2}
+    assert rust_counts == {"synthetic-success": 2, "synthetic-reject": 2}
+
+    files_a = tree_file_bytes(bundle_a)
+    files_b = tree_file_bytes(bundle_b)
+    assert files_a == files_b
+    assert set(files_a) == {
+        "manifest.json",
+        "report.json",
+        "cases/0000/python-capture.json",
+        "cases/0000/rust-execution.json",
+        "cases/0001/python-capture.json",
+        "cases/0001/rust-execution.json",
+    }
+    assert files_a["report.json"] == report_a
+    for payload in files_a.values():
+        assert not payload.endswith(b"\n")
+        assert payload == json_bytes(json.loads(payload))
+
+    report = json.loads(report_a)
+    manifest = json.loads(files_a["manifest.json"])
+    gate._validate_live_bundle_manifest(manifest, 2)
+    assert manifest["manifest_schema"] == gate.LIVE_BUNDLE_SCHEMA
+    assert manifest["comparator_id"] == gate.COMPARATOR_ID
+    assert manifest["live_driver_id"] == gate.LIVE_DRIVER_ID
+    assert manifest["capture_mode"] == gate.LIVE_CAPTURE_MODE
+    assert manifest["report"] == {
+        "bundle_relative_path": "report.json",
+        "byte_length": len(report_a),
+        "report_schema": gate.LIVE_REPORT_SCHEMA,
+        "sha256": hashlib.sha256(report_a).hexdigest(),
+    }
+    assert manifest["frozen_specification"] == {
+        "byte_length": len((ROOT / gate.FROZEN_SPECIFICATION_PATH).read_bytes()),
+        "repository_relative_path": gate.FROZEN_SPECIFICATION_PATH,
+        "sha256": gate.FROZEN_SPECIFICATION_SHA256,
+    }
+    assert manifest["corpus_manifest"] == {
+        "byte_length": len((corpus / "manifest.json").read_bytes()),
+        "corpus_relative_path": "manifest.json",
+        "sha256": hashlib.sha256((corpus / "manifest.json").read_bytes()).hexdigest(),
+    }
+    assert manifest["comparator_source"] == {
+        "byte_length": len(SCRIPT.read_bytes()),
+        "repository_relative_path": gate.COMPARATOR_SOURCE_PATH,
+        "sha256": hashlib.sha256(SCRIPT.read_bytes()).hexdigest(),
+    }
+    assert manifest["rust_executable"] == {
+        "byte_length": len(executable.read_bytes()),
+        "sha256": hashlib.sha256(executable.read_bytes()).hexdigest(),
+    }
+    assert manifest["claim_scope"] == {
+        "implementation_or_verifier_independence_attested": False,
+        "loaded_code_matches_comparator_source_attested": False,
+        "nonclaims_report_field": "aggregate.nonclaims",
+        "release_gate_status": "BLOCKED",
+        "release_gate_status_report_field": "aggregate.release_gate_status",
+    }
+    assert report["aggregate"]["release_gate_status"] == "BLOCKED"
+    assert report["aggregate"]["nonclaims"] == list(gate.FIXED_NONCLAIMS)
+
+    assert [item["case_id"] for item in manifest["cases"]] == [
+        "synthetic-reject",
+        "synthetic-success",
+    ]
+    for index, case_record in enumerate(manifest["cases"]):
+        case_id = case_record["case_id"]
+        for field in ("input", "expectation"):
+            binding = case_record[field]
+            payload = (corpus / binding["corpus_relative_path"]).read_bytes()
+            assert binding["byte_length"] == len(payload)
+            assert binding["sha256"] == hashlib.sha256(payload).hexdigest()
+        python_binding = case_record["python_capture"]
+        python_payload = files_a[python_binding["bundle_relative_path"]]
+        assert python_payload == captures[case_id].payload
+        assert python_binding["byte_length"] == len(python_payload)
+        assert python_binding["sha256"] == hashlib.sha256(python_payload).hexdigest()
+        assert python_binding["capture_kind"] == captures[case_id].kind
+        assert python_binding["profile_id"] == captures[case_id].profile_id
+        rust_binding = case_record["rust_execution"]
+        rust_payload = files_a[rust_binding["bundle_relative_path"]]
+        input_payload = (
+            corpus / case_record["input"]["corpus_relative_path"]
+        ).read_bytes()
+        expected_rust = rust_executions[hashlib.sha256(input_payload).hexdigest()]
+        assert rust_payload == expected_rust
+        assert rust_binding["byte_length"] == len(rust_payload)
+        assert rust_binding["sha256"] == hashlib.sha256(rust_payload).hexdigest()
+        assert rust_binding["evidence_kind"] == gate.RUST_EXECUTION_EVIDENCE_KIND
+        assert rust_binding["profile_id"] == gate.RUST_EXECUTION_PROFILE
+        if index == 0:
+            assert json.loads(python_payload)["capture_kind"] == (
+                "PARSER_REJECT_OBSERVATION"
+            )
+        else:
+            assert json.loads(python_payload)["artifact_schema"] == (
+                gate.PYTHON_TRANSCRIPT_SCHEMA
+            )
+
+    combined = b"\n".join(files_a.values()).lower()
+    assert str(tmp_path).encode().lower() not in combined
+    assert b"timestamp" not in combined
+    assert b"exception" not in combined
+    assert b"hostname" not in combined
+
+    extra_field = json.loads(files_a["manifest.json"])
+    extra_field["unexpected"] = None
+    with pytest.raises(gate.DifferentialGateError) as extra_error:
+        gate._validate_live_bundle_manifest(extra_field, 2)
+    assert extra_error.value.code == "LIVE_BUNDLE_MANIFEST_FIELDS_INVALID"
+
+    traversal = json.loads(files_a["manifest.json"])
+    traversal["cases"][0]["input"]["corpus_relative_path"] = "../input.json"
+    with pytest.raises(gate.DifferentialGateError) as traversal_error:
+        gate._validate_live_bundle_manifest(traversal, 2)
+    assert traversal_error.value.code == "LIVE_BUNDLE_RELATIVE_PATH_INVALID"
+
+
 def test_live_corpus_rejects_unbound_input_and_path_traversal(tmp_path) -> None:
     corpus = tmp_path / "corpus"
     write_fake_live_corpus(corpus)
@@ -943,6 +1134,192 @@ def test_live_corpus_rejects_symlinked_input(tmp_path) -> None:
     with pytest.raises(gate.DifferentialGateError) as error:
         gate.enumerate_live_corpus(corpus)
     assert error.value.code == "CORPUS_SYMLINK_REJECTED"
+
+
+def test_report_writer_resolves_symlinked_parent_but_rejects_output_symlink(
+    tmp_path,
+) -> None:
+    real_parent = tmp_path / "real-parent"
+    real_parent.mkdir()
+    alias_parent = tmp_path / "alias-parent"
+    try:
+        alias_parent.symlink_to(real_parent, target_is_directory=True)
+    except OSError:
+        pytest.skip("symlinks are unavailable")
+
+    payload = b'{"report":"through-resolved-parent"}'
+    gate._write_report_file(alias_parent / "report.json", payload)
+    assert (real_parent / "report.json").read_bytes() == payload
+
+    symlink_target = real_parent / "ordinary-file.json"
+    symlink_target.write_bytes(b"preserve-me")
+    output_symlink = real_parent / "output-link.json"
+    output_symlink.symlink_to(symlink_target)
+    with pytest.raises(gate.DifferentialGateError) as error:
+        gate._write_report_file(alias_parent / "output-link.json", payload)
+    assert error.value.code == "OUTPUT_SYMLINK_REJECTED"
+    assert symlink_target.read_bytes() == b"preserve-me"
+
+
+def test_live_bundle_refuses_existing_or_symlink_target_before_capture(
+    tmp_path,
+) -> None:
+    corpus = tmp_path / "corpus"
+    write_fake_live_corpus(corpus)
+    executable = write_fake_rust_executable(tmp_path)
+    capture_called = False
+
+    def forbidden_capture(*_args):
+        nonlocal capture_called
+        capture_called = True
+        pytest.fail("capture must not run for a forbidden bundle target")
+
+    existing = tmp_path / "existing-bundle"
+    existing.mkdir()
+    with pytest.raises(gate.DifferentialGateError) as existing_error:
+        gate.run_live_evidence_bundle(
+            corpus,
+            executable,
+            existing,
+            jobs=1,
+            python_capture_adapter=forbidden_capture,
+            rust_execution_runner=lambda *_args: b"{}",
+        )
+    assert existing_error.value.code == "LIVE_BUNDLE_TARGET_ALREADY_EXISTS"
+    assert capture_called is False
+
+    symlink = tmp_path / "bundle-symlink"
+    try:
+        symlink.symlink_to(existing, target_is_directory=True)
+    except OSError:
+        pytest.skip("symlinks are unavailable")
+    with pytest.raises(gate.DifferentialGateError) as symlink_error:
+        gate.run_live_evidence_bundle(
+            corpus,
+            executable,
+            symlink,
+            jobs=1,
+            python_capture_adapter=forbidden_capture,
+            rust_execution_runner=lambda *_args: b"{}",
+        )
+    assert symlink_error.value.code == "LIVE_BUNDLE_TARGET_SYMLINK_REJECTED"
+    assert capture_called is False
+
+
+def test_live_bundle_resolves_symlinked_parent_once(tmp_path) -> None:
+    corpus = tmp_path / "corpus"
+    captures, rust_executions = write_fake_live_corpus(corpus)
+    executable = write_fake_rust_executable(tmp_path)
+    real_parent = tmp_path / "real-bundles"
+    real_parent.mkdir()
+    alias_parent = tmp_path / "bundle-alias"
+    try:
+        alias_parent.symlink_to(real_parent, target_is_directory=True)
+    except OSError:
+        pytest.skip("symlinks are unavailable")
+
+    def python_adapter(case_id, _input_bytes, _expected_parse):
+        return captures[case_id]
+
+    def rust_runner(_executable, input_path):
+        payload = input_path.read_bytes()
+        return rust_executions[hashlib.sha256(payload).hexdigest()]
+
+    report = gate.run_live_evidence_bundle(
+        corpus,
+        executable,
+        alias_parent / "bundle",
+        jobs=1,
+        python_capture_adapter=python_adapter,
+        rust_execution_runner=rust_runner,
+    )
+    assert (real_parent / "bundle" / "report.json").read_bytes() == report
+    assert not (alias_parent / "bundle").is_symlink()
+
+
+@pytest.mark.parametrize(
+    ("changed_label", "code"),
+    (
+        ("comparator_source", "COMPARATOR_SOURCE_MUTATED_DURING_CAPTURE"),
+        (
+            "frozen_specification",
+            "FROZEN_SPECIFICATION_MUTATED_DURING_CAPTURE",
+        ),
+    ),
+)
+def test_live_bundle_detects_bound_source_drift_during_fake_capture(
+    tmp_path, monkeypatch, changed_label, code
+) -> None:
+    corpus = tmp_path / "corpus"
+    captures, rust_executions = write_fake_live_corpus(corpus)
+    executable = write_fake_rust_executable(tmp_path)
+
+    def python_adapter(case_id, _input_bytes, _expected_parse):
+        return captures[case_id]
+
+    def rust_runner(_executable, input_path):
+        payload = input_path.read_bytes()
+        return rust_executions[hashlib.sha256(payload).hexdigest()]
+
+    original_reader = gate._read_regular_file_bounded
+    matching_reads = 0
+
+    def drifting_reader(path, label):
+        nonlocal matching_reads
+        payload = original_reader(path, label)
+        if label == changed_label:
+            matching_reads += 1
+            if matching_reads == 2:
+                return payload + b"drift"
+        return payload
+
+    monkeypatch.setattr(gate, "_read_regular_file_bounded", drifting_reader)
+    bundle = tmp_path / "bundle"
+    with pytest.raises(gate.DifferentialGateError) as error:
+        gate.run_live_evidence_bundle(
+            corpus,
+            executable,
+            bundle,
+            jobs=1,
+            python_capture_adapter=python_adapter,
+            rust_execution_runner=rust_runner,
+        )
+    assert error.value.code == code
+    assert matching_reads == 2
+    assert not bundle.exists()
+
+
+def test_live_bundle_cleans_private_sibling_after_build_failure(
+    tmp_path, monkeypatch
+) -> None:
+    corpus = tmp_path / "corpus"
+    captures, rust_executions = write_fake_live_corpus(corpus)
+    executable = write_fake_rust_executable(tmp_path)
+
+    def python_adapter(case_id, _input_bytes, _expected_parse):
+        return captures[case_id]
+
+    def rust_runner(_executable, input_path):
+        payload = input_path.read_bytes()
+        return rust_executions[hashlib.sha256(payload).hexdigest()]
+
+    def failed_bundle_write(_path, _payload):
+        raise gate.DifferentialGateError("LIVE_BUNDLE_FILE_WRITE_FAILED", "bundle")
+
+    monkeypatch.setattr(gate, "_write_new_bundle_file", failed_bundle_write)
+    bundle = tmp_path / "bundle"
+    with pytest.raises(gate.DifferentialGateError) as error:
+        gate.run_live_evidence_bundle(
+            corpus,
+            executable,
+            bundle,
+            jobs=1,
+            python_capture_adapter=python_adapter,
+            rust_execution_runner=rust_runner,
+        )
+    assert error.value.code == "LIVE_BUNDLE_FILE_WRITE_FAILED"
+    assert not bundle.exists()
+    assert list(tmp_path.glob(".bundle.private-*")) == []
 
 
 def test_live_jobs_are_bounded_before_capture(tmp_path) -> None:
@@ -1095,6 +1472,78 @@ def test_direct_script_live_command_runs_one_cheap_real_reject(tmp_path) -> None
     report = json.loads(report_bytes)
     assert report["capture_mode"] == gate.LIVE_CAPTURE_MODE
     assert report["cases"][0]["python_capture_kind"] == "PARSER_REJECT_OBSERVATION"
+
+
+@pytest.mark.parametrize(
+    ("passed", "expected_exit", "expected_stderr"),
+    (
+        (True, 0, ""),
+        (False, 1, "raw-v1-live-bundle:DIFFERENTIAL_DISAGREEMENT\n"),
+    ),
+)
+def test_live_bundle_cli_has_distinct_command_and_gate_exit_semantics(
+    tmp_path, capsys, passed, expected_exit, expected_stderr
+) -> None:
+    case = gate.compare_case("synthetic-reject", *rejected_fixture())
+    if not passed:
+        case["differential_gate_passed"] = False
+        case["mismatch_ids"] = ["SYNTHETIC_DIFFERENTIAL_MISMATCH"]
+    report = gate.build_report([case], capture_mode=gate.LIVE_CAPTURE_MODE)
+    bundle = tmp_path / f"bundle-{passed}"
+    calls = []
+
+    def fake_bundle_runner(corpus, rust, bundle_dir, *, jobs):
+        calls.append((corpus, rust, bundle_dir, jobs))
+        bundle_dir.mkdir()
+        (bundle_dir / "report.json").write_bytes(report)
+        return report
+
+    def forbidden_live_runner(*_args, **_kwargs):
+        pytest.fail("the live command runner must not handle live-bundle")
+
+    exit_code = gate.main(
+        [
+            "live-bundle",
+            "--corpus-root",
+            str(tmp_path / "corpus"),
+            "--rust-verifier",
+            str(tmp_path / "rust"),
+            "--bundle-dir",
+            str(bundle),
+            "--jobs",
+            "1",
+        ],
+        live_runner=forbidden_live_runner,
+        live_bundle_runner=fake_bundle_runner,
+    )
+    assert exit_code == expected_exit
+    assert calls == [
+        (tmp_path / "corpus", tmp_path / "rust", bundle, 1),
+    ]
+    assert (bundle / "report.json").read_bytes() == report
+    assert capsys.readouterr().err == expected_stderr
+
+
+def test_live_bundle_cli_capture_failure_has_stable_distinct_stderr(
+    tmp_path, capsys
+) -> None:
+    def failed_runner(*_args, **_kwargs):
+        raise gate.DifferentialGateError("FAKE_BUNDLE_FAILURE", "bundle")
+
+    exit_code = gate.main(
+        [
+            "live-bundle",
+            "--corpus-root",
+            str(tmp_path / "corpus"),
+            "--rust-verifier",
+            str(tmp_path / "rust"),
+            "--bundle-dir",
+            str(tmp_path / "bundle"),
+        ],
+        live_bundle_runner=failed_runner,
+    )
+    assert exit_code == 2
+    assert capsys.readouterr().err == "raw-v1-live-bundle:FAKE_BUNDLE_FAILURE\n"
 
 
 def test_live_cli_writes_canonical_report_and_uses_gate_result_for_exit(

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 from concurrent.futures import ThreadPoolExecutor
+import ctypes
 from fractions import Fraction
 import hashlib
 import json
@@ -17,6 +18,7 @@ from math import gcd
 import os
 from pathlib import Path, PurePosixPath
 import selectors
+import shutil
 import stat
 import subprocess
 import sys
@@ -44,7 +46,9 @@ RUST_SEMANTIC_SCHEMA = "raw-v1-rust-semantic-outcome-v1"
 RUST_SEMANTIC_PROFILE = "exact_rational_admitted_raw_v1_outcome_v04"
 REPORT_SCHEMA = "raw-v1-cross-profile-differential-report-v1"
 LIVE_REPORT_SCHEMA = "raw-v1-cross-profile-differential-report-v2"
+LIVE_BUNDLE_SCHEMA = "raw-v1-live-evidence-bundle-v1"
 COMPARATOR_ID = "raw_v1_cross_profile_differential_gate_v1"
+LIVE_DRIVER_ID = "raw_v1_live_capture_driver_v1"
 COMPARISON_KIND = "CROSS_PROFILE_COMPATIBILITY_OBSERVATION"
 LIVE_CAPTURE_MODE = "LIVE_FRESH"
 OFFLINE_CAPTURE_MODE = "OFFLINE_SUPPLIED"
@@ -52,6 +56,13 @@ PYTHON_REJECT_CAPTURE_SCHEMA = "raw-v1-python-parser-reject-observation-v1"
 PYTHON_REJECT_PROFILE = "frozen_python_raw_v1_parser_v03"
 PYTHON_LIVE_REPLAY_SOURCE_MARKER = "fresh_public_python_replay_adapter"
 PYTHON_LIVE_REJECT_SOURCE_MARKER = "fresh_public_python_parser_adapter"
+FROZEN_SPECIFICATION_PATH = "docs/raw-v1-certificate-specification.md"
+FROZEN_SPECIFICATION_SHA256 = (
+    "18a131cb559dc74d86c33a61de8b252402b2b2e41755f789f66bc67f61238cac"
+)
+CORPUS_MANIFEST_PATH = "manifest.json"
+COMPARATOR_SOURCE_PATH = "scripts/raw_v1_differential_gate.py"
+RUST_EXECUTION_EVIDENCE_KIND = "RUST_EXECUTION_ENVELOPE"
 RUST_EXECUTION_FIELDS = {
     "evaluation_error_stage",
     "evaluation_outcome",
@@ -149,6 +160,23 @@ class PythonLiveCapture:
         self.kind = kind
         self.payload = payload
         self.profile_id = profile_id
+
+
+class LiveCaseEvidence:
+    """Exact fresh capture bytes and their derived live comparison result."""
+
+    __slots__ = ("comparison_result", "python_capture", "rust_execution_bytes")
+
+    def __init__(
+        self,
+        *,
+        comparison_result: dict[str, Any],
+        python_capture: PythonLiveCapture,
+        rust_execution_bytes: bytes,
+    ) -> None:
+        self.comparison_result = comparison_result
+        self.python_capture = python_capture
+        self.rust_execution_bytes = rust_execution_bytes
 
 
 EQUAL = "EQUAL"
@@ -2321,12 +2349,55 @@ PythonCaptureAdapter = Callable[[str, bytes, str], PythonLiveCapture]
 RustExecutionRunner = Callable[[str | os.PathLike[str], Path], bytes]
 
 
-def _compare_live_case(
+def _live_comparison_from_evidence(
+    case: LiveCorpusCase,
+    capture: PythonLiveCapture,
+    rust_execution: bytes,
+) -> dict[str, Any]:
+    _validate_python_live_capture(case, capture)
+    if type(rust_execution) is not bytes:
+        _fail("ARTIFACT_NOT_BYTES", "rust_execution")
+    if len(rust_execution) > MAX_ARTIFACT_BYTES:
+        _fail("JSON_ARTIFACT_SIZE_LIMIT_EXCEEDED", "rust_execution")
+
+    python_transcript = capture.payload if capture.kind == "REPLAY_TRANSCRIPT" else None
+    result = compare_case(
+        case.case_id,
+        case.input_bytes,
+        case.expectation_bytes,
+        python_transcript,
+        rust_execution,
+    )
+    capture_sha256 = hashlib.sha256(capture.payload).hexdigest()
+    result["python_capture_kind"] = capture.kind
+    result["sha256_bindings"]["python_capture_sha256"] = capture_sha256
+    if capture.kind == "REPLAY_TRANSCRIPT":
+        result["profiles"]["python"] = {
+            "capture_kind": capture.kind,
+            "capture_schema": PYTHON_TRANSCRIPT_SCHEMA,
+            "profile_id": PYTHON_PROFILE,
+            "source_marker": PYTHON_LIVE_REPLAY_SOURCE_MARKER,
+            "transcript_present": True,
+        }
+    else:
+        result["profiles"]["python"] = {
+            "capture_kind": capture.kind,
+            "capture_schema": PYTHON_REJECT_CAPTURE_SCHEMA,
+            "profile_id": PYTHON_REJECT_PROFILE,
+            "source_marker": PYTHON_LIVE_REJECT_SOURCE_MARKER,
+            "transcript_present": False,
+        }
+        if result["differential_gate_passed"]:
+            result["comparison_status"] = "PARSER_PROFILE_COMPATIBILITY_OBSERVED"
+    return result
+
+
+def _capture_live_case(
     case: LiveCorpusCase,
     rust_executable: str | os.PathLike[str],
     python_capture_adapter: PythonCaptureAdapter,
     rust_execution_runner: RustExecutionRunner,
-) -> dict[str, Any]:
+) -> LiveCaseEvidence:
     capture = python_capture_adapter(
         case.case_id, case.input_bytes, case.expected_parse_outcome
     )
@@ -2366,41 +2437,45 @@ def _compare_live_case(
         )
         if retained_private_input != case.input_bytes:
             _fail("RUST_PRIVATE_INPUT_MUTATED", "rust_private_input")
-    if type(rust_execution) is not bytes:
-        _fail("ARTIFACT_NOT_BYTES", "rust_execution")
-    if len(rust_execution) > MAX_ARTIFACT_BYTES:
-        _fail("JSON_ARTIFACT_SIZE_LIMIT_EXCEEDED", "rust_execution")
-
-    python_transcript = capture.payload if capture.kind == "REPLAY_TRANSCRIPT" else None
-    result = compare_case(
-        case.case_id,
-        case.input_bytes,
-        case.expectation_bytes,
-        python_transcript,
-        rust_execution,
+    return LiveCaseEvidence(
+        comparison_result=_live_comparison_from_evidence(case, capture, rust_execution),
+        python_capture=capture,
+        rust_execution_bytes=rust_execution,
     )
-    capture_sha256 = hashlib.sha256(capture.payload).hexdigest()
-    result["python_capture_kind"] = capture.kind
-    result["sha256_bindings"]["python_capture_sha256"] = capture_sha256
-    if capture.kind == "REPLAY_TRANSCRIPT":
-        result["profiles"]["python"] = {
-            "capture_kind": capture.kind,
-            "capture_schema": PYTHON_TRANSCRIPT_SCHEMA,
-            "profile_id": PYTHON_PROFILE,
-            "source_marker": PYTHON_LIVE_REPLAY_SOURCE_MARKER,
-            "transcript_present": True,
-        }
-    else:
-        result["profiles"]["python"] = {
-            "capture_kind": capture.kind,
-            "capture_schema": PYTHON_REJECT_CAPTURE_SCHEMA,
-            "profile_id": PYTHON_REJECT_PROFILE,
-            "source_marker": PYTHON_LIVE_REJECT_SOURCE_MARKER,
-            "transcript_present": False,
-        }
-        if result["differential_gate_passed"]:
-            result["comparison_status"] = "PARSER_PROFILE_COMPATIBILITY_OBSERVED"
-    return result
+
+
+def _compare_live_case(
+    case: LiveCorpusCase,
+    rust_executable: str | os.PathLike[str],
+    python_capture_adapter: PythonCaptureAdapter,
+    rust_execution_runner: RustExecutionRunner,
+) -> dict[str, Any]:
+    return _capture_live_case(
+        case,
+        rust_executable,
+        python_capture_adapter,
+        rust_execution_runner,
+    ).comparison_result
+
+
+def _capture_ordered_live_evidence(
+    cases: list[LiveCorpusCase],
+    rust_executable: str | os.PathLike[str],
+    *,
+    jobs: int,
+    python_capture_adapter: PythonCaptureAdapter,
+    rust_execution_runner: RustExecutionRunner,
+) -> list[LiveCaseEvidence]:
+    def capture(case: LiveCorpusCase) -> LiveCaseEvidence:
+        return _capture_live_case(
+            case,
+            rust_executable,
+            python_capture_adapter,
+            rust_execution_runner,
+        )
+
+    with ThreadPoolExecutor(max_workers=jobs) as executor:
+        return list(executor.map(capture, cases))
 
 
 def run_live_corpus(
@@ -2424,33 +2499,826 @@ def run_live_corpus(
         rust_executable = _path_argument(rust_verifier_executable, "rust_verifier")
         rust_runner = rust_execution_runner
 
-    def capture(case: LiveCorpusCase) -> dict[str, Any]:
-        return _compare_live_case(
-            case,
-            rust_executable,
-            python_adapter,
-            rust_runner,
+    evidence = _capture_ordered_live_evidence(
+        cases,
+        rust_executable,
+        jobs=jobs,
+        python_capture_adapter=python_adapter,
+        rust_execution_runner=rust_runner,
+    )
+    return build_report(
+        [item.comparison_result for item in evidence],
+        capture_mode=LIVE_CAPTURE_MODE,
+    )
+
+
+def _strict_relative_path(value: Any, path: str) -> str:
+    text = _string(value, path)
+    relative = PurePosixPath(text)
+    if (
+        "\\" in text
+        or relative.is_absolute()
+        or relative.as_posix() != text
+        or any(part in ("", ".", "..") for part in relative.parts)
+    ):
+        _fail("LIVE_BUNDLE_RELATIVE_PATH_INVALID", path)
+    return text
+
+
+def _exact_fields(
+    value: Any, expected: set[str], path: str, error_code: str
+) -> dict[str, Any]:
+    mapping = _mapping(value, path)
+    if set(mapping) != expected:
+        _fail(error_code, path)
+    return mapping
+
+
+def _sha256_bytes(payload: bytes) -> str:
+    return hashlib.sha256(payload).hexdigest()
+
+
+def _validate_live_case_evidence(
+    case: LiveCorpusCase, evidence: LiveCaseEvidence
+) -> None:
+    if type(evidence) is not LiveCaseEvidence:
+        _fail("LIVE_CASE_EVIDENCE_TYPE_INVALID", "live_evidence")
+    _validate_python_live_capture(case, evidence.python_capture)
+    rust_value = _load_json_object(
+        evidence.rust_execution_bytes, "live_evidence.rust_execution"
+    )
+    if evidence.rust_execution_bytes != _canonical_json_bytes(
+        rust_value, "live_evidence.rust_execution"
+    ):
+        _fail(
+            "LIVE_BUNDLE_RUST_EXECUTION_NOT_CANONICAL",
+            "live_evidence.rust_execution",
+        )
+    expected_comparison = _live_comparison_from_evidence(
+        case, evidence.python_capture, evidence.rust_execution_bytes
+    )
+    if evidence.comparison_result != expected_comparison:
+        _fail("LIVE_CASE_COMPARISON_BINDING_INVALID", "live_evidence.comparison")
+
+
+def _relative_case_path(path: Path, corpus_root: Path, label: str) -> str:
+    try:
+        relative = path.relative_to(corpus_root).as_posix()
+    except ValueError:
+        _fail("LIVE_BUNDLE_CORPUS_PATH_OUTSIDE_ROOT", label)
+    return _strict_relative_path(relative, label)
+
+
+def _validate_bundle_byte_binding(
+    value: Any, path: str, *, path_field: str | None
+) -> dict[str, Any]:
+    fields = {"byte_length", "sha256"}
+    if path_field is not None:
+        fields.add(path_field)
+    binding = _exact_fields(
+        value, fields, path, "LIVE_BUNDLE_MANIFEST_BINDING_FIELDS_INVALID"
+    )
+    if path_field is not None:
+        _strict_relative_path(_field(binding, path_field, path), f"{path}.{path_field}")
+    _integer(_field(binding, "byte_length", path), f"{path}.byte_length")
+    _sha256(_field(binding, "sha256", path), f"{path}.sha256")
+    return binding
+
+
+def _validate_live_bundle_manifest(value: Any, case_count: int) -> None:
+    manifest = _exact_fields(
+        value,
+        {
+            "capture_mode",
+            "cases",
+            "claim_scope",
+            "comparator_id",
+            "comparator_source",
+            "corpus_manifest",
+            "frozen_specification",
+            "live_driver_id",
+            "manifest_schema",
+            "report",
+            "rust_executable",
+        },
+        "manifest",
+        "LIVE_BUNDLE_MANIFEST_FIELDS_INVALID",
+    )
+    _declare(manifest, "manifest_schema", LIVE_BUNDLE_SCHEMA, "manifest")
+    if _field(manifest, "capture_mode", "manifest") != LIVE_CAPTURE_MODE:
+        _fail("LIVE_BUNDLE_MANIFEST_VALUE_INVALID", "manifest.capture_mode")
+    if _field(manifest, "comparator_id", "manifest") != COMPARATOR_ID:
+        _fail("LIVE_BUNDLE_MANIFEST_VALUE_INVALID", "manifest.comparator_id")
+    if _field(manifest, "live_driver_id", "manifest") != LIVE_DRIVER_ID:
+        _fail("LIVE_BUNDLE_MANIFEST_VALUE_INVALID", "manifest.live_driver_id")
+
+    report = _exact_fields(
+        _field(manifest, "report", "manifest"),
+        {"bundle_relative_path", "byte_length", "report_schema", "sha256"},
+        "manifest.report",
+        "LIVE_BUNDLE_MANIFEST_BINDING_FIELDS_INVALID",
+    )
+    if (
+        _strict_relative_path(
+            _field(report, "bundle_relative_path", "manifest.report"),
+            "manifest.report.bundle_relative_path",
+        )
+        != "report.json"
+    ):
+        _fail(
+            "LIVE_BUNDLE_MANIFEST_VALUE_INVALID",
+            "manifest.report.bundle_relative_path",
+        )
+    if _field(report, "report_schema", "manifest.report") != LIVE_REPORT_SCHEMA:
+        _fail("LIVE_BUNDLE_MANIFEST_VALUE_INVALID", "manifest.report.report_schema")
+    _integer(
+        _field(report, "byte_length", "manifest.report"), "manifest.report.byte_length"
+    )
+    _sha256(_field(report, "sha256", "manifest.report"), "manifest.report.sha256")
+
+    for field, path_field in (
+        ("frozen_specification", "repository_relative_path"),
+        ("corpus_manifest", "corpus_relative_path"),
+        ("comparator_source", "repository_relative_path"),
+    ):
+        _validate_bundle_byte_binding(
+            _field(manifest, field, "manifest"),
+            f"manifest.{field}",
+            path_field=path_field,
+        )
+    frozen = _mapping(
+        _field(manifest, "frozen_specification", "manifest"),
+        "manifest.frozen_specification",
+    )
+    if (
+        _field(frozen, "repository_relative_path", "manifest.frozen_specification")
+        != FROZEN_SPECIFICATION_PATH
+        or _field(frozen, "sha256", "manifest.frozen_specification")
+        != FROZEN_SPECIFICATION_SHA256
+    ):
+        _fail("LIVE_BUNDLE_MANIFEST_VALUE_INVALID", "manifest.frozen_specification")
+    corpus_manifest = _mapping(
+        _field(manifest, "corpus_manifest", "manifest"),
+        "manifest.corpus_manifest",
+    )
+    if (
+        _field(corpus_manifest, "corpus_relative_path", "manifest.corpus_manifest")
+        != CORPUS_MANIFEST_PATH
+    ):
+        _fail("LIVE_BUNDLE_MANIFEST_VALUE_INVALID", "manifest.corpus_manifest")
+    comparator_source = _mapping(
+        _field(manifest, "comparator_source", "manifest"),
+        "manifest.comparator_source",
+    )
+    if (
+        _field(
+            comparator_source,
+            "repository_relative_path",
+            "manifest.comparator_source",
+        )
+        != COMPARATOR_SOURCE_PATH
+    ):
+        _fail("LIVE_BUNDLE_MANIFEST_VALUE_INVALID", "manifest.comparator_source")
+
+    _validate_bundle_byte_binding(
+        _field(manifest, "rust_executable", "manifest"),
+        "manifest.rust_executable",
+        path_field=None,
+    )
+    claim_scope = _exact_fields(
+        _field(manifest, "claim_scope", "manifest"),
+        {
+            "implementation_or_verifier_independence_attested",
+            "loaded_code_matches_comparator_source_attested",
+            "nonclaims_report_field",
+            "release_gate_status",
+            "release_gate_status_report_field",
+        },
+        "manifest.claim_scope",
+        "LIVE_BUNDLE_MANIFEST_CLAIM_SCOPE_FIELDS_INVALID",
+    )
+    if (
+        _field(
+            claim_scope,
+            "implementation_or_verifier_independence_attested",
+            "manifest.claim_scope",
+        )
+        is not False
+        or _field(
+            claim_scope,
+            "loaded_code_matches_comparator_source_attested",
+            "manifest.claim_scope",
+        )
+        is not False
+        or _field(claim_scope, "nonclaims_report_field", "manifest.claim_scope")
+        != "aggregate.nonclaims"
+        or _field(claim_scope, "release_gate_status", "manifest.claim_scope")
+        != "BLOCKED"
+        or _field(
+            claim_scope,
+            "release_gate_status_report_field",
+            "manifest.claim_scope",
+        )
+        != "aggregate.release_gate_status"
+    ):
+        _fail("LIVE_BUNDLE_MANIFEST_VALUE_INVALID", "manifest.claim_scope")
+
+    cases = _array(_field(manifest, "cases", "manifest"), "manifest.cases")
+    if len(cases) != case_count:
+        _fail("LIVE_BUNDLE_MANIFEST_CASE_COUNT_INVALID", "manifest.cases")
+    seen_case_ids: set[str] = set()
+    for index, raw_case in enumerate(cases):
+        case_path = f"manifest.cases[{index}]"
+        case = _exact_fields(
+            raw_case,
+            {
+                "case_id",
+                "expectation",
+                "input",
+                "python_capture",
+                "rust_execution",
+            },
+            case_path,
+            "LIVE_BUNDLE_MANIFEST_CASE_FIELDS_INVALID",
+        )
+        case_id = _string(_field(case, "case_id", case_path), f"{case_path}.case_id")
+        if case_id in seen_case_ids:
+            _fail("DUPLICATE_CASE_ID", f"{case_path}.case_id")
+        seen_case_ids.add(case_id)
+        for field in ("input", "expectation"):
+            _validate_bundle_byte_binding(
+                _field(case, field, case_path),
+                f"{case_path}.{field}",
+                path_field="corpus_relative_path",
+            )
+        python_capture = _exact_fields(
+            _field(case, "python_capture", case_path),
+            {
+                "bundle_relative_path",
+                "byte_length",
+                "capture_kind",
+                "profile_id",
+                "sha256",
+            },
+            f"{case_path}.python_capture",
+            "LIVE_BUNDLE_MANIFEST_BINDING_FIELDS_INVALID",
+        )
+        expected_python_path = f"cases/{index:04d}/python-capture.json"
+        if (
+            _strict_relative_path(
+                _field(
+                    python_capture,
+                    "bundle_relative_path",
+                    f"{case_path}.python_capture",
+                ),
+                f"{case_path}.python_capture.bundle_relative_path",
+            )
+            != expected_python_path
+        ):
+            _fail(
+                "LIVE_BUNDLE_MANIFEST_VALUE_INVALID",
+                f"{case_path}.python_capture.bundle_relative_path",
+            )
+        capture_kind = _field(
+            python_capture, "capture_kind", f"{case_path}.python_capture"
+        )
+        capture_profile = _field(
+            python_capture, "profile_id", f"{case_path}.python_capture"
+        )
+        if (capture_kind, capture_profile) not in (
+            ("REPLAY_TRANSCRIPT", PYTHON_PROFILE),
+            ("PARSER_REJECT_OBSERVATION", PYTHON_REJECT_PROFILE),
+        ):
+            _fail(
+                "LIVE_BUNDLE_MANIFEST_VALUE_INVALID",
+                f"{case_path}.python_capture",
+            )
+        _integer(
+            _field(python_capture, "byte_length", f"{case_path}.python_capture"),
+            f"{case_path}.python_capture.byte_length",
+        )
+        _sha256(
+            _field(python_capture, "sha256", f"{case_path}.python_capture"),
+            f"{case_path}.python_capture.sha256",
+        )
+        rust_execution = _exact_fields(
+            _field(case, "rust_execution", case_path),
+            {
+                "bundle_relative_path",
+                "byte_length",
+                "evidence_kind",
+                "profile_id",
+                "sha256",
+            },
+            f"{case_path}.rust_execution",
+            "LIVE_BUNDLE_MANIFEST_BINDING_FIELDS_INVALID",
+        )
+        expected_rust_path = f"cases/{index:04d}/rust-execution.json"
+        if (
+            _strict_relative_path(
+                _field(
+                    rust_execution,
+                    "bundle_relative_path",
+                    f"{case_path}.rust_execution",
+                ),
+                f"{case_path}.rust_execution.bundle_relative_path",
+            )
+            != expected_rust_path
+            or _field(rust_execution, "evidence_kind", f"{case_path}.rust_execution")
+            != RUST_EXECUTION_EVIDENCE_KIND
+            or _field(rust_execution, "profile_id", f"{case_path}.rust_execution")
+            != RUST_EXECUTION_PROFILE
+        ):
+            _fail(
+                "LIVE_BUNDLE_MANIFEST_VALUE_INVALID",
+                f"{case_path}.rust_execution",
+            )
+        _integer(
+            _field(rust_execution, "byte_length", f"{case_path}.rust_execution"),
+            f"{case_path}.rust_execution.byte_length",
+        )
+        _sha256(
+            _field(rust_execution, "sha256", f"{case_path}.rust_execution"),
+            f"{case_path}.rust_execution.sha256",
         )
 
-    with ThreadPoolExecutor(max_workers=jobs) as executor:
-        results = list(executor.map(capture, cases))
-    return build_report(results, capture_mode=LIVE_CAPTURE_MODE)
+
+def _build_live_bundle_manifest(
+    *,
+    corpus_root: Path,
+    cases: list[LiveCorpusCase],
+    evidence: list[LiveCaseEvidence],
+    report_bytes: bytes,
+    corpus_manifest_bytes: bytes,
+    frozen_specification_bytes: bytes,
+    comparator_source_bytes: bytes,
+    rust_executable_bytes: bytes,
+) -> bytes:
+    if len(cases) != len(evidence):
+        _fail("LIVE_BUNDLE_CASE_EVIDENCE_COUNT_MISMATCH", "live_evidence")
+    report = _load_json_object(report_bytes, "report")
+    if report_bytes != _canonical_json_bytes(report, "report"):
+        _fail("LIVE_BUNDLE_REPORT_NOT_CANONICAL", "report")
+    _declare(report, "report_schema", LIVE_REPORT_SCHEMA, "report")
+    if _field(report, "capture_mode", "report") != LIVE_CAPTURE_MODE:
+        _fail("LIVE_BUNDLE_REPORT_BINDING_INVALID", "report.capture_mode")
+    if _field(report, "comparator_id", "report") != COMPARATOR_ID:
+        _fail("LIVE_BUNDLE_REPORT_BINDING_INVALID", "report.comparator_id")
+    aggregate = _mapping(_field(report, "aggregate", "report"), "report.aggregate")
+    if _field(aggregate, "release_gate_status", "report.aggregate") != "BLOCKED":
+        _fail(
+            "LIVE_BUNDLE_REPORT_BINDING_INVALID",
+            "report.aggregate.release_gate_status",
+        )
+    if _field(aggregate, "nonclaims", "report.aggregate") != list(FIXED_NONCLAIMS):
+        _fail("LIVE_BUNDLE_REPORT_BINDING_INVALID", "report.aggregate.nonclaims")
+    if _field(report, "cases", "report") != [
+        item.comparison_result for item in evidence
+    ]:
+        _fail("LIVE_BUNDLE_REPORT_BINDING_INVALID", "report.cases")
+    if _sha256_bytes(frozen_specification_bytes) != FROZEN_SPECIFICATION_SHA256:
+        _fail("FROZEN_SPECIFICATION_SHA256_MISMATCH", "frozen_specification")
+
+    manifest_cases: list[dict[str, Any]] = []
+    for index, (case, item) in enumerate(zip(cases, evidence)):
+        _validate_live_case_evidence(case, item)
+        python_path = f"cases/{index:04d}/python-capture.json"
+        rust_path = f"cases/{index:04d}/rust-execution.json"
+        manifest_cases.append(
+            {
+                "case_id": case.case_id,
+                "expectation": {
+                    "byte_length": len(case.expectation_bytes),
+                    "corpus_relative_path": _relative_case_path(
+                        case.expectation_path,
+                        corpus_root,
+                        f"cases[{index}].expectation",
+                    ),
+                    "sha256": _sha256_bytes(case.expectation_bytes),
+                },
+                "input": {
+                    "byte_length": len(case.input_bytes),
+                    "corpus_relative_path": _relative_case_path(
+                        case.input_path, corpus_root, f"cases[{index}].input"
+                    ),
+                    "sha256": _sha256_bytes(case.input_bytes),
+                },
+                "python_capture": {
+                    "bundle_relative_path": python_path,
+                    "byte_length": len(item.python_capture.payload),
+                    "capture_kind": item.python_capture.kind,
+                    "profile_id": item.python_capture.profile_id,
+                    "sha256": _sha256_bytes(item.python_capture.payload),
+                },
+                "rust_execution": {
+                    "bundle_relative_path": rust_path,
+                    "byte_length": len(item.rust_execution_bytes),
+                    "evidence_kind": RUST_EXECUTION_EVIDENCE_KIND,
+                    "profile_id": RUST_EXECUTION_PROFILE,
+                    "sha256": _sha256_bytes(item.rust_execution_bytes),
+                },
+            }
+        )
+
+    manifest = {
+        "capture_mode": LIVE_CAPTURE_MODE,
+        "cases": manifest_cases,
+        "claim_scope": {
+            "implementation_or_verifier_independence_attested": False,
+            "loaded_code_matches_comparator_source_attested": False,
+            "nonclaims_report_field": "aggregate.nonclaims",
+            "release_gate_status": "BLOCKED",
+            "release_gate_status_report_field": "aggregate.release_gate_status",
+        },
+        "comparator_id": COMPARATOR_ID,
+        "comparator_source": {
+            "byte_length": len(comparator_source_bytes),
+            "repository_relative_path": COMPARATOR_SOURCE_PATH,
+            "sha256": _sha256_bytes(comparator_source_bytes),
+        },
+        "corpus_manifest": {
+            "byte_length": len(corpus_manifest_bytes),
+            "corpus_relative_path": CORPUS_MANIFEST_PATH,
+            "sha256": _sha256_bytes(corpus_manifest_bytes),
+        },
+        "frozen_specification": {
+            "byte_length": len(frozen_specification_bytes),
+            "repository_relative_path": FROZEN_SPECIFICATION_PATH,
+            "sha256": FROZEN_SPECIFICATION_SHA256,
+        },
+        "live_driver_id": LIVE_DRIVER_ID,
+        "manifest_schema": LIVE_BUNDLE_SCHEMA,
+        "report": {
+            "bundle_relative_path": "report.json",
+            "byte_length": len(report_bytes),
+            "report_schema": LIVE_REPORT_SCHEMA,
+            "sha256": _sha256_bytes(report_bytes),
+        },
+        "rust_executable": {
+            "byte_length": len(rust_executable_bytes),
+            "sha256": _sha256_bytes(rust_executable_bytes),
+        },
+    }
+    _validate_live_bundle_manifest(manifest, len(cases))
+    return _canonical_json_bytes(manifest, "manifest")
+
+
+def _ensure_bundle_target_absent(bundle_path: Path) -> None:
+    try:
+        information = os.lstat(bundle_path)
+    except FileNotFoundError:
+        return
+    except OSError:
+        _fail("LIVE_BUNDLE_TARGET_UNAVAILABLE", "bundle_dir")
+    if stat.S_ISLNK(information.st_mode):
+        _fail("LIVE_BUNDLE_TARGET_SYMLINK_REJECTED", "bundle_dir")
+    _fail("LIVE_BUNDLE_TARGET_ALREADY_EXISTS", "bundle_dir")
+
+
+def _bundle_destination(path_value: str | os.PathLike[str]) -> Path:
+    bundle_path = _resolved_destination(
+        path_value, "bundle_dir", "LIVE_BUNDLE_PARENT_DIRECTORY_INVALID"
+    )
+    _ensure_bundle_target_absent(bundle_path)
+    return bundle_path
+
+
+def _write_new_bundle_file(path: Path, payload: bytes) -> None:
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    flags |= getattr(os, "O_CLOEXEC", 0)
+    flags |= getattr(os, "O_NOFOLLOW", 0)
+    try:
+        descriptor = os.open(path, flags, 0o600)
+    except OSError:
+        _fail("LIVE_BUNDLE_FILE_CREATE_FAILED", "bundle")
+    write_failed = False
+    try:
+        offset = 0
+        while offset < len(payload):
+            written = os.write(descriptor, payload[offset:])
+            if written <= 0:
+                write_failed = True
+                break
+            offset += written
+        os.fchmod(descriptor, 0o644)
+        os.fsync(descriptor)
+    except OSError:
+        write_failed = True
+    finally:
+        try:
+            os.close(descriptor)
+        except OSError:
+            write_failed = True
+    if write_failed:
+        try:
+            os.unlink(path)
+        except OSError:
+            pass
+        _fail("LIVE_BUNDLE_FILE_WRITE_FAILED", "bundle")
+
+
+def _rename_bundle_exclusive(source: Path, destination: Path) -> None:
+    source_bytes = os.fsencode(source)
+    destination_bytes = os.fsencode(destination)
+    result: int
+    try:
+        if sys.platform == "darwin":
+            rename = ctypes.CDLL(None, use_errno=True).renameatx_np
+            rename.argtypes = (
+                ctypes.c_int,
+                ctypes.c_char_p,
+                ctypes.c_int,
+                ctypes.c_char_p,
+                ctypes.c_uint,
+            )
+            rename.restype = ctypes.c_int
+            result = rename(-2, source_bytes, -2, destination_bytes, 0x00000004)
+        elif sys.platform.startswith("linux"):
+            rename = ctypes.CDLL(None, use_errno=True).renameat2
+            rename.argtypes = (
+                ctypes.c_int,
+                ctypes.c_char_p,
+                ctypes.c_int,
+                ctypes.c_char_p,
+                ctypes.c_uint,
+            )
+            rename.restype = ctypes.c_int
+            result = rename(-100, source_bytes, -100, destination_bytes, 0x00000001)
+        elif os.name == "nt":
+            os.rename(source, destination)
+            result = 0
+        else:
+            _fail("LIVE_BUNDLE_EXCLUSIVE_RENAME_UNAVAILABLE", "bundle_dir")
+    except AttributeError:
+        _fail("LIVE_BUNDLE_EXCLUSIVE_RENAME_UNAVAILABLE", "bundle_dir")
+    except OSError:
+        result = -1
+    if result == 0:
+        return
+    try:
+        _ensure_bundle_target_absent(destination)
+    except DifferentialGateError:
+        raise
+    _fail("LIVE_BUNDLE_PUBLISH_FAILED", "bundle_dir")
+
+
+def _validate_live_bundle_tree(
+    root: Path, expected_payloads: dict[str, bytes], expected_directories: set[str]
+) -> None:
+    actual_files: set[str] = set()
+    actual_directories: set[str] = set()
+    try:
+        for current, directory_names, file_names in os.walk(root, followlinks=False):
+            current_path = Path(current)
+            for name in directory_names:
+                path = current_path / name
+                information = os.lstat(path)
+                if stat.S_ISLNK(information.st_mode) or not stat.S_ISDIR(
+                    information.st_mode
+                ):
+                    _fail("LIVE_BUNDLE_TREE_ENTRY_INVALID", "bundle")
+                relative = path.relative_to(root).as_posix()
+                _strict_relative_path(relative, "bundle.directory")
+                actual_directories.add(relative)
+            for name in file_names:
+                path = current_path / name
+                information = os.lstat(path)
+                if stat.S_ISLNK(information.st_mode) or not stat.S_ISREG(
+                    information.st_mode
+                ):
+                    _fail("LIVE_BUNDLE_TREE_ENTRY_INVALID", "bundle")
+                relative = path.relative_to(root).as_posix()
+                _strict_relative_path(relative, "bundle.file")
+                actual_files.add(relative)
+    except OSError:
+        _fail("LIVE_BUNDLE_TREE_ENUMERATION_FAILED", "bundle")
+    if (
+        actual_files != set(expected_payloads)
+        or actual_directories != expected_directories
+    ):
+        _fail("LIVE_BUNDLE_FILE_SET_INVALID", "bundle")
+    for relative, expected_payload in expected_payloads.items():
+        observed = _read_regular_file_bounded(root / relative, f"bundle.{relative}")
+        if observed != expected_payload:
+            _fail("LIVE_BUNDLE_FILE_CONTENT_CHANGED", f"bundle.{relative}")
+
+
+def _publish_live_bundle(
+    bundle_path: Path,
+    *,
+    report_bytes: bytes,
+    manifest_bytes: bytes,
+    cases: list[LiveCorpusCase],
+    evidence: list[LiveCaseEvidence],
+) -> None:
+    expected_payloads = {"manifest.json": manifest_bytes, "report.json": report_bytes}
+    expected_directories = {"cases"}
+    for index, (case, item) in enumerate(zip(cases, evidence)):
+        _validate_live_case_evidence(case, item)
+        case_directory = f"cases/{index:04d}"
+        expected_directories.add(case_directory)
+        expected_payloads[f"{case_directory}/python-capture.json"] = (
+            item.python_capture.payload
+        )
+        expected_payloads[f"{case_directory}/rust-execution.json"] = (
+            item.rust_execution_bytes
+        )
+    for relative, payload in expected_payloads.items():
+        _strict_relative_path(relative, "bundle.file")
+        value = _load_json_object(payload, f"bundle.{relative}")
+        if payload != _canonical_json_bytes(value, f"bundle.{relative}"):
+            _fail("LIVE_BUNDLE_JSON_NOT_CANONICAL", f"bundle.{relative}")
+
+    _ensure_bundle_target_absent(bundle_path)
+    try:
+        temporary_root = Path(
+            tempfile.mkdtemp(
+                dir=bundle_path.parent,
+                prefix=f".{bundle_path.name}.private-",
+            )
+        )
+        os.chmod(temporary_root, 0o700)
+    except OSError:
+        _fail("LIVE_BUNDLE_TEMP_DIRECTORY_CREATE_FAILED", "bundle_dir")
+    published = False
+    try:
+        try:
+            (temporary_root / "cases").mkdir(mode=0o700)
+            for index in range(len(cases)):
+                (temporary_root / "cases" / f"{index:04d}").mkdir(mode=0o700)
+        except OSError:
+            _fail("LIVE_BUNDLE_DIRECTORY_CREATE_FAILED", "bundle")
+        for relative in sorted(expected_payloads):
+            _write_new_bundle_file(
+                temporary_root / relative, expected_payloads[relative]
+            )
+        _validate_live_bundle_tree(
+            temporary_root, expected_payloads, expected_directories
+        )
+        for relative in sorted(expected_directories, reverse=True):
+            try:
+                os.chmod(temporary_root / relative, 0o755)
+            except OSError:
+                _fail("LIVE_BUNDLE_MODE_FINALIZATION_FAILED", "bundle")
+        try:
+            os.chmod(temporary_root, 0o755)
+        except OSError:
+            _fail("LIVE_BUNDLE_MODE_FINALIZATION_FAILED", "bundle")
+        _ensure_bundle_target_absent(bundle_path)
+        _rename_bundle_exclusive(temporary_root, bundle_path)
+        published = True
+    finally:
+        if not published:
+            shutil.rmtree(temporary_root, ignore_errors=True)
+
+
+def run_live_evidence_bundle(
+    corpus_root: str | os.PathLike[str],
+    rust_verifier_executable: str | os.PathLike[str],
+    bundle_dir: str | os.PathLike[str],
+    *,
+    jobs: int = MAX_LIVE_JOBS,
+    python_capture_adapter: PythonCaptureAdapter | None = None,
+    rust_execution_runner: RustExecutionRunner | None = None,
+) -> bytes:
+    """Capture every case once and atomically publish deterministic evidence."""
+
+    if type(jobs) is not int or not 1 <= jobs <= MAX_LIVE_JOBS:
+        _fail("LIVE_JOBS_OUT_OF_RANGE", "jobs")
+    bundle_path = _bundle_destination(bundle_dir)
+    root = _require_real_directory(
+        _path_argument(corpus_root, "corpus_root"), "corpus_root"
+    )
+    verifier = _validate_rust_executable(rust_verifier_executable)
+    rust_executable_before = _read_regular_file_bounded(verifier, "rust_verifier")
+    corpus_manifest_path = root / CORPUS_MANIFEST_PATH
+    corpus_manifest_before = _read_regular_file_bounded(
+        corpus_manifest_path, "corpus_manifest"
+    )
+    _load_json_object(corpus_manifest_before, "corpus_manifest")
+    repository_root = Path(__file__).resolve().parents[1]
+    frozen_specification_path = repository_root / FROZEN_SPECIFICATION_PATH
+    comparator_source_path = repository_root / COMPARATOR_SOURCE_PATH
+    frozen_specification_before = _read_regular_file_bounded(
+        frozen_specification_path,
+        "frozen_specification",
+    )
+    if _sha256_bytes(frozen_specification_before) != FROZEN_SPECIFICATION_SHA256:
+        _fail("FROZEN_SPECIFICATION_SHA256_MISMATCH", "frozen_specification")
+    comparator_source_before = _read_regular_file_bounded(
+        comparator_source_path,
+        "comparator_source",
+    )
+    cases = enumerate_live_corpus(root)
+    python_adapter = python_capture_adapter or capture_python_raw_v1
+    rust_runner = rust_execution_runner or run_rust_raw_v1
+    evidence = _capture_ordered_live_evidence(
+        cases,
+        verifier,
+        jobs=jobs,
+        python_capture_adapter=python_adapter,
+        rust_execution_runner=rust_runner,
+    )
+
+    rust_executable_after = _read_regular_file_bounded(verifier, "rust_verifier")
+    if rust_executable_after != rust_executable_before:
+        _fail("RUST_EXECUTABLE_MUTATED_DURING_CAPTURE", "rust_verifier")
+    corpus_manifest_after = _read_regular_file_bounded(
+        corpus_manifest_path, "corpus_manifest"
+    )
+    if corpus_manifest_after != corpus_manifest_before:
+        _fail("CORPUS_MANIFEST_MUTATED_DURING_CAPTURE", "corpus_manifest")
+    frozen_specification_after = _read_regular_file_bounded(
+        frozen_specification_path,
+        "frozen_specification",
+    )
+    if frozen_specification_after != frozen_specification_before:
+        _fail(
+            "FROZEN_SPECIFICATION_MUTATED_DURING_CAPTURE",
+            "frozen_specification",
+        )
+    comparator_source_after = _read_regular_file_bounded(
+        comparator_source_path,
+        "comparator_source",
+    )
+    if comparator_source_after != comparator_source_before:
+        _fail(
+            "COMPARATOR_SOURCE_MUTATED_DURING_CAPTURE",
+            "comparator_source",
+        )
+    for index, case in enumerate(cases):
+        retained_input = _read_regular_file_bounded(
+            case.input_path, f"cases[{index}].input"
+        )
+        retained_expectation = _read_regular_file_bounded(
+            case.expectation_path, f"cases[{index}].expectation"
+        )
+        if retained_input != case.input_bytes:
+            _fail("CORPUS_INPUT_MUTATED_DURING_CAPTURE", f"cases[{index}].input")
+        if retained_expectation != case.expectation_bytes:
+            _fail(
+                "CORPUS_EXPECTATION_MUTATED_DURING_CAPTURE",
+                f"cases[{index}].expectation",
+            )
+        _validate_live_case_evidence(case, evidence[index])
+
+    report_bytes = build_report(
+        [item.comparison_result for item in evidence],
+        capture_mode=LIVE_CAPTURE_MODE,
+    )
+    manifest_bytes = _build_live_bundle_manifest(
+        corpus_root=root,
+        cases=cases,
+        evidence=evidence,
+        report_bytes=report_bytes,
+        corpus_manifest_bytes=corpus_manifest_before,
+        frozen_specification_bytes=frozen_specification_before,
+        comparator_source_bytes=comparator_source_before,
+        rust_executable_bytes=rust_executable_before,
+    )
+    _publish_live_bundle(
+        bundle_path,
+        report_bytes=report_bytes,
+        manifest_bytes=manifest_bytes,
+        cases=cases,
+        evidence=evidence,
+    )
+    return report_bytes
+
+
+def _resolved_destination(
+    path_value: str | os.PathLike[str], path: str, parent_error_code: str
+) -> Path:
+    destination = _path_argument(path_value, path)
+    if not destination.name:
+        _fail(parent_error_code, path)
+    try:
+        resolved_parent = destination.parent.resolve(strict=True)
+        information = resolved_parent.stat()
+    except OSError:
+        _fail(parent_error_code, path)
+    if not stat.S_ISDIR(information.st_mode):
+        _fail(parent_error_code, path)
+    return resolved_parent / destination.name
 
 
 def _write_report_file(path_value: str | os.PathLike[str], payload: bytes) -> None:
-    output_path = _path_argument(path_value, "output")
-    parent = output_path.parent
+    output_path = _resolved_destination(
+        path_value, "output", "OUTPUT_PARENT_DIRECTORY_INVALID"
+    )
     try:
-        if parent.is_symlink() or not parent.is_dir():
-            _fail("OUTPUT_PARENT_DIRECTORY_INVALID", "output")
-        if output_path.is_symlink():
-            _fail("OUTPUT_SYMLINK_REJECTED", "output")
+        information = os.lstat(output_path)
+    except FileNotFoundError:
+        pass
     except OSError:
         _fail("OUTPUT_PATH_UNAVAILABLE", "output")
+    else:
+        if stat.S_ISLNK(information.st_mode):
+            _fail("OUTPUT_SYMLINK_REJECTED", "output")
     temporary_path: str | None = None
     try:
         descriptor, temporary_path = tempfile.mkstemp(
-            dir=parent, prefix=f".{output_path.name}.", suffix=".tmp"
+            dir=output_path.parent, prefix=f".{output_path.name}.", suffix=".tmp"
         )
     except OSError:
         _fail("OUTPUT_OPEN_FAILED", "output")
@@ -2499,6 +3367,16 @@ def _argument_parser() -> argparse.ArgumentParser:
     live.add_argument(
         "--jobs", type=int, choices=range(1, MAX_LIVE_JOBS + 1), default=MAX_LIVE_JOBS
     )
+    live_bundle = commands.add_parser(
+        "live-bundle",
+        help="freshly capture the complete corpus into an atomic evidence bundle",
+    )
+    live_bundle.add_argument("--corpus-root", required=True, type=Path)
+    live_bundle.add_argument("--rust-verifier", required=True, type=Path)
+    live_bundle.add_argument("--bundle-dir", required=True, type=Path)
+    live_bundle.add_argument(
+        "--jobs", type=int, choices=range(1, MAX_LIVE_JOBS + 1), default=MAX_LIVE_JOBS
+    )
     return parser
 
 
@@ -2506,32 +3384,45 @@ def main(
     argv: list[str] | None = None,
     *,
     live_runner: Callable[..., bytes] = run_live_corpus,
+    live_bundle_runner: Callable[..., bytes] = run_live_evidence_bundle,
 ) -> int:
     args = _argument_parser().parse_args(argv)
+    prefix = "raw-v1-live" if args.command == "live" else "raw-v1-live-bundle"
+    output_path: Path | None = None
     try:
-        if args.command != "live":  # pragma: no cover - argparse enforces this
+        if args.command == "live":
+            report_bytes = live_runner(
+                args.corpus_root,
+                args.rust_verifier,
+                jobs=args.jobs,
+            )
+            output_path = args.output
+        elif args.command == "live-bundle":
+            report_bytes = live_bundle_runner(
+                args.corpus_root,
+                args.rust_verifier,
+                args.bundle_dir,
+                jobs=args.jobs,
+            )
+        else:  # pragma: no cover - argparse enforces this
             _fail("CLI_COMMAND_INVALID", "command")
-        report_bytes = live_runner(
-            args.corpus_root,
-            args.rust_verifier,
-            jobs=args.jobs,
-        )
         report = _load_json_object(report_bytes, "report")
         aggregate = _mapping(_field(report, "aggregate", "report"), "report.aggregate")
         passed = _boolean(
             _field(aggregate, "differential_gate_passed", "report.aggregate"),
             "report.aggregate.differential_gate_passed",
         )
-        _write_report_file(args.output, report_bytes)
+        if output_path is not None:
+            _write_report_file(output_path, report_bytes)
         if passed:
             return 0
-        print("raw-v1-live:DIFFERENTIAL_DISAGREEMENT", file=sys.stderr)
+        print(f"{prefix}:DIFFERENTIAL_DISAGREEMENT", file=sys.stderr)
         return 1
     except DifferentialGateError as error:
-        print(f"raw-v1-live:{error.code}", file=sys.stderr)
+        print(f"{prefix}:{error.code}", file=sys.stderr)
         return 2
     except Exception:
-        print("raw-v1-live:INTERNAL_CAPTURE_FAILURE", file=sys.stderr)
+        print(f"{prefix}:INTERNAL_CAPTURE_FAILURE", file=sys.stderr)
         return 2
 
 
