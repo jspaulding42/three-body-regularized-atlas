@@ -812,17 +812,6 @@ def _interval_array_hull(left: Array, right: Array) -> Array:
     return out
 
 
-def _interval_arrays_overlap(left: Array, right: Array) -> bool:
-    left = np.asarray(left, dtype=object)
-    right = np.asarray(right, dtype=object)
-    if left.shape != right.shape or left.size == 0:
-        return False
-    return all(
-        _intervals_overlap(left_interval, right_interval)
-        for left_interval, right_interval in zip(left.flat, right.flat, strict=True)
-    )
-
-
 def _interval_vector_add(left: Array, right: Array) -> Array:
     left = np.asarray(left, dtype=object)
     right = np.asarray(right, dtype=object)

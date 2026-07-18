@@ -76,7 +76,6 @@ from .intervals import (
     interval_array_derivative_coefficients,
     interval_array_series_eval,
     interval_polynomial_eval,
-    interval_sign,
     rational_interval_polyder,
     rational_interval_polynomial_eval,
     rational_interval_sign,
@@ -14117,38 +14116,6 @@ def _event_rational_interval_coefficients(
         RationalInterval.from_float_interval(float(lower), float(upper))
         for lower, upper in coefficient_intervals
     )
-
-
-def _signed_polynomial_range_certified(
-    coefficients: tuple[FloatInterval, ...],
-    lower: float,
-    upper: float,
-    *,
-    sign: int,
-    max_subintervals: int = 512,
-) -> bool:
-    if sign == 0 or not np.isfinite(lower) or not np.isfinite(upper) or lower > upper:
-        return False
-    if lower == upper:
-        value = interval_polynomial_eval(coefficients, FloatInterval.point(lower))
-        return interval_sign(value) == sign
-    pieces = 1
-    while pieces <= max_subintervals:
-        certified = True
-        for index in range(pieces):
-            piece_lower = lower + (upper - lower) * index / pieces
-            piece_upper = lower + (upper - lower) * (index + 1) / pieces
-            value = interval_polynomial_eval(
-                coefficients,
-                FloatInterval(piece_lower, piece_upper),
-            )
-            if interval_sign(value) != sign:
-                certified = False
-                break
-        if certified:
-            return True
-        pieces *= 2
-    return False
 
 
 def _signed_rational_polynomial_range_certified(

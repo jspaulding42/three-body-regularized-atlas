@@ -2643,18 +2643,6 @@ _EXACT_HOMOTHETIC_REMAINDER_COMPONENT_EXPONENTS = (
 )
 
 
-def _exact_homothetic_total_collision_supported_for_checker(
-    evaluation: object,
-    atlas_charts: tuple[object, ...],
-    atlas_transitions: tuple[object, ...],
-) -> bool:
-    return _homothetic_total_collision_supported_for_checker(
-        evaluation,
-        atlas_charts,
-        atlas_transitions,
-    )
-
-
 def _homothetic_total_collision_supported_for_checker(
     evaluation: object,
     atlas_charts: tuple[object, ...],
@@ -2677,27 +2665,6 @@ def _homothetic_total_collision_supported_for_checker(
             getattr(certificate, "parabolic_exact_tail_certified", False)
             or getattr(getattr(certificate, "scalar_majorant", None), "certified", False)
         )
-    )
-
-
-def _exact_homothetic_total_collision_stop_chart_for_checker(
-    evaluation: object,
-    chart_meta: object,
-    *,
-    certificate_id: str,
-    residual_tolerance: float,
-    angular_momentum_tolerance: float,
-    sample_count: int,
-    projected_residual_tolerance: float | None = None,
-):
-    return _homothetic_total_collision_stop_chart_for_checker(
-        evaluation,
-        chart_meta,
-        certificate_id=certificate_id,
-        residual_tolerance=residual_tolerance,
-        projected_residual_tolerance=projected_residual_tolerance,
-        angular_momentum_tolerance=angular_momentum_tolerance,
-        sample_count=sample_count,
     )
 
 

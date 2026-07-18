@@ -1115,42 +1115,6 @@ def _ordinary_kinematic_state_matrix(physical_step: float) -> Array:
     )
 
 
-def _ordinary_nonlinear_remainder_box(
-    interval_solution: object,
-    center_solution: object,
-    physical_step: float,
-    *,
-    tail_bound: float,
-) -> tuple[tuple[float, float], ...]:
-    """Bound nonlinear ordinary Taylor terms relative to the center chart."""
-
-    h = float(physical_step)
-    tail = FloatInterval(
-        float(np.nextafter(-float(tail_bound), -np.inf)),
-        float(np.nextafter(float(tail_bound), np.inf)),
-    )
-    remainder = []
-    for body in range(3):
-        for axis in range(2):
-            interval_value = zero_interval()
-            center_value = 0.0
-            for degree in range(2, interval_solution.order + 1):
-                scale = h**degree
-                interval_value = interval_value + interval_solution.position[degree, body, axis].scale(scale)
-                center_value += float(center_solution.position[degree, body, axis]) * scale
-            remainder.append((interval_value - FloatInterval.point(center_value) + tail).as_tuple())
-    for body in range(3):
-        for axis in range(2):
-            interval_value = zero_interval()
-            center_value = 0.0
-            for degree in range(1, interval_solution.order + 1):
-                scale = h**degree
-                interval_value = interval_value + interval_solution.velocity[degree, body, axis].scale(scale)
-                center_value += float(center_solution.velocity[degree, body, axis]) * scale
-            remainder.append((interval_value - FloatInterval.point(center_value) + tail).as_tuple())
-    return tuple(remainder)
-
-
 def _ordinary_nonlinear_remainder_box_over_time_interval(
     interval_solution: object,
     center_solution: object,
@@ -1262,10 +1226,6 @@ def _inflate_float_interval(value: FloatInterval, radius: float) -> FloatInterva
         float(np.nextafter(value.lower - radius, -np.inf)),
         float(np.nextafter(value.upper + radius, np.inf)),
     )
-
-
-def _tuple_to_float_interval(value: tuple[float, float]) -> FloatInterval:
-    return FloatInterval(float(value[0]), float(value[1]))
 
 
 def _float_interval_as_tuple(value: FloatInterval) -> tuple[float, float]:

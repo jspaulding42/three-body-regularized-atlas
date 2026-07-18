@@ -7349,12 +7349,6 @@ def _recursive_stratified_source_tree_certified(
     )
 
 
-def _recursive_stratified_source_type(
-    certificate: RecursiveStratifiedBranchEventConsumptionCertificate | None,
-) -> str:
-    return recursive_constructor_source_type(certificate)
-
-
 def recursive_constructor_source_type(
     certificate: RecursiveStratifiedBranchEventConsumptionCertificate | None,
 ) -> str:
