@@ -35,6 +35,7 @@ mod ordinary_field;
 mod ordinary_semantic;
 mod ordinary_tube;
 pub mod outward_mass;
+mod planar_lc_chart;
 mod planar_lc_defect;
 mod planar_lc_field;
 mod planar_lc_projection;
@@ -108,6 +109,12 @@ pub use ordinary_tube::{
     replay_ordinary_tube_exact_rational_v04, ExactRationalOrdinaryTubeV04, OrdinaryTubeObligation,
     OrdinaryTubeReplay, OrdinaryTubeReplayError, EXACT_RATIONAL_ORDINARY_TUBE_V04_PROFILE_ID,
     ORDINARY_TUBE_OBLIGATION_IDS,
+};
+pub use planar_lc_chart::{
+    replay_planar_lc_chart_exact_rational_claimed_tail_v04,
+    ExactRationalPlanarLcChartClaimedTailV04, PlanarLcChartObligation, PlanarLcChartReplay,
+    PlanarLcChartReplayError, EXACT_RATIONAL_PLANAR_LC_CHART_CLAIMED_TAIL_V04_PROFILE_ID,
+    PLANAR_LC_CHART_OBLIGATION_IDS, PLANAR_LC_CHART_PHYSICAL_TIME_SUBDIVISIONS,
 };
 pub use planar_lc_defect::{
     evaluate_planar_lc_polynomial_defect, evaluate_planar_lc_polynomial_defect_default,

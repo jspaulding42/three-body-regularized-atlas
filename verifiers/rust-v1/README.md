@@ -51,6 +51,12 @@ foundation. The current checkpoint contains:
   formula, independently recomputes guarded Newton accelerations from exact
   masses, and returns six residuals plus their exact endpoint maximum. It
   consumes no tail, tolerance, sample, time interval, or chart coefficient;
+- the ordered 15-obligation Section 4.2 LC-chart ledger under the separately
+  named `exact_rational_planar_lc_chart_claimed_tail_v04` profile. It composes
+  a 64-piece exact-rational physical-time hull, the coefficient recurrence and
+  constraint replay, interval-coefficient residual Horner bounds, and the
+  projection kernel with the historical dependency gates. Domain failures are
+  false obligations; numeric/resource/kernel failures remain typed errors;
 - a non-certifying semantic conversion from decoded ordinary chart/tube wires
   to bounded exact-rational inputs, using every real's proved binary64 dyadic,
   exact body-major coefficient shapes, and strictly increasing parameter and
@@ -138,7 +144,7 @@ foundation. The current checkpoint contains:
   an explicit unsupported stop. Both canonical chains commit one bridge and
   stop at their first LC segment.
 
-At this checkpoint, 201 Rust unit tests and 15 integration cases across five
+At this checkpoint, 209 Rust unit tests and 15 integration cases across five
 integration test targets pass;
 `cargo fmt --check` and `cargo clippy --all-targets -- -D warnings` are clean.
 
@@ -190,6 +196,9 @@ The formal-series layer also makes no chart-acceptance or frozen binary64
 status-parity claim.
 The projection residual is likewise arithmetic evidence only: it supplies no
 accepted tail/remainder bound, chart acceptance, or continuation result.
+Even an all-true LC-chart profile is conditional on the unproved serialized
+tail allowance. It is not convergence, frozen binary64 parity, or theorem-
+facing chart acceptance.
 
 The ordinary-only checkpoint starts at obligations 6--13 and makes no claim about outer
 obligations 1--5, namespace uniqueness, canonicalization or SHA-256 results,

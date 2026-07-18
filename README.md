@@ -206,11 +206,14 @@ and pair-energy constraint recurrences with exact rational arithmetic and
 dyadic outward enclosures. A separate exact-rational interval kernel projects
 an explicit LC state to Cartesian positions/accelerations and independently
 compares them with guarded Newton accelerations after enforcing the strict
-rho-floor domain. This is arithmetic only: it certifies no LC
+rho-floor domain. These kernels now compose into the exact ordered 15-row
+Section 4.2 ledger under the separately named claimed-tail v0.4 profile,
+including 64-piece physical-time containment and the historical dependency
+gates. This is conditional arithmetic only: it certifies no LC
 obligation, accepted defect threshold, remainder bound, or frozen binary64
 status parity.
 
-The crate currently passes 201 Rust unit tests and 15 integration cases across
+The crate currently passes 209 Rust unit tests and 15 integration cases across
 five integration test targets;
 `cargo fmt --check` and warning-denying Clippy are clean. The implementation-neutral
 [`raw-v1 seed corpus`](conformance/raw-v1/README.md) currently contains two
