@@ -6,8 +6,10 @@
 //! decoding, bounded exact arithmetic, non-certifying ordinary semantic
 //! inputs, conditional ordinary chart and tube replay, exact planar
 //! initial-value binding, proof-oriented validated-root replay, and local
-//! parent-carried ordinary-bridge composition under separately named
-//! exact-rational profiles.
+//! parent-carried ordinary-bridge composition, and a bounded ordinary-only raw
+//! chain checkpoint for top-level obligations 6--13 under separately named
+//! exact-rational profiles. The checkpoint stops fail-closed at LC and is not
+//! outer-obligation, LC, or full-chain replay.
 
 #![forbid(unsafe_code)]
 
@@ -19,6 +21,7 @@ mod interval;
 mod json_number;
 mod ordinary_binding;
 mod ordinary_bridge;
+mod ordinary_chain;
 mod ordinary_chart;
 mod ordinary_defect;
 mod ordinary_field;
@@ -60,6 +63,13 @@ pub use ordinary_bridge::{
     OrdinaryBridgeReplay, OrdinaryBridgeReplayError,
     EXACT_RATIONAL_CARRIED_ORDINARY_BRIDGE_V04_PROFILE_ID,
     ORDINARY_AUTONOMOUS_UNIQUENESS_BRIDGE_KERNEL_V1_ID, ORDINARY_BRIDGE_OBLIGATION_IDS,
+};
+pub use ordinary_chain::{
+    replay_raw_ordinary_only_chain_exact_rational_v04, OrdinaryChainClockLedgerEntry,
+    OrdinaryChainFinalEnclosure, OrdinaryChainReplayFailure, OrdinaryChainRightFrontier,
+    RawOrdinaryOnlyChainObligation, RawOrdinaryOnlyChainReplay, RawOrdinaryOnlyChainReplayError,
+    EXACT_RATIONAL_RAW_ORDINARY_ONLY_CHAIN_V04_PROFILE_ID, HARD_MAX_RAW_ORDINARY_CHAIN_SEGMENTS,
+    RAW_ORDINARY_ONLY_CHAIN_OBLIGATION_IDS,
 };
 pub use ordinary_chart::{
     replay_ordinary_chart_exact_rational_claimed_tail_v04,

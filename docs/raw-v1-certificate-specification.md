@@ -1165,6 +1165,70 @@ If all 13 obligations are true, the result is `CERTIFIED_TO_T`, the covered
 physical interval is `[t0,T]`, the final state order is the ordinary 12-vector
 of Section 3.1, and no retained frontier is emitted.
 
+### 7.1 Bounded Rust ordinary-only checkpoint
+
+The separately named implementation profile
+`exact_rational_raw_ordinary_only_chain_v04` is a bounded partial replay of
+top-level obligations 6--13. It consumes an already decoded
+`RawPlanarChainWire`; it does not establish obligations 1--5 or perform global
+namespace, canonical-byte, or raw SHA-256/result serialization work.
+
+Its root-exact gate requires the admitted planar binding/chart/tube schemas,
+nonempty binding source, matching chart identifiers, exact binary64-dyadic
+mass equality, exact-zero time/position/velocity binding tolerances, and
+
+```text
+binding.chart_parameter
+  = initial_chart.parameter_interval.left
+  = initial_tube.anchor_parameter.
+```
+
+Root certification additionally requires the separately named exact binding,
+direct-defect ordinary-tube, and proof-oriented root profiles. The
+`exact_rational_ordinary_chart_claimed_tail_v04` ledger is also required to be
+all true, but only as a fail-closed compatibility gate. Its serialized
+`tail_bound` is an unproved allowance, supplies no theorem evidence, and does
+not close `OPEN-V1-06`. Root support comes from the exact binding and the
+direct-defect/a-posteriori tube argument. Subsequent ordinary bridge handoff
+uses the named autonomy/local-uniqueness kernel.
+
+For each consecutive ordinary bridge, state mutation is transactional. The
+target chart, target tube, derived target clock, segment count, and clock
+ledger are committed only if all nine local bridge obligations pass. A
+derived clock on a failed bridge is diagnostic and is never committed. The
+profile stops at the first false or malformed ordinary bridge. A malformed
+later chart is a structured failure rather than a panic. More than 256 raw
+segments is rejected before segment replay. A planar-LC segment is recorded as
+unsupported and stops the prefix without being committed; consequently the
+canonical chains stop after root plus their first ordinary bridge.
+
+Only when the entire segment word is ordinary and committed does the profile
+evaluate obligations 9--13. With current parameter domain `[a,b]`, current
+clock `[B_lo,B_hi]`, and exact binary64-dyadic target `T`, it requires
+
+```text
+T >= a + B_hi
+J = [T - B_hi, T - B_lo]
+[J_lo,J_hi] subseteq [a,b]
+```
+
+with inclusive comparisons. It freshly replays the current ordinary tube,
+evaluates every body-major position and velocity polynomial by exact interval
+Horner arithmetic at the absolute parameter interval `J` (no left-endpoint
+shift), symmetrically inflates all 12 components by the fresh rational
+Gronwall upper bound, and compares the maximum exact component width to the
+requested exact binary64 dyadic using `<=`. Failure of only the width gate
+retains the stronger fixed-time enclosure. Other supported-prefix failures
+retain a freshly replayed current ordinary right-frontier enclosure when one
+can be constructed; a failed bridge's uncommitted target is never used for
+that frontier.
+
+This profile is intentionally stricter and numerically different from the
+frozen-v0.3 binary64 path. It claims no frozen status parity, cross-profile
+agreement, verifier independence, LC replay, complete-chain replay, or v0.4
+release-gate satisfaction. `OPEN-V1-01`, `OPEN-V1-06`, and `OPEN-V1-08` remain
+open as applicable.
+
 ## 8. `UNRESOLVED`, failure location, and retained frontiers
 
 ### 8.1 Meaning

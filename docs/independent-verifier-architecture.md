@@ -226,9 +226,28 @@ proof-oriented local-root composition, and local carried ordinary bridge
 described above now couple decoded ordinary records to the exact polynomial,
 square-root, exponential, defect, collision, analytic Lipschitz, cap, strict
 Gronwall, binding-gap, endpoint-containment, and local clock-cocycle kernels.
-The current validation checkpoint is 158 passing Rust unit tests and five
-passing integration tests, with `cargo fmt --check` and
+The current validation checkpoint is 158 passing Rust unit tests and 15
+passing integration cases across five integration test targets, with
+`cargo fmt --check` and
 warning-denying Clippy clean.
+
+The newest bounded slice is
+`exact_rational_raw_ordinary_only_chain_v04`. It accepts an already decoded
+raw wire value and covers top-level obligations 6--13 only. It enforces the
+strict raw root equalities, uses the claimed-tail chart ledger solely as a
+fail-closed compatibility gate (the allowance is unproved and does not close
+`OPEN-V1-06`). Root support comes from exact binding and the
+direct-defect/a-posteriori tube argument; subsequent bridge handoff uses the
+named autonomy/local-uniqueness kernel. Ordinary bridge state is
+transactional: chart, tube, clock, count, and ledger advance only when the
+entire nine-obligation bridge passes. A wholly ordinary word receives exact
+clock/preimage arithmetic, absolute-parameter interval Horner evaluation,
+fresh tube-radius inflation, and the inclusive width test. Width-only failure
+retains the fixed-time enclosure; otherwise a freshly justified ordinary
+right frontier is retained when possible. Malformed later ordinary records
+are structured failures, segment count is capped at 256 before replay, and LC
+is an explicit unsupported stop. The canonical inputs therefore demonstrate
+root plus one committed bridge and a retained frontier, not full-chain replay.
 
 The implementation-neutral
 [`raw-v1 seed corpus`](../conformance/raw-v1/README.md) contains two accepted
@@ -241,22 +260,26 @@ root/fold/LC-entry/LC-tube/LC-exit/fixed-time result boundaries required for
 release.
 
 Delivery slices 1 and 2 remain partial. Slice 3 now includes the conditional
-ordinary tube, exact admitted-planar binding, proof-oriented local root, and
-one local carried ordinary-bridge component described above, but no raw-chain
-root admission, segment commit, or chain fold.
+ordinary tube, exact admitted-planar binding, proof-oriented local root, local
+ordinary bridge, strict root admission, transactional ordinary-prefix fold,
+and fixed-time enclosure described above. It is still bounded to ordinary
+segments and begins after outer obligations 1--5.
 `OPEN-V1-01` remains open because the tested Rust
 float rendering path is not yet a portable normative shortest-decimal
 algorithm and the Rust toolchain is not pinned. `OPEN-V1-08` remains open
 because the new exact-rational tube profile does not claim status parity with
 the historical binary64 outward profile. Raw SHA-256, frozen-v0.3 primitive
-ordinary-chart parity or a proof-grade verified-tail replay, raw-chain root
-admission, fixed-time semantics, every LC field, full chain replay,
-clock/gauge induction beyond the local components, and the semantic result
-serializer remain unimplemented. The local profiles provide neither direct
+ordinary-chart parity or a proof-grade verified-tail replay, every LC field,
+full chain replay, and the semantic result serializer remain unimplemented.
+The local profiles provide neither direct
 three-dimensional API parity nor chain-level independence. No complete
 certificate has been replayed by this crate. The corpus remains
 `seed_incomplete`, and neither the conformance gate nor the
 independent-verifier gate passes at this checkpoint.
+
+This slice establishes neither outer obligations 1--5 nor
+namespace/canonicalization/hash results, frozen parity, cross-profile
+agreement, implementation independence, or any v0.4 release gate.
 
 ## Delivery slices
 

@@ -12,7 +12,7 @@
     "source_artifact_manifest": "../../artifacts/v0.3.0-review/planar-chain/manifest.json",
     "source_artifact_manifest_sha256": "2b7e88bd8834fa68fb6a70d0b7e7b8ad2363a01f619ea450b880b791b6909976",
     "normative_specification": "../../docs/raw-v1-certificate-specification.md",
-    "normative_specification_sha256": "854001d87fd259557c65719297445b98be6504787c936d943cda3ab1136d06f7",
+    "normative_specification_sha256": "18a131cb559dc74d86c33a61de8b252402b2b2e41755f789f66bc67f61238cac",
     "expectation_method": "original parser/replay facts manually transcribed and jq-compared against checked-in transcripts without importing the Python checker; the ordinary-chart profile observation separately labels its Python and Rust runtimes and blocks mathematical comparability",
     "rejection_tranche_method": "single mutations of inputs/success.raw.json; no-newline and invalid-UTF-8 fixtures generated mechanically, trailing-newline fixture created through apply_patch; exact operations live in paired expectations"
   },

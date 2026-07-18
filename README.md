@@ -170,7 +170,28 @@ does not consume either chart's claimed-tail ledger. Physical-time metadata is
 used only for semantic/schema admission and never updates or overrides the
 bridge clock.
 
-The crate currently passes 158 Rust unit tests and five integration tests;
+The bounded `exact_rational_raw_ordinary_only_chain_v04` checkpoint now
+orchestrates those components from a decoded `RawPlanarChainWire`. It begins
+at raw top-level obligations 6--13 only. Its strict root gate adds the raw
+binding source, exact-zero binding tolerances, exact mass/identifier bindings,
+and the common binding/chart-left/tube-anchor parameter. The claimed-tail
+chart replay is only a fail-closed compatibility gate: its allowance remains
+unproved and is not theorem evidence, so `OPEN-V1-06` stays open. Root support
+instead comes from exact binding and the direct-defect/a-posteriori tube
+argument; subsequent bridge handoff uses the named autonomy/local-uniqueness
+kernel. Ordinary bridges commit transactionally only when all nine
+local obligations pass, and the exact clock ledger records only the committed
+prefix. A wholly ordinary word receives exact fixed-time preimage arithmetic,
+absolute-parameter interval Horner evaluation, fresh tube-radius inflation of
+all 12 planar components, and an inclusive maximum-width check. A width-only
+failure retains that fixed-time enclosure; other supported-prefix failures
+retain a freshly replayed ordinary right frontier when available. Malformed
+later ordinary records are structured failures, and a hard preflight cap
+rejects more than 256 segments. Each canonical chain commits its first bridge
+and then stops fail-closed at the first LC segment.
+
+The crate currently passes 158 Rust unit tests and 15 integration cases across
+five integration test targets;
 `cargo fmt --check` and warning-denying Clippy are clean. The implementation-neutral
 [`raw-v1 seed corpus`](conformance/raw-v1/README.md) currently contains two
 accepted baseline payloads and sixteen isolated rejection mutations. The
@@ -190,16 +211,12 @@ The Rust crate still has no raw SHA-256 layer. Its 13-entry ordinary-chart
 result is conditional on the unproved claimed tail and does not establish a
 collision-free chart, a convergent Taylor representation, or a rigorous
 remainder bound. Its six-obligation tube result is also conditional: it does
-not by itself prove that an IVP lies in the initial ball. The new binding and
+not by itself prove that an IVP lies in the initial ball. The binding and
 local-root profiles establish that component only for admitted planar inputs;
-they are neither direct three-dimensional API parity nor raw-chain root
-admission. Raw-chain replay must additionally require a nonempty binding
-`source`, exact-zero binding tolerances, and equality of the binding parameter,
-chart left endpoint, and tube anchor. The exact bridge profile is a separate
-arithmetic profile, not frozen-v0.3 binary64 status parity, and it performs no
-raw-chain fold or commit. Raw-chain root admission, fixed-time semantics,
-every LC field, full chain replay, clock/gauge induction beyond the local
-components, and the semantic result serializer remain unimplemented.
+they are not direct three-dimensional API parity. The bounded ordinary-only
+profile enforces the additional raw root conditions and
+ordinary-prefix/fixed-time semantics described above. Every LC field, full
+chain replay, and the semantic result serializer remain unimplemented.
 Frozen-v0.3 primitive parity and
 `OPEN-V1-06` remain open, as does historical tube arithmetic parity under
 `OPEN-V1-08`; cross-language numeric rendering and the Rust toolchain pin
@@ -207,6 +224,11 @@ remain open under `OPEN-V1-01`.
 The corpus is still `seed_incomplete`, the conformance and independent-verifier
 release gates remain failed, and no complete-certificate or independent
 chain-replay claim is made.
+
+The checkpoint does **not** establish outer obligations 1--5, namespace
+uniqueness, canonicalization or a SHA-256 result, LC replay, full-chain replay,
+frozen-v0.3 parity, cross-profile agreement, implementation independence, or
+satisfaction of any release gate.
 
 The broader historical research program and experimental machinery are
 retained below for auditability.

@@ -466,6 +466,27 @@ must preserve the diagnostic-only behavior separately.
    `binary64_embedded_ordinary_chart_v03` and
    `exact_rational_ordinary_chart_with_verified_tail_v04`, respectively.
 
+8. **The bounded ordinary-only chain profile begins after wire admission.**
+   `exact_rational_raw_ordinary_only_chain_v04` consumes
+   `RawPlanarChainWire` and reports only top-level obligations 6--13. Its
+   strict root gate adds nonempty binding source, exact-zero binding
+   tolerances, exact mass/identifier bindings, and equality of binding
+   parameter, chart left endpoint, and tube anchor. The claimed-tail chart
+   ledger is a fail-closed compatibility gate with an unproved allowance, not
+   theorem evidence; `OPEN-V1-06` therefore remains open. Consecutive ordinary
+   bridges commit chart, tube, clock, count, and ledger transactionally only
+   when all nine local obligations pass. A completely ordinary word then uses
+   the exact clock to derive the fixed-time preimage, freshly replays the
+   current tube, applies absolute-parameter interval Horner evaluation and
+   symmetric inflation, and checks the maximum of all 12 component widths.
+   Width-only failure retains that enclosure; otherwise a freshly justified
+   committed-prefix right frontier can be retained. The orchestration cap is
+   256 raw segments, malformed later ordinary charts are structured failures,
+   and the first LC segment is an unsupported stop. This profile does not
+   establish outer obligations 1--5, namespace/canonicalization/SHA results,
+   any LC semantics, full-chain replay, parity, agreement, independence, or a
+   release gate.
+
 No outer or nested field is missing from Sections 2.1-2.10, and the two tag
 field sets match the current source. The issues above concern validation
 stage, profile scope, arithmetic semantics, and canonicalization rather than

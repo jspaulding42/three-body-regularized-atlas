@@ -83,9 +83,22 @@ foundation. The current checkpoint contains:
   ignoring both charts' claimed-tail ledgers. Physical-time metadata is used
   only for semantic/schema admission and never updates or overrides the bridge
   clock. Both canonical first bridges pass and advance `[0,0]` to
-  `[2^-40,2^-40]`.
+  `[2^-40,2^-40]`; and
+- bounded orchestration under `exact_rational_raw_ordinary_only_chain_v04`,
+  beginning at raw obligations 6--13. It applies the strict raw root gate and
+  consumes the claimed-tail chart replay only as a fail-closed compatibility
+  gate, not theorem evidence. It transactionally commits ordinary bridges,
+  records an exact clock ledger, freshly replays the current tube for
+  absolute-parameter interval Horner evaluation and radius inflation, and
+  checks the inclusive maximum width across all 12 components. A width-only
+  failure retains the fixed-time enclosure; otherwise a fresh ordinary right
+  frontier is retained when available. Malformed later ordinary records are
+  structured failures, segment count is capped at 256 before replay, and LC is
+  an explicit unsupported stop. Both canonical chains commit one bridge and
+  stop at their first LC segment.
 
-At this checkpoint, 158 Rust unit tests and five integration tests pass;
+At this checkpoint, 158 Rust unit tests and 15 integration cases across five
+integration test targets pass;
 `cargo fmt --check` and `cargo clippy --all-targets -- -D warnings` are clean.
 
 The checked-in [raw-v1 seed corpus](../../conformance/raw-v1/README.md) supplies
@@ -108,19 +121,19 @@ witness, no formal-series convergence proof, and no rigorous remainder
 witness; it is not frozen-v0.3 primitive parity and does not close
 `OPEN-V1-06`. The ordinary-tube result alone proves only a conditional
 a-posteriori estimate; the separately named binding and validated-root
-profiles now establish the corresponding exact local root obligations only
-for admitted planar semantic inputs. They are not parity with the Python
-direct-object API on three-dimensional inputs, and they are not raw-chain root
-admission. A raw-chain root must additionally require a nonempty binding
-`source`, exact-zero time/position/velocity tolerances, and equality of the
-binding parameter, chart left endpoint, and tube anchor. Raw-chain root
-admission remains unimplemented. The exact ordinary-bridge profile is a local
-component under a separate arithmetic profile: it neither reproduces v0.3
-binary64 status parity nor folds or commits a raw chain. Fixed-time semantics,
-every LC field, full chain replay, and clock/gauge induction beyond the local
-components remain unimplemented. `OPEN-V1-08` remains open for historical
+profiles establish the corresponding exact local root obligations only for
+admitted planar semantic inputs. They are not parity with the Python
+direct-object API on three-dimensional inputs. The bounded ordinary-only
+checkpoint enforces the additional raw root conditions and
+ordinary-prefix/fixed-time semantics described above. Every LC field and full
+chain replay remain unimplemented. `OPEN-V1-08` remains open for historical
 binary64 arithmetic status parity. The crate does not call Python and makes no
 complete-certificate, end-to-end independent-verifier, or independent-chain-
 replay claim. `OPEN-V1-01` also remains open: the current
 canonical float renderer is tested against the frozen fixtures but is not yet
 a language-neutral normative algorithm, and its Rust toolchain is not pinned.
+
+The checkpoint starts at obligations 6--13 and makes no claim about outer
+obligations 1--5, namespace uniqueness, canonicalization or SHA-256 results,
+LC replay, complete-chain replay, frozen parity, cross-profile agreement,
+independence, or release-gate satisfaction.
