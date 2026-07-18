@@ -14,6 +14,7 @@ mod error;
 mod exp;
 mod interval;
 mod json_number;
+mod ordinary_chart;
 mod ordinary_defect;
 mod ordinary_field;
 mod ordinary_semantic;
@@ -39,6 +40,12 @@ pub use json_number::{
     checked_real_binary64_from_json, parse_json_number_lexeme, verify_binary64_candidate,
     CheckedJsonBinary64, JsonNumberKind, JsonNumberLimits, ParsedJsonNumber,
     DEFAULT_JSON_NUMBER_LIMITS,
+};
+pub use ordinary_chart::{
+    replay_ordinary_chart_exact_rational_claimed_tail_v04,
+    ExactRationalOrdinaryChartClaimedTailV04, OrdinaryChartObligation, OrdinaryChartReplay,
+    OrdinaryChartReplayError, EXACT_RATIONAL_ORDINARY_CHART_CLAIMED_TAIL_V04_PROFILE_ID,
+    HARD_MAX_ORDINARY_CHART_SERIES_WORK_UNITS, ORDINARY_CHART_OBLIGATION_IDS,
 };
 pub use ordinary_defect::{
     evaluate_planar_three_body_ordinary_polynomial_defect, OrdinaryPolynomialDefectEnclosure,

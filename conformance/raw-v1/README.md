@@ -95,6 +95,40 @@ artifacts/v0.3.0-review/planar-chain/failed-revisit.replay.json
 This seed does not repair or strengthen v0.3 semantics.  In particular, it
 must not be treated as independent confirmation of the source transcripts.
 
+The raw planar-chain admission surface and the frozen ordinary-chart primitive
+also have deliberately distinct boundaries.  Raw-chain composition requires
+planar coefficients, nonempty `source`, strictly increasing intervals, and
+`sample_count >= 1`.  The primitive's direct-object 13-obligation ledger admits
+two or three dimensions, does not test `source`, permits point intervals, and
+uses `sample_count >= 2` only to enable a non-gating sampled diagnostic.  That
+primitive forms its recurrence and residual coefficients in binary64, embeds
+the rounded residuals as point dyadics, adds the supplied
+`max(0, tail_bound)` allowance once, and only checks the tail separately for
+finite nonnegativity.  It does not verify that the allowance bounds omitted
+Taylor terms.  None of the present seed cases isolates these distinctions.
+
+The Rust checkpoint now implements a separate partial profile,
+`exact_rational_ordinary_chart_claimed_tail_v04`.  It consumes the semantic
+adapter's exact binary64 dyadics, uses bounded adaptive square-root interval
+precision from 256 through 2048 bits, and performs formal-series recurrence,
+12-component residual, and Horner calculations with exact rational interval
+arithmetic.  All six ordinary charts in each canonical baseline chain, twelve
+chart replays total, satisfy its 13 ordered ledger entries.  The inherited
+`ordinary_taylor_exact_rational_residual_polynomials` ID means exact rational
+interval arithmetic in that profile.  It does not prove interval-wide
+collision-freedom, formal-series convergence, or a Taylor remainder; the
+serialized `tail_bound` remains an unproved claimed allowance.  It is neither
+frozen-v0.3 parity nor complete or independent chain replay, and OPEN-V1-06
+remains open.  This seed contains no expectation under that profile.
+
+The existing `exact_rational_ordinary_tube_v04` implementation remains a
+separate conditional tube profile.  Proposed future names distinguish a
+historical compatibility target, `binary64_embedded_ordinary_chart_v03`, from
+a stronger proof-grade target,
+`exact_rational_ordinary_chart_with_verified_tail_v04`.  Neither of those two
+future profiles is implemented, and this seed contains no expectation under
+either name.
+
 A complete corpus still needs, at minimum:
 
 - ordinary-only chains, including the empty and multi-bridge cases;
@@ -104,6 +138,17 @@ A complete corpus still needs, at minimum:
 - systematic mutations at every nested record boundary, including additional
   wrong tags/types/shapes, namespace collisions, mass/endpoint/gauge mutations,
   and paired cases proving which defects parse but become `UNRESOLVED`;
+- profile-labeled ordinary-chart cases isolating planar versus spatial shape,
+  empty source, point intervals, and nonpositive, one-point, and multi-point
+  `sample_count`, with separate raw-chain-admission and direct-primitive
+  expectations;
+- ordinary recurrence/residual cases pinning binary64 operation order,
+  point-dyadic embedding and the final upward `nextafter`, plus negative-tail
+  clamping cases that distinguish the residual obligations from the separate
+  tail-admissibility failure;
+- profile-labeled expectations for the implemented exact-rational
+  claimed-tail ledger, kept distinct from both frozen-v0.3 parity and a future
+  convergence/remainder-certified profile;
 - numeric boundary cases for signed zero, subnormals, maximum finite binary64,
   overflow, decimal halfway rounding, exponent spellings, exact dyadics,
   interval endpoints, `nextafter`, square root, exponential, and Gronwall

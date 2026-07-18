@@ -224,11 +224,26 @@ coefficient_tolerance:F, residual_tolerance:F, tail_bound:F,
 sample_count:I, source:S
 ```
 
-Here `d >= 2`; both coefficient arrays MUST have the same shape.
-For primitive ordinary-chart certification, `chart_type` MUST equal
-`ordinary_taylor`; identifiers and source MUST be nonempty; intervals MUST be
-strictly increasing; tolerances and tail bound MUST be nonnegative; and
-`sample_count >= 1`.  These are replay obligations, not byte grammar.
+Here `d >= 2`; both coefficient arrays MUST have the same shape.  On every raw
+planar-chain composition surface, the coefficient blocks MUST be planar
+`[d][3][2]`, `chart_type` MUST equal `ordinary_taylor`, identifiers and source
+MUST be nonempty, masses MUST be positive, both intervals MUST be strictly
+increasing, the three declared tolerance/bound fields MUST be finite, and
+`sample_count >= 1`.  These are raw-chain replay-admission rules, not byte
+grammar and not a statement of the complete direct-object primitive semantics.
+
+The frozen v0.3 primitive ordinary-chart ledger is slightly wider.  Its common
+coefficient shape is `[d][3][k]` with `k` equal to `2` or `3`; its identity
+obligation tests `certificate_id` and `chart_id`, but not `source`; and its
+interval obligation permits finite point intervals (`lower <= upper`).  No
+primitive acceptance obligation tests `sample_count`; a value of at least `2`
+only enables a sampled diagnostic.  The primitive does require finite
+nonnegative `coefficient_tolerance` and `residual_tolerance`, and its separate
+`tail_bound_admissible` obligation requires a finite nonnegative `tail_bound`.
+Thus planar shape, nonempty source, positive interval width, and positive sample
+count are valid composition-surface restrictions but MUST NOT be presented as
+frozen primitive parity.  A v0.4 verifier may retain the stricter admission
+surface, provided that the divergence is explicit in its profile and corpus.
 
 The chain does not consume the primitive ordinary-chart ledger at every
 vertex.  In particular, an ordinary bridge proves local existence with its
@@ -506,14 +521,55 @@ In exact order:
 12. `interval_taylor_model_newton_residual`
 13. `tail_bound_admissible`
 
-The ordinary-chart checker verifies shape and finiteness, positive masses,
-positive pair distance at the zeroth coefficient, the Taylor coefficient
-recurrence within `coefficient_tolerance`, formation and dyadic embedding of
-Newton residual coefficient arrays, a rational-interval evaluation not
-exceeding `residual_tolerance`, and a nonnegative tail bound.  Despite the
-obligation's `exact_rational` name, acceleration and residual coefficient
-arrays are first computed in binary64 and only then embedded exactly as
-dyadics.  See OPEN-V1-06.
+This is the frozen primitive's direct-object ledger, not the stricter
+raw-planar-chain admission surface of Section 2.4.  In particular, obligation 2
+tests only `certificate_id` and `chart_id`; obligation 3 admits two or three
+spatial coordinates; obligation 6 admits point intervals; and no obligation
+tests `source` or `sample_count`.
+
+For common coefficient degree count `d`, the checker coerces coefficients and
+masses to binary64.  It tests initial noncollision only at `q_0`, using the host
+NumPy binary64 Euclidean norm.  For `n = 0,...,d-2`, it forms the acceleration
+series with the frozen `acceleration_coefficients` loop and reduction order,
+including binary64 evaluation of `base[0] ** -1.5`, then compares the binary64
+maximum residuals
+
+```text
+(n + 1) q[n + 1] - v[n]
+(n + 1) v[n + 1] - a[n]
+```
+
+with `coefficient_tolerance`.  This is a coefficient-recurrence check; it is
+not an interval proof of noncollision throughout the chart.
+
+For obligations 11 and 12 the checker again forms the acceleration and
+residual coefficient arrays in binary64, embeds each rounded residual value as
+a point dyadic, and evaluates the residual polynomials by exact rational
+interval Horner evaluation over the exact-dyadic enclosure of the absolute
+parameter interval.  Obligation 11 records only that this
+formation/embedding/evaluation completed.  Obligation 12 alone compares the
+resulting bound with `residual_tolerance`.  The `exact_rational` name therefore
+describes only the arithmetic after rounded binary64 coefficient formation; it
+does not close OPEN-V1-06.
+
+The interval helper takes the maximum absolute residual enclosure over every
+component, adds the single declared allowance `max(0, tail_bound)` once,
+converts the rational result to binary64, and applies one upward `nextafter`.
+`tail_bound_admissible` checks only that the supplied scalar is finite and
+nonnegative.  The checker neither derives the scalar nor verifies that it
+bounds omitted Taylor terms.  The primitive residual theorem is therefore
+conditional on a declared tail allowance, not a self-contained certified
+Taylor-remainder construction.  On the direct-object API, a negative tail is
+clamped to zero inside the interval-residual calculation, so obligations 11 and
+12 can remain true, but obligation 13 is false and the primitive does not
+certify.  Nonfinite direct-object behavior belongs to OPEN-V1-03; strict raw
+JSON excludes nonfinite values.
+
+When `sample_count >= 2`, a separate diagnostic evaluates the Newton residual
+in NumPy binary64 at `np.linspace` points.  The checker does not compare that
+diagnostic with `residual_tolerance`, creates no sampled-residual obligation,
+and leaves its reported value at positive infinity when sampling is skipped.
+Primitive certification MUST NOT depend on this diagnostic.
 
 The physical and parameter interval widths are considered unit-speed when
 
@@ -522,7 +578,33 @@ abs(parameter_width - physical_width)
     <= max(coefficient_tolerance, 1e-14)
 ```
 
-under the v0.3 binary64 calculation.
+under the v0.3 binary64 calculation.  Endpoint subtraction, the two widths,
+absolute value, maximum, and comparison all use binary64 operations.  Because
+obligation 6 permits point intervals, two zero-width intervals can satisfy this
+unit-speed test.
+
+The independent Rust checkpoint also implements a separate partial profile,
+`exact_rational_ordinary_chart_claimed_tail_v04`, on the stricter planar
+raw-chain semantic input of Section 2.4.  Every serialized real enters that
+profile as the exact dyadic value of its independently proved binary64 bits.
+Pair-distance square roots use bounded adaptive exact-dyadic interval
+precision, starting at 256 bits and doubling through at most 2048 bits.  The
+formal acceleration series, coefficient-recurrence residuals, and all 12
+component residual Horner evaluations then use checked exact rational interval
+arithmetic.  In this profile the inherited obligation ID
+`ordinary_taylor_exact_rational_residual_polynomials` means that residual
+polynomials are formed and enclosed with exact rational **interval arithmetic**;
+it does not assert exact point-valued accelerations or a proved Taylor
+remainder.
+
+All six ordinary charts in each of the two canonical raw-v1 chains, twelve
+chart replays total, satisfy the same 13 ordered ledger entries under this
+profile.  That is a conditional claimed-tail result only.  The serialized
+`tail_bound` is still added as an unproved claimed allowance; the checker does
+not establish collision-freedom over the chart interval, convergence of the
+formal series, or a rigorous omitted-term/remainder witness.  The profile does
+not reproduce the frozen v0.3 binary64 primitive, does not close OPEN-V1-06,
+and does not provide complete or independent chain replay.
 
 **OPEN-V1-04 — ordinary clock interface.**  Later chain logic treats
 `t = s + B` exactly although this primitive permits unequal interval widths
@@ -1063,11 +1145,33 @@ verifier MUST NOT silently invent answers to them and claim exact v0.3 parity.
    intentionally disagree with archived v0.3, and the v0.4 corpus must record
    the repaired `UNRESOLVED` outcome.
 2. **OPEN-V1-06 — misleading exact-rational residual names.**  Both ordinary
-   and LC `exact_rational_*` obligations first form RHS/residual coefficients
-   through binary64 array arithmetic and only afterward embed the rounded
-   coefficients as exact dyadics.  The names overstate what is exact.  A new
-   profile must either specify and outwardly account for the binary64
-   formation error or derive the coefficient algebra over exact rationals.
+   and LC v0.3 `exact_rational_*` obligations first form RHS/residual
+   coefficients through binary64 array arithmetic and only afterward embed the
+   rounded coefficients as exact dyadics.  Those historical names overstate
+   what is exact.  The implemented partial
+   `exact_rational_ordinary_chart_claimed_tail_v04` profile instead consumes
+   exact dyadic inputs and performs formal-series recurrence, residual, and
+   Horner operations with exact rational interval arithmetic.  Its inherited
+   `ordinary_taylor_exact_rational_residual_polynomials` ID has that narrower
+   interval-arithmetic meaning.  It still accepts an unproved claimed tail and
+   provides no convergence or remainder witness, and it does not reproduce the
+   frozen binary64 semantics.  It therefore does not close this issue.  The
+   implemented `exact_rational_ordinary_tube_v04` profile remains limited to
+   the conditional six-obligation a-posteriori tube ledger.
+
+   Two further profiles are reserved here as proposed names, not as
+   implementation claims.  Historical status parity may use
+   `binary64_embedded_ordinary_chart_v03`, which must pin the Python/NumPy
+   environment, operation and reduction order, `** -1.5`, point-dyadic
+   embedding, tail clamping, rational-to-binary64 conversion, and final upward
+   `nextafter`.  A proof-grade replacement may use
+   `exact_rational_ordinary_chart_with_verified_tail_v04`, but only if it forms
+   recurrence/residual coefficients over exact dyadics or rationals and derives
+   or independently validates a rigorous Taylor-remainder witness.  The latter
+   is intentionally stronger, may change statuses, and therefore needs new
+   checker/obligation identifiers and separate conformance expectations rather
+   than a claim of exact v0.3 parity.  Neither of these two further profiles is
+   implemented at this checkpoint.
 3. **OPEN-V1-07 — split LC mass semantics.**  The decisive LC tube,
    entry, and exit paths use exact-derived outward mass witnesses, but the LC
    chart recurrence and residual helpers use point-valued binary64 mass sums
@@ -1080,7 +1184,9 @@ verifier MUST NOT silently invent answers to them and claim exact v0.3 parity.
    exponential enclosure, but raw-v1 has no standalone normative arithmetic
    standard.  A sound implementation may use wider proven enclosures and
    return more `UNRESOLVED`; status parity requires a separately pinned
-   profile.
+   profile.  For the ordinary primitive, that compatibility profile is the
+   proposed `binary64_embedded_ordinary_chart_v03` of OPEN-V1-06, not the
+   implemented claimed-tail chart or proof-oriented ordinary-tube profile.
 5. **OPEN-V1-09 — entry conversion path.**  Parts of the LC entry path convert
    exact rational endpoint boxes outward to binary64 and then embed those
    endpoints back into rationals.  This is sound but not equivalent to a

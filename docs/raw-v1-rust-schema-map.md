@@ -305,13 +305,32 @@ decoding.
 | ordinary segment | exact four fields; known exact tag; nested record classes | nested schemas, identifier matches, endpoint handoff, tube replay, and clock advance |
 | LC segment | exact seven fields; known exact tag; nested record classes | nested schemas, canonical pair, entry/tube/exit replay, gauge and clock advance |
 | root binding | exact eleven fields and scalar/nesting classes; legacy dynamic arrays as in the shape table | nonempty `binding_id`, `chart_id`, `source`; three positive masses; planar state shapes; chart/mass identity; parameter/state binding; at chain root, all three tolerances are exact dyadic zero and parameter equals the chart/tube left anchor |
-| ordinary chart | exact thirteen fields and scalar/nesting classes; fixed interval lengths; legacy-dynamic masses/coefficient blocks | nonempty IDs/type/source; `chart_type == "ordinary_taylor"`; positive `F[3]` masses; equal planar coefficient shapes with `d >= 2`; strictly increasing intervals; `sample_count >= 1`; primitive recurrence/residual/tail requirements when that primitive ledger is required |
+| ordinary chart | exact thirteen fields and scalar/nesting classes; fixed interval lengths; legacy-dynamic masses/coefficient blocks | raw-chain composition admission requires nonempty IDs/source, `chart_type == "ordinary_taylor"`, positive `F[3]` masses, equal planar coefficient shapes with `d >= 2`, strictly increasing intervals, and `sample_count >= 1`; replay the separate primitive recurrence/residual/tail ledger only where the composition theorem requires it |
 | ordinary tube | exact eight fields and scalar classes | nonempty IDs/source; anchor in chart interval; `initial_error_bound >= 0`; `tube_radius > 0`; both caps nonnegative; identity, defect, separation, Lipschitz, and Gronwall checks |
 | ordinary transition | exact ten fields and scalar classes | all IDs/source nonempty; `schema_version == 1`; `record_type == "ordinary_bridge_transition"`; `source == "private_carried_ordinary_bridge_v1"`; referenced identities and exact endpoint parameters |
 | LC-entry transition | exact ten fields and scalar classes | all IDs/source nonempty; `schema_version == 1`; `record_type == "carried_planar_lc_entry_transition"`; `source == "private_carried_planar_lc_entry_v1"`; referenced identities and exact right/left endpoints |
 | LC chart | exact twenty-two fields and scalar/nesting classes; pair and interval lengths fixed; other arrays legacy-dynamic | nonempty IDs/type/source; `chart_type == "planar_levi_civita_binary"`; positive `F[3]` masses; common `d >= 2` shapes; pair entries distinct in `{0,1,2}` and chain pair ascending; increasing intervals; five nonnegative tolerance/bound fields; `sample_count >= 1`; recurrence, constraint, time-containment, and residual checks |
 | LC tube | exact nine fields, including an exact Boolean | nonempty IDs/source; ordinary-tube anchor/sign rules; LC defect/separation/Jacobian/Gronwall checks; pair-energy constraint when flag is true |
 | LC-exit transition | exact six fields and scalar classes | all four strings nonempty; referenced identities and exact endpoint parameters; `source` is not pinned to a constant in raw-v1 |
+
+The ordinary-chart row deliberately describes the raw planar-chain composition
+surface.  It is narrower than the frozen 13-obligation direct-object primitive:
+that primitive admits two- or three-dimensional coefficient blocks, tests no
+`source` obligation, permits finite point intervals, and uses `sample_count`
+only to enable a non-gating diagnostic when the value is at least `2`.  Passing
+the Rust row's planar/source/strict-width/positive-sample checks is therefore
+not evidence that the primitive ledger has been replayed.
+
+The implemented adapter now feeds a distinct partial replay profile,
+`exact_rational_ordinary_chart_claimed_tail_v04`.  It consumes each admitted
+binary64 value as its exact dyadic, uses bounded adaptive square-root interval
+precision from 256 through 2048 bits, and performs the planar formal-series
+recurrence, 12-component residual construction, and interval Horner evaluation
+with exact rational interval arithmetic.  All six ordinary charts in each of
+the two canonical chains, twelve chart replays total, satisfy its 13 ordered
+ledger entries.  This is not frozen-v0.3 primitive parity or complete chain
+replay: the tail remains a claimed allowance, with no collision-free,
+convergence, or Taylor-remainder witness.
 
 Finite `F` values are already established by byte parsing, so “finite” is
 not repeated as a semantic rule above. Empty strings, negative finite values,
@@ -326,9 +345,12 @@ later code cannot accidentally admit a reversed or out-of-range pair:
 enum CanonicalPair { P01, P02, P12 }
 ```
 
-Similarly, convert `schema_version` only after proving exact `1`, and convert
-`sample_count` to `usize` only after proving it is positive and fits the
-implementation/resource limit.
+Similarly, convert `schema_version` only after proving exact `1`.  On the
+raw-chain/v0.4 semantic-admission surface, convert `sample_count` to `usize`
+only after proving it is positive and fits the implementation/resource limit.
+That conversion is a composition-profile choice, not parity with the frozen
+primitive direct-object ledger; a compatibility implementation of that ledger
+must preserve the diagnostic-only behavior separately.
 
 ## Specification audit findings
 
@@ -369,6 +391,37 @@ implementation/resource limit.
    OPEN-V1-01 is replaced by a language-neutral rule. Schema tests must not
    validate canonicality by re-emitting the original lexeme.
 
+6. **Ordinary admission is not primitive-ledger parity.** The private planar
+   composition schemas impose two spatial dimensions, nonempty `source`,
+   positive interval width, and `sample_count >= 1`. The frozen primitive
+   obligation ledger imposes none of those four restrictions: it accepts two
+   or three dimensions, ignores `source`, permits point intervals, and treats
+   sampling as diagnostic only. The semantic corpus must include one isolated
+   case for each divergence and state whether its expectation belongs to the
+   raw-chain admission profile or the direct primitive profile.
+
+7. **The ordinary tail is an unverified allowance.** The primitive forms its
+   recurrence and residual coefficients in binary64, embeds the rounded
+   residuals as point dyadics, takes the largest exact-rational interval
+   residual, adds `max(0, tail_bound)` once, converts to binary64, and applies
+   one upward `nextafter`. Its final tail obligation checks only finite
+   nonnegativity; it does not establish a Taylor-remainder theorem. A negative
+   direct-object tail can therefore leave residual obligations 11 and 12 true
+   after clamping while obligation 13 and overall certification are false.
+   The implemented `exact_rational_ordinary_chart_claimed_tail_v04` profile
+   replaces rounded coefficient formation with exact rational interval
+   formal-series arithmetic, but deliberately inherits the same unproved
+   claimed-tail premise. In that profile the inherited
+   `ordinary_taylor_exact_rational_residual_polynomials` ID denotes exact
+   rational interval arithmetic, not a convergence or remainder theorem.
+   Accordingly OPEN-V1-06 remains open. The separate
+   `exact_rational_ordinary_tube_v04` profile addresses only the conditional
+   tube ledger. Historical parity and a stronger proof-grade primitive still
+   require distinct, unimplemented profiles:
+   `binary64_embedded_ordinary_chart_v03` and
+   `exact_rational_ordinary_chart_with_verified_tail_v04`, respectively.
+
 No outer or nested field is missing from Sections 2.1-2.10, and the two tag
 field sets match the current source. The issues above concern validation
-stage, profile scope, and canonicalization rather than record inventory.
+stage, profile scope, arithmetic semantics, and canonicalization rather than
+record inventory.

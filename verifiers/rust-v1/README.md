@@ -42,7 +42,16 @@ foundation. The current checkpoint contains:
   witness replay, and hard component/work/storage budgets;
 - exact outward binary64 mass coefficients for all eight raw-v1 Section 3.3
   mass formulas, with exact adjacency and nearest-even endpoint checks tested
-  against hand-derived boundaries and deterministic lattice stress cases; and
+  against hand-derived boundaries and deterministic lattice stress cases;
+- partial replay of the 13 ordered ordinary-chart ledger entries under
+  `exact_rational_ordinary_chart_claimed_tail_v04`, consuming the semantic
+  adapter's exact binary64 dyadics, using bounded adaptive 256-, 512-, 1024-,
+  and 2048-bit square-root interval precision, and carrying exact rational
+  interval formal-series recurrence, residual, and Horner arithmetic. All six
+  ordinary charts in each canonical baseline chain, twelve chart replays total,
+  satisfy the ordered ledger under this claimed-tail profile. Its inherited
+  `ordinary_taylor_exact_rational_residual_polynomials` ID denotes exact
+  rational interval arithmetic, not a proved remainder; and
 - conditional replay of the six ordered ordinary-tube obligations under the
   named `exact_rational_ordinary_tube_v04` profile. It uses the exact analytic
   v0.3 pair-distance and Lipschitz formula family, 256-bit square-root
@@ -50,7 +59,7 @@ foundation. The current checkpoint contains:
   Taylor cutoff 32, and maximum reduced Taylor tail `2^-128`. All six ordinary
   tubes in each baseline chain, twelve replays total, certify conditionally.
 
-At this checkpoint, 137 Rust unit tests and two raw-v1 corpus tests pass;
+At this checkpoint, 144 Rust unit tests and two raw-v1 corpus tests pass;
 `cargo fmt --check` and `cargo clippy --all-targets -- -D warnings` are clean.
 
 The checked-in [raw-v1 seed corpus](../../conformance/raw-v1/README.md) supplies
@@ -58,15 +67,16 @@ two `ACCEPT` baselines and sixteen isolated `REJECT` mutations. It is
 `seed_incomplete`, not the complete release corpus.
 
 The crate still stops before theorem-facing certificate replay: there is no
-raw SHA-256 layer. The semantic ordinary-chart input is not primitive chart
-certification—it does not replay the coefficient recurrence or Taylor-model
-residual/tail obligations—and the ordinary-tube result proves only a
-conditional a-posteriori estimate, not root/IVP containment. Root/IVP binding,
+raw SHA-256 layer. The ordinary-chart profile's serialized `tail_bound` remains
+an unproved claimed allowance. It provides no interval-wide collision-free
+witness, no formal-series convergence proof, and no rigorous remainder
+witness; it is not frozen-v0.3 primitive parity and does not close
+`OPEN-V1-06`. The ordinary-tube result likewise proves only a conditional
+a-posteriori estimate, not root/IVP containment. Root/IVP binding,
 handoff/ordinary-bridge/fixed-time semantics, every LC field, full chain
 replay, clock/gauge logic, and the semantic result serializer remain
-unimplemented. `OPEN-V1-08` remains open for status parity between this exact
-rational profile and the historical binary64 outward profile. The crate does
-not call Python and makes no certificate-level or independent-replay claim.
-`OPEN-V1-01` also remains open: the current canonical float renderer is tested
-against the frozen fixtures but is not yet a language-neutral normative
-algorithm, and its Rust toolchain is not pinned.
+unimplemented. `OPEN-V1-08` remains open for historical binary64 arithmetic
+status parity. The crate does not call Python and makes no complete-certificate
+or independent-chain-replay claim. `OPEN-V1-01` also remains open: the current
+canonical float renderer is tested against the frozen fixtures but is not yet
+a language-neutral normative algorithm, and its Rust toolchain is not pinned.

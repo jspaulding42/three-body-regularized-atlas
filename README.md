@@ -128,15 +128,28 @@ budgets, plus exact outward binary64 mass coefficients for all eight raw-v1
 mass formulas with hand-derived and stress-tested nearest-even endpoints. The
 typed decoder now feeds a non-certifying finite ordinary chart/tube semantic
 adapter, which interprets every real through its proved binary64 dyadic and
-builds bounded exact-rational polynomial inputs. Those inputs drive a
-conditional replay of the six ordered Section 4.4 ordinary-tube obligations
-under the named `exact_rational_ordinary_tube_v04` profile. The profile retains
-the exact analytic v0.3 pair-floor and Lipschitz formula family and fixes
-square-root precision at 256 bits, the upward exponent dyadic grid at 32 bits,
-Taylor cutoff 32, and the maximum reduced exponential tail at `2^-128`. All
-six ordinary tubes in each of the two baseline chains, twelve tube replays in
+builds bounded exact-rational polynomial inputs. Those inputs now drive the
+partial `exact_rational_ordinary_chart_claimed_tail_v04` profile. It uses
+bounded adaptive dyadic square-root interval precision from 256 through 2048
+bits and exact rational interval formal-series recurrence, residual, and Horner
+arithmetic. All six ordinary charts in each of the two canonical chains,
+twelve chart replays total, satisfy its 13 ordered ledger entries. The inherited
+`ordinary_taylor_exact_rational_residual_polynomials` identifier means exact
+rational **interval arithmetic** in this profile; it does not mean that a
+Taylor remainder has been proved. The serialized `tail_bound` remains an
+unproved claimed allowance, and the profile supplies no interval-wide
+collision-free witness, formal-series convergence proof, or remainder witness.
+It neither reproduces frozen-v0.3 status semantics nor closes `OPEN-V1-06`.
+
+The same semantic inputs also drive a conditional replay of the six ordered
+Section 4.4 ordinary-tube obligations under the named
+`exact_rational_ordinary_tube_v04` profile. The tube profile retains the exact
+analytic v0.3 pair-floor and Lipschitz formula family and fixes square-root
+precision at 256 bits, the upward exponent dyadic grid at 32 bits, Taylor
+cutoff 32, and the maximum reduced exponential tail at `2^-128`. All six
+ordinary tubes in each of the two baseline chains, twelve tube replays in
 total, certify conditionally under this profile. The crate currently passes
-137 Rust unit tests and two corpus tests; `cargo fmt --check` and
+144 Rust unit tests and two corpus tests; `cargo fmt --check` and
 warning-denying Clippy are clean. The implementation-neutral
 [`raw-v1 seed corpus`](conformance/raw-v1/README.md) currently contains two
 accepted baseline payloads and sixteen isolated rejection mutations. The
@@ -144,17 +157,19 @@ public Python admission API and the independent Rust integration suite both
 enforce those 18 parser classifications.
 
 This remains foundation work, **not yet an independent certificate verifier**.
-The Rust crate still has no raw SHA-256 layer. Its ordinary semantic adapter
-does not certify the primitive coefficient recurrence or Taylor-model
-residual/tail ledger, and its six-obligation tube result is conditional: it
-does not prove that an IVP lies in the initial ball. Root/IVP binding,
+The Rust crate still has no raw SHA-256 layer. Its 13-entry ordinary-chart
+result is conditional on the unproved claimed tail and does not establish a
+collision-free chart, a convergent Taylor representation, or a rigorous
+remainder bound. Its six-obligation tube result is also conditional: it does
+not prove that an IVP lies in the initial ball. Root/IVP binding,
 handoff/ordinary-bridge/fixed-time semantics, every LC field, full chain
 replay, clock and gauge logic, and the semantic result serializer remain
-unimplemented. Status parity with the historical binary64 tube checker
-remains open under `OPEN-V1-08`; cross-language numeric rendering and the Rust
-toolchain pin remain open under `OPEN-V1-01`. The corpus is still
-`seed_incomplete`, the conformance and independent-verifier release gates
-remain failed, and no certificate-level or independent-replay claim is made.
+unimplemented. Frozen-v0.3 primitive parity and `OPEN-V1-06` remain open, as
+does historical tube arithmetic parity under `OPEN-V1-08`; cross-language
+numeric rendering and the Rust toolchain pin remain open under `OPEN-V1-01`.
+The corpus is still `seed_incomplete`, the conformance and independent-verifier
+release gates remain failed, and no complete-certificate or independent
+chain-replay claim is made.
 
 The broader historical research program and experimental machinery are
 retained below for auditability.
