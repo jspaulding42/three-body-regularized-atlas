@@ -314,6 +314,16 @@ conditional on the parent induction premise that the actual branch lies in
 the source tube and proves no LC evolution, exit, chain commit, or fixed-time
 theorem.
 
+The separately named `exact_rational_carried_planar_lc_exit_v04` profile
+composes the ordered 21-row Section 5.4 ledger from canonical admission and a
+conditional parent clock. It freshly replays entry and endpoint tubes,
+reconstructs the complete inflated LC right slice and Cartesian projection,
+checks containment, and derives `D_out` and `B'`. Success passes four exits;
+failed-revisit passes three and its fourth misses only row 19. Rust's wider,
+non-bit-identical first-exit `D_out` is independent differential evidence; the
+Python transcript is not consumed. This proves no chain commit, fixed-time
+theorem, complete replay, parity, or independence.
+
 The lifted-state and field operations are arithmetic only: evaluating a
 serialized constraint or enclosing a differential residual does not prove
 constraint satisfaction or any LC tube, entry, gauge, projection, exit, or
@@ -351,7 +361,7 @@ proof-oriented local-root composition, and local carried ordinary bridge
 described above now couple decoded ordinary records to the exact polynomial,
 square-root, exponential, defect, collision, analytic Lipschitz, cap, strict
 Gronwall, binding-gap, endpoint-containment, and local clock-cocycle kernels.
-The current validation checkpoint is 236 passing Rust unit tests and 15
+The current validation checkpoint is 249 passing Rust unit tests and 15
 passing integration cases across five integration test targets, with
 `cargo fmt --check` and
 warning-denying Clippy clean.
@@ -394,8 +404,8 @@ float rendering path is not yet a portable normative shortest-decimal
 algorithm and the Rust toolchain is not pinned. `OPEN-V1-08` remains open
 because the new exact-rational tube profile does not claim status parity with
 the historical binary64 outward profile. Raw SHA-256, frozen-v0.3 primitive
-ordinary-chart parity or a proof-grade verified-tail replay, every LC field,
-full chain replay, and the semantic result serializer remain unimplemented.
+ordinary-chart parity or a proof-grade verified-tail replay,
+full chain replay and the semantic result serializer remain unimplemented.
 The local profiles provide neither direct
 three-dimensional API parity nor chain-level independence. No complete
 certificate has been replayed by this crate. The corpus remains

@@ -1,0 +1,791 @@
+//! Conditional exact-rational carried planar-LC exit composer.
+//!
+//! This local profile consumes an opaque canonical raw-v1 admission and a
+//! parent-derived source clock.  It freshly replays the carried entry and both
+//! endpoint tubes, reconstructs the complete inflated LC right slice, projects
+//! that slice to Cartesian coordinates, and derives the target clock.
+
+use core::fmt;
+
+use num_rational::BigRational;
+use num_traits::{Signed, Zero};
+
+use crate::{
+    ordinary_chart_input_from_wire, ordinary_tube_input_from_wire,
+    outward_mass::PLANAR_LC_MASS_KERNEL_ID, planar_lc_entry_input_from_admission,
+    project_planar_lc_full_state_exact_rational, raw_schema::SegmentWire,
+    raw_v1_defining_namespace_unique, replay_carried_planar_lc_entry_exact_rational_v04,
+    replay_ordinary_tube_exact_rational_v04, replay_planar_lc_tube_exact_rational_v04,
+    CanonicalRawV1Admission, CarriedPlanarLcEntryError, CarriedPlanarLcEntryReplay, NumericError,
+    OrdinarySemanticError, OrdinaryTubeReplay, OrdinaryTubeReplayError,
+    PlanarLcCartesianStateProjection, PlanarLcProjectionError, PlanarLcSemanticError,
+    PlanarLcStateError, PlanarLcStatePolynomial, PlanarLcTubeReplay, PlanarLcTubeReplayError,
+    PolynomialError, RationalInterval, PLANAR_LC_CONSTRAINED_LIFT_DECK_GAUGE_KERNEL_V1_ID,
+    PLANAR_LC_LIFTED_STATE_DIMENSION,
+};
+
+pub const EXACT_RATIONAL_CARRIED_PLANAR_LC_EXIT_V04_PROFILE_ID: &str =
+    "exact_rational_carried_planar_lc_exit_v04";
+pub const PLANAR_LC_ANALYTIC_KERNEL_V1_ID: &str = "planar_lc_analytic_kernel_v1";
+pub const PARENT_CARRIED_ORDINARY_SOLUTION_INVARIANT_V1_ID: &str =
+    "parent_carried_ordinary_solution_invariant_v1";
+
+pub const CARRIED_PLANAR_LC_EXIT_OBLIGATION_IDS: [&str; 21] = [
+    "carried_lc_exit_exact_raw_schemas",
+    "carried_lc_exit_identifiers_match_and_are_unique",
+    "carried_lc_exit_parent_source_invariant_is_explicit_condition",
+    "carried_lc_exit_entry_freshly_replayed_and_certified",
+    "carried_lc_exit_common_planar_mass_problem",
+    "carried_lc_exit_pair_is_canonical_ascending",
+    "carried_lc_exit_outward_mass_arithmetic_certified",
+    "carried_lc_exit_exact_right_to_left_endpoint_handoff",
+    "carried_lc_exit_constrained_entry_branch_carried",
+    "carried_lc_exit_constraint_invariance_kernel",
+    "carried_lc_exit_lc_tube_freshly_certified",
+    "carried_lc_exit_third_body_separated",
+    "carried_lc_exit_target_ordinary_tube_freshly_certified",
+    "carried_lc_exit_strict_physical_clock_kernel",
+    "carried_lc_exit_complete_inflated_slice_reconstructed",
+    "carried_lc_exit_complete_slice_rho_positive",
+    "carried_lc_exit_complete_cartesian_projection_reconstructed",
+    "carried_lc_exit_deck_equivariant_newton_projection_kernel",
+    "carried_lc_exit_target_initial_ball_contains_complete_projection",
+    "carried_lc_exit_time_interval_derived_from_component_fourteen",
+    "carried_lc_exit_target_clock_origin_exactly_derived",
+];
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CarriedPlanarLcExitObligation {
+    id: &'static str,
+    satisfied: bool,
+}
+
+impl CarriedPlanarLcExitObligation {
+    pub const fn id(&self) -> &'static str {
+        self.id
+    }
+    pub const fn satisfied(&self) -> bool {
+        self.satisfied
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct CarriedPlanarLcExitReplay {
+    obligations: [CarriedPlanarLcExitObligation; 21],
+    entry_replay: CarriedPlanarLcEntryReplay,
+    lc_tube_replay: PlanarLcTubeReplay,
+    target_tube_replay: OrdinaryTubeReplay,
+    lifted_exit_slice: Option<crate::PlanarLcIntervalState>,
+    exit_rho_interval: Option<RationalInterval>,
+    cartesian_projection: Option<PlanarLcCartesianStateProjection>,
+    target_anchor_centers: Option<Vec<BigRational>>,
+    maximum_projected_anchor_gap: Option<BigRational>,
+    exit_time_interval: Option<RationalInterval>,
+    target_clock_origin: Option<RationalInterval>,
+}
+
+impl CarriedPlanarLcExitReplay {
+    pub const fn profile_id(&self) -> &'static str {
+        EXACT_RATIONAL_CARRIED_PLANAR_LC_EXIT_V04_PROFILE_ID
+    }
+    pub const fn analytic_kernel_id(&self) -> &'static str {
+        PLANAR_LC_ANALYTIC_KERNEL_V1_ID
+    }
+    pub const fn mass_kernel_id(&self) -> &'static str {
+        PLANAR_LC_MASS_KERNEL_ID
+    }
+    pub const fn parent_invariant_id(&self) -> &'static str {
+        PARENT_CARRIED_ORDINARY_SOLUTION_INVARIANT_V1_ID
+    }
+    pub fn obligations(&self) -> &[CarriedPlanarLcExitObligation; 21] {
+        &self.obligations
+    }
+    pub fn conditional_profile_satisfied(&self) -> bool {
+        self.obligations
+            .iter()
+            .all(CarriedPlanarLcExitObligation::satisfied)
+    }
+    pub fn entry_replay(&self) -> &CarriedPlanarLcEntryReplay {
+        &self.entry_replay
+    }
+    pub fn lc_tube_replay(&self) -> &PlanarLcTubeReplay {
+        &self.lc_tube_replay
+    }
+    pub fn target_tube_replay(&self) -> &OrdinaryTubeReplay {
+        &self.target_tube_replay
+    }
+    pub fn lifted_exit_slice(&self) -> Option<&crate::PlanarLcIntervalState> {
+        self.lifted_exit_slice.as_ref()
+    }
+    pub fn exit_rho_interval(&self) -> Option<&RationalInterval> {
+        self.exit_rho_interval.as_ref()
+    }
+    pub fn cartesian_projection(&self) -> Option<&PlanarLcCartesianStateProjection> {
+        self.cartesian_projection.as_ref()
+    }
+    pub fn target_anchor_centers(&self) -> Option<&[BigRational]> {
+        self.target_anchor_centers.as_deref()
+    }
+    pub fn maximum_projected_anchor_gap(&self) -> Option<&BigRational> {
+        self.maximum_projected_anchor_gap.as_ref()
+    }
+    pub fn exit_time_interval(&self) -> Option<&RationalInterval> {
+        self.exit_time_interval.as_ref()
+    }
+    pub fn target_clock_origin(&self) -> Option<&RationalInterval> {
+        self.target_clock_origin.as_ref()
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum CarriedPlanarLcExitError {
+    SegmentUnavailable { segment_index: usize },
+    SegmentNotPlanarLc { segment_index: usize },
+    SourceSemantic(OrdinarySemanticError),
+    TargetSemantic(OrdinarySemanticError),
+    LcSemantic(PlanarLcSemanticError),
+    Entry(CarriedPlanarLcEntryError),
+    LcTube(PlanarLcTubeReplayError),
+    TargetTube(OrdinaryTubeReplayError),
+    State(PlanarLcStateError),
+    Projection(PlanarLcProjectionError),
+    TargetPositionPolynomial(PolynomialError),
+    TargetVelocityPolynomial(PolynomialError),
+    Numeric(NumericError),
+    InternalShapeInvariant,
+}
+
+impl fmt::Display for CarriedPlanarLcExitError {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(formatter, "carried planar LC exit replay failed: {self:?}")
+    }
+}
+impl std::error::Error for CarriedPlanarLcExitError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::SourceSemantic(source) | Self::TargetSemantic(source) => Some(source),
+            Self::LcSemantic(source) => Some(source),
+            Self::Entry(source) => Some(source),
+            Self::LcTube(source) => Some(source),
+            Self::TargetTube(source) => Some(source),
+            Self::State(source) => Some(source),
+            Self::Projection(source) => Some(source),
+            Self::TargetPositionPolynomial(source) | Self::TargetVelocityPolynomial(source) => {
+                Some(source)
+            }
+            Self::Numeric(source) => Some(source),
+            Self::SegmentUnavailable { .. }
+            | Self::SegmentNotPlanarLc { .. }
+            | Self::InternalShapeInvariant => None,
+        }
+    }
+}
+impl From<NumericError> for CarriedPlanarLcExitError {
+    fn from(value: NumericError) -> Self {
+        Self::Numeric(value)
+    }
+}
+impl From<PlanarLcStateError> for CarriedPlanarLcExitError {
+    fn from(value: PlanarLcStateError) -> Self {
+        Self::State(value)
+    }
+}
+
+/// Replay one admission-bound `N -> LC -> N` passage.  The parent clock is a
+/// conditional premise, not certificate evidence.
+pub fn replay_carried_planar_lc_exit_exact_rational_v04(
+    admission: &CanonicalRawV1Admission,
+    segment_index: usize,
+    parent_source_clock_origin: &RationalInterval,
+) -> Result<CarriedPlanarLcExitReplay, CarriedPlanarLcExitError> {
+    let wire = admission.wire();
+    let passage = match wire.segments.get(segment_index) {
+        Some(SegmentWire::PlanarLcPassage(value)) => value,
+        Some(SegmentWire::OrdinaryBridge(_)) => {
+            return Err(CarriedPlanarLcExitError::SegmentNotPlanarLc { segment_index });
+        }
+        None => return Err(CarriedPlanarLcExitError::SegmentUnavailable { segment_index }),
+    };
+    let (source_chart_wire, source_tube_wire) = if segment_index == 0 {
+        (&wire.initial_chart, &wire.initial_tube)
+    } else {
+        match &wire.segments[segment_index - 1] {
+            SegmentWire::OrdinaryBridge(value) => (&value.target_chart, &value.target_tube),
+            SegmentWire::PlanarLcPassage(value) => (&value.target_chart, &value.target_tube),
+        }
+    };
+    let source_chart = ordinary_chart_input_from_wire(source_chart_wire)
+        .map_err(CarriedPlanarLcExitError::SourceSemantic)?;
+    let source_tube = ordinary_tube_input_from_wire(source_tube_wire);
+    let entry =
+        planar_lc_entry_input_from_admission(admission, segment_index, &source_chart, &source_tube)
+            .map_err(CarriedPlanarLcExitError::LcSemantic)?;
+    let target_chart = ordinary_chart_input_from_wire(&passage.target_chart)
+        .map_err(CarriedPlanarLcExitError::TargetSemantic)?;
+    let target_tube = ordinary_tube_input_from_wire(&passage.target_tube);
+
+    let entry_replay = replay_carried_planar_lc_entry_exact_rational_v04(
+        admission,
+        segment_index,
+        &source_chart,
+        &source_tube,
+        parent_source_clock_origin,
+    )
+    .map_err(CarriedPlanarLcExitError::Entry)?;
+    let lc_tube_replay =
+        replay_planar_lc_tube_exact_rational_v04(entry.target_chart(), entry.target_tube())
+            .map_err(CarriedPlanarLcExitError::LcTube)?;
+    let target_tube_replay = replay_ordinary_tube_exact_rational_v04(&target_chart, &target_tube)
+        .map_err(CarriedPlanarLcExitError::TargetTube)?;
+
+    let namespace =
+        raw_v1_defining_namespace_unique(admission).map_err(CarriedPlanarLcExitError::Entry)?;
+    let exit = &passage.exit_transition;
+    let raw_schemas = passage.segment_type == "planar_lc_passage_v1"
+        && !exit.source.is_empty()
+        && !exit.transition_id.is_empty()
+        && !exit.source_chart_id.is_empty()
+        && !exit.target_chart_id.is_empty()
+        && !target_tube.tube_id().is_empty()
+        && !target_tube.chart_id().is_empty()
+        && target_tube_replay.obligations()[1].satisfied();
+    let identifiers = namespace
+        && exit.source_chart_id == entry.target_chart().chart_id()
+        && exit.target_chart_id == target_chart.chart_id()
+        && entry.target_tube().chart_id() == entry.target_chart().chart_id()
+        && target_tube.chart_id() == target_chart.chart_id()
+        && target_tube_replay.obligations()[0].satisfied();
+    let common_problem = source_chart.masses() == entry.target_chart().masses()
+        && source_chart.masses() == target_chart.masses();
+    let pair = entry.target_chart().pair();
+    let canonical_pair = pair[0] < pair[1] && pair[1] < 3;
+    let mass_arithmetic = entry_replay.mass_kernel_id() == Some(PLANAR_LC_MASS_KERNEL_ID);
+    let entry_handoff = entry.source_right_parameter() == source_chart.parameter_interval().upper()
+        && source_tube.anchor_parameter() == source_chart.parameter_interval().lower()
+        && entry.target_left_parameter() == entry.target_chart().parameter_interval().lower()
+        && entry.target_left_parameter() == entry.target_tube().anchor_parameter();
+    let lc_right = exit.source_parameter.binary64_rational()
+        == entry.target_chart().parameter_interval().upper();
+    let target_left = exit.target_parameter.binary64_rational()
+        == target_chart.parameter_interval().lower()
+        && exit.target_parameter.binary64_rational() == target_tube.anchor_parameter();
+    let endpoints = entry_handoff && lc_right && target_left;
+    let entry_certified = entry_replay.conditional_profile_satisfied();
+    let constrained_entry = entry_certified
+        && entry_replay.selected_assignment().is_some()
+        && entry_replay
+            .selected_transformed_patches()
+            .is_some_and(|patches| !patches.is_empty())
+        && entry_replay.analytic_kernel_id()
+            == Some(PLANAR_LC_CONSTRAINED_LIFT_DECK_GAUGE_KERNEL_V1_ID);
+    let lc_certified = lc_tube_replay.certified();
+    let constraint_kernel = constrained_entry && lc_certified;
+    let third_body_separated = lc_certified
+        && lc_tube_replay
+            .third_body_squared_distance_floors()
+            .is_some_and(|values| values.iter().all(|value| value.is_positive()));
+    let target_certified = target_tube_replay.certified();
+    let strict_clock =
+        endpoints && constrained_entry && constraint_kernel && lc_certified && third_body_separated;
+
+    let preliminary = [
+        raw_schemas,
+        identifiers,
+        true,
+        entry_certified,
+        common_problem,
+        canonical_pair,
+        mass_arithmetic,
+        endpoints,
+        constrained_entry,
+        constraint_kernel,
+        lc_certified,
+        third_body_separated,
+        target_certified,
+        strict_clock,
+    ];
+    // Reconstruct the LC right slice whenever its actual dependencies pass.
+    // In particular, a false target-tube result suppresses only containment;
+    // it must not discard independent LC slice, projection, or clock evidence.
+    let slice_gate =
+        entry_certified && entry_handoff && lc_right && constrained_entry && lc_certified;
+    if !slice_gate {
+        return Ok(build_replay(
+            preliminary,
+            entry_replay,
+            lc_tube_replay,
+            target_tube_replay,
+            [false; 7],
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+            None,
+        ));
+    }
+
+    let right = RationalInterval::try_point(exit.source_parameter.binary64_rational().clone())?;
+    let polynomial = PlanarLcStatePolynomial::from_chart(entry.target_chart())?;
+    let state = polynomial.evaluate(&right)?.inflate(
+        lc_tube_replay
+            .gronwall_upper()
+            .ok_or(CarriedPlanarLcExitError::InternalShapeInvariant)?,
+    )?;
+    let slice_arithmetic = state.components().len() == PLANAR_LC_LIFTED_STATE_DIMENSION;
+    let slice_reconstructed = entry_certified
+        && entry_handoff
+        && lc_right
+        && constrained_entry
+        && lc_certified
+        && slice_arithmetic;
+    let rho = state.rho()?;
+    let rho_positive = rho.lower().is_positive();
+    let projection = if rho_positive {
+        Some(
+            project_planar_lc_full_state_exact_rational(entry.target_chart(), &state)
+                .map_err(CarriedPlanarLcExitError::Projection)?,
+        )
+    } else {
+        None
+    };
+    let projection_reconstructed =
+        mass_arithmetic && slice_reconstructed && rho_positive && projection.is_some();
+    let deck_kernel =
+        constraint_kernel && rho_positive && projection_reconstructed && mass_arithmetic;
+    let anchor = RationalInterval::try_point(exit.target_parameter.binary64_rational().clone())?;
+    let mut centers = target_chart
+        .position_polynomial()
+        .evaluate(&anchor)
+        .map_err(CarriedPlanarLcExitError::TargetPositionPolynomial)?;
+    centers.extend(
+        target_chart
+            .velocity_polynomial()
+            .evaluate(&anchor)
+            .map_err(CarriedPlanarLcExitError::TargetVelocityPolynomial)?,
+    );
+    if centers.len() != 12 || centers.iter().any(|value| !value.is_point()) {
+        return Err(CarriedPlanarLcExitError::InternalShapeInvariant);
+    }
+    let center_values = centers
+        .iter()
+        .map(|value| value.lower().clone())
+        .collect::<Vec<_>>();
+    let maximum_gap = projection.as_ref().map(|value| {
+        value
+            .positions()
+            .iter()
+            .flatten()
+            .chain(value.velocities().iter().flatten())
+            .zip(&center_values)
+            .fold(BigRational::zero(), |maximum, (interval, center)| {
+                maximum
+                    .max((interval.lower() - center).abs())
+                    .max((interval.upper() - center).abs())
+            })
+    });
+    let contains_arithmetic = maximum_gap
+        .as_ref()
+        .is_some_and(|gap| gap <= target_tube.initial_error_bound());
+    let contains = common_problem
+        && endpoints
+        && target_certified
+        && projection_reconstructed
+        && deck_kernel
+        && contains_arithmetic;
+    let exit_time = state.physical_time().clone();
+    let target_clock = exit_time.subtract(&anchor)?;
+    let time_derived = slice_reconstructed;
+    let clock_derived = endpoints && time_derived;
+    let derived = [
+        slice_reconstructed,
+        slice_reconstructed && rho_positive,
+        projection_reconstructed,
+        deck_kernel,
+        contains,
+        time_derived,
+        clock_derived,
+    ];
+    Ok(build_replay(
+        preliminary,
+        entry_replay,
+        lc_tube_replay,
+        target_tube_replay,
+        derived,
+        Some(state),
+        Some(rho),
+        projection,
+        Some(center_values),
+        maximum_gap,
+        Some(exit_time),
+        Some(target_clock),
+    ))
+}
+
+#[allow(clippy::too_many_arguments)]
+fn build_replay(
+    preliminary: [bool; 14],
+    entry_replay: CarriedPlanarLcEntryReplay,
+    lc_tube_replay: PlanarLcTubeReplay,
+    target_tube_replay: OrdinaryTubeReplay,
+    derived: [bool; 7],
+    lifted_exit_slice: Option<crate::PlanarLcIntervalState>,
+    exit_rho_interval: Option<RationalInterval>,
+    cartesian_projection: Option<PlanarLcCartesianStateProjection>,
+    target_anchor_centers: Option<Vec<BigRational>>,
+    maximum_projected_anchor_gap: Option<BigRational>,
+    exit_time_interval: Option<RationalInterval>,
+    target_clock_origin: Option<RationalInterval>,
+) -> CarriedPlanarLcExitReplay {
+    let satisfaction: [bool; 21] = std::array::from_fn(|index| {
+        if index < 14 {
+            preliminary[index]
+        } else {
+            derived[index - 14]
+        }
+    });
+    CarriedPlanarLcExitReplay {
+        obligations: std::array::from_fn(|index| CarriedPlanarLcExitObligation {
+            id: CARRIED_PLANAR_LC_EXIT_OBLIGATION_IDS[index],
+            satisfied: satisfaction[index],
+        }),
+        entry_replay,
+        lc_tube_replay,
+        target_tube_replay,
+        lifted_exit_slice,
+        exit_rho_interval,
+        cartesian_projection,
+        target_anchor_centers,
+        maximum_projected_anchor_gap,
+        exit_time_interval,
+        target_clock_origin,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use num_bigint::BigInt;
+
+    const SUCCESS: &[u8] = include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../conformance/raw-v1/inputs/success.raw.json"
+    ));
+    const FAILED_REVISIT: &[u8] = include_bytes!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../conformance/raw-v1/inputs/failed-revisit.raw.json"
+    ));
+
+    fn canonical_parent() -> RationalInterval {
+        RationalInterval::try_point(BigRational::new(BigInt::from(1), BigInt::from(1_u64 << 40)))
+            .unwrap()
+    }
+
+    fn replay_changed(changed: &str) -> CarriedPlanarLcExitReplay {
+        let admission = CanonicalRawV1Admission::admit(changed.as_bytes()).unwrap();
+        replay_carried_planar_lc_exit_exact_rational_v04(&admission, 1, &canonical_parent())
+            .unwrap()
+    }
+
+    #[test]
+    fn first_canonical_exit_passes_all_twenty_one_ordered_obligations() {
+        let admission = CanonicalRawV1Admission::admit(SUCCESS).unwrap();
+        let parent = RationalInterval::try_point(BigRational::new(
+            BigInt::from(1),
+            BigInt::from(1_u64 << 40),
+        ))
+        .unwrap();
+        let replay =
+            replay_carried_planar_lc_exit_exact_rational_v04(&admission, 1, &parent).unwrap();
+        assert!(
+            replay.conditional_profile_satisfied(),
+            "{:?}",
+            replay.obligations()
+        );
+        assert_eq!(
+            replay
+                .obligations()
+                .iter()
+                .map(CarriedPlanarLcExitObligation::id)
+                .collect::<Vec<_>>(),
+            CARRIED_PLANAR_LC_EXIT_OBLIGATION_IDS
+        );
+        assert_eq!(
+            replay.profile_id(),
+            "exact_rational_carried_planar_lc_exit_v04"
+        );
+        assert_eq!(replay.analytic_kernel_id(), "planar_lc_analytic_kernel_v1");
+        assert_eq!(
+            replay.parent_invariant_id(),
+            "parent_carried_ordinary_solution_invariant_v1"
+        );
+        assert_eq!(replay.lifted_exit_slice().unwrap().components().len(), 14);
+        assert_eq!(replay.target_anchor_centers().unwrap().len(), 12);
+        assert!(replay.maximum_projected_anchor_gap().is_some());
+        assert_eq!(replay.exit_time_interval(), replay.target_clock_origin());
+
+        // Differential evidence only: the Rust verifier does not consume the
+        // archived Python transcript or attempt to mimic its interval path.
+        let archived = RationalInterval::new(
+            BigRational::new(
+                BigInt::parse_bytes(b"4533271374569969", 10).unwrap(),
+                BigInt::parse_bytes(b"2361183241434822606848", 10).unwrap(),
+            ),
+            BigRational::new(
+                BigInt::parse_bytes(b"5005509942997599", 10).unwrap(),
+                BigInt::parse_bytes(b"2361183241434822606848", 10).unwrap(),
+            ),
+        )
+        .unwrap();
+        let rust = replay.exit_time_interval().unwrap();
+        assert_ne!(rust, &archived);
+        assert!(rust.lower() <= archived.lower());
+        assert!(rust.upper() >= archived.upper());
+        assert!(rust.lower() < archived.lower() || rust.upper() > archived.upper());
+    }
+
+    #[test]
+    fn exit_source_label_is_unpinned_but_must_remain_nonempty() {
+        let changed = std::str::from_utf8(SUCCESS).unwrap().replacen(
+            "serialized_planar_lc_to_ordinary_enclosure_transition",
+            "another_nonempty_exit_producer",
+            1,
+        );
+        let admission = CanonicalRawV1Admission::admit(changed.as_bytes()).unwrap();
+        let parent = RationalInterval::try_point(BigRational::new(
+            BigInt::from(1),
+            BigInt::from(1_u64 << 40),
+        ))
+        .unwrap();
+        let replay =
+            replay_carried_planar_lc_exit_exact_rational_v04(&admission, 1, &parent).unwrap();
+        assert!(replay.obligations()[0].satisfied());
+        assert!(replay.conditional_profile_satisfied());
+    }
+
+    #[test]
+    fn exit_schema_identity_and_segment_selection_fail_independently() {
+        let raw = std::str::from_utf8(SUCCESS).unwrap();
+        let empty_source = replay_changed(&raw.replacen(
+            "\"source\":\"serialized_planar_lc_to_ordinary_enclosure_transition\"",
+            "\"source\":\"\"",
+            1,
+        ));
+        assert!(!empty_source.obligations()[0].satisfied());
+
+        let empty_target_tube_source = replay_changed(&raw.replacen(
+            "\"source\":\"serialized_ordinary_aposteriori_tube\",\"tube_id\":\"review-v03:n:tube:2\"",
+            "\"source\":\"\",\"tube_id\":\"review-v03:n:tube:2\"",
+            1,
+        ));
+        assert!(!empty_target_tube_source.obligations()[0].satisfied());
+
+        let empty_target_tube_id = replay_changed(&raw.replacen(
+            "\"tube_id\":\"review-v03:n:tube:2\",\"tube_radius\":0.0001",
+            "\"tube_id\":\"\",\"tube_radius\":0.0001",
+            1,
+        ));
+        assert!(!empty_target_tube_id.obligations()[0].satisfied());
+        assert!(!empty_target_tube_id.obligations()[1].satisfied());
+
+        let wrong_reference = replay_changed(&raw.replacen(
+            "\"source_chart_id\":\"review-v03:lc:chart:0\",\"source_parameter\":9.5367431640625e-07",
+            "\"source_chart_id\":\"distinct-wrong-lc-chart\",\"source_parameter\":9.5367431640625e-07",
+            1,
+        ));
+        assert!(!wrong_reference.obligations()[1].satisfied());
+        assert!(wrong_reference.obligations()[14..]
+            .iter()
+            .all(CarriedPlanarLcExitObligation::satisfied));
+
+        let admission = CanonicalRawV1Admission::admit(SUCCESS).unwrap();
+        assert!(matches!(
+            replay_carried_planar_lc_exit_exact_rational_v04(&admission, 0, &canonical_parent()),
+            Err(CarriedPlanarLcExitError::SegmentNotPlanarLc { segment_index: 0 })
+        ));
+        assert!(matches!(
+            replay_carried_planar_lc_exit_exact_rational_v04(
+                &admission,
+                usize::MAX,
+                &canonical_parent()
+            ),
+            Err(CarriedPlanarLcExitError::SegmentUnavailable { .. })
+        ));
+    }
+
+    #[test]
+    fn target_tube_failure_retains_lc_slice_projection_time_and_clock() {
+        let changed = std::str::from_utf8(SUCCESS).unwrap().replacen(
+            "\"chart_id\":\"review-v03:n:chart:2\",\"initial_error_bound\":1e-06,\"max_defect_bound\":1.0",
+            "\"chart_id\":\"review-v03:n:chart:2\",\"initial_error_bound\":1e-06,\"max_defect_bound\":0.0",
+            1,
+        );
+        assert_ne!(changed.as_bytes(), SUCCESS);
+        let admission = CanonicalRawV1Admission::admit(changed.as_bytes()).unwrap();
+        let parent = RationalInterval::try_point(BigRational::new(
+            BigInt::from(1),
+            BigInt::from(1_u64 << 40),
+        ))
+        .unwrap();
+        let replay =
+            replay_carried_planar_lc_exit_exact_rational_v04(&admission, 1, &parent).unwrap();
+        assert!(!replay.obligations()[12].satisfied());
+        assert!(!replay.obligations()[18].satisfied());
+        for index in [14, 15, 16, 17, 19, 20] {
+            assert!(replay.obligations()[index].satisfied(), "row {}", index + 1);
+        }
+        assert!(replay.lifted_exit_slice().is_some());
+        assert!(replay.exit_rho_interval().is_some());
+        assert!(replay.cartesian_projection().is_some());
+        assert!(replay.exit_time_interval().is_some());
+        assert!(replay.target_clock_origin().is_some());
+    }
+
+    #[test]
+    fn too_small_target_allowance_fails_only_containment_among_derived_rows() {
+        let changed = std::str::from_utf8(SUCCESS).unwrap().replacen(
+            "\"chart_id\":\"review-v03:n:chart:2\",\"initial_error_bound\":1e-06",
+            "\"chart_id\":\"review-v03:n:chart:2\",\"initial_error_bound\":0.0",
+            1,
+        );
+        let replay = replay_changed(&changed);
+        assert!(replay.obligations()[12].satisfied());
+        for index in 14..21 {
+            assert_eq!(
+                replay.obligations()[index].satisfied(),
+                index != 18,
+                "row {}",
+                index + 1
+            );
+        }
+    }
+
+    #[test]
+    fn nonpoint_parent_clock_is_an_explicit_valid_condition() {
+        let center = BigRational::new(BigInt::from(1), BigInt::from(1_u64 << 40));
+        let epsilon = BigRational::new(BigInt::from(1), BigInt::from(1_u128 << 80));
+        let parent = RationalInterval::new(&center - &epsilon, &center + &epsilon).unwrap();
+        let admission = CanonicalRawV1Admission::admit(SUCCESS).unwrap();
+        let replay =
+            replay_carried_planar_lc_exit_exact_rational_v04(&admission, 1, &parent).unwrap();
+        assert!(replay.obligations()[2].satisfied());
+        assert!(replay.conditional_profile_satisfied());
+    }
+
+    #[test]
+    fn endpoint_failures_distinguish_lc_right_from_target_left_evidence() {
+        let raw = std::str::from_utf8(SUCCESS).unwrap();
+        let wrong_target = raw.replacen(
+            "\"target_chart_id\":\"review-v03:n:chart:2\",\"target_parameter\":0.0",
+            "\"target_chart_id\":\"review-v03:n:chart:2\",\"target_parameter\":9.094947017729282e-13",
+            1,
+        );
+        let target = replay_changed(&wrong_target);
+        assert!(!target.obligations()[7].satisfied());
+        for index in [14, 15, 16, 17, 19] {
+            assert!(target.obligations()[index].satisfied(), "row {}", index + 1);
+        }
+        assert!(!target.obligations()[18].satisfied());
+        assert!(!target.obligations()[20].satisfied());
+
+        let wrong_right = raw.replacen(
+            "\"source_chart_id\":\"review-v03:lc:chart:0\",\"source_parameter\":9.5367431640625e-07",
+            "\"source_chart_id\":\"review-v03:lc:chart:0\",\"source_parameter\":4.76837158203125e-07",
+            1,
+        );
+        let right = replay_changed(&wrong_right);
+        assert!(!right.obligations()[7].satisfied());
+        assert!(right.obligations()[14..].iter().all(|row| !row.satisfied()));
+        assert!(right.lifted_exit_slice().is_none());
+    }
+
+    #[test]
+    fn namespace_entry_and_lc_tube_failures_are_fail_closed() {
+        let raw = std::str::from_utf8(SUCCESS).unwrap();
+        let namespace = replay_changed(&raw.replacen(
+            "\"transition_id\":\"review-v03:lc:exit:0\"",
+            "\"transition_id\":\"review-v03:lc:entry:0\"",
+            1,
+        ));
+        assert!(!namespace.obligations()[1].satisfied());
+        assert!(!namespace.obligations()[3].satisfied());
+
+        let entry_changed = raw.replacen(
+            "\"source_right_parameter\":9.5367431640625e-07",
+            "\"source_right_parameter\":0.0",
+            1,
+        );
+        let entry_admission = CanonicalRawV1Admission::admit(entry_changed.as_bytes()).unwrap();
+        assert!(matches!(
+            replay_carried_planar_lc_exit_exact_rational_v04(
+                &entry_admission,
+                1,
+                &canonical_parent()
+            ),
+            Err(CarriedPlanarLcExitError::LcSemantic(_))
+        ));
+
+        let lc_tube = replay_changed(&raw.replacen(
+            "\"chart_id\":\"review-v03:lc:chart:0\",\"initial_error_bound\":1e-07,\"max_defect_bound\":1.0",
+            "\"chart_id\":\"review-v03:lc:chart:0\",\"initial_error_bound\":1e-07,\"max_defect_bound\":0.0",
+            1,
+        ));
+        assert!(!lc_tube.obligations()[3].satisfied());
+        assert!(!lc_tube.obligations()[10].satisfied());
+        assert!(lc_tube.lifted_exit_slice().is_none());
+    }
+
+    #[test]
+    fn target_physical_time_metadata_is_irrelevant() {
+        let raw = std::str::from_utf8(SUCCESS).unwrap();
+        let baseline = replay_changed(raw);
+        let marker = "\"certificate_id\":\"review-v03:n:certificate:2\"";
+        let marker_index = raw.find(marker).unwrap();
+        let (prefix, suffix) = raw.split_at(marker_index);
+        let changed_suffix = suffix.replacen(
+            "\"physical_time_interval\":[2.019915513158379e-06,2.973589829564629e-06]",
+            "\"physical_time_interval\":[100.0,101.0]",
+            1,
+        );
+        let changed = format!("{prefix}{changed_suffix}");
+        assert_eq!(replay_changed(&changed), baseline);
+    }
+
+    #[test]
+    fn canonical_files_have_expected_sequential_lc_prefix_behavior() {
+        for (bytes, expected_passes) in [(SUCCESS, 4_usize), (FAILED_REVISIT, 3_usize)] {
+            let admission = CanonicalRawV1Admission::admit(bytes).unwrap();
+            let mut parent = canonical_parent();
+            let lc_indices = admission
+                .wire()
+                .segments
+                .iter()
+                .enumerate()
+                .filter_map(|(index, segment)| {
+                    matches!(segment, SegmentWire::PlanarLcPassage(_)).then_some(index)
+                })
+                .collect::<Vec<_>>();
+            for (ordinal, index) in lc_indices.iter().copied().enumerate() {
+                let replay =
+                    replay_carried_planar_lc_exit_exact_rational_v04(&admission, index, &parent)
+                        .unwrap();
+                assert_eq!(
+                    replay.conditional_profile_satisfied(),
+                    ordinal < expected_passes
+                );
+                if ordinal >= expected_passes {
+                    assert!(!replay.obligations()[18].satisfied());
+                    assert!(replay.obligations()[14..18]
+                        .iter()
+                        .all(CarriedPlanarLcExitObligation::satisfied));
+                    assert!(replay.obligations()[19..]
+                        .iter()
+                        .all(CarriedPlanarLcExitObligation::satisfied));
+                    break;
+                }
+                parent = replay.target_clock_origin().unwrap().clone();
+            }
+        }
+    }
+}

@@ -9,16 +9,17 @@
 //! arithmetic, an independent interval-dual LC field and direct polynomial
 //! defect enclosure, bounded exact-rational interval-series LC coefficient
 //! replay, exact-rational LC-to-Cartesian projection/Newton residuals, a
-//! canonical exact-rational LC lift-cover kernel and provenance-bound carried
-//! LC-entry composer,
+//! canonical exact-rational LC lift-cover kernel, provenance-bound carried
+//! LC-entry composer, and conditional carried LC-exit composer with complete
+//! inflated-slice Cartesian position/velocity projection,
 //! conditional ordinary chart and tube replay, exact planar
 //! initial-value binding, proof-oriented validated-root replay, and local
 //! parent-carried ordinary-bridge composition, and a bounded ordinary-only raw
 //! chain checkpoint for top-level obligations 6--13 under separately named
 //! exact-rational profiles. The ordinary-only chain checkpoint stops
 //! fail-closed at LC and is not outer-obligation or full-chain replay. The
-//! carried-entry result is conditional on parent IVP carry and proves no LC
-//! evolution, exit, chain commit, or fixed-time theorem.
+//! carried entry/exit results are conditional on parent IVP carry and prove no
+//! full-chain commit, complete replay, or fixed-time theorem.
 
 #![forbid(unsafe_code)]
 
@@ -40,6 +41,7 @@ pub mod outward_mass;
 mod planar_lc_chart;
 mod planar_lc_defect;
 mod planar_lc_entry;
+mod planar_lc_exit;
 mod planar_lc_field;
 mod planar_lc_lift;
 mod planar_lc_projection;
@@ -131,6 +133,12 @@ pub use planar_lc_entry::{
     CARRIED_PLANAR_LC_ENTRY_OBLIGATION_IDS, EXACT_RATIONAL_CARRIED_PLANAR_LC_ENTRY_V04_PROFILE_ID,
     HARD_MAX_RAW_V1_NAMESPACE_SEGMENTS,
 };
+pub use planar_lc_exit::{
+    replay_carried_planar_lc_exit_exact_rational_v04, CarriedPlanarLcExitError,
+    CarriedPlanarLcExitObligation, CarriedPlanarLcExitReplay,
+    CARRIED_PLANAR_LC_EXIT_OBLIGATION_IDS, EXACT_RATIONAL_CARRIED_PLANAR_LC_EXIT_V04_PROFILE_ID,
+    PARENT_CARRIED_ORDINARY_SOLUTION_INVARIANT_V1_ID, PLANAR_LC_ANALYTIC_KERNEL_V1_ID,
+};
 pub use planar_lc_field::{
     evaluate_planar_lc_field, evaluate_planar_lc_field_default, PlanarLcFieldEnclosure,
     PlanarLcFieldError, PlanarLcThirdDenominator, PLANAR_LC_FIELD_DEFAULT_SQRT_PRECISION_BITS,
@@ -143,7 +151,8 @@ pub use planar_lc_lift::{
     PLANAR_LC_LIFT_DEFAULT_SQRT_PRECISION_BITS,
 };
 pub use planar_lc_projection::{
-    replay_planar_lc_projection, replay_planar_lc_projection_default, PlanarLcProjectionError,
+    project_planar_lc_full_state_exact_rational, replay_planar_lc_projection,
+    replay_planar_lc_projection_default, PlanarLcCartesianStateProjection, PlanarLcProjectionError,
     PlanarLcProjectionPair, PlanarLcProjectionReplay,
     PLANAR_LC_PROJECTION_DEFAULT_SQRT_PRECISION_BITS,
 };

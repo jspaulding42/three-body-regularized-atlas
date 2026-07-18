@@ -48,6 +48,7 @@ pub enum PlanarLcProjectionError {
     MassProfile(MassProfileError),
     NegativeProjectionFloor,
     RhoFloorNotStrict,
+    RhoNotStrictlyPositive,
     NewtonCollision { pair: PlanarLcProjectionPair },
     PositiveSquareRootUnresolved { pair: PlanarLcProjectionPair },
     SqrtPrecisionExceeded { requested: usize, limit: usize },
@@ -111,6 +112,83 @@ pub struct PlanarLcProjectionReplay {
     residuals: [RationalInterval; BODY_COUNT * PLANE_DIMENSION],
     maximum_absolute_residual_endpoint: BigRational,
     mass_profile: PlanarLcMassProfile,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PlanarLcCartesianStateProjection {
+    rho: RationalInterval,
+    positions: [[RationalInterval; PLANE_DIMENSION]; BODY_COUNT],
+    velocities: [[RationalInterval; PLANE_DIMENSION]; BODY_COUNT],
+    mass_profile: PlanarLcMassProfile,
+}
+
+impl PlanarLcCartesianStateProjection {
+    pub fn rho(&self) -> &RationalInterval {
+        &self.rho
+    }
+    pub fn positions(&self) -> &[[RationalInterval; PLANE_DIMENSION]; BODY_COUNT] {
+        &self.positions
+    }
+    pub fn velocities(&self) -> &[[RationalInterval; PLANE_DIMENSION]; BODY_COUNT] {
+        &self.velocities
+    }
+    pub fn mass_profile(&self) -> &PlanarLcMassProfile {
+        &self.mass_profile
+    }
+}
+
+/// Project a complete lifted LC interval state to Cartesian `q,v` without
+/// consuming the chart projection-floor claim or any residual/tail metadata.
+pub fn project_planar_lc_full_state_exact_rational(
+    chart: &PlanarLcChartInput,
+    state: &PlanarLcIntervalState,
+) -> Result<PlanarLcCartesianStateProjection, PlanarLcProjectionError> {
+    let rho = state.rho()?;
+    if rho.lower().numer().sign() != Sign::Plus {
+        return Err(PlanarLcProjectionError::RhoNotStrictlyPositive);
+    }
+    let masses = reconstruct_masses(chart)?;
+    let mass_profile = derive_planar_lc_mass_profile(&masses, chart.pair())?;
+    mass_profile.validate_against(&masses, chart.pair())?;
+    let components = state.components();
+    let square = state.lc_square()?;
+    let two = BigRational::from_integer(BigInt::from(2));
+    let relative_velocity = [
+        components[LC_ZX]
+            .multiply(&components[LC_WX])?
+            .subtract(&components[LC_ZY].multiply(&components[LC_WY])?)?
+            .scale(&two)?
+            .divide(&rho)?,
+        components[LC_ZY]
+            .multiply(&components[LC_WX])?
+            .add(&components[LC_ZX].multiply(&components[LC_WY])?)?
+            .scale(&two)?
+            .divide(&rho)?,
+    ];
+    let zero = RationalInterval::try_point(BigRational::zero())?;
+    let mut positions = std::array::from_fn(|_| std::array::from_fn(|_| zero.clone()));
+    let mut velocities = std::array::from_fn(|_| std::array::from_fn(|_| zero.clone()));
+    let [first, second] = chart.pair();
+    let third = mass_profile.third_index();
+    for axis in 0..PLANE_DIMENSION {
+        let center = &components[LC_RX + axis];
+        let center_velocity = &components[LC_UX + axis];
+        positions[first][axis] =
+            center.subtract(&square[axis].scale(mass_profile.alpha().exact())?)?;
+        positions[second][axis] = center.add(&square[axis].scale(mass_profile.beta().exact())?)?;
+        positions[third][axis] = center.add(&components[LC_YX + axis])?;
+        velocities[first][axis] = center_velocity
+            .subtract(&relative_velocity[axis].scale(mass_profile.alpha().exact())?)?;
+        velocities[second][axis] =
+            center_velocity.add(&relative_velocity[axis].scale(mass_profile.beta().exact())?)?;
+        velocities[third][axis] = center_velocity.add(&components[LC_VX + axis])?;
+    }
+    Ok(PlanarLcCartesianStateProjection {
+        rho,
+        positions,
+        velocities,
+        mass_profile,
+    })
 }
 
 impl PlanarLcProjectionReplay {
@@ -360,9 +438,11 @@ fn reconstruct_masses(
 mod tests {
     use super::*;
     use crate::{
-        checked_real_binary64_from_json, parse_json_number_lexeme, parse_wire_json,
-        planar_lc_chart_input_from_wire,
+        checked_real_binary64_from_json, ordinary_chart_input_from_wire,
+        ordinary_tube_input_from_wire, parse_json_number_lexeme, parse_wire_json,
+        planar_lc_chart_input_from_wire, planar_lc_entry_input_from_admission,
         raw_schema::{decode_raw_chain, PlanarLcChartWire, SchemaProfile, SegmentWire},
+        replay_carried_planar_lc_entry_exact_rational_v04, CanonicalRawV1Admission,
         PlanarLcStatePolynomial, DEFAULT_JSON_NUMBER_LIMITS, DEFAULT_WIRE_JSON_LIMITS,
     };
 
@@ -458,6 +538,159 @@ mod tests {
             ]
         );
         assert_eq!(replay.maximum_absolute_residual_endpoint(), &r(1, 1));
+    }
+
+    #[test]
+    fn full_state_projection_pins_q_v_and_ignores_claimed_rho_floor() {
+        let projection = project_planar_lc_full_state_exact_rational(
+            &unit_chart_with_floor("2.0"),
+            &hand_state(),
+        )
+        .unwrap();
+        assert_eq!(projection.rho(), &point(1, 1));
+        assert_eq!(
+            projection.positions(),
+            &[
+                [point(-1, 2), point(0, 1)],
+                [point(1, 2), point(0, 1)],
+                [point(3, 1), point(0, 1)],
+            ]
+        );
+        assert_eq!(
+            projection.velocities(),
+            &[
+                [point(6, 1), point(8, 1)],
+                [point(8, 1), point(8, 1)],
+                [point(16, 1), point(18, 1)],
+            ]
+        );
+        projection
+            .mass_profile()
+            .validate_against(
+                &[
+                    ExactBinary64::from_bits(1.0_f64.to_bits()).unwrap(),
+                    ExactBinary64::from_bits(1.0_f64.to_bits()).unwrap(),
+                    ExactBinary64::from_bits(1.0_f64.to_bits()).unwrap(),
+                ],
+                [0, 1],
+            )
+            .unwrap();
+    }
+
+    #[test]
+    fn full_state_projection_is_deck_invariant_contains_points_and_rejects_zero_rho() {
+        let chain = chain();
+        let mut pairs = Vec::new();
+        for segment in &chain.segments {
+            let SegmentWire::PlanarLcPassage(segment) = segment else {
+                continue;
+            };
+            let chart = planar_lc_chart_input_from_wire(&segment.lc_chart).unwrap();
+            let point_projection =
+                project_planar_lc_full_state_exact_rational(&chart, &hand_state()).unwrap();
+            let deck = hand_state().deck_transform().unwrap();
+            assert_eq!(
+                project_planar_lc_full_state_exact_rational(&chart, &deck).unwrap(),
+                point_projection
+            );
+            let inflated = hand_state().inflate(&r(1, 100)).unwrap();
+            let interval_projection =
+                project_planar_lc_full_state_exact_rational(&chart, &inflated).unwrap();
+            for body in 0..BODY_COUNT {
+                for axis in 0..PLANE_DIMENSION {
+                    assert!(interval_projection.positions()[body][axis]
+                        .contains_interval(&point_projection.positions()[body][axis]));
+                    assert!(interval_projection.velocities()[body][axis]
+                        .contains_interval(&point_projection.velocities()[body][axis]));
+                }
+            }
+            pairs.push(chart.pair());
+        }
+        pairs.sort_unstable();
+        pairs.dedup();
+        assert_eq!(pairs, vec![[0, 1], [0, 2], [1, 2]]);
+
+        let zero = PlanarLcIntervalState::from_exact_components(std::array::from_fn(|_| {
+            BigRational::zero()
+        }))
+        .unwrap();
+        assert_eq!(
+            project_planar_lc_full_state_exact_rational(&unit_chart_with_floor("0.0"), &zero),
+            Err(PlanarLcProjectionError::RhoNotStrictlyPositive)
+        );
+    }
+
+    #[test]
+    fn first_canonical_exit_projection_is_feasible() {
+        let admission = CanonicalRawV1Admission::admit(SUCCESS).unwrap();
+        let SegmentWire::OrdinaryBridge(bridge) = &admission.wire().segments[0] else {
+            panic!()
+        };
+        let SegmentWire::PlanarLcPassage(passage) = &admission.wire().segments[1] else {
+            panic!()
+        };
+        let source_chart = ordinary_chart_input_from_wire(&bridge.target_chart).unwrap();
+        let source_tube = ordinary_tube_input_from_wire(&bridge.target_tube);
+        let parent = RationalInterval::try_point(BigRational::new(
+            BigInt::from(1),
+            BigInt::from(1_u64 << 40),
+        ))
+        .unwrap();
+        let entry_replay = replay_carried_planar_lc_entry_exact_rational_v04(
+            &admission,
+            1,
+            &source_chart,
+            &source_tube,
+            &parent,
+        )
+        .unwrap();
+        assert!(entry_replay.conditional_profile_satisfied());
+        let entry =
+            planar_lc_entry_input_from_admission(&admission, 1, &source_chart, &source_tube)
+                .unwrap();
+        let polynomial = PlanarLcStatePolynomial::from_chart(entry.target_chart()).unwrap();
+        let right =
+            RationalInterval::try_point(entry.target_chart().parameter_interval().upper().clone())
+                .unwrap();
+        let state = polynomial
+            .evaluate(&right)
+            .unwrap()
+            .inflate(entry_replay.target_tube_replay().gronwall_upper().unwrap())
+            .unwrap();
+        let projected =
+            project_planar_lc_full_state_exact_rational(entry.target_chart(), &state).unwrap();
+        let target_chart = ordinary_chart_input_from_wire(&passage.target_chart).unwrap();
+        let target_tube = ordinary_tube_input_from_wire(&passage.target_tube);
+        let anchor =
+            RationalInterval::try_point(target_chart.parameter_interval().lower().clone()).unwrap();
+        let mut centers = target_chart
+            .position_polynomial()
+            .evaluate(&anchor)
+            .unwrap();
+        centers.extend(
+            target_chart
+                .velocity_polynomial()
+                .evaluate(&anchor)
+                .unwrap(),
+        );
+        let projected_flat = projected
+            .positions()
+            .iter()
+            .flatten()
+            .chain(projected.velocities().iter().flatten())
+            .collect::<Vec<_>>();
+        let maximum =
+            projected_flat
+                .iter()
+                .zip(&centers)
+                .fold(BigRational::zero(), |m, (value, center)| {
+                    m.max((value.lower() - center.lower()).abs())
+                        .max((value.upper() - center.lower()).abs())
+                });
+        assert!(maximum <= *target_tube.initial_error_bound());
+        let d_out = state.physical_time().clone();
+        let b_prime = d_out.subtract(&anchor).unwrap();
+        assert_eq!(d_out, b_prime);
     }
 
     #[test]

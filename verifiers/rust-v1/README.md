@@ -90,6 +90,15 @@ foundation. The current checkpoint contains:
   lift, and containment are decisive. Its all-true conclusion is conditional
   on the parent having carried its actual branch inside the source tube and
   proves no LC evolution, exit, chain commit, or fixed-time theorem;
+- the exact ordered 21-row Section 5.4 carried-exit composer under
+  `exact_rational_carried_planar_lc_exit_v04`. It derives records from
+  canonical admission, freshly replays entry and endpoint tubes, reconstructs
+  the complete inflated LC right slice and Cartesian projection, checks
+  containment, and derives `D_out` and the next clock. Success passes four
+  exits; failed-revisit passes three then fails only row 19. Rust's wider,
+  non-bit-identical first-exit `D_out` is independent differential evidence;
+  the Python transcript is not consumed. This remains conditional and proves
+  no chain commit, fixed-time theorem, complete replay, parity, or independence;
 - a non-certifying semantic conversion from decoded ordinary chart/tube wires
   to bounded exact-rational inputs, using every real's proved binary64 dyadic,
   exact body-major coefficient shapes, and strictly increasing parameter and
@@ -177,7 +186,7 @@ foundation. The current checkpoint contains:
   an explicit unsupported stop. Both canonical chains commit one bridge and
   stop at their first LC segment.
 
-At this checkpoint, 236 Rust unit tests and 15 integration cases across five
+At this checkpoint, 249 Rust unit tests and 15 integration cases across five
 integration test targets pass;
 `cargo fmt --check` and `cargo clippy --all-targets -- -D warnings` are clean.
 
@@ -206,7 +215,8 @@ admitted planar semantic inputs. They are not parity with the Python
 direct-object API on three-dimensional inputs. The bounded ordinary-only
 checkpoint enforces the additional raw root conditions and
 ordinary-prefix/fixed-time semantics described above. The conditional LC tube
-ledger now exists; LC entry, exit, and full-chain replay remain unimplemented.
+ledger and carried LC entry/exit composers now exist; full-chain replay remains
+unimplemented.
 `OPEN-V1-08` remains
 open for historical
 binary64 arithmetic status parity. The crate does not call Python and makes no

@@ -248,7 +248,18 @@ all-true result remains conditional on the chain parent having carried its
 actual branch in the source tube and supplies no LC evolution, exit, chain
 commit, or fixed-time theorem.
 
-The crate currently passes 236 Rust unit tests and 15 integration cases across
+The `exact_rational_carried_planar_lc_exit_v04` profile now composes the exact
+ordered 21-row Section 5.4 exit ledger from canonical admission and a
+parent-derived clock. It freshly replays entry, LC tube, and target tube
+evidence, reconstructs the complete inflated LC right slice and Cartesian
+projection, checks containment, and derives `D_out` and `B'`. Success passes
+four sequential exits; failed-revisit passes three and then fails only row 19.
+Rust's independent first-exit `D_out` strictly contains, and is not
+bit-identical to, the archived Python interval; the transcript is not
+consumed. This conditional local lemma proves no chain commit, fixed-time
+theorem, complete replay, parity, or implementation independence.
+
+The crate currently passes 249 Rust unit tests and 15 integration cases across
 five integration test targets;
 `cargo fmt --check` and warning-denying Clippy are clean. The implementation-neutral
 [`raw-v1 seed corpus`](conformance/raw-v1/README.md) currently contains two
@@ -274,8 +285,8 @@ local-root profiles establish that component only for admitted planar inputs;
 they are not direct three-dimensional API parity. The bounded ordinary-only
 profile enforces the additional raw root conditions and
 ordinary-prefix/fixed-time semantics described above. The conditional LC tube
-ledger now exists; LC entry/exit, full-chain replay, and the semantic result
-serializer remain unimplemented.
+ledger and carried LC entry/exit composers now exist; full-chain replay and
+the semantic result serializer remain unimplemented.
 Frozen-v0.3 primitive parity and
 `OPEN-V1-06` remain open, as does historical tube arithmetic parity under
 `OPEN-V1-08`; cross-language numeric rendering and the Rust toolchain pin
@@ -285,7 +296,7 @@ release gates remain failed, and no complete-certificate or independent
 chain-replay claim is made.
 
 The checkpoint does **not** establish outer obligations 1--5, namespace
-uniqueness, canonicalization or a SHA-256 result, LC entry/exit or full-chain
+uniqueness, canonicalization or a SHA-256 result, full-chain
 replay, frozen-v0.3 parity, cross-profile agreement, implementation
 independence, or satisfaction of any release gate.
 
