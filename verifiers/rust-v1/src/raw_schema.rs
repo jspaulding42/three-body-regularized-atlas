@@ -122,6 +122,11 @@ impl RawInteger {
         let value = parsed.exact_decimal().to_integer();
         Self { parsed, value }
     }
+
+    #[cfg(test)]
+    pub(crate) fn from_parsed_for_test(parsed: ParsedJsonNumber) -> Self {
+        Self::from_parsed(parsed)
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]

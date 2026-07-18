@@ -200,10 +200,14 @@ state polynomial with interval/derivative evaluation and algebraic
 `rho`/square/constraint/deck operations. An independent interval-dual kernel
 now reconstructs and revalidates the mass profile, evaluates the ordered LC
 field and 14-by-14 Jacobian, and directly encloses the uninflated polynomial
-defect without consuming the serialized tail claim. This is arithmetic only:
-it certifies no LC obligation, accepted defect threshold, or remainder bound.
+defect without consuming the serialized tail claim. A bounded interval formal-
+series kernel independently replays the ordered LC RHS, coefficient residual,
+and pair-energy constraint recurrences with exact rational arithmetic and
+dyadic outward enclosures. This is arithmetic only: it certifies no LC
+obligation, accepted defect threshold, remainder bound, or frozen binary64
+status parity.
 
-The crate currently passes 185 Rust unit tests and 15 integration cases across
+The crate currently passes 194 Rust unit tests and 15 integration cases across
 five integration test targets;
 `cargo fmt --check` and warning-denying Clippy are clean. The implementation-neutral
 [`raw-v1 seed corpus`](conformance/raw-v1/README.md) currently contains two

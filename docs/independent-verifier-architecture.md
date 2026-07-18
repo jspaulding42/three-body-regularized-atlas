@@ -236,6 +236,20 @@ on the uninflated chart interval and reports all 14 residual intervals plus
 their exact maximum absolute endpoint. It deliberately ignores the claimed
 tail bound.
 
+A separate bounded coefficient replay forms the same ordered field as formal
+power series. It uses quadratic interval convolution, reconstructs and
+revalidates the mass profile, guards both constant third-body denominator
+squares, recursively encloses their positive square-root series from dyadic
+constant enclosures, and forms reciprocal series without host floating-point
+arithmetic. It returns every recurrence residual through coefficient count
+minus two and every pair-energy constraint coefficient through the serialized
+degree, with exact endpoint maxima. Exact integer floor/ceil keeps recurrence
+divisions on the requested dyadic grid; the fixed default is 64 bits and the
+public API permits a higher bounded precision. The work cap accounts
+quadratically for every allocated coefficient row. Chart intervals,
+tolerances, tail and projection claims, and sample counts are not inputs to
+this coefficient kernel.
+
 This layer proves no LC chart, tube, or entry obligation, accepted defect
 threshold, or remainder theorem, and does not construct a gauge or lift,
 replay an exit, or commit a chain segment. It establishes no parity,
@@ -278,7 +292,7 @@ proof-oriented local-root composition, and local carried ordinary bridge
 described above now couple decoded ordinary records to the exact polynomial,
 square-root, exponential, defect, collision, analytic Lipschitz, cap, strict
 Gronwall, binding-gap, endpoint-containment, and local clock-cocycle kernels.
-The current validation checkpoint is 185 passing Rust unit tests and 15
+The current validation checkpoint is 194 passing Rust unit tests and 15
 passing integration cases across five integration test targets, with
 `cargo fmt --check` and
 warning-denying Clippy clean.

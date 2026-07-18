@@ -7,7 +7,8 @@
 //! decode, bounded exact arithmetic, non-certifying ordinary and planar-LC
 //! semantic inputs, exact 14-component LC state polynomial/interval
 //! arithmetic, an independent interval-dual LC field and direct polynomial
-//! defect enclosure, conditional ordinary chart and tube replay, exact planar
+//! defect enclosure, bounded exact-rational interval-series LC coefficient
+//! replay, conditional ordinary chart and tube replay, exact planar
 //! initial-value binding, proof-oriented validated-root replay, and local
 //! parent-carried ordinary-bridge composition, and a bounded ordinary-only raw
 //! chain checkpoint for top-level obligations 6--13 under separately named
@@ -36,6 +37,7 @@ pub mod outward_mass;
 mod planar_lc_defect;
 mod planar_lc_field;
 mod planar_lc_semantic;
+mod planar_lc_series;
 mod planar_lc_state;
 mod polynomial;
 mod rational_input;
@@ -118,6 +120,11 @@ pub use planar_lc_semantic::{
     planar_lc_tube_input_from_wire, PlanarLcChartInput, PlanarLcEntryInput, PlanarLcIntervalKind,
     PlanarLcSemanticError, PlanarLcSemanticResource, PlanarLcSeriesKind, PlanarLcTubeInput,
     HARD_MAX_PLANAR_LC_SEMANTIC_COEFFICIENT_COUNT, HARD_MAX_PLANAR_LC_SEMANTIC_TOTAL_WORK_UNITS,
+};
+pub use planar_lc_series::{
+    replay_planar_lc_interval_series, replay_planar_lc_interval_series_default,
+    PlanarLcSeriesDenominator, PlanarLcSeriesError, PlanarLcSeriesReplay,
+    HARD_MAX_PLANAR_LC_SERIES_WORK_UNITS, PLANAR_LC_SERIES_DEFAULT_SQRT_PRECISION_BITS,
 };
 pub use planar_lc_state::{
     PlanarLcAnchorPoint, PlanarLcIntervalState, PlanarLcStateError, PlanarLcStatePolynomial, LC_H,

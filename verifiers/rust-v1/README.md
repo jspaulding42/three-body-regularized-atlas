@@ -35,6 +35,15 @@ foundation. The current checkpoint contains:
   infinity row-sum bound; plus a direct uninflated chart-polynomial defect and
   exact maximum absolute residual-endpoint bound. The defect does not consume
   the serialized tail claim;
+- bounded exact-rational interval formal-series replay of the full ordered LC
+  field coefficients, derivative-minus-field residual coefficients, and pair
+  energy constraint coefficients. Its inverse-cube recurrence uses guarded
+  denominator-square series, a recursively constructed positive square-root
+  series initialized by a dyadic enclosure, reciprocal convolution, exact
+  endpoint maxima, and an explicit quadratic work cap. Recurrence divisions
+  are enclosed on a fixed dyadic grid (64 bits by default, with an explicit
+  bounded precision API). It consumes coefficient and mass data only, not
+  chart intervals, tolerances, tail claims, projection claims, or samples;
 - a non-certifying semantic conversion from decoded ordinary chart/tube wires
   to bounded exact-rational inputs, using every real's proved binary64 dyadic,
   exact body-major coefficient shapes, and strictly increasing parameter and
@@ -122,7 +131,7 @@ foundation. The current checkpoint contains:
   an explicit unsupported stop. Both canonical chains commit one bridge and
   stop at their first LC segment.
 
-At this checkpoint, 185 Rust unit tests and 15 integration cases across five
+At this checkpoint, 194 Rust unit tests and 15 integration cases across five
 integration test targets pass;
 `cargo fmt --check` and `cargo clippy --all-targets -- -D warnings` are clean.
 
@@ -170,6 +179,8 @@ The lifted-state, field, and direct-defect layers are likewise arithmetic
 only. Enclosing a residual does not establish an accepted defect threshold or
 remainder theorem, and these layers do not prove the LC constraint,
 chart/tube/entry validity, gauge, projection, exit, or any continuation step.
+The formal-series layer also makes no chart-acceptance or frozen binary64
+status-parity claim.
 
 The ordinary-only checkpoint starts at obligations 6--13 and makes no claim about outer
 obligations 1--5, namespace uniqueness, canonicalization or SHA-256 results,
