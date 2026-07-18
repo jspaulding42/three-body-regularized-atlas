@@ -16,14 +16,20 @@
 //! initial-value binding, proof-oriented validated-root replay, and local
 //! parent-carried ordinary-bridge composition, a bounded ordinary-only raw
 //! chain checkpoint, and a bounded admitted mixed ordinary/LC fold for
-//! top-level obligations 6--13 under separately named exact-rational profiles.
+//! top-level obligations 6--13 under separately named exact-rational profiles,
+//! plus an admitted-payload 13-row semantic outcome with SHA-256 and a
+//! deterministic exact-rational JSON projection when the bounded replay
+//! returns Boolean evidence.
 //! The mixed fold transactionally commits freshly certified local results,
 //! derives its clock and cocycle ledgers, evaluates the ordinary fixed-time
 //! enclosure, and applies typed retained-frontier priority. The ordinary-only
-//! checkpoint still stops fail-closed at LC. Neither chain profile establishes
-//! outer obligations 1--5, raw SHA-256, result serialization or terminal
-//! status, frozen arithmetic parity, or verifier independence. The carried
-//! entry/exit component results remain conditional on parent IVP carry.
+//! checkpoint still stops fail-closed at LC. The chain profiles alone do not
+//! establish outer obligations 1--5, raw SHA-256, result serialization, or
+//! terminal status; the admitted outcome adds those only after opaque parser
+//! admission. It reports no parser/CLI outcome, differs from the frozen
+//! binary64 profile, and claims neither cross-verifier agreement nor v0.4
+//! independence. The carried entry/exit component results remain conditional
+//! on parent IVP carry.
 
 #![forbid(unsafe_code)]
 
@@ -58,6 +64,7 @@ mod polynomial;
 mod rational_input;
 mod raw_admission;
 pub mod raw_schema;
+mod raw_v1_outcome;
 mod sqrt;
 mod wire_json;
 
@@ -199,6 +206,13 @@ pub use polynomial::{
 };
 pub use rational_input::HARD_MAX_RATIONAL_COMPONENT_BITS;
 pub use raw_admission::{CanonicalRawV1Admission, CanonicalRawV1AdmissionError};
+pub use raw_v1_outcome::{
+    replay_admitted_raw_v1_outcome_exact_rational_v04, RawV1Outcome, RawV1OutcomeError,
+    RawV1OutcomeObligation, RawV1OutcomeSegmentKind, RawV1OutcomeSegmentProfile,
+    RawV1OutcomeSerializationError, RawV1OutcomeStatus,
+    EXACT_RATIONAL_ADMITTED_RAW_V1_OUTCOME_V04_PROFILE_ID, RAW_V1_OUTCOME_OBLIGATION_IDS,
+    RAW_V1_RUST_SEMANTIC_OUTCOME_V1_SCHEMA_ID,
+};
 pub use sqrt::{sqrt_enclosure_dyadic, DyadicSqrtEnclosure, HARD_MAX_SQRT_PRECISION_BITS};
 pub use wire_json::{
     parse_wire_json, to_canonical_bytes, validate_canonical_wire_json, WireJsonError,
