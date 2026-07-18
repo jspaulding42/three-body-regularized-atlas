@@ -242,6 +242,83 @@ fn outer_namespace_failure_has_priority_over_nested_local_failures() {
 }
 
 #[test]
+fn admitted_initial_semantic_defect_is_portable_unresolved_without_private_text() {
+    let raw = one_bridge_success_raw().replacen(
+        "\"chart_id\":\"review-v03:n:chart:0\",\"chart_type\":\"ordinary_taylor\"",
+        "\"chart_id\":\"review-v03:n:chart:0\",\"chart_type\":\"ordinary_taylor_bad\"",
+        1,
+    );
+    let admission = CanonicalRawV1Admission::admit(raw.as_bytes()).unwrap();
+    let outcome = replay_admitted_raw_v1_outcome_exact_rational_v04(&admission).unwrap();
+
+    assert_eq!(outcome.status(), RawV1OutcomeStatus::Unresolved);
+    assert_eq!(outcome.certified_segment_count(), 0);
+    assert_eq!(outcome.failed_segment_index(), None);
+    assert!(outcome.failed_local_obligation_ids().is_empty());
+    assert_eq!(
+        outcome.first_failed_obligation(),
+        Some("raw_planar_chain_root_exact_point_left_anchor")
+    );
+    assert_eq!(
+        outcome
+            .obligations()
+            .iter()
+            .map(|row| row.satisfied())
+            .collect::<Vec<_>>(),
+        [true, true, true, true, true, false, false, false, false, false, false, false, false]
+    );
+
+    let mixed = outcome.mixed_replay();
+    assert!(matches!(
+        mixed.replay_failure(),
+        Some(MixedChainReplayFailure::InitialChartSemantic { .. })
+    ));
+    assert!(mixed.obligations().iter().all(|row| !row.satisfied()));
+    assert!(mixed.initial_chart_replay().is_none());
+    assert!(mixed.root_replay().is_none());
+    assert!(mixed.segment_replays().is_empty());
+    assert!(mixed.clock_ledger().is_empty());
+    assert!(mixed.cocycle_ledger().is_empty());
+    assert!(mixed.current_chart().is_none());
+    assert!(mixed.current_clock_origin().is_none());
+    assert!(mixed.target_preimage().is_none());
+    assert!(mixed.final_tube_replay().is_none());
+    assert!(mixed.final_enclosure().is_none());
+    assert!(mixed.maximum_component_width().is_none());
+    assert!(mixed.covered_physical_interval().is_none());
+    assert!(mixed.retained_region().is_none());
+    assert!(!mixed.mathematical_to_target());
+
+    let bytes = outcome.to_portable_json_bytes().unwrap();
+    assert!(!bytes
+        .windows("UnexpectedChartType".len())
+        .any(|window| window == b"UnexpectedChartType"));
+    assert!(!bytes
+        .windows("ordinary_taylor_bad".len())
+        .any(|window| window == b"ordinary_taylor_bad"));
+    let json: Value = serde_json::from_slice(&bytes).unwrap();
+    assert_eq!(json["status"], "UNRESOLVED");
+    assert_eq!(
+        json["first_failed_obligation"],
+        "raw_planar_chain_root_exact_point_left_anchor"
+    );
+    assert_eq!(json["certified_segment_count"], 0);
+    assert!(json["failed_segment_index"].is_null());
+    assert!(json["failed_segment_missing_obligations"]
+        .as_array()
+        .unwrap()
+        .is_empty());
+    assert!(json["clock_ledger"].as_array().unwrap().is_empty());
+    assert!(json["current_chart"].is_null());
+    assert!(json["current_clock_origin"].is_null());
+    assert!(json["covered_physical_time_interval"].is_null());
+    assert!(json["target_parameter_preimage_interval"].is_null());
+    assert!(json["maximum_final_component_width"].is_null());
+    assert!(json["final_enclosure"].is_null());
+    assert!(json["retained_region"].is_null());
+}
+
+#[test]
 fn admitted_target_semantic_diagnostic_is_serializable_unresolved() {
     let raw = one_bridge_success_raw().replacen(
         "\"chart_id\":\"review-v03:n:chart:1\",\"chart_type\":\"ordinary_taylor\"",

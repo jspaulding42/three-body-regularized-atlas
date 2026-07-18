@@ -45,7 +45,7 @@ fn cli_result_matches_the_library_envelope_and_exits_zero() {
 }
 
 #[test]
-fn cli_evaluation_error_writes_stage_json_and_exits_two() {
+fn cli_initial_semantic_failure_writes_unresolved_json_and_exits_zero() {
     let bytes = zero_segment_success_raw().replacen(
         "\"chart_id\":\"review-v03:n:chart:0\",\"chart_type\":\"ordinary_taylor\"",
         "\"chart_id\":\"review-v03:n:chart:0\",\"chart_type\":\"ordinary_taylor_bad\"",
@@ -57,10 +57,17 @@ fn cli_evaluation_error_writes_stage_json_and_exits_two() {
     let input = TempInput::from_bytes(bytes.as_bytes());
     let output = run_cli(&[input.path().as_os_str()]);
 
-    assert_eq!(output.status.code(), Some(2));
+    assert_eq!(output.status.code(), Some(0));
     assert!(output.stderr.is_empty());
     assert_eq!(output.stdout, expected);
     assert!(!output.stdout.ends_with(b"\n"));
+    let json: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!(json["evaluation_outcome"], "RESULT");
+    assert_eq!(json["semantic_result"]["status"], "UNRESOLVED");
+    assert_eq!(
+        json["semantic_result"]["first_failed_obligation"],
+        "raw_planar_chain_root_exact_point_left_anchor"
+    );
 }
 
 #[test]

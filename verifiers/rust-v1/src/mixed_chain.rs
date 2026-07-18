@@ -282,6 +282,9 @@ pub enum MixedChainRetainedRegion {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum MixedChainReplayFailure {
+    InitialChartSemantic {
+        source: OrdinarySemanticError,
+    },
     SegmentLimitExceeded {
         actual: usize,
         limit: usize,
@@ -441,8 +444,15 @@ pub fn replay_raw_mixed_planar_chain_exact_rational_v04(
     admission: &CanonicalRawV1Admission,
 ) -> Result<RawMixedPlanarChainReplay, RawMixedPlanarChainReplayError> {
     let chain = admission.wire();
-    let initial_chart = ordinary_chart_input_from_wire(&chain.initial_chart)
-        .map_err(RawMixedPlanarChainReplayError::InitialChartSemantic)?;
+    let initial_chart = match ordinary_chart_input_from_wire(&chain.initial_chart) {
+        Ok(value) => value,
+        Err(source) if source.is_certificate_defect() => {
+            return Ok(initial_chart_semantic_failure_replay(source));
+        }
+        Err(source) => {
+            return Err(RawMixedPlanarChainReplayError::InitialChartSemantic(source));
+        }
+    };
     let initial_tube = ordinary_tube_input_from_wire(&chain.initial_tube);
     let root_exact = strict_root_exact_gate(chain, &initial_chart, &initial_tube);
 
@@ -891,6 +901,35 @@ pub fn replay_raw_mixed_planar_chain_exact_rational_v04(
         retained_region,
         mathematical_to_target,
     })
+}
+
+fn initial_chart_semantic_failure_replay(
+    source: OrdinarySemanticError,
+) -> RawMixedPlanarChainReplay {
+    RawMixedPlanarChainReplay {
+        obligations: std::array::from_fn(|index| RawMixedPlanarChainObligation {
+            id: RAW_MIXED_PLANAR_CHAIN_OBLIGATION_IDS[index],
+            satisfied: false,
+        }),
+        initial_chart_replay: None,
+        root_replay: None,
+        segment_replays: Vec::new(),
+        clock_ledger: Vec::new(),
+        cocycle_ledger: Vec::new(),
+        certified_segment_count: 0,
+        failed_segment_index: None,
+        failed_local_obligation_ids: Vec::new(),
+        replay_failure: Some(MixedChainReplayFailure::InitialChartSemantic { source }),
+        current_chart: None,
+        current_clock_origin: None,
+        target_preimage: None,
+        final_tube_replay: None,
+        final_enclosure: None,
+        maximum_component_width: None,
+        covered_physical_interval: None,
+        retained_region: None,
+        mathematical_to_target: false,
+    }
 }
 
 fn reconstruct_failed_lc_frontier(

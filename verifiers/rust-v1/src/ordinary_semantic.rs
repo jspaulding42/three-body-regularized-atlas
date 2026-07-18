@@ -99,6 +99,26 @@ pub enum OrdinarySemanticError {
     },
 }
 
+impl OrdinarySemanticError {
+    /// Whether this failure is an explicit defect in the supplied certificate
+    /// record rather than resource exhaustion or an exact-kernel failure.
+    pub(crate) const fn is_certificate_defect(&self) -> bool {
+        match self {
+            Self::EmptyString { .. }
+            | Self::UnexpectedChartType { .. }
+            | Self::MassCountMismatch { .. }
+            | Self::NonPositiveMass { .. }
+            | Self::NonPositiveSampleCount { .. }
+            | Self::CoefficientCountTooSmall { .. }
+            | Self::CoefficientCountMismatch { .. }
+            | Self::CoefficientBodyCountMismatch { .. }
+            | Self::CoefficientAxisCountMismatch { .. }
+            | Self::IntervalNotStrictlyIncreasing { .. } => true,
+            Self::Polynomial { .. } | Self::Numeric(_) | Self::ResourceExhausted { .. } => false,
+        }
+    }
+}
+
 impl fmt::Display for OrdinarySemanticError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -667,6 +687,69 @@ mod tests {
         wire.max_lipschitz_bound = real("2.0");
         wire.source = "tube-source".into();
         wire
+    }
+
+    #[test]
+    fn certificate_defect_classification_is_explicit_and_exhaustive() {
+        let certificate_defects = [
+            OrdinarySemanticError::EmptyString {
+                field: "certificate_id",
+            },
+            OrdinarySemanticError::UnexpectedChartType {
+                actual: "other".into(),
+            },
+            OrdinarySemanticError::MassCountMismatch {
+                expected: BODY_COUNT,
+                actual: 2,
+            },
+            OrdinarySemanticError::NonPositiveMass { index: 0 },
+            OrdinarySemanticError::NonPositiveSampleCount {
+                value: BigInt::zero(),
+            },
+            OrdinarySemanticError::CoefficientCountTooSmall {
+                minimum: MINIMUM_COEFFICIENT_COUNT,
+                actual: 1,
+            },
+            OrdinarySemanticError::CoefficientCountMismatch {
+                position: 2,
+                velocity: 3,
+            },
+            OrdinarySemanticError::CoefficientBodyCountMismatch {
+                coefficients: OrdinaryCoefficientKind::Position,
+                degree_index: 0,
+                expected: BODY_COUNT,
+                actual: 2,
+            },
+            OrdinarySemanticError::CoefficientAxisCountMismatch {
+                coefficients: OrdinaryCoefficientKind::Velocity,
+                degree_index: 0,
+                body_index: 0,
+                expected: PLANE_DIMENSION,
+                actual: 1,
+            },
+            OrdinarySemanticError::IntervalNotStrictlyIncreasing {
+                interval: OrdinaryIntervalKind::Parameter,
+            },
+        ];
+        assert!(certificate_defects
+            .iter()
+            .all(OrdinarySemanticError::is_certificate_defect));
+
+        let evaluation_failures = [
+            OrdinarySemanticError::ResourceExhausted {
+                resource: OrdinarySemanticResource::CoefficientCount,
+                required: 2,
+                limit: 1,
+            },
+            OrdinarySemanticError::Polynomial {
+                coefficients: OrdinaryCoefficientKind::Position,
+                source: PolynomialError::EmptyCoefficientTable,
+            },
+            OrdinarySemanticError::Numeric(NumericError::InvalidIntervalBounds),
+        ];
+        assert!(evaluation_failures
+            .iter()
+            .all(|error| !error.is_certificate_defect()));
     }
 
     #[test]

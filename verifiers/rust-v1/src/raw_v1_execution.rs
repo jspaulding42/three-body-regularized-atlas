@@ -255,6 +255,10 @@ pub fn execute_raw_v1_bytes_exact_rational_v04(bytes: &[u8]) -> RawV1Execution {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{
+        NumericError, OrdinaryCoefficientKind, OrdinarySemanticError, OrdinarySemanticResource,
+        PolynomialError, RawMixedPlanarChainReplayError,
+    };
 
     #[test]
     fn empty_bytes_are_total_canonical_wire_rejection() {
@@ -271,5 +275,46 @@ mod tests {
         assert_eq!(execution.evaluation_error_stage(), None);
         assert!(execution.semantic_result().is_none());
         assert!(execution.source_error().is_some());
+    }
+
+    #[test]
+    fn non_certificate_initial_semantic_failures_remain_evaluation_errors() {
+        let sources = [
+            OrdinarySemanticError::ResourceExhausted {
+                resource: OrdinarySemanticResource::CoefficientCount,
+                required: 2,
+                limit: 1,
+            },
+            OrdinarySemanticError::Polynomial {
+                coefficients: OrdinaryCoefficientKind::Position,
+                source: PolynomialError::EmptyCoefficientTable,
+            },
+            OrdinarySemanticError::Numeric(NumericError::InvalidIntervalBounds),
+        ];
+
+        for source in sources {
+            assert!(!source.is_certificate_defect());
+            let execution = RawV1Execution {
+                inner: RawV1ExecutionInner::EvaluationError(RawV1OutcomeError::MixedReplay(
+                    RawMixedPlanarChainReplayError::InitialChartSemantic(source),
+                )),
+            };
+            assert_eq!(execution.parse_outcome(), RawV1ParseOutcome::Accept);
+            assert_eq!(execution.rejection_stage(), None);
+            assert_eq!(
+                execution.evaluation_outcome(),
+                RawV1EvaluationOutcome::Error
+            );
+            assert_eq!(
+                execution.evaluation_error_stage(),
+                Some(RawV1EvaluationErrorStage::MixedReplay)
+            );
+            assert!(execution.semantic_result().is_none());
+            assert!(execution.source_error().is_some());
+            assert_eq!(
+                execution.to_portable_json_bytes().unwrap(),
+                b"{\"schema\":\"raw-v1-rust-execution-v1\",\"profile\":\"exact_rational_raw_v1_execution_v04\",\"parse_outcome\":\"ACCEPT\",\"rejection_stage\":null,\"evaluation_outcome\":\"ERROR\",\"evaluation_error_stage\":\"MIXED_REPLAY\",\"semantic_result\":null}"
+            );
+        }
     }
 }

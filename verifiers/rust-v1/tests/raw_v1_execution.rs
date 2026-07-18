@@ -1,7 +1,9 @@
 use std::{collections::BTreeSet, fs, path::Path};
 
+use serde_json::Value;
+
 use three_body_planar_chain_verifier::{
-    execute_raw_v1_bytes_exact_rational_v04, RawV1EvaluationErrorStage, RawV1EvaluationOutcome,
+    execute_raw_v1_bytes_exact_rational_v04, RawV1EvaluationOutcome, RawV1OutcomeStatus,
     RawV1ParseOutcome, RawV1RejectionStage, EXACT_RATIONAL_RAW_V1_EXECUTION_V04_PROFILE_ID,
     RAW_V1_RUST_EXECUTION_V1_SCHEMA_ID,
 };
@@ -202,7 +204,7 @@ fn zero_segment_result_embeds_the_existing_projection_byte_for_byte() {
 }
 
 #[test]
-fn admitted_initial_semantic_failure_is_evaluation_error_without_theorem_json() {
+fn admitted_initial_semantic_failure_is_unresolved_semantic_result() {
     let bytes = zero_segment_success_raw().replacen(
         "\"chart_id\":\"review-v03:n:chart:0\",\"chart_type\":\"ordinary_taylor\"",
         "\"chart_id\":\"review-v03:n:chart:0\",\"chart_type\":\"ordinary_taylor_bad\"",
@@ -213,19 +215,54 @@ fn admitted_initial_semantic_failure_is_evaluation_error_without_theorem_json() 
     assert_eq!(execution.rejection_stage(), None);
     assert_eq!(
         execution.evaluation_outcome(),
-        RawV1EvaluationOutcome::Error
+        RawV1EvaluationOutcome::Result
+    );
+    assert_eq!(execution.evaluation_error_stage(), None);
+    assert!(execution.source_error().is_none());
+    let semantic = execution.semantic_result().unwrap();
+    assert_eq!(semantic.status(), RawV1OutcomeStatus::Unresolved);
+    assert_eq!(semantic.certified_segment_count(), 0);
+    assert_eq!(semantic.failed_segment_index(), None);
+    assert_eq!(
+        semantic.first_failed_obligation(),
+        Some("raw_planar_chain_root_exact_point_left_anchor")
     );
     assert_eq!(
-        execution.evaluation_error_stage(),
-        Some(RawV1EvaluationErrorStage::MixedReplay)
+        semantic
+            .obligations()
+            .iter()
+            .map(|row| row.satisfied())
+            .collect::<Vec<_>>(),
+        [true, true, true, true, true, false, false, false, false, false, false, false, false]
     );
-    assert!(execution.semantic_result().is_none());
-    let source = execution.source_error().unwrap();
-    assert!(source.source().is_some());
+
+    let first = execution.to_portable_json_bytes().unwrap();
+    let second = execution.to_portable_json_bytes().unwrap();
+    assert_eq!(first, second);
+    assert!(!first.ends_with(b"\n"));
+    assert!(!first
+        .windows("UnexpectedChartType".len())
+        .any(|window| window == b"UnexpectedChartType"));
+    assert!(!first
+        .windows("ordinary_taylor_bad".len())
+        .any(|window| window == b"ordinary_taylor_bad"));
+    let json: Value = serde_json::from_slice(&first).unwrap();
+    assert_eq!(json["evaluation_outcome"], "RESULT");
+    assert!(json["evaluation_error_stage"].is_null());
+    assert_eq!(json["semantic_result"]["status"], "UNRESOLVED");
     assert_eq!(
-        execution.to_portable_json_bytes().unwrap(),
-        b"{\"schema\":\"raw-v1-rust-execution-v1\",\"profile\":\"exact_rational_raw_v1_execution_v04\",\"parse_outcome\":\"ACCEPT\",\"rejection_stage\":null,\"evaluation_outcome\":\"ERROR\",\"evaluation_error_stage\":\"MIXED_REPLAY\",\"semantic_result\":null}"
+        json["semantic_result"]["first_failed_obligation"],
+        "raw_planar_chain_root_exact_point_left_anchor"
     );
+    assert!(json["semantic_result"]["failed_segment_index"].is_null());
+    assert!(json["semantic_result"]["clock_ledger"]
+        .as_array()
+        .unwrap()
+        .is_empty());
+    assert!(json["semantic_result"]["current_chart"].is_null());
+    assert!(json["semantic_result"]["current_clock_origin"].is_null());
+    assert!(json["semantic_result"]["final_enclosure"].is_null());
+    assert!(json["semantic_result"]["retained_region"].is_null());
 }
 
 fn zero_segment_success_raw() -> String {

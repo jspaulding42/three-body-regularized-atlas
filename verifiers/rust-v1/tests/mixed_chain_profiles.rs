@@ -370,6 +370,50 @@ fn ordinary_only_width_time_domain_and_cap_boundaries_are_fail_closed() {
 }
 
 #[test]
+fn initial_chart_semantic_defect_returns_empty_false_replay() {
+    let raw = one_bridge_raw("9.094947017729282e-13", "0.1");
+    let malformed = raw.replacen(
+        "\"chart_id\":\"review-v03:n:chart:0\",\"chart_type\":\"ordinary_taylor\"",
+        "\"chart_id\":\"review-v03:n:chart:0\",\"chart_type\":\"malformed_ordinary\"",
+        1,
+    );
+    assert_ne!(malformed, raw);
+    let admission = CanonicalRawV1Admission::admit(malformed.as_bytes()).unwrap();
+    let replay = replay_raw_mixed_planar_chain_exact_rational_v04(&admission).unwrap();
+
+    assert_eq!(
+        replay
+            .obligations()
+            .iter()
+            .map(|row| row.satisfied())
+            .collect::<Vec<_>>(),
+        [false, false, false, false, false, false, false, false]
+    );
+    assert!(matches!(
+        replay.replay_failure(),
+        Some(MixedChainReplayFailure::InitialChartSemantic { .. })
+    ));
+    assert_eq!(replay.certified_segment_count(), 0);
+    assert_eq!(replay.failed_segment_index(), None);
+    assert!(replay.failed_local_obligation_ids().is_empty());
+    assert!(replay.initial_chart_replay().is_none());
+    assert!(replay.root_replay().is_none());
+    assert!(replay.segment_replays().is_empty());
+    assert!(replay.clock_ledger().is_empty());
+    assert!(replay.cocycle_ledger().is_empty());
+    assert!(replay.current_chart().is_none());
+    assert!(replay.current_clock_origin().is_none());
+    assert!(replay.target_preimage().is_none());
+    assert!(replay.final_tube_replay().is_none());
+    assert!(replay.final_enclosure().is_none());
+    assert!(replay.maximum_component_width().is_none());
+    assert!(replay.covered_physical_interval().is_none());
+    assert!(replay.retained_region().is_none());
+    assert!(!replay.mathematical_to_target());
+    assert!(!replay.profile_satisfied());
+}
+
+#[test]
 fn first_ordinary_false_and_malformed_targets_roll_back_without_panicking() {
     let raw = std::str::from_utf8(SUCCESS_RAW).unwrap();
     let one = one_bridge_raw("9.094947017729282e-13", "0.1");
