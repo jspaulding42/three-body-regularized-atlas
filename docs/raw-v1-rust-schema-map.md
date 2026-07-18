@@ -334,11 +334,29 @@ available; the exact root clock origin is retained only when both exact unit
 speed and the exact physical-time anchor hold. Both canonical roots pass both
 named profiles.
 
-Neither profile is raw-chain root admission. Composition at the raw root must
-add the nonempty binding `source` rule, exact-zero time, position, and velocity
-tolerances, and exact equality of the binding parameter, chart left endpoint,
-and tube anchor. These component replays also provide no ordinary handoff,
-fixed-time, LC, chain-fold, or end-to-end independent-verifier result.
+The admitted planar ordinary records also feed the local
+`exact_rational_carried_ordinary_bridge_v04` profile. It replays the nine
+historical bridge IDs, freshly replays both source and target tubes under the
+exact-rational tube profile, and evaluates the source endpoint in body-major
+`q` followed by body-major `v` order. It inflates that exact center by the
+source replay's rational Gronwall
+upper bound, requires inclusive containment in the target initial ball, and
+derives the exact interval clock update `B'=B+e-a`. The returned analytic
+kernel ID is pinned to `ordinary_autonomous_uniqueness_bridge_kernel_v1`.
+Both canonical first bridges pass and carry `[0,0]` to `[2^-40,2^-40]`.
+Neither chart's claimed-tail ledger is consumed. Physical-time metadata is used
+only for semantic/schema admission and never updates or overrides the bridge
+clock.
+
+The binding and root profiles are not raw-chain root admission. Composition at
+the raw root must add the nonempty binding `source` rule, exact-zero time,
+position, and velocity tolerances, and exact equality of the binding parameter,
+chart left endpoint,
+and tube anchor. The bridge profile is likewise a local component and does not
+fold or commit a raw-chain segment. Its exact-rational arithmetic is not
+frozen-v0.3 binary64 status parity and does not close OPEN-V1-08. These
+component replays provide no fixed-time, LC, full-chain, or end-to-end
+independent-verifier result.
 
 The ordinary-chart row deliberately describes the raw planar-chain composition
 surface.  It is narrower than the frozen 13-obligation direct-object primitive:

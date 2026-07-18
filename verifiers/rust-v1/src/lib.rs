@@ -5,7 +5,8 @@
 //! complete continuation-chain replay. The public surface covers strict wire
 //! decoding, bounded exact arithmetic, non-certifying ordinary semantic
 //! inputs, conditional ordinary chart and tube replay, exact planar
-//! initial-value binding, and proof-oriented validated-root replay under named
+//! initial-value binding, proof-oriented validated-root replay, and local
+//! parent-carried ordinary-bridge composition under separately named
 //! exact-rational profiles.
 
 #![forbid(unsafe_code)]
@@ -17,6 +18,7 @@ mod exp;
 mod interval;
 mod json_number;
 mod ordinary_binding;
+mod ordinary_bridge;
 mod ordinary_chart;
 mod ordinary_defect;
 mod ordinary_field;
@@ -52,6 +54,12 @@ pub use ordinary_binding::{
     EXACT_RATIONAL_INITIAL_VALUE_BINDING_V04_PROFILE_ID,
     EXACT_RATIONAL_VALIDATED_ORDINARY_ROOT_V04_PROFILE_ID, INITIAL_VALUE_BINDING_OBLIGATION_IDS,
     VALIDATED_ORDINARY_ROOT_OBLIGATION_IDS,
+};
+pub use ordinary_bridge::{
+    replay_carried_ordinary_bridge_exact_rational_v04, OrdinaryBridgeObligation,
+    OrdinaryBridgeReplay, OrdinaryBridgeReplayError,
+    EXACT_RATIONAL_CARRIED_ORDINARY_BRIDGE_V04_PROFILE_ID,
+    ORDINARY_AUTONOMOUS_UNIQUENESS_BRIDGE_KERNEL_V1_ID, ORDINARY_BRIDGE_OBLIGATION_IDS,
 };
 pub use ordinary_chart::{
     replay_ordinary_chart_exact_rational_claimed_tail_v04,

@@ -72,9 +72,20 @@ foundation. The current checkpoint contains:
   error whenever the binding position and velocity gaps are available, and it
   retains the exact root clock origin only when both the unit-speed and
   physical-time-anchor obligations hold. Both canonical roots satisfy all
-  eight obligations.
+  eight obligations; and
+- local replay of the nine historical ordinary-bridge obligation IDs under
+  `exact_rational_carried_ordinary_bridge_v04`. It freshly replays both source
+  and target tubes under the exact ordinary-tube profile, evaluates the source
+  endpoint in `q`-then-`v` order, inflates it by the source replay's rational
+  Gronwall upper bound, checks inclusive containment in the target initial ball,
+  and derives the exact clock update `B'=B+e-a`. The replay pins
+  `ordinary_autonomous_uniqueness_bridge_kernel_v1`, while deliberately
+  ignoring both charts' claimed-tail ledgers. Physical-time metadata is used
+  only for semantic/schema admission and never updates or overrides the bridge
+  clock. Both canonical first bridges pass and advance `[0,0]` to
+  `[2^-40,2^-40]`.
 
-At this checkpoint, 150 Rust unit tests and four integration tests pass;
+At this checkpoint, 158 Rust unit tests and five integration tests pass;
 `cargo fmt --check` and `cargo clippy --all-targets -- -D warnings` are clean.
 
 The checked-in [raw-v1 seed corpus](../../conformance/raw-v1/README.md) supplies
@@ -103,11 +114,13 @@ direct-object API on three-dimensional inputs, and they are not raw-chain root
 admission. A raw-chain root must additionally require a nonempty binding
 `source`, exact-zero time/position/velocity tolerances, and equality of the
 binding parameter, chart left endpoint, and tube anchor. Raw-chain root
-admission, handoff/ordinary-bridge/fixed-time semantics, every LC field, full
-chain replay, clock/gauge induction beyond the local root, and the semantic
-result serializer remain unimplemented. `OPEN-V1-08` remains open for
-historical binary64 arithmetic status parity. The crate does not call Python
-and makes no complete-certificate, end-to-end independent-verifier, or
-independent-chain-replay claim. `OPEN-V1-01` also remains open: the current
+admission remains unimplemented. The exact ordinary-bridge profile is a local
+component under a separate arithmetic profile: it neither reproduces v0.3
+binary64 status parity nor folds or commits a raw chain. Fixed-time semantics,
+every LC field, full chain replay, and clock/gauge induction beyond the local
+components remain unimplemented. `OPEN-V1-08` remains open for historical
+binary64 arithmetic status parity. The crate does not call Python and makes no
+complete-certificate, end-to-end independent-verifier, or independent-chain-
+replay claim. `OPEN-V1-01` also remains open: the current
 canonical float renderer is tested against the frozen fixtures but is not yet
 a language-neutral normative algorithm, and its Rust toolchain is not pinned.

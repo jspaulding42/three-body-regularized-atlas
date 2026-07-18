@@ -171,12 +171,28 @@ it retains the exact root clock origin only when both exact unit speed and the
 exact physical-time anchor hold. Both canonical roots satisfy all eight
 obligations.
 
-These are component profiles, not raw-chain root admission. Raw-chain replay
+The next local component is
+`exact_rational_carried_ordinary_bridge_v04`. It replays the nine historical
+ordinary-bridge IDs, including fresh exact-rational replay of both conditional
+tubes. At the exact source right endpoint it evaluates all positions followed
+by all velocities, inflates that 12-vector by the source tube replay's rational
+Gronwall upper bound, and requires inclusive containment in the target initial
+ball at the exact target left anchor. It derives the clock interval by the
+exact cocycle `B'=B+e-a` and exposes the pinned analytic-kernel ID
+`ordinary_autonomous_uniqueness_bridge_kernel_v1`. The first bridge in each
+canonical chain passes all nine obligations and advances `[0,0]` to
+`[2^-40,2^-40]`. Neither chart's claimed-tail ledger is consumed. Physical-time
+metadata is used only for semantic/schema admission and never updates or
+overrides the bridge clock.
+
+These are component profiles, not raw-chain admission. Raw-chain replay
 must additionally require a nonempty binding `source`, exact-zero time,
 position, and velocity tolerances, and equality of the binding parameter,
-chart left endpoint, and tube anchor. The profiles do not implement ordinary
-handoff, fixed-time evaluation, any LC record, chain folding, or end-to-end
-independent certificate replay.
+chart left endpoint, and tube anchor. The bridge profile does not fold or
+commit a raw-chain segment. It is a separate exact-rational arithmetic profile,
+not frozen-v0.3 binary64 status parity, so `OPEN-V1-08` remains open. The
+profiles do not implement fixed-time evaluation, any LC record, full chain
+folding, or end-to-end independent certificate replay.
 
 ## Implementation status at the current checkpoint
 
@@ -206,11 +222,12 @@ boundary is documented in the
 [`Rust schema map`](raw-v1-rust-schema-map.md).
 
 The semantic adapter, conditional ordinary-tube replay, exact planar binding,
-and proof-oriented local-root composition described above now couple decoded
-ordinary records to the exact polynomial, square-root, exponential, defect,
-collision, analytic Lipschitz, cap, strict Gronwall, binding-gap, and local
-clock-anchor kernels. The current validation checkpoint is 150 passing Rust
-unit tests and four passing integration tests, with `cargo fmt --check` and
+proof-oriented local-root composition, and local carried ordinary bridge
+described above now couple decoded ordinary records to the exact polynomial,
+square-root, exponential, defect, collision, analytic Lipschitz, cap, strict
+Gronwall, binding-gap, endpoint-containment, and local clock-cocycle kernels.
+The current validation checkpoint is 158 passing Rust unit tests and five
+passing integration tests, with `cargo fmt --check` and
 warning-denying Clippy clean.
 
 The implementation-neutral
@@ -224,17 +241,17 @@ root/fold/LC-entry/LC-tube/LC-exit/fixed-time result boundaries required for
 release.
 
 Delivery slices 1 and 2 remain partial. Slice 3 now includes the conditional
-ordinary tube, exact admitted-planar binding, and proof-oriented local-root
-components described above, but no raw-chain root or segment fold.
+ordinary tube, exact admitted-planar binding, proof-oriented local root, and
+one local carried ordinary-bridge component described above, but no raw-chain
+root admission, segment commit, or chain fold.
 `OPEN-V1-01` remains open because the tested Rust
 float rendering path is not yet a portable normative shortest-decimal
 algorithm and the Rust toolchain is not pinned. `OPEN-V1-08` remains open
 because the new exact-rational tube profile does not claim status parity with
 the historical binary64 outward profile. Raw SHA-256, frozen-v0.3 primitive
 ordinary-chart parity or a proof-grade verified-tail replay, raw-chain root
-admission,
-handoff/ordinary-bridge/fixed-time semantics, every LC field, full chain
-replay, clock/gauge induction beyond the local root, and the semantic result
+admission, fixed-time semantics, every LC field, full chain replay,
+clock/gauge induction beyond the local components, and the semantic result
 serializer remain unimplemented. The local profiles provide neither direct
 three-dimensional API parity nor chain-level independence. No complete
 certificate has been replayed by this crate. The corpus remains

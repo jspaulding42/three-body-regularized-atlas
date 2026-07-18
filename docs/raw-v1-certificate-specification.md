@@ -935,6 +935,29 @@ The new clock is
 B'=B+e-a.
 \]
 
+The current Rust checkpoint exposes these nine historical obligation IDs under
+the separately named `exact_rational_carried_ordinary_bridge_v04` profile. It
+freshly replays both source and target tubes under
+`exact_rational_ordinary_tube_v04`. It evaluates the exact source endpoint in
+the normative 12-state order—six body-major position components followed by
+six body-major velocity components—and inflates every component by the source
+tube replay's exact rational Gronwall upper bound. Containment in the target
+anchor's `L_infinity` initial ball is inclusive: equality with
+`target_tube.initial_error_bound` passes. The clock interval is derived only
+from the parent interval and the exact endpoint parameters through
+`B'=B+e-a`. The replay identifies its analytic premise as
+`ordinary_autonomous_uniqueness_bridge_kernel_v1`.
+
+The first ordinary bridge in each canonical raw-v1 chain satisfies all nine
+profile obligations and advances the parent clock `[0,0]` to
+`[2^-40,2^-40]`. This local profile does not consume either ordinary chart's
+claimed-tail ledger. Physical-time metadata is used only for semantic/schema
+admission and never updates or overrides the bridge clock. It is a separate
+exact-rational arithmetic profile, not frozen-v0.3 binary64 status parity, so
+it does not close OPEN-V1-08. It does not admit, fold, or commit a raw-chain
+segment and supplies no fixed-time, LC, full-chain, or independent-replay
+result.
+
 ### 5.3 LC-entry obligations
 
 In exact order:

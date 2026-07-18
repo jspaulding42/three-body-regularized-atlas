@@ -157,9 +157,21 @@ six-obligation wrapper with exact unit speed and an exact physical-time anchor,
 composes the exact binding and tube replays, and ignores the claimed-tail chart
 ledger. It computes the actual initial error whenever the binding gaps are
 available and retains the root clock only when both exact clock obligations
-hold. Both canonical roots pass both profiles. The crate currently passes
-150 Rust unit tests and four integration tests; `cargo fmt --check` and
-warning-denying Clippy are clean. The implementation-neutral
+hold. Both canonical roots pass both profiles.
+`exact_rational_carried_ordinary_bridge_v04` now replays the nine historical
+ordinary-bridge obligation IDs as a local exact-rational component. It freshly
+replays both source and target tubes, reconstructs the complete source endpoint
+box in `q`-then-`v` order using the source tube's rational Gronwall upper bound,
+checks inclusive containment in the target initial ball, derives the exact clock
+cocycle `B'=B+e-a`, and pins
+`ordinary_autonomous_uniqueness_bridge_kernel_v1`. The first bridge in each
+canonical chain passes and advances `[0,0]` to `[2^-40,2^-40]`. The profile
+does not consume either chart's claimed-tail ledger. Physical-time metadata is
+used only for semantic/schema admission and never updates or overrides the
+bridge clock.
+
+The crate currently passes 158 Rust unit tests and five integration tests;
+`cargo fmt --check` and warning-denying Clippy are clean. The implementation-neutral
 [`raw-v1 seed corpus`](conformance/raw-v1/README.md) currently contains two
 accepted baseline payloads and sixteen isolated rejection mutations. The
 public Python admission API and the independent Rust integration suite both
@@ -183,10 +195,12 @@ local-root profiles establish that component only for admitted planar inputs;
 they are neither direct three-dimensional API parity nor raw-chain root
 admission. Raw-chain replay must additionally require a nonempty binding
 `source`, exact-zero binding tolerances, and equality of the binding parameter,
-chart left endpoint, and tube anchor. Raw-chain root admission,
-handoff/ordinary-bridge/fixed-time semantics, every LC field, full chain
-replay, clock/gauge induction beyond the local root, and the semantic result
-serializer remain unimplemented. Frozen-v0.3 primitive parity and
+chart left endpoint, and tube anchor. The exact bridge profile is a separate
+arithmetic profile, not frozen-v0.3 binary64 status parity, and it performs no
+raw-chain fold or commit. Raw-chain root admission, fixed-time semantics,
+every LC field, full chain replay, clock/gauge induction beyond the local
+components, and the semantic result serializer remain unimplemented.
+Frozen-v0.3 primitive parity and
 `OPEN-V1-06` remain open, as does historical tube arithmetic parity under
 `OPEN-V1-08`; cross-language numeric rendering and the Rust toolchain pin
 remain open under `OPEN-V1-01`.
