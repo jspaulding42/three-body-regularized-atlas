@@ -313,6 +313,23 @@ decoding.
 | LC tube | exact nine fields, including an exact Boolean | nonempty IDs/source; ordinary-tube anchor/sign rules; LC defect/separation/Jacobian/Gronwall checks; pair-energy constraint when flag is true |
 | LC-exit transition | exact six fields and scalar classes | all four strings nonempty; referenced identities and exact endpoint parameters; `source` is not pinned to a constant in raw-v1 |
 
+The Rust crate now wraps canonical-byte validation and the
+`V03Compatible` decode in an opaque, fixed-limit `CanonicalRawV1Admission`.
+It owns both representations, exposes immutable borrows, and preserves
+canonical-wire versus schema errors. It does not compute SHA-256, establish
+namespace uniqueness, or satisfy outer obligations 1--5.
+
+After that boundary, non-certifying planar-LC semantic adapters convert finite
+reals to their exact binary64 dyadics, build bounded rational polynomials for
+the six vector and two scalar coefficient families, and check
+composition-level shapes, positive masses, ascending pair, strict intervals,
+tube signs/anchor, and entry identity/mass/endpoint bindings. Public LC-entry
+input requires the opaque admission plus a segment index. Unlike a primitive
+LC ledger, the adapter preserves the signs of all five finite untrusted chart
+tolerance/bound fields. It certifies none of those claims and supplies no
+mass-coefficient witness, gauge/lift, field, tube, entry, exit, or chain-commit
+result.
+
 The current Rust checkpoint exposes two named component profiles after planar
 ordinary semantic admission. `exact_rational_initial_value_binding_v04`
 replays the eight direct Python binding obligations using exact binary64
@@ -484,7 +501,7 @@ must preserve the diagnostic-only behavior separately.
    256 raw segments, malformed later ordinary charts are structured failures,
    and the first LC segment is an unsupported stop. This profile does not
    establish outer obligations 1--5, namespace/canonicalization/SHA results,
-   any LC semantics, full-chain replay, parity, agreement, independence, or a
+   any LC replay semantics, full-chain replay, parity, agreement, independence, or a
    release gate.
 
 No outer or nested field is missing from Sections 2.1-2.10, and the two tag

@@ -127,6 +127,14 @@ evaluation.
 
 ### Ordinary semantic inputs, conditional tube, and local root replay
 
+Before semantic conversion, `CanonicalRawV1Admission` provides a fixed-limit
+opaque boundary that owns both the exact canonical input bytes and their
+strict `V03Compatible` typed decode. Its public constructor fixes
+`DEFAULT_WIRE_JSON_LIMITS`; immutable accessors cannot replace either side of
+the binding, and errors preserve the canonical-wire versus typed-schema
+stage. This is not SHA-256, namespace validation, or replay of outer
+obligations 1--5.
+
 The `V03Compatible` wire decoder now feeds a non-certifying semantic adapter
 for finite ordinary chart and tube records. Every real is taken from its
 proved binary64 bits as an exact dyadic, coefficient tensors are checked and
@@ -191,8 +199,28 @@ position, and velocity tolerances, and equality of the binding parameter,
 chart left endpoint, and tube anchor. The bridge profile does not fold or
 commit a raw-chain segment. It is a separate exact-rational arithmetic profile,
 not frozen-v0.3 binary64 status parity, so `OPEN-V1-08` remains open. The
-profiles do not implement fixed-time evaluation, any LC record, full chain
-folding, or end-to-end independent certificate replay.
+profiles do not implement fixed-time evaluation, any LC replay obligation,
+full chain folding, or end-to-end independent certificate replay.
+
+### Planar LC semantic admission
+
+The exact-dyadic polynomial foundation now admits non-certifying planar LC
+chart and tube inputs. It checks six planar vector series and two scalar
+series against one bounded common coefficient count, positive masses,
+ascending canonical pairs, strictly increasing parameter and physical-time
+intervals, positive sample count, and strict tube identity/sign/anchor rules.
+The five finite chart tolerance/bound claims retain their serialized signs;
+this schema-level adapter does not silently add primitive-ledger sign
+hypotheses. Public `PlanarLcEntryInput` construction requires an opaque
+`CanonicalRawV1Admission` and segment index, then checks transition constants,
+carried identifiers, mass equality, and exact ordinary-right/LC-left/anchor
+bindings. Bare chart and tube conversion remains explicitly non-provenance and
+non-certifying.
+
+This layer proves no LC chart, tube, or entry obligation, supplies no outward
+mass witness, and does not evaluate the LC field, construct a gauge or lift,
+replay an exit, or commit a chain segment. It establishes no parity,
+cross-profile agreement, implementation independence, or release gate.
 
 ## Implementation status at the current checkpoint
 
@@ -226,7 +254,7 @@ proof-oriented local-root composition, and local carried ordinary bridge
 described above now couple decoded ordinary records to the exact polynomial,
 square-root, exponential, defect, collision, analytic Lipschitz, cap, strict
 Gronwall, binding-gap, endpoint-containment, and local clock-cocycle kernels.
-The current validation checkpoint is 158 passing Rust unit tests and 15
+The current validation checkpoint is 168 passing Rust unit tests and 15
 passing integration cases across five integration test targets, with
 `cargo fmt --check` and
 warning-denying Clippy clean.

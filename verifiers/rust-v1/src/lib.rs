@@ -3,13 +3,16 @@
 //!
 //! This crate deliberately contains no Python bridge and does not claim
 //! complete continuation-chain replay. The public surface covers strict wire
-//! decoding, bounded exact arithmetic, non-certifying ordinary semantic
-//! inputs, conditional ordinary chart and tube replay, exact planar
+//! decoding, fixed-limit opaque ownership of canonical bytes plus their typed
+//! decode, bounded exact arithmetic, non-certifying ordinary and planar-LC
+//! semantic inputs, conditional ordinary chart and tube replay, exact planar
 //! initial-value binding, proof-oriented validated-root replay, and local
 //! parent-carried ordinary-bridge composition, and a bounded ordinary-only raw
 //! chain checkpoint for top-level obligations 6--13 under separately named
 //! exact-rational profiles. The checkpoint stops fail-closed at LC and is not
-//! outer-obligation, LC, or full-chain replay.
+//! outer-obligation, LC-obligation, or full-chain replay. Public LC-entry
+//! semantic construction requires the opaque admission plus a segment index;
+//! it proves no LC chart, tube, entry, mass, gauge, field, lift, or exit claim.
 
 #![forbid(unsafe_code)]
 
@@ -28,8 +31,10 @@ mod ordinary_field;
 mod ordinary_semantic;
 mod ordinary_tube;
 pub mod outward_mass;
+mod planar_lc_semantic;
 mod polynomial;
 mod rational_input;
+mod raw_admission;
 pub mod raw_schema;
 mod sqrt;
 mod wire_json;
@@ -95,11 +100,18 @@ pub use ordinary_tube::{
     OrdinaryTubeReplay, OrdinaryTubeReplayError, EXACT_RATIONAL_ORDINARY_TUBE_V04_PROFILE_ID,
     ORDINARY_TUBE_OBLIGATION_IDS,
 };
+pub use planar_lc_semantic::{
+    planar_lc_chart_input_from_wire, planar_lc_entry_input_from_admission,
+    planar_lc_tube_input_from_wire, PlanarLcChartInput, PlanarLcEntryInput, PlanarLcIntervalKind,
+    PlanarLcSemanticError, PlanarLcSemanticResource, PlanarLcSeriesKind, PlanarLcTubeInput,
+    HARD_MAX_PLANAR_LC_SEMANTIC_COEFFICIENT_COUNT, HARD_MAX_PLANAR_LC_SEMANTIC_TOTAL_WORK_UNITS,
+};
 pub use polynomial::{
     ExactRationalPolynomial, PolynomialError, HARD_MAX_POLYNOMIAL_DEGREE,
     HARD_MAX_POLYNOMIAL_DIMENSION, HARD_MAX_POLYNOMIAL_WORK_UNITS,
 };
 pub use rational_input::HARD_MAX_RATIONAL_COMPONENT_BITS;
+pub use raw_admission::{CanonicalRawV1Admission, CanonicalRawV1AdmissionError};
 pub use sqrt::{sqrt_enclosure_dyadic, DyadicSqrtEnclosure, HARD_MAX_SQRT_PRECISION_BITS};
 pub use wire_json::{
     parse_wire_json, to_canonical_bytes, validate_canonical_wire_json, WireJsonError,

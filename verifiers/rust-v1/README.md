@@ -10,6 +10,17 @@ foundation. The current checkpoint contains:
   raw-v1 record grammar, with exact field sets, segment tags, and the legacy
   parser-versus-`UNRESOLVED` shape boundary documented in the
   [Rust schema map](../../docs/raw-v1-rust-schema-map.md);
+- fixed-limit opaque raw-v1 admission that owns the exact canonical bytes and
+  their strict `V03Compatible` typed decode, preserves wire-versus-schema
+  failure stages, and exposes immutable borrows. This is not SHA-256, global
+  namespace checking, or outer-obligation replay;
+- non-certifying exact-dyadic semantic inputs for planar LC charts and tubes,
+  including common bounded coefficient shapes for six planar vector series
+  and two scalar series, positive masses, ascending canonical pairs, strict
+  intervals, tube signs/anchors, and finite untrusted chart claims without
+  adding sign hypotheses. Public LC-entry semantic construction additionally
+  requires the opaque admitted chain and a segment index, then checks the
+  carried IDs, constants, masses, and exact source-right/target-left bindings;
 - a non-certifying semantic conversion from decoded ordinary chart/tube wires
   to bounded exact-rational inputs, using every real's proved binary64 dyadic,
   exact body-major coefficient shapes, and strictly increasing parameter and
@@ -97,7 +108,7 @@ foundation. The current checkpoint contains:
   an explicit unsupported stop. Both canonical chains commit one bridge and
   stop at their first LC segment.
 
-At this checkpoint, 158 Rust unit tests and 15 integration cases across five
+At this checkpoint, 168 Rust unit tests and 15 integration cases across five
 integration test targets pass;
 `cargo fmt --check` and `cargo clippy --all-targets -- -D warnings` are clean.
 
@@ -125,15 +136,22 @@ profiles establish the corresponding exact local root obligations only for
 admitted planar semantic inputs. They are not parity with the Python
 direct-object API on three-dimensional inputs. The bounded ordinary-only
 checkpoint enforces the additional raw root conditions and
-ordinary-prefix/fixed-time semantics described above. Every LC field and full
-chain replay remain unimplemented. `OPEN-V1-08` remains open for historical
+ordinary-prefix/fixed-time semantics described above. Every LC replay
+obligation and full chain replay remain unimplemented. `OPEN-V1-08` remains
+open for historical
 binary64 arithmetic status parity. The crate does not call Python and makes no
 complete-certificate, end-to-end independent-verifier, or independent-chain-
 replay claim. `OPEN-V1-01` also remains open: the current
 canonical float renderer is tested against the frozen fixtures but is not yet
 a language-neutral normative algorithm, and its Rust toolchain is not pinned.
 
-The checkpoint starts at obligations 6--13 and makes no claim about outer
+The opaque admission and LC semantic adapters are non-certifying. They prove
+no LC chart, tube, or entry obligation; derive no LC mass witness; and perform
+no gauge, lift, vector-field, exit, or chain-commit replay. They are not
+frozen parity, cross-profile agreement, verifier independence, or release-gate
+evidence.
+
+The ordinary-only checkpoint starts at obligations 6--13 and makes no claim about outer
 obligations 1--5, namespace uniqueness, canonicalization or SHA-256 results,
 LC replay, complete-chain replay, frozen parity, cross-profile agreement,
 independence, or release-gate satisfaction.
