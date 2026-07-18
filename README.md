@@ -195,7 +195,12 @@ and non-certifying exact-dyadic LC chart, tube, and entry semantic inputs; see
 the [`Rust schema map`](docs/raw-v1-rust-schema-map.md). These prove no LC
 replay obligation or SHA-256 result.
 
-The crate currently passes 168 Rust unit tests and 15 integration cases across
+Those inputs now assemble into an explicitly ordered 14-component exact LC
+state polynomial with interval/derivative evaluation and algebraic
+`rho`/square/constraint/deck operations. This is arithmetic only and certifies
+no LC obligation or mass witness.
+
+The crate currently passes 174 Rust unit tests and 15 integration cases across
 five integration test targets;
 `cargo fmt --check` and warning-denying Clippy are clean. The implementation-neutral
 [`raw-v1 seed corpus`](conformance/raw-v1/README.md) currently contains two

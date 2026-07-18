@@ -21,6 +21,14 @@ foundation. The current checkpoint contains:
   adding sign hypotheses. Public LC-entry semantic construction additionally
   requires the opaque admitted chain and a segment index, then checks the
   carried IDs, constants, masses, and exact source-right/target-left bindings;
+- exact arithmetic for the explicitly ordered lifted LC state
+  `(zx,zy,wx,wy,h,Rx,Ry,Ux,Uy,yx,yy,Vx,Vy,t)`: one bounded 14-component
+  rational polynomial assembled degree-by-degree, interval and derivative
+  evaluation, 13-plus-time anchor points, uniform nonnegative inflation,
+  dependency-aware squares for `rho`, the LC square and pair-energy
+  constraint, and the deck involution. Admitted charts retain the three
+  original positive binary64 mass encodings alongside their exact rational
+  masses solely as input identity for future mass replay;
 - a non-certifying semantic conversion from decoded ordinary chart/tube wires
   to bounded exact-rational inputs, using every real's proved binary64 dyadic,
   exact body-major coefficient shapes, and strictly increasing parameter and
@@ -108,7 +116,7 @@ foundation. The current checkpoint contains:
   an explicit unsupported stop. Both canonical chains commit one bridge and
   stop at their first LC segment.
 
-At this checkpoint, 168 Rust unit tests and 15 integration cases across five
+At this checkpoint, 174 Rust unit tests and 15 integration cases across five
 integration test targets pass;
 `cargo fmt --check` and `cargo clippy --all-targets -- -D warnings` are clean.
 
@@ -150,6 +158,10 @@ no LC chart, tube, or entry obligation; derive no LC mass witness; and perform
 no gauge, lift, vector-field, exit, or chain-commit replay. They are not
 frozen parity, cross-profile agreement, verifier independence, or release-gate
 evidence.
+
+The lifted-state layer is likewise arithmetic only. It does not prove the LC
+constraint, field equation, chart/tube/entry validity, mass formulas, gauge,
+projection, exit, or any continuation step.
 
 The ordinary-only checkpoint starts at obligations 6--13 and makes no claim about outer
 obligations 1--5, namespace uniqueness, canonicalization or SHA-256 results,

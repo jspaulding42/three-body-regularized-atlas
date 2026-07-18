@@ -217,10 +217,23 @@ carried identifiers, mass equality, and exact ordinary-right/LC-left/anchor
 bindings. Bare chart and tube conversion remains explicitly non-provenance and
 non-certifying.
 
+The next arithmetic layer concatenates those eight admitted polynomial
+families degree-by-degree in the fixed lifted order
+`(zx,zy,wx,wy,h,Rx,Ry,Ux,Uy,yx,yy,Vx,Vy,t)`. It provides exact interval and
+derivative evaluation, a checked 13-plus-time anchor point, uniform
+nonnegative inflation, dependency-aware interval squares for `rho`, the LC
+square and pair-energy constraint, and the LC deck involution. Original
+positive binary64 mass encodings are retained beside exact rational masses as
+input identity for future mass replay, not as a mass-formula witness.
+
 This layer proves no LC chart, tube, or entry obligation, supplies no outward
 mass witness, and does not evaluate the LC field, construct a gauge or lift,
 replay an exit, or commit a chain segment. It establishes no parity,
 cross-profile agreement, implementation independence, or release gate.
+
+The lifted-state operations are arithmetic only: evaluating a serialized
+constraint expression does not prove constraint satisfaction or any LC
+differential, tube, entry, gauge, projection, exit, or chain theorem.
 
 ## Implementation status at the current checkpoint
 
@@ -254,7 +267,7 @@ proof-oriented local-root composition, and local carried ordinary bridge
 described above now couple decoded ordinary records to the exact polynomial,
 square-root, exponential, defect, collision, analytic Lipschitz, cap, strict
 Gronwall, binding-gap, endpoint-containment, and local clock-cocycle kernels.
-The current validation checkpoint is 168 passing Rust unit tests and 15
+The current validation checkpoint is 174 passing Rust unit tests and 15
 passing integration cases across five integration test targets, with
 `cargo fmt --check` and
 warning-denying Clippy clean.

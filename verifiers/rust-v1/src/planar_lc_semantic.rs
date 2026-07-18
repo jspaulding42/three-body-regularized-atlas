@@ -155,6 +155,7 @@ pub struct PlanarLcChartInput {
     chart_id: String,
     source: String,
     masses: [BigRational; BODY_COUNT],
+    mass_binary64_bits: [u64; BODY_COUNT],
     pair: [usize; 2],
     z: ExactRationalPolynomial,
     z_velocity: ExactRationalPolynomial,
@@ -186,6 +187,11 @@ impl PlanarLcChartInput {
     }
     pub fn masses(&self) -> &[BigRational; BODY_COUNT] {
         &self.masses
+    }
+    /// Original positive finite binary64 encodings. This is retained input
+    /// identity only and is not an outward mass-coefficient witness.
+    pub const fn mass_binary64_bits(&self) -> &[u64; BODY_COUNT] {
+        &self.mass_binary64_bits
     }
     pub const fn pair(&self) -> [usize; 2] {
         self.pair
@@ -340,6 +346,7 @@ pub fn planar_lc_chart_input_from_wire(
         });
     }
     let masses = std::array::from_fn(|index| wire.masses[index].binary64_rational().clone());
+    let mass_binary64_bits = std::array::from_fn(|index| wire.masses[index].bits());
     for (index, mass) in masses.iter().enumerate() {
         if mass.numer().sign() != Sign::Plus {
             return Err(PlanarLcSemanticError::NonPositiveMass { index });
@@ -442,6 +449,7 @@ pub fn planar_lc_chart_input_from_wire(
         chart_id: wire.chart_id.clone(),
         source: wire.source.clone(),
         masses,
+        mass_binary64_bits,
         pair,
         z: vector_polynomial(&wire.z_coefficients, PlanarLcSeriesKind::Z)?,
         z_velocity: vector_polynomial(

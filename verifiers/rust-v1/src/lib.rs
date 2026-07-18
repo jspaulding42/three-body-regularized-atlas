@@ -5,7 +5,8 @@
 //! complete continuation-chain replay. The public surface covers strict wire
 //! decoding, fixed-limit opaque ownership of canonical bytes plus their typed
 //! decode, bounded exact arithmetic, non-certifying ordinary and planar-LC
-//! semantic inputs, conditional ordinary chart and tube replay, exact planar
+//! semantic inputs, exact 14-component LC state polynomial/interval
+//! arithmetic, conditional ordinary chart and tube replay, exact planar
 //! initial-value binding, proof-oriented validated-root replay, and local
 //! parent-carried ordinary-bridge composition, and a bounded ordinary-only raw
 //! chain checkpoint for top-level obligations 6--13 under separately named
@@ -32,6 +33,7 @@ mod ordinary_semantic;
 mod ordinary_tube;
 pub mod outward_mass;
 mod planar_lc_semantic;
+mod planar_lc_state;
 mod polynomial;
 mod rational_input;
 mod raw_admission;
@@ -105,6 +107,13 @@ pub use planar_lc_semantic::{
     planar_lc_tube_input_from_wire, PlanarLcChartInput, PlanarLcEntryInput, PlanarLcIntervalKind,
     PlanarLcSemanticError, PlanarLcSemanticResource, PlanarLcSeriesKind, PlanarLcTubeInput,
     HARD_MAX_PLANAR_LC_SEMANTIC_COEFFICIENT_COUNT, HARD_MAX_PLANAR_LC_SEMANTIC_TOTAL_WORK_UNITS,
+};
+pub use planar_lc_state::{
+    PlanarLcAnchorPoint, PlanarLcIntervalState, PlanarLcStateError, PlanarLcStatePolynomial, LC_H,
+    LC_RX, LC_RY, LC_T, LC_UX, LC_UY, LC_VX, LC_VY, LC_WX, LC_WY, LC_YX, LC_YY, LC_ZX, LC_ZY,
+    PLANAR_LC_LIFTED_STATE_COMPONENT_NAMES, PLANAR_LC_LIFTED_STATE_DIMENSION,
+    PLANAR_LC_LIFTED_STATE_WITHOUT_TIME_COMPONENT_NAMES,
+    PLANAR_LC_LIFTED_STATE_WITHOUT_TIME_DIMENSION,
 };
 pub use polynomial::{
     ExactRationalPolynomial, PolynomialError, HARD_MAX_POLYNOMIAL_DEGREE,
