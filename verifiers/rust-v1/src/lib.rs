@@ -6,14 +6,15 @@
 //! decoding, fixed-limit opaque ownership of canonical bytes plus their typed
 //! decode, bounded exact arithmetic, non-certifying ordinary and planar-LC
 //! semantic inputs, exact 14-component LC state polynomial/interval
-//! arithmetic, conditional ordinary chart and tube replay, exact planar
+//! arithmetic, an independent interval-dual LC field and direct polynomial
+//! defect enclosure, conditional ordinary chart and tube replay, exact planar
 //! initial-value binding, proof-oriented validated-root replay, and local
 //! parent-carried ordinary-bridge composition, and a bounded ordinary-only raw
 //! chain checkpoint for top-level obligations 6--13 under separately named
 //! exact-rational profiles. The checkpoint stops fail-closed at LC and is not
 //! outer-obligation, LC-obligation, or full-chain replay. Public LC-entry
 //! semantic construction requires the opaque admission plus a segment index;
-//! it proves no LC chart, tube, entry, mass, gauge, field, lift, or exit claim.
+//! it proves no LC chart, tube, entry, gauge, lift, projection, or exit claim.
 
 #![forbid(unsafe_code)]
 
@@ -32,6 +33,8 @@ mod ordinary_field;
 mod ordinary_semantic;
 mod ordinary_tube;
 pub mod outward_mass;
+mod planar_lc_defect;
+mod planar_lc_field;
 mod planar_lc_semantic;
 mod planar_lc_state;
 mod polynomial;
@@ -101,6 +104,14 @@ pub use ordinary_tube::{
     replay_ordinary_tube_exact_rational_v04, ExactRationalOrdinaryTubeV04, OrdinaryTubeObligation,
     OrdinaryTubeReplay, OrdinaryTubeReplayError, EXACT_RATIONAL_ORDINARY_TUBE_V04_PROFILE_ID,
     ORDINARY_TUBE_OBLIGATION_IDS,
+};
+pub use planar_lc_defect::{
+    evaluate_planar_lc_polynomial_defect, evaluate_planar_lc_polynomial_defect_default,
+    PlanarLcPolynomialDefectEnclosure, PlanarLcPolynomialDefectError,
+};
+pub use planar_lc_field::{
+    evaluate_planar_lc_field, evaluate_planar_lc_field_default, PlanarLcFieldEnclosure,
+    PlanarLcFieldError, PlanarLcThirdDenominator, PLANAR_LC_FIELD_DEFAULT_SQRT_PRECISION_BITS,
 };
 pub use planar_lc_semantic::{
     planar_lc_chart_input_from_wire, planar_lc_entry_input_from_admission,

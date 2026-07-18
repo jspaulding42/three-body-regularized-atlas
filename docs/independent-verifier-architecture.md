@@ -224,16 +224,27 @@ derivative evaluation, a checked 13-plus-time anchor point, uniform
 nonnegative inflation, dependency-aware interval squares for `rho`, the LC
 square and pair-energy constraint, and the LC deck involution. Original
 positive binary64 mass encodings are retained beside exact rational masses as
-input identity for future mass replay, not as a mass-formula witness.
+input identity for independent mass replay.
 
-This layer proves no LC chart, tube, or entry obligation, supplies no outward
-mass witness, and does not evaluate the LC field, construct a gauge or lift,
+The next arithmetic checkpoint reconstructs those three encodings, derives
+and revalidates the selected-pair mass profile, and evaluates the full ordered
+LC RHS with a 14-variable exact-rational interval-dual kernel. It exposes the
+14-by-14 Jacobian, exact maximum infinity row-sum bound, and guarded
+third-body denominator squares. A direct defect layer compares the exact
+derivative of the serialized state polynomial against that independent field
+on the uninflated chart interval and reports all 14 residual intervals plus
+their exact maximum absolute endpoint. It deliberately ignores the claimed
+tail bound.
+
+This layer proves no LC chart, tube, or entry obligation, accepted defect
+threshold, or remainder theorem, and does not construct a gauge or lift,
 replay an exit, or commit a chain segment. It establishes no parity,
 cross-profile agreement, implementation independence, or release gate.
 
-The lifted-state operations are arithmetic only: evaluating a serialized
-constraint expression does not prove constraint satisfaction or any LC
-differential, tube, entry, gauge, projection, exit, or chain theorem.
+The lifted-state and field operations are arithmetic only: evaluating a
+serialized constraint or enclosing a differential residual does not prove
+constraint satisfaction or any LC tube, entry, gauge, projection, exit, or
+chain theorem.
 
 ## Implementation status at the current checkpoint
 
@@ -267,7 +278,7 @@ proof-oriented local-root composition, and local carried ordinary bridge
 described above now couple decoded ordinary records to the exact polynomial,
 square-root, exponential, defect, collision, analytic Lipschitz, cap, strict
 Gronwall, binding-gap, endpoint-containment, and local clock-cocycle kernels.
-The current validation checkpoint is 174 passing Rust unit tests and 15
+The current validation checkpoint is 185 passing Rust unit tests and 15
 passing integration cases across five integration test targets, with
 `cargo fmt --check` and
 warning-denying Clippy clean.
