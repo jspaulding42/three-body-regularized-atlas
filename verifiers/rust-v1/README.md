@@ -66,6 +66,18 @@ foundation. The current checkpoint contains:
   outward mass profile and reports exact diagnostic bounds. Certification is
   conditional tube evidence only: it proves no IVP containment, lift/entry,
   exit, chain step, claimed-tail theorem, or frozen binary64 parity;
+- the separately named `exact_rational_planar_lc_lift_cover_v04` arithmetic
+  profile. From a complete 12-component Cartesian interval box and an admitted
+  LC mass/pair identity, it applies the exact Section 5.3 canonical branch
+  order, constructs one or two 13-component lifted patches, derives the
+  parity-one negative-cut edge, and checks strict selected-pair and patch-rho
+  lower bounds. Its component formula
+  `w=(1/2)(zx vx+zy vy, zx vy-zy vx)` is exactly the frozen
+  `w=(1/4)L(z)^T v` convention because that specification defines `L` with a
+  leading factor two. A complete result invokes only the pinned existential
+  constrained-lift/deck/gauge implication: rectangular patches are not wholly
+  constrained, and no entry IDs, target containment, gauge graph, IVP carry,
+  exit, or chain step is replayed;
 - a non-certifying semantic conversion from decoded ordinary chart/tube wires
   to bounded exact-rational inputs, using every real's proved binary64 dyadic,
   exact body-major coefficient shapes, and strictly increasing parameter and
@@ -153,7 +165,7 @@ foundation. The current checkpoint contains:
   an explicit unsupported stop. Both canonical chains commit one bridge and
   stop at their first LC segment.
 
-At this checkpoint, 216 Rust unit tests and 15 integration cases across five
+At this checkpoint, 223 Rust unit tests and 15 integration cases across five
 integration test targets pass;
 `cargo fmt --check` and `cargo clippy --all-targets -- -D warnings` are clean.
 

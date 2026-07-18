@@ -224,7 +224,18 @@ An all-true ledger is conditional tube evidence only: it does not prove
 root/IVP containment, lift/entry or exit validity, a chain step, convergence
 of a claimed tail, or frozen binary64 status parity.
 
-The crate currently passes 216 Rust unit tests and 15 integration cases across
+The independent `exact_rational_planar_lc_lift_cover_v04` profile now applies
+the exact Section 5.3 branch order to a complete Cartesian interval box and
+constructs the canonical one- or two-patch 13-component LC lift cover with
+strict pair-distance and rho diagnostics plus the parity-one negative-cut
+edge. Its componentwise one-half formula for `w` is exactly the frozen
+`(1/4)L(z)^T v` formula because the frozen `L` includes a factor two. The
+pinned analytic conclusion is existential for the actual source state; it
+does not say every point of a rectangular patch is constrained and does not
+replay entry identifiers, target containment, a gauge graph, IVP carry, exit,
+or a chain commit.
+
+The crate currently passes 223 Rust unit tests and 15 integration cases across
 five integration test targets;
 `cargo fmt --check` and warning-denying Clippy are clean. The implementation-neutral
 [`raw-v1 seed corpus`](conformance/raw-v1/README.md) currently contains two

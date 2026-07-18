@@ -8,15 +8,19 @@
 //! semantic inputs, exact 14-component LC state polynomial/interval
 //! arithmetic, an independent interval-dual LC field and direct polynomial
 //! defect enclosure, bounded exact-rational interval-series LC coefficient
-//! replay, exact-rational LC-to-Cartesian projection/Newton residuals,
+//! replay, exact-rational LC-to-Cartesian projection/Newton residuals, a
+//! canonical exact-rational LC lift-cover kernel,
 //! conditional ordinary chart and tube replay, exact planar
 //! initial-value binding, proof-oriented validated-root replay, and local
 //! parent-carried ordinary-bridge composition, and a bounded ordinary-only raw
 //! chain checkpoint for top-level obligations 6--13 under separately named
 //! exact-rational profiles. The checkpoint stops fail-closed at LC and is not
-//! outer-obligation, LC-obligation, or full-chain replay. Public LC-entry
-//! semantic construction requires the opaque admission plus a segment index;
-//! it proves no LC chart, tube, entry, gauge, lift, projection, or exit claim.
+//! outer-obligation or full-chain replay; LC-entry composition remains absent.
+//! Public LC-entry
+//! semantic construction requires the opaque admission plus a segment index.
+//! The lift-cover profile is not an entry ledger and proves no target
+//! containment, gauge-graph certificate, IVP carry, projection, exit, or chain
+//! claim.
 
 #![forbid(unsafe_code)]
 
@@ -38,6 +42,7 @@ pub mod outward_mass;
 mod planar_lc_chart;
 mod planar_lc_defect;
 mod planar_lc_field;
+mod planar_lc_lift;
 mod planar_lc_projection;
 mod planar_lc_semantic;
 mod planar_lc_series;
@@ -124,6 +129,13 @@ pub use planar_lc_defect::{
 pub use planar_lc_field::{
     evaluate_planar_lc_field, evaluate_planar_lc_field_default, PlanarLcFieldEnclosure,
     PlanarLcFieldError, PlanarLcThirdDenominator, PLANAR_LC_FIELD_DEFAULT_SQRT_PRECISION_BITS,
+};
+pub use planar_lc_lift::{
+    replay_planar_lc_lift_cover_exact_rational, replay_planar_lc_lift_cover_exact_rational_v04,
+    PlanarLcCanonicalLiftCase, PlanarLcLiftError, PlanarLcLiftParityEdge, PlanarLcLiftPatch,
+    PlanarLcLiftPatchLabel, PlanarLcLiftReplay, EXACT_RATIONAL_PLANAR_LC_LIFT_COVER_V04_PROFILE_ID,
+    PLANAR_CARTESIAN_STATE_DIMENSION, PLANAR_LC_CONSTRAINED_LIFT_DECK_GAUGE_KERNEL_V1_ID,
+    PLANAR_LC_LIFT_DEFAULT_SQRT_PRECISION_BITS,
 };
 pub use planar_lc_projection::{
     replay_planar_lc_projection, replay_planar_lc_projection_default, PlanarLcProjectionError,

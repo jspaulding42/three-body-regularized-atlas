@@ -285,6 +285,20 @@ remain typed errors. An all-true result is conditional a-posteriori tube
 evidence only: it does not prove root/IVP containment, a lift or entry, an
 exit, a chain commit, claimed-tail convergence, or frozen binary64 parity.
 
+The independent `exact_rational_planar_lc_lift_cover_v04` arithmetic profile
+now reconstructs the canonical Section 5.3 LC square-root atlas from a
+complete 12-component Cartesian interval box. It independently validates the
+exact mass profile, follows the frozen upper/lower/right/negative-cut decision
+order, returns one or two 13-component lifted boxes, derives the parity-one
+two-patch edge, and reports strict selected-pair and patch-rho lower bounds.
+The component convention
+`w=(1/2)(zx vx+zy vy, zx vy-zy vx)` equals the frozen
+`w=(1/4)L(z)^T v` because the frozen matrix `L` includes a factor two. The
+pinned analytic kernel is only an existential implication for the actual
+source state; the rectangular boxes are not asserted wholly constrained.
+This profile does not replay entry IDs, target-anchor containment, a gauge
+graph certificate, IVP carry, an exit, or a chain commit.
+
 The lifted-state and field operations are arithmetic only: evaluating a
 serialized constraint or enclosing a differential residual does not prove
 constraint satisfaction or any LC tube, entry, gauge, projection, exit, or
@@ -322,7 +336,7 @@ proof-oriented local-root composition, and local carried ordinary bridge
 described above now couple decoded ordinary records to the exact polynomial,
 square-root, exponential, defect, collision, analytic Lipschitz, cap, strict
 Gronwall, binding-gap, endpoint-containment, and local clock-cocycle kernels.
-The current validation checkpoint is 216 passing Rust unit tests and 15
+The current validation checkpoint is 223 passing Rust unit tests and 15
 passing integration cases across five integration test targets, with
 `cargo fmt --check` and
 warning-denying Clippy clean.
@@ -387,9 +401,10 @@ agreement, implementation independence, or any v0.4 release gate.
    exponential, and mass coefficients against hand-derived vectors.
 3. **Ordinary-only replay.** Reproduce the exact root, ordinary tube, complete
    ordinary handoff, clock translation, fixed-time enclosure, and width gate.
-4. **LC replay.** The conditional LC tube ledger is implemented. Add the
-   constrained entry lift cover, gauge graph, complete punctured projection,
-   and exit clock enclosure for all three canonical pairs.
+4. **LC replay.** The conditional LC tube ledger and canonical lift-cover
+   arithmetic are implemented. Add the complete entry composer, gauge-graph
+   certificate, punctured projection, and exit clock enclosure for all three
+   canonical pairs.
 5. **Full finite-chain replay.** Fold arbitrary finite raw-v1 segment words,
    including pair revisits, and emit sound terminal or typed unresolved
    results.
