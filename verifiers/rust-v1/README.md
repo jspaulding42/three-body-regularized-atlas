@@ -57,6 +57,15 @@ foundation. The current checkpoint contains:
   constraint replay, interval-coefficient residual Horner bounds, and the
   projection kernel with the historical dependency gates. Domain failures are
   false obligations; numeric/resource/kernel failures remain typed errors;
+- the ordered nine-obligation Section 4.5 conditional LC-tube ledger under
+  `exact_rational_planar_lc_tube_v04`. It directly replays the uninflated
+  14-state polynomial defect, inflates the full lifted state, checks strict
+  third-body separation and an interval-Jacobian row-sum cap, optionally
+  checks the anchor pair-energy constraint exactly, and applies a strict
+  rational Gronwall self-consistency test. It independently reconstructs the
+  outward mass profile and reports exact diagnostic bounds. Certification is
+  conditional tube evidence only: it proves no IVP containment, lift/entry,
+  exit, chain step, claimed-tail theorem, or frozen binary64 parity;
 - a non-certifying semantic conversion from decoded ordinary chart/tube wires
   to bounded exact-rational inputs, using every real's proved binary64 dyadic,
   exact body-major coefficient shapes, and strictly increasing parameter and
@@ -144,7 +153,7 @@ foundation. The current checkpoint contains:
   an explicit unsupported stop. Both canonical chains commit one bridge and
   stop at their first LC segment.
 
-At this checkpoint, 209 Rust unit tests and 15 integration cases across five
+At this checkpoint, 216 Rust unit tests and 15 integration cases across five
 integration test targets pass;
 `cargo fmt --check` and `cargo clippy --all-targets -- -D warnings` are clean.
 
@@ -172,8 +181,9 @@ profiles establish the corresponding exact local root obligations only for
 admitted planar semantic inputs. They are not parity with the Python
 direct-object API on three-dimensional inputs. The bounded ordinary-only
 checkpoint enforces the additional raw root conditions and
-ordinary-prefix/fixed-time semantics described above. Every LC replay
-obligation and full chain replay remain unimplemented. `OPEN-V1-08` remains
+ordinary-prefix/fixed-time semantics described above. The conditional LC tube
+ledger now exists; LC entry, exit, and full-chain replay remain unimplemented.
+`OPEN-V1-08` remains
 open for historical
 binary64 arithmetic status parity. The crate does not call Python and makes no
 complete-certificate, end-to-end independent-verifier, or independent-chain-
@@ -183,7 +193,7 @@ a language-neutral normative algorithm, and its Rust toolchain is not pinned.
 
 The opaque admission and LC semantic adapters are non-certifying. The
 arithmetic field reconstructs and revalidates its mass profile, but these
-layers prove no LC chart, tube, or entry obligation and perform no gauge,
+layers alone prove no LC chart, tube, or entry obligation and perform no gauge,
 lift, projection, exit, or chain-commit replay. They are not
 frozen parity, cross-profile agreement, verifier independence, or release-gate
 evidence.
@@ -198,7 +208,8 @@ The projection residual is likewise arithmetic evidence only: it supplies no
 accepted tail/remainder bound, chart acceptance, or continuation result.
 Even an all-true LC-chart profile is conditional on the unproved serialized
 tail allowance. It is not convergence, frozen binary64 parity, or theorem-
-facing chart acceptance.
+facing chart acceptance. The separate all-true LC-tube profile is conditional
+a-posteriori evidence and does not supply root/IVP containment or a transition.
 
 The ordinary-only checkpoint starts at obligations 6--13 and makes no claim about outer
 obligations 1--5, namespace uniqueness, canonicalization or SHA-256 results,

@@ -42,6 +42,7 @@ mod planar_lc_projection;
 mod planar_lc_semantic;
 mod planar_lc_series;
 mod planar_lc_state;
+mod planar_lc_tube;
 mod polynomial;
 mod rational_input;
 mod raw_admission;
@@ -146,6 +147,11 @@ pub use planar_lc_state::{
     PLANAR_LC_LIFTED_STATE_COMPONENT_NAMES, PLANAR_LC_LIFTED_STATE_DIMENSION,
     PLANAR_LC_LIFTED_STATE_WITHOUT_TIME_COMPONENT_NAMES,
     PLANAR_LC_LIFTED_STATE_WITHOUT_TIME_DIMENSION,
+};
+pub use planar_lc_tube::{
+    replay_planar_lc_tube_exact_rational_v04, ExactRationalPlanarLcTubeV04, PlanarLcTubeObligation,
+    PlanarLcTubeReplay, PlanarLcTubeReplayError, EXACT_RATIONAL_PLANAR_LC_TUBE_V04_PROFILE_ID,
+    PLANAR_LC_TUBE_OBLIGATION_IDS,
 };
 pub use polynomial::{
     ExactRationalPolynomial, PolynomialError, HARD_MAX_POLYNOMIAL_DEGREE,

@@ -213,7 +213,18 @@ gates. This is conditional arithmetic only: it certifies no LC
 obligation, accepted defect threshold, remainder bound, or frozen binary64
 status parity.
 
-The crate currently passes 209 Rust unit tests and 15 integration cases across
+The Rust verifier also exposes the separately named
+`exact_rational_planar_lc_tube_v04` profile for the exact ordered nine-row
+Section 4.5 conditional LC tube ledger. It directly encloses the uninflated
+14-state defect, inflates the full lifted polynomial state, checks strict
+third-body separation and an interval-Jacobian Lipschitz cap, optionally checks
+the anchor pair-energy constraint exactly, and applies a strict rational
+Gronwall radius test after independently revalidating the outward mass profile.
+An all-true ledger is conditional tube evidence only: it does not prove
+root/IVP containment, lift/entry or exit validity, a chain step, convergence
+of a claimed tail, or frozen binary64 status parity.
+
+The crate currently passes 216 Rust unit tests and 15 integration cases across
 five integration test targets;
 `cargo fmt --check` and warning-denying Clippy are clean. The implementation-neutral
 [`raw-v1 seed corpus`](conformance/raw-v1/README.md) currently contains two
@@ -238,8 +249,9 @@ not by itself prove that an IVP lies in the initial ball. The binding and
 local-root profiles establish that component only for admitted planar inputs;
 they are not direct three-dimensional API parity. The bounded ordinary-only
 profile enforces the additional raw root conditions and
-ordinary-prefix/fixed-time semantics described above. Every LC field, full
-chain replay, and the semantic result serializer remain unimplemented.
+ordinary-prefix/fixed-time semantics described above. The conditional LC tube
+ledger now exists; LC entry/exit, full-chain replay, and the semantic result
+serializer remain unimplemented.
 Frozen-v0.3 primitive parity and
 `OPEN-V1-06` remain open, as does historical tube arithmetic parity under
 `OPEN-V1-08`; cross-language numeric rendering and the Rust toolchain pin
@@ -249,9 +261,9 @@ release gates remain failed, and no complete-certificate or independent
 chain-replay claim is made.
 
 The checkpoint does **not** establish outer obligations 1--5, namespace
-uniqueness, canonicalization or a SHA-256 result, LC replay, full-chain replay,
-frozen-v0.3 parity, cross-profile agreement, implementation independence, or
-satisfaction of any release gate.
+uniqueness, canonicalization or a SHA-256 result, LC entry/exit or full-chain
+replay, frozen-v0.3 parity, cross-profile agreement, implementation
+independence, or satisfaction of any release gate.
 
 The broader historical research program and experimental machinery are
 retained below for auditability.

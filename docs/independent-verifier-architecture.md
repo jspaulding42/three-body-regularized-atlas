@@ -273,10 +273,17 @@ domain failures become false obligations, while arithmetic/resource failures
 remain typed errors. An all-true ledger remains conditional on an unproved
 tail allowance and is not chart acceptance or frozen binary64 parity.
 
-This layer proves no LC chart, tube, or entry obligation, accepted defect
-threshold, or remainder theorem, and does not construct a gauge or lift,
-replay an exit, or commit a chain segment. It establishes no parity,
-cross-profile agreement, implementation independence, or release gate.
+The separately named `exact_rational_planar_lc_tube_v04` profile now replays
+the exact ordered nine-row Section 4.5 LC tube ledger. It computes a direct
+uninflated 14-component defect, inflates the whole lifted state by the claimed
+radius, proves strict separation from both third-body denominators, recomputes
+an interval-Jacobian infinity row-sum bound, optionally checks the anchor
+pair-energy constraint exactly, and applies a strict rational Gronwall test.
+Mass data are reconstructed and revalidated independently, while collision
+domain failures become false dependent rows and arithmetic/resource failures
+remain typed errors. An all-true result is conditional a-posteriori tube
+evidence only: it does not prove root/IVP containment, a lift or entry, an
+exit, a chain commit, claimed-tail convergence, or frozen binary64 parity.
 
 The lifted-state and field operations are arithmetic only: evaluating a
 serialized constraint or enclosing a differential residual does not prove
@@ -315,7 +322,7 @@ proof-oriented local-root composition, and local carried ordinary bridge
 described above now couple decoded ordinary records to the exact polynomial,
 square-root, exponential, defect, collision, analytic Lipschitz, cap, strict
 Gronwall, binding-gap, endpoint-containment, and local clock-cocycle kernels.
-The current validation checkpoint is 209 passing Rust unit tests and 15
+The current validation checkpoint is 216 passing Rust unit tests and 15
 passing integration cases across five integration test targets, with
 `cargo fmt --check` and
 warning-denying Clippy clean.
@@ -380,9 +387,9 @@ agreement, implementation independence, or any v0.4 release gate.
    exponential, and mass coefficients against hand-derived vectors.
 3. **Ordinary-only replay.** Reproduce the exact root, ordinary tube, complete
    ordinary handoff, clock translation, fixed-time enclosure, and width gate.
-4. **LC replay.** Add the LC tube, constrained entry lift cover, gauge graph,
-   complete punctured projection, and exit clock enclosure for all three
-   canonical pairs.
+4. **LC replay.** The conditional LC tube ledger is implemented. Add the
+   constrained entry lift cover, gauge graph, complete punctured projection,
+   and exit clock enclosure for all three canonical pairs.
 5. **Full finite-chain replay.** Fold arbitrary finite raw-v1 segment words,
    including pair revisits, and emit sound terminal or typed unresolved
    results.
