@@ -59,12 +59,21 @@ foundation. The current checkpoint contains:
   Taylor cutoff 32, and maximum reduced Taylor tail `2^-128`. All six ordinary
   tubes in each baseline chain, twelve replays total, certify conditionally.
 
-At this checkpoint, 144 Rust unit tests and two raw-v1 corpus tests pass;
+At this checkpoint, 143 Rust unit tests and three integration tests pass;
 `cargo fmt --check` and `cargo clippy --all-targets -- -D warnings` are clean.
 
 The checked-in [raw-v1 seed corpus](../../conformance/raw-v1/README.md) supplies
 two `ACCEPT` baselines and sixteen isolated `REJECT` mutations. It is
 `seed_incomplete`, not the complete release corpus.
+
+The corpus's strict
+[`ordinary-chart profile observation`](../../conformance/raw-v1/ordinary-chart-profile-expectations.json)
+also records that both baseline inputs have equal all-true ordered Boolean
+ledgers under the frozen Python direct-object profile and this Rust
+claimed-tail profile. The comparison deliberately sets mathematical
+comparability false, release status `BLOCKED`, and the OPEN-V1-06
+profile-semantics blocker. It is not evidence of cross-profile mathematical
+agreement, frozen arithmetic parity, or independent chain replay.
 
 The crate still stops before theorem-facing certificate replay: there is no
 raw SHA-256 layer. The ordinary-chart profile's serialized `tail_bound` remains

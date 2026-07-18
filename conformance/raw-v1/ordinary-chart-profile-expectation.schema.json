@@ -1,0 +1,303 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jspaulding42/three-body-regularized-atlas/conformance/raw-v1/ordinary-chart-profile-expectation.schema.json",
+  "title": "Raw-v1 ordinary-chart profile expectation",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "expectation_schema",
+    "obligation_ids",
+    "cases"
+  ],
+  "properties": {
+    "expectation_schema": {
+      "const": "raw-v1-ordinary-chart-profile-expectation-v1"
+    },
+    "obligation_ids": {
+      "$ref": "#/$defs/obligation_ids"
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "prefixItems": [
+        {
+          "allOf": [
+            {"$ref": "#/$defs/case"},
+            {
+              "properties": {
+                "case_id": {"const": "failed-revisit"},
+                "input_file": {"const": "inputs/failed-revisit.raw.json"},
+                "input_sha256": {
+                  "const": "c6830919726c22fbca6e45d5781b2465e54876bfa89c25bc26e97284ff918727"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {"$ref": "#/$defs/case"},
+            {
+              "properties": {
+                "case_id": {"const": "success"},
+                "input_file": {"const": "inputs/success.raw.json"},
+                "input_sha256": {
+                  "const": "ede15b0f35cf741f542a6cd260470a93ee5ff85dc5ae2371db1b88819b821f11"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "items": false
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "obligation_ids": {
+      "type": "array",
+      "minItems": 13,
+      "maxItems": 13,
+      "uniqueItems": true,
+      "prefixItems": [
+        {"const": "ordinary_chart_type"},
+        {"const": "certificate_identity_present"},
+        {"const": "coefficient_array_shape"},
+        {"const": "finite_coefficients"},
+        {"const": "positive_masses"},
+        {"const": "finite_nonempty_time_intervals"},
+        {"const": "ordinary_physical_parameter_unit_speed"},
+        {"const": "finite_checker_tolerances"},
+        {"const": "initial_noncollision"},
+        {"const": "ordinary_taylor_coefficient_recurrence"},
+        {"const": "ordinary_taylor_exact_rational_residual_polynomials"},
+        {"const": "interval_taylor_model_newton_residual"},
+        {"const": "tail_bound_admissible"}
+      ],
+      "items": false
+    },
+    "satisfied_ledger": {
+      "type": "array",
+      "minItems": 13,
+      "maxItems": 13,
+      "prefixItems": [
+        {"const": true},
+        {"const": true},
+        {"const": true},
+        {"const": true},
+        {"const": true},
+        {"const": true},
+        {"const": true},
+        {"const": true},
+        {"const": true},
+        {"const": true},
+        {"const": true},
+        {"const": true},
+        {"const": true}
+      ],
+      "items": false
+    },
+    "chart": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "certificate_id",
+        "chart_id"
+      ],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "certificate_id": {"type": "string", "minLength": 1},
+        "chart_id": {"type": "string", "minLength": 1}
+      }
+    },
+    "chart_order": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "uniqueItems": true,
+      "prefixItems": [
+        {
+          "allOf": [
+            {"$ref": "#/$defs/chart"},
+            {
+              "properties": {
+                "path": {"const": "$.initial_chart"},
+                "certificate_id": {"const": "review-v03:n:certificate:0"},
+                "chart_id": {"const": "review-v03:n:chart:0"}
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {"$ref": "#/$defs/chart"},
+            {
+              "properties": {
+                "path": {"const": "$.segments[0].target_chart"},
+                "certificate_id": {"const": "review-v03:n:certificate:1"},
+                "chart_id": {"const": "review-v03:n:chart:1"}
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {"$ref": "#/$defs/chart"},
+            {
+              "properties": {
+                "path": {"const": "$.segments[1].target_chart"},
+                "certificate_id": {"const": "review-v03:n:certificate:2"},
+                "chart_id": {"const": "review-v03:n:chart:2"}
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {"$ref": "#/$defs/chart"},
+            {
+              "properties": {
+                "path": {"const": "$.segments[2].target_chart"},
+                "certificate_id": {"const": "review-v03:n:certificate:3"},
+                "chart_id": {"const": "review-v03:n:chart:3"}
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {"$ref": "#/$defs/chart"},
+            {
+              "properties": {
+                "path": {"const": "$.segments[3].target_chart"},
+                "certificate_id": {"const": "review-v03:n:certificate:4"},
+                "chart_id": {"const": "review-v03:n:chart:4"}
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {"$ref": "#/$defs/chart"},
+            {
+              "properties": {
+                "path": {"const": "$.segments[4].target_chart"},
+                "certificate_id": {"const": "review-v03:n:certificate:5"},
+                "chart_id": {"const": "review-v03:n:chart:5"}
+              }
+            }
+          ]
+        }
+      ],
+      "items": false
+    },
+    "frozen_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile_id",
+        "runtime",
+        "profile_scope",
+        "chart_satisfaction"
+      ],
+      "properties": {
+        "profile_id": {
+          "const": "frozen_python_ordinary_chart_direct_object_v03"
+        },
+        "runtime": {"const": "python-v0.3-baseline"},
+        "profile_scope": {"const": "frozen_direct_object_primitive"},
+        "chart_satisfaction": {
+          "$ref": "#/$defs/chart_satisfaction"
+        }
+      }
+    },
+    "claimed_tail_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "profile_id",
+        "runtime",
+        "profile_scope",
+        "chart_satisfaction"
+      ],
+      "properties": {
+        "profile_id": {
+          "const": "exact_rational_ordinary_chart_claimed_tail_v04"
+        },
+        "runtime": {"const": "rust-v1"},
+        "profile_scope": {"const": "conditional_claimed_tail"},
+        "chart_satisfaction": {
+          "$ref": "#/$defs/chart_satisfaction"
+        }
+      }
+    },
+    "chart_satisfaction": {
+      "type": "array",
+      "minItems": 6,
+      "maxItems": 6,
+      "items": {"$ref": "#/$defs/satisfied_ledger"}
+    },
+    "profiles": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "prefixItems": [
+        {"$ref": "#/$defs/frozen_profile"},
+        {"$ref": "#/$defs/claimed_tail_profile"}
+      ],
+      "items": false
+    },
+    "comparison": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "left_profile_id",
+        "right_profile_id",
+        "observed_ordered_boolean_ledgers_equal",
+        "mathematical_outcomes_comparable",
+        "release_gate_status",
+        "blocker_id"
+      ],
+      "properties": {
+        "left_profile_id": {
+          "const": "frozen_python_ordinary_chart_direct_object_v03"
+        },
+        "right_profile_id": {
+          "const": "exact_rational_ordinary_chart_claimed_tail_v04"
+        },
+        "observed_ordered_boolean_ledgers_equal": {"const": true},
+        "mathematical_outcomes_comparable": {"const": false},
+        "release_gate_status": {"const": "BLOCKED"},
+        "blocker_id": {"const": "profile_semantics_differ_open_v1_06"}
+      }
+    },
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "case_id",
+        "input_file",
+        "input_sha256",
+        "chart_order",
+        "profiles",
+        "comparison"
+      ],
+      "properties": {
+        "case_id": {"type": "string", "minLength": 1},
+        "input_file": {
+          "type": "string",
+          "pattern": "^inputs/[A-Za-z0-9._-]+\\.raw\\.json$"
+        },
+        "input_sha256": {"$ref": "#/$defs/sha256"},
+        "chart_order": {"$ref": "#/$defs/chart_order"},
+        "profiles": {"$ref": "#/$defs/profiles"},
+        "comparison": {"$ref": "#/$defs/comparison"}
+      }
+    }
+  }
+}

@@ -149,12 +149,20 @@ precision at 256 bits, the upward exponent dyadic grid at 32 bits, Taylor
 cutoff 32, and the maximum reduced exponential tail at `2^-128`. All six
 ordinary tubes in each of the two baseline chains, twelve tube replays in
 total, certify conditionally under this profile. The crate currently passes
-144 Rust unit tests and two corpus tests; `cargo fmt --check` and
+143 Rust unit tests and three integration tests; `cargo fmt --check` and
 warning-denying Clippy are clean. The implementation-neutral
 [`raw-v1 seed corpus`](conformance/raw-v1/README.md) currently contains two
 accepted baseline payloads and sixteen isolated rejection mutations. The
 public Python admission API and the independent Rust integration suite both
 enforce those 18 parser classifications.
+
+The corpus also includes a strict, profile-labeled
+[`ordinary-chart ledger observation`](conformance/raw-v1/ordinary-chart-profile-expectations.json).
+For the two baseline inputs it records equal all-true ordered Boolean ledgers
+under the frozen Python direct-object profile and the Rust claimed-tail
+profile. Its comparison explicitly marks the mathematical outcomes
+non-comparable and the release gate `BLOCKED` under OPEN-V1-06. This is not
+cross-profile mathematical agreement or independent chain replay.
 
 This remains foundation work, **not yet an independent certificate verifier**.
 The Rust crate still has no raw SHA-256 layer. Its 13-entry ordinary-chart

@@ -460,7 +460,6 @@ mod tests {
         checked_real_binary64_from_json, ordinary_chart_input_from_wire, parse_wire_json,
         raw_schema::{
             decode_raw_chain, OrdinaryChartWire, RawPlanarChainWire, Real, SchemaProfile,
-            SegmentWire,
         },
         DEFAULT_JSON_NUMBER_LIMITS, DEFAULT_WIRE_JSON_LIMITS,
     };
@@ -469,11 +468,6 @@ mod tests {
         env!("CARGO_MANIFEST_DIR"),
         "/../../artifacts/v0.3.0-review/planar-chain/success.raw.json"
     ));
-    const FAILED_REVISIT_RAW: &[u8] = include_bytes!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/../../artifacts/v0.3.0-review/planar-chain/failed-revisit.raw.json"
-    ));
-
     fn parse_chain(bytes: &[u8]) -> RawPlanarChainWire {
         let ast = parse_wire_json(bytes, DEFAULT_WIRE_JSON_LIMITS).unwrap();
         decode_raw_chain(ast, SchemaProfile::V03Compatible).unwrap()
@@ -636,37 +630,5 @@ mod tests {
                 limit: HARD_MAX_ORDINARY_CHART_SERIES_WORK_UNITS,
             })
         );
-    }
-
-    #[test]
-    fn both_canonical_chains_have_six_certified_charts_and_exact_ordered_ids() {
-        for (name, bytes) in [
-            ("success", SUCCESS_RAW),
-            ("failed-revisit", FAILED_REVISIT_RAW),
-        ] {
-            let chain = parse_chain(bytes);
-            let mut certified_count = 0_usize;
-            let mut replay_chart = |wire: &OrdinaryChartWire| {
-                let replay = replay_wire(wire);
-                assert!(replay.conditional_profile_satisfied(), "{name}: {replay:?}");
-                assert_eq!(
-                    replay
-                        .obligations()
-                        .iter()
-                        .map(OrdinaryChartObligation::id)
-                        .collect::<Vec<_>>(),
-                    ORDINARY_CHART_OBLIGATION_IDS
-                );
-                certified_count += 1;
-            };
-            replay_chart(&chain.initial_chart);
-            for segment in &chain.segments {
-                match segment {
-                    SegmentWire::OrdinaryBridge(segment) => replay_chart(&segment.target_chart),
-                    SegmentWire::PlanarLcPassage(segment) => replay_chart(&segment.target_chart),
-                }
-            }
-            assert_eq!(certified_count, 6, "{name}");
-        }
     }
 }
