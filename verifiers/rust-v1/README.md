@@ -78,6 +78,18 @@ foundation. The current checkpoint contains:
   constrained-lift/deck/gauge implication: rectangular patches are not wholly
   constrained, and no entry IDs, target containment, gauge graph, IVP carry,
   exit, or chain step is replayed;
+- the exact ordered 21-row Section 5.3 carried-entry composer under
+  `exact_rational_carried_planar_lc_entry_v04`. It derives the entry record
+  from opaque canonical raw admission, binds the caller's source chart/tube
+  exactly to the preceding raw frontier, checks the bounded global defining-ID
+  namespace including all reserved entry IDs, freshly replays both chart/tube
+  pairs, reconstructs the complete source endpoint box, invokes the canonical
+  lift cover, derives the F2 assignments and exact `D_in`, and tests both
+  global complements against the target 14D anchor ball. The claimed-tail
+  chart ledgers are compatibility gates only; the source tube, direct endpoint,
+  lift, and containment are decisive. Its all-true conclusion is conditional
+  on the parent having carried its actual branch inside the source tube and
+  proves no LC evolution, exit, chain commit, or fixed-time theorem;
 - a non-certifying semantic conversion from decoded ordinary chart/tube wires
   to bounded exact-rational inputs, using every real's proved binary64 dyadic,
   exact body-major coefficient shapes, and strictly increasing parameter and
@@ -165,7 +177,7 @@ foundation. The current checkpoint contains:
   an explicit unsupported stop. Both canonical chains commit one bridge and
   stop at their first LC segment.
 
-At this checkpoint, 223 Rust unit tests and 15 integration cases across five
+At this checkpoint, 236 Rust unit tests and 15 integration cases across five
 integration test targets pass;
 `cargo fmt --check` and `cargo clippy --all-targets -- -D warnings` are clean.
 

@@ -560,7 +560,7 @@ pub fn planar_lc_tube_input_from_wire(
     })
 }
 
-fn planar_lc_entry_input_from_wire(
+pub(crate) fn planar_lc_entry_input_from_wire(
     transition: &LcEntryTransitionWire,
     source_chart: &OrdinaryChartInput,
     source_tube: &OrdinaryTubeInput,

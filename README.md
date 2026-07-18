@@ -235,7 +235,20 @@ does not say every point of a rectangular patch is constrained and does not
 replay entry identifiers, target containment, a gauge graph, IVP carry, exit,
 or a chain commit.
 
-The crate currently passes 223 Rust unit tests and 15 integration cases across
+The separately named `exact_rational_carried_planar_lc_entry_v04` profile now
+composes the exact ordered 21-row Section 5.3 entry ledger. It derives the
+transition from opaque canonical raw admission, proves the supplied source
+objects are exactly the preceding admitted frontier, checks the bounded global
+namespace including reserved derived IDs, freshly replays source and target
+charts/tubes, reconstructs the source endpoint box, lift cover, F2 assignments,
+`D_in`, and target 14D anchor, then tests both global complements by inclusive
+exact interval containment. Claimed-tail chart results are compatibility gates
+only; the fresh tube and direct endpoint/lift/containment path is decisive. An
+all-true result remains conditional on the chain parent having carried its
+actual branch in the source tube and supplies no LC evolution, exit, chain
+commit, or fixed-time theorem.
+
+The crate currently passes 236 Rust unit tests and 15 integration cases across
 five integration test targets;
 `cargo fmt --check` and warning-denying Clippy are clean. The implementation-neutral
 [`raw-v1 seed corpus`](conformance/raw-v1/README.md) currently contains two

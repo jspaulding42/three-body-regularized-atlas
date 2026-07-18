@@ -299,6 +299,21 @@ source state; the rectangular boxes are not asserted wholly constrained.
 This profile does not replay entry IDs, target-anchor containment, a gauge
 graph certificate, IVP carry, an exit, or a chain commit.
 
+The separately named `exact_rational_carried_planar_lc_entry_v04` profile now
+composes the exact ordered 21-row Section 5.3 entry ledger. Its public boundary
+derives the transition from opaque canonical raw admission and requires the
+supplied source chart and tube to equal the preceding admitted raw frontier,
+closing same-ID replacement attacks. It checks the bounded global defining-ID
+namespace including all six reserved IDs per entry, freshly replays the source
+and target chart/tube profiles, reconstructs the direct source endpoint box,
+canonical lift cover, F2 assignments, exact `D_in`, and target 14D anchor, and
+tests both global complements by inclusive interval containment. Claimed-tail
+chart ledgers remain compatibility gates only; fresh tube replay and the direct
+endpoint/lift/containment path provide the a-posteriori evidence. The result is
+conditional on the parent induction premise that the actual branch lies in
+the source tube and proves no LC evolution, exit, chain commit, or fixed-time
+theorem.
+
 The lifted-state and field operations are arithmetic only: evaluating a
 serialized constraint or enclosing a differential residual does not prove
 constraint satisfaction or any LC tube, entry, gauge, projection, exit, or
@@ -336,7 +351,7 @@ proof-oriented local-root composition, and local carried ordinary bridge
 described above now couple decoded ordinary records to the exact polynomial,
 square-root, exponential, defect, collision, analytic Lipschitz, cap, strict
 Gronwall, binding-gap, endpoint-containment, and local clock-cocycle kernels.
-The current validation checkpoint is 223 passing Rust unit tests and 15
+The current validation checkpoint is 236 passing Rust unit tests and 15
 passing integration cases across five integration test targets, with
 `cargo fmt --check` and
 warning-denying Clippy clean.
@@ -401,9 +416,9 @@ agreement, implementation independence, or any v0.4 release gate.
    exponential, and mass coefficients against hand-derived vectors.
 3. **Ordinary-only replay.** Reproduce the exact root, ordinary tube, complete
    ordinary handoff, clock translation, fixed-time enclosure, and width gate.
-4. **LC replay.** The conditional LC tube ledger and canonical lift-cover
-   arithmetic are implemented. Add the complete entry composer, gauge-graph
-   certificate, punctured projection, and exit clock enclosure for all three
+4. **LC replay.** The conditional LC tube ledger, canonical lift cover, and
+   provenance-bound 21-row carried-entry composer are implemented. Add
+   punctured evolution/projection and exit clock enclosure for all three
    canonical pairs.
 5. **Full finite-chain replay.** Fold arbitrary finite raw-v1 segment words,
    including pair revisits, and emit sound terminal or typed unresolved

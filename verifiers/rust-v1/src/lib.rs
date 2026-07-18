@@ -9,18 +9,16 @@
 //! arithmetic, an independent interval-dual LC field and direct polynomial
 //! defect enclosure, bounded exact-rational interval-series LC coefficient
 //! replay, exact-rational LC-to-Cartesian projection/Newton residuals, a
-//! canonical exact-rational LC lift-cover kernel,
+//! canonical exact-rational LC lift-cover kernel and provenance-bound carried
+//! LC-entry composer,
 //! conditional ordinary chart and tube replay, exact planar
 //! initial-value binding, proof-oriented validated-root replay, and local
 //! parent-carried ordinary-bridge composition, and a bounded ordinary-only raw
 //! chain checkpoint for top-level obligations 6--13 under separately named
-//! exact-rational profiles. The checkpoint stops fail-closed at LC and is not
-//! outer-obligation or full-chain replay; LC-entry composition remains absent.
-//! Public LC-entry
-//! semantic construction requires the opaque admission plus a segment index.
-//! The lift-cover profile is not an entry ledger and proves no target
-//! containment, gauge-graph certificate, IVP carry, projection, exit, or chain
-//! claim.
+//! exact-rational profiles. The ordinary-only chain checkpoint stops
+//! fail-closed at LC and is not outer-obligation or full-chain replay. The
+//! carried-entry result is conditional on parent IVP carry and proves no LC
+//! evolution, exit, chain commit, or fixed-time theorem.
 
 #![forbid(unsafe_code)]
 
@@ -41,6 +39,7 @@ mod ordinary_tube;
 pub mod outward_mass;
 mod planar_lc_chart;
 mod planar_lc_defect;
+mod planar_lc_entry;
 mod planar_lc_field;
 mod planar_lc_lift;
 mod planar_lc_projection;
@@ -125,6 +124,12 @@ pub use planar_lc_chart::{
 pub use planar_lc_defect::{
     evaluate_planar_lc_polynomial_defect, evaluate_planar_lc_polynomial_defect_default,
     PlanarLcPolynomialDefectEnclosure, PlanarLcPolynomialDefectError,
+};
+pub use planar_lc_entry::{
+    raw_v1_defining_namespace_unique, replay_carried_planar_lc_entry_exact_rational_v04,
+    CarriedPlanarLcEntryError, CarriedPlanarLcEntryObligation, CarriedPlanarLcEntryReplay,
+    CARRIED_PLANAR_LC_ENTRY_OBLIGATION_IDS, EXACT_RATIONAL_CARRIED_PLANAR_LC_ENTRY_V04_PROFILE_ID,
+    HARD_MAX_RAW_V1_NAMESPACE_SEGMENTS,
 };
 pub use planar_lc_field::{
     evaluate_planar_lc_field, evaluate_planar_lc_field_default, PlanarLcFieldEnclosure,
