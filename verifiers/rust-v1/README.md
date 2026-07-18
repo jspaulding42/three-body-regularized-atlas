@@ -44,6 +44,13 @@ foundation. The current checkpoint contains:
   are enclosed on a fixed dyadic grid (64 bits by default, with an explicit
   bounded precision API). It consumes coefficient and mass data only, not
   chart intervals, tolerances, tail claims, projection claims, or samples;
+- fixed-dimensional exact-rational interval projection from an explicit
+  lifted LC state to three Cartesian positions and accelerations. It enforces
+  a nonnegative claimed rho floor and strict whole-interval separation above
+  that floor, projects the regularized acceleration through the frozen LC
+  formula, independently recomputes guarded Newton accelerations from exact
+  masses, and returns six residuals plus their exact endpoint maximum. It
+  consumes no tail, tolerance, sample, time interval, or chart coefficient;
 - a non-certifying semantic conversion from decoded ordinary chart/tube wires
   to bounded exact-rational inputs, using every real's proved binary64 dyadic,
   exact body-major coefficient shapes, and strictly increasing parameter and
@@ -131,7 +138,7 @@ foundation. The current checkpoint contains:
   an explicit unsupported stop. Both canonical chains commit one bridge and
   stop at their first LC segment.
 
-At this checkpoint, 194 Rust unit tests and 15 integration cases across five
+At this checkpoint, 201 Rust unit tests and 15 integration cases across five
 integration test targets pass;
 `cargo fmt --check` and `cargo clippy --all-targets -- -D warnings` are clean.
 
@@ -181,6 +188,8 @@ remainder theorem, and these layers do not prove the LC constraint,
 chart/tube/entry validity, gauge, projection, exit, or any continuation step.
 The formal-series layer also makes no chart-acceptance or frozen binary64
 status-parity claim.
+The projection residual is likewise arithmetic evidence only: it supplies no
+accepted tail/remainder bound, chart acceptance, or continuation result.
 
 The ordinary-only checkpoint starts at obligations 6--13 and makes no claim about outer
 obligations 1--5, namespace uniqueness, canonicalization or SHA-256 results,

@@ -250,6 +250,18 @@ quadratically for every allocated coefficient row. Chart intervals,
 tolerances, tail and projection claims, and sample counts are not inputs to
 this coefficient kernel.
 
+The projection checkpoint takes an admitted chart solely for its exact mass
+identity/profile, selected pair, and claimed rho floor, together with an
+explicit lifted interval state. It rejects negative floor claims and requires
+the entire derived rho interval to lie strictly above the floor, reconstructs
+all three Cartesian positions, projects the LC acceleration through the
+frozen physical-time formula, and independently recomputes all three guarded
+Newton accelerations. Its six component residuals and exact maximum endpoint
+are fixed-dimensional arithmetic evidence. Tail and tolerance claims, sample
+counts, chart coefficients, and parameter/physical-time intervals are not
+consumed. This does not accept a projection, supply a remainder, or commit an
+LC segment.
+
 This layer proves no LC chart, tube, or entry obligation, accepted defect
 threshold, or remainder theorem, and does not construct a gauge or lift,
 replay an exit, or commit a chain segment. It establishes no parity,
@@ -292,7 +304,7 @@ proof-oriented local-root composition, and local carried ordinary bridge
 described above now couple decoded ordinary records to the exact polynomial,
 square-root, exponential, defect, collision, analytic Lipschitz, cap, strict
 Gronwall, binding-gap, endpoint-containment, and local clock-cocycle kernels.
-The current validation checkpoint is 194 passing Rust unit tests and 15
+The current validation checkpoint is 201 passing Rust unit tests and 15
 passing integration cases across five integration test targets, with
 `cargo fmt --check` and
 warning-denying Clippy clean.
