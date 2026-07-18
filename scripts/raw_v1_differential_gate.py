@@ -1,22 +1,37 @@
 #!/usr/bin/env python3
-"""Offline raw-v1 cross-profile compatibility comparison primitives.
+"""Raw-v1 cross-profile compatibility comparison and bounded live driver.
 
-This module compares supplied, profile-labeled artifacts only.  It is not a
-theorem oracle, an independent proof, or evidence of mathematical agreement.
+Both the pure offline API and the live corpus driver compare profile-labeled
+artifacts only.  Neither is a theorem oracle, an independent proof, nor
+evidence of mathematical agreement.
 """
 
 from __future__ import annotations
 
+import argparse
+from concurrent.futures import ThreadPoolExecutor
 from fractions import Fraction
 import hashlib
 import json
 from math import gcd
-from typing import Any
+import os
+from pathlib import Path, PurePosixPath
+import selectors
+import stat
+import subprocess
+import sys
+import tempfile
+import time
+from typing import Any, Callable
 
 
 MAX_DECIMAL_DIGITS = 100_000
 MAX_JSON_INTEGER_DIGITS = 100_000
 MAX_ARTIFACT_BYTES = 64 * 1024 * 1024
+MAX_RUST_STDOUT_BYTES = 64 * 1024 * 1024
+MAX_RUST_STDERR_BYTES = 64 * 1024
+RUST_TIMEOUT_SECONDS = 600.0
+MAX_LIVE_JOBS = 2
 
 EXPECTATION_SCHEMA = "raw-v1-seed-expectation-v1"
 PYTHON_TRANSCRIPT_SCHEMA = "raw-planar-chain-replay-transcript-v1"
@@ -28,8 +43,24 @@ RUST_EXECUTION_PROFILE = "exact_rational_raw_v1_execution_v04"
 RUST_SEMANTIC_SCHEMA = "raw-v1-rust-semantic-outcome-v1"
 RUST_SEMANTIC_PROFILE = "exact_rational_admitted_raw_v1_outcome_v04"
 REPORT_SCHEMA = "raw-v1-cross-profile-differential-report-v1"
+LIVE_REPORT_SCHEMA = "raw-v1-cross-profile-differential-report-v2"
 COMPARATOR_ID = "raw_v1_cross_profile_differential_gate_v1"
 COMPARISON_KIND = "CROSS_PROFILE_COMPATIBILITY_OBSERVATION"
+LIVE_CAPTURE_MODE = "LIVE_FRESH"
+OFFLINE_CAPTURE_MODE = "OFFLINE_SUPPLIED"
+PYTHON_REJECT_CAPTURE_SCHEMA = "raw-v1-python-parser-reject-observation-v1"
+PYTHON_REJECT_PROFILE = "frozen_python_raw_v1_parser_v03"
+PYTHON_LIVE_REPLAY_SOURCE_MARKER = "fresh_public_python_replay_adapter"
+PYTHON_LIVE_REJECT_SOURCE_MARKER = "fresh_public_python_parser_adapter"
+RUST_EXECUTION_FIELDS = {
+    "evaluation_error_stage",
+    "evaluation_outcome",
+    "parse_outcome",
+    "profile",
+    "rejection_stage",
+    "schema",
+    "semantic_result",
+}
 
 FIXED_BLOCKERS = (
     "OPEN-V1-01",
@@ -77,6 +108,48 @@ LC_COMPONENT_NAMES = (
     "Vy",
     "t",
 )
+
+
+class LiveCorpusCase:
+    """One strictly bound expectation/input pair, never serialized directly."""
+
+    __slots__ = (
+        "case_id",
+        "expected_parse_outcome",
+        "expectation_bytes",
+        "expectation_path",
+        "input_bytes",
+        "input_path",
+    )
+
+    def __init__(
+        self,
+        *,
+        case_id: str,
+        expected_parse_outcome: str,
+        expectation_bytes: bytes,
+        expectation_path: Path,
+        input_bytes: bytes,
+        input_path: Path,
+    ) -> None:
+        self.case_id = case_id
+        self.expected_parse_outcome = expected_parse_outcome
+        self.expectation_bytes = expectation_bytes
+        self.expectation_path = expectation_path
+        self.input_bytes = input_bytes
+        self.input_path = input_path
+
+
+class PythonLiveCapture:
+    """Canonical bytes produced by the live public-Python adapter."""
+
+    __slots__ = ("kind", "payload", "profile_id")
+
+    def __init__(self, *, kind: str, payload: bytes, profile_id: str) -> None:
+        self.kind = kind
+        self.payload = payload
+        self.profile_id = profile_id
+
 
 EQUAL = "EQUAL"
 LEFT_CONTAINS_RIGHT = "LEFT_CONTAINS_RIGHT"
@@ -429,6 +502,22 @@ def _validate_utf8_tree(value: Any, path: str) -> None:
     if type(value) is list:
         for index, child in enumerate(value):
             _validate_utf8_tree(child, f"{path}[{index}]")
+
+
+def _canonical_json_bytes(value: Any, path: str) -> bytes:
+    _validate_utf8_tree(value, path)
+    try:
+        return json.dumps(
+            value,
+            allow_nan=False,
+            ensure_ascii=False,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("utf-8")
+    except UnicodeEncodeError:
+        _fail("STRING_NOT_UTF8_ENCODABLE", path)
+    except (TypeError, ValueError):
+        _fail("JSON_SERIALIZATION_FAILED", path)
 
 
 def _compare_committed_segments(
@@ -1194,6 +1283,8 @@ def compare_case(
     expectation = _load_json_object(expectation_bytes, "expectation")
     rust_execution = _load_json_object(rust_execution_bytes, "rust_execution")
     _declare(expectation, "expectation_schema", EXPECTATION_SCHEMA, "expectation")
+    if set(rust_execution) != RUST_EXECUTION_FIELDS:
+        _fail("RUST_EXECUTION_FIELDS_INVALID", "rust_execution")
     _declare(rust_execution, "schema", RUST_EXECUTION_SCHEMA, "rust_execution")
     _declare(rust_execution, "profile", RUST_EXECUTION_PROFILE, "rust_execution")
 
@@ -1226,12 +1317,55 @@ def compare_case(
     )
     if rust_evaluation not in ("NOT_RUN", "RESULT", "ERROR"):
         _fail("RUST_EVALUATION_OUTCOME_INVALID", "rust_execution.evaluation_outcome")
+    rejection_stage = _field(rust_execution, "rejection_stage", "rust_execution")
+    if rejection_stage is not None and rejection_stage not in (
+        "CANONICAL_WIRE",
+        "SCHEMA",
+    ):
+        _fail("RUST_REJECTION_STAGE_INVALID", "rust_execution.rejection_stage")
+    evaluation_error_stage = _field(
+        rust_execution, "evaluation_error_stage", "rust_execution"
+    )
+    if evaluation_error_stage is not None and evaluation_error_stage not in (
+        "NAMESPACE",
+        "MIXED_REPLAY",
+    ):
+        _fail(
+            "RUST_EVALUATION_ERROR_STAGE_INVALID",
+            "rust_execution.evaluation_error_stage",
+        )
     semantic_value = _field(rust_execution, "semantic_result", "rust_execution")
     if semantic_value is not None and type(semantic_value) is not dict:
         _fail(
             "RUST_SEMANTIC_RESULT_OBJECT_OR_NULL_REQUIRED",
             "rust_execution.semantic_result",
         )
+    if rust_parse == "REJECT":
+        if rejection_stage not in ("CANONICAL_WIRE", "SCHEMA"):
+            _fail("RUST_REJECTION_STAGE_INVALID", "rust_execution.rejection_stage")
+        if (
+            rust_evaluation != "NOT_RUN"
+            or evaluation_error_stage is not None
+            or semantic_value is not None
+        ):
+            _fail("RUST_REJECT_ENVELOPE_INCONSISTENT", "rust_execution")
+    else:
+        if rejection_stage is not None:
+            _fail(
+                "RUST_ACCEPT_REJECTION_STAGE_NOT_NULL",
+                "rust_execution.rejection_stage",
+            )
+        if rust_evaluation == "NOT_RUN":
+            _fail("RUST_ACCEPT_ENVELOPE_INCONSISTENT", "rust_execution")
+        if rust_evaluation == "RESULT" and (
+            evaluation_error_stage is not None or semantic_value is None
+        ):
+            _fail("RUST_RESULT_ENVELOPE_INCONSISTENT", "rust_execution")
+        if rust_evaluation == "ERROR" and (
+            evaluation_error_stage not in ("NAMESPACE", "MIXED_REPLAY")
+            or semantic_value is not None
+        ):
+            _fail("RUST_ERROR_ENVELOPE_INCONSISTENT", "rust_execution")
 
     mismatches: list[str] = []
     _record_mismatch(mismatches, "CASE_ID_MISMATCH", case_id == expected_case_id)
@@ -1676,9 +1810,11 @@ def compare_case(
     )
 
 
-def build_report(cases: Any) -> bytes:
+def build_report(cases: Any, *, capture_mode: str = OFFLINE_CAPTURE_MODE) -> bytes:
     """Serialize ordered comparison results as canonical compact JSON bytes."""
 
+    if capture_mode not in (OFFLINE_CAPTURE_MODE, LIVE_CAPTURE_MODE):
+        _fail("CAPTURE_MODE_INVALID", "capture_mode")
     if isinstance(cases, (str, bytes, bytearray, dict)):
         _fail("ORDERED_CASE_ITERABLE_REQUIRED", "cases")
     try:
@@ -1785,7 +1921,7 @@ def build_report(cases: Any) -> bytes:
     blockers = list(FIXED_BLOCKERS)
     if not differential_gate_passed:
         blockers.append("DIFFERENTIAL-DISAGREEMENT")
-    document = {
+    document: dict[str, Any] = {
         "aggregate": {
             "accepted_case_count": accepted_case_count,
             "blockers": blockers,
@@ -1808,18 +1944,596 @@ def build_report(cases: Any) -> bytes:
         "cases": ordered_cases,
         "comparator_id": COMPARATOR_ID,
         "comparison_kind": COMPARISON_KIND,
-        "report_schema": REPORT_SCHEMA,
+        "report_schema": (
+            LIVE_REPORT_SCHEMA if capture_mode == LIVE_CAPTURE_MODE else REPORT_SCHEMA
+        ),
     }
-    _validate_utf8_tree(document, "report")
+    if capture_mode == LIVE_CAPTURE_MODE:
+        document["capture_mode"] = LIVE_CAPTURE_MODE
+    return _canonical_json_bytes(document, "report")
+
+
+def _path_argument(value: str | os.PathLike[str], path: str) -> Path:
+    if not isinstance(value, (str, os.PathLike)):
+        _fail("FILESYSTEM_PATH_REQUIRED", path)
+    candidate = Path(value)
+    if ".." in candidate.parts:
+        _fail("FILESYSTEM_PATH_TRAVERSAL_REJECTED", path)
+    return candidate
+
+
+def _require_real_directory(path: Path, label: str) -> Path:
     try:
-        return json.dumps(
-            document,
-            allow_nan=False,
-            ensure_ascii=False,
-            separators=(",", ":"),
-            sort_keys=True,
-        ).encode("utf-8")
-    except UnicodeEncodeError:
-        _fail("STRING_NOT_UTF8_ENCODABLE", "report")
-    except (TypeError, ValueError):
-        _fail("REPORT_NOT_JSON_SERIALIZABLE", "report")
+        if path.is_symlink():
+            _fail("CORPUS_SYMLINK_REJECTED", label)
+        information = path.stat()
+    except OSError:
+        _fail("CORPUS_DIRECTORY_UNAVAILABLE", label)
+    if not stat.S_ISDIR(information.st_mode):
+        _fail("CORPUS_DIRECTORY_REQUIRED", label)
+    try:
+        return path.resolve(strict=True)
+    except OSError:
+        _fail("CORPUS_DIRECTORY_UNAVAILABLE", label)
+
+
+def _read_regular_file_bounded(path: Path, label: str) -> bytes:
+    flags = os.O_RDONLY
+    flags |= getattr(os, "O_CLOEXEC", 0)
+    flags |= getattr(os, "O_NOFOLLOW", 0)
+    try:
+        descriptor = os.open(path, flags)
+    except OSError:
+        _fail("CORPUS_FILE_OPEN_FAILED", label)
+    try:
+        information = os.fstat(descriptor)
+        if not stat.S_ISREG(information.st_mode):
+            _fail("CORPUS_REGULAR_FILE_REQUIRED", label)
+        if information.st_size > MAX_ARTIFACT_BYTES:
+            _fail("JSON_ARTIFACT_SIZE_LIMIT_EXCEEDED", label)
+        chunks: list[bytes] = []
+        total = 0
+        while True:
+            chunk = os.read(descriptor, min(64 * 1024, MAX_ARTIFACT_BYTES + 1 - total))
+            if not chunk:
+                break
+            chunks.append(chunk)
+            total += len(chunk)
+            if total > MAX_ARTIFACT_BYTES:
+                _fail("JSON_ARTIFACT_SIZE_LIMIT_EXCEEDED", label)
+        return b"".join(chunks)
+    except OSError:
+        _fail("CORPUS_FILE_READ_FAILED", label)
+    finally:
+        os.close(descriptor)
+
+
+def enumerate_live_corpus(
+    corpus_root: str | os.PathLike[str],
+) -> list[LiveCorpusCase]:
+    """Mechanically enumerate the flat raw-v1 expectation/input corpus."""
+
+    root_argument = _path_argument(corpus_root, "corpus_root")
+    root = _require_real_directory(root_argument, "corpus_root")
+    expectation_root = _require_real_directory(
+        root / "expectations", "corpus_root.expectations"
+    )
+    input_root = _require_real_directory(root / "inputs", "corpus_root.inputs")
+
+    try:
+        expectation_entries = sorted(
+            expectation_root.iterdir(), key=lambda item: item.name
+        )
+        input_entries = sorted(input_root.iterdir(), key=lambda item: item.name)
+    except OSError:
+        _fail("CORPUS_DIRECTORY_ENUMERATION_FAILED", "corpus_root")
+    if not expectation_entries:
+        _fail("CORPUS_EXPECTATIONS_EMPTY", "corpus_root.expectations")
+
+    cases: list[LiveCorpusCase] = []
+    seen_case_ids: set[str] = set()
+    bound_input_names: set[str] = set()
+    for index, expectation_path in enumerate(expectation_entries):
+        expectation_label = f"expectations[{index}]"
+        if expectation_path.is_symlink():
+            _fail("CORPUS_SYMLINK_REJECTED", expectation_label)
+        if not expectation_path.name.endswith(".expected.json"):
+            _fail("CORPUS_EXPECTATION_FILE_NAME_INVALID", expectation_label)
+        expectation_bytes = _read_regular_file_bounded(
+            expectation_path, expectation_label
+        )
+        expectation = _load_json_object(expectation_bytes, expectation_label)
+        _declare(
+            expectation,
+            "expectation_schema",
+            EXPECTATION_SCHEMA,
+            expectation_label,
+        )
+        case_id = _string(
+            _field(expectation, "case_id", expectation_label),
+            f"{expectation_label}.case_id",
+        )
+        if expectation_path.name != f"{case_id}.expected.json":
+            _fail("CORPUS_EXPECTATION_CASE_FILE_MISMATCH", expectation_label)
+        if case_id in seen_case_ids:
+            _fail("DUPLICATE_CASE_ID", f"{expectation_label}.case_id")
+        seen_case_ids.add(case_id)
+        expected_parse = _string(
+            _field(expectation, "expected_parse_outcome", expectation_label),
+            f"{expectation_label}.expected_parse_outcome",
+        )
+        if expected_parse not in ("ACCEPT", "REJECT"):
+            _fail(
+                "EXPECTED_PARSE_OUTCOME_INVALID",
+                f"{expectation_label}.expected_parse_outcome",
+            )
+        input_name = _string(
+            _field(expectation, "input_file", expectation_label),
+            f"{expectation_label}.input_file",
+        )
+        relative_input = PurePosixPath(input_name)
+        if (
+            "\\" in input_name
+            or relative_input.is_absolute()
+            or relative_input.as_posix() != input_name
+            or len(relative_input.parts) != 2
+            or relative_input.parts[0] != "inputs"
+            or any(part in ("", ".", "..") for part in relative_input.parts)
+        ):
+            _fail(
+                "CORPUS_INPUT_BINDING_PATH_INVALID", f"{expectation_label}.input_file"
+            )
+        bound_name = relative_input.parts[1]
+        if bound_name in bound_input_names:
+            _fail("CORPUS_INPUT_BINDING_AMBIGUOUS", f"{expectation_label}.input_file")
+        bound_input_names.add(bound_name)
+        input_path = input_root / bound_name
+        if input_path.is_symlink():
+            _fail("CORPUS_SYMLINK_REJECTED", f"{expectation_label}.input_file")
+        input_bytes = _read_regular_file_bounded(
+            input_path, f"{expectation_label}.input_file"
+        )
+        cases.append(
+            LiveCorpusCase(
+                case_id=case_id,
+                expected_parse_outcome=expected_parse,
+                expectation_bytes=expectation_bytes,
+                expectation_path=expectation_path,
+                input_bytes=input_bytes,
+                input_path=input_path,
+            )
+        )
+
+    actual_input_names: set[str] = set()
+    for index, input_path in enumerate(input_entries):
+        input_label = f"inputs[{index}]"
+        if input_path.is_symlink():
+            _fail("CORPUS_SYMLINK_REJECTED", input_label)
+        _read_regular_file_bounded(input_path, input_label)
+        actual_input_names.add(input_path.name)
+    if actual_input_names != bound_input_names:
+        _fail("CORPUS_INPUT_SET_NOT_EXACTLY_BOUND", "corpus_root.inputs")
+    return cases
+
+
+def capture_python_raw_v1(
+    case_id: str, input_bytes: bytes, expected_parse_outcome: str
+) -> PythonLiveCapture:
+    """Capture one fresh public-Python parser/replay observation lazily."""
+
+    repository_root = str(Path(__file__).resolve().parents[1])
+    if repository_root not in sys.path:
+        sys.path.insert(0, repository_root)
+    from three_body_symmetry.planar_chain_review_artifact import (
+        ReviewArtifactError,
+        canonical_replay_transcript_json,
+        replay_transcript,
+        strict_load_raw_planar_chain_bytes,
+    )
+
+    case_id = _string(case_id, "python_capture.case_id")
+    if type(input_bytes) is not bytes:
+        _fail("ARTIFACT_NOT_BYTES", "python_capture.input")
+    if expected_parse_outcome == "ACCEPT":
+        try:
+            certificate = strict_load_raw_planar_chain_bytes(input_bytes)
+        except ReviewArtifactError:
+            _fail("PYTHON_EXPECTED_ACCEPT_WAS_REJECTED", "python_capture")
+        transcript = replay_transcript(certificate)
+        payload = canonical_replay_transcript_json(transcript).encode("utf-8")
+        if len(payload) > MAX_ARTIFACT_BYTES:
+            _fail("JSON_ARTIFACT_SIZE_LIMIT_EXCEEDED", "python_capture")
+        return PythonLiveCapture(
+            kind="REPLAY_TRANSCRIPT", payload=payload, profile_id=PYTHON_PROFILE
+        )
+    if expected_parse_outcome != "REJECT":
+        _fail("EXPECTED_PARSE_OUTCOME_INVALID", "python_capture.expected_parse_outcome")
+    try:
+        strict_load_raw_planar_chain_bytes(input_bytes)
+    except ReviewArtifactError:
+        observation = {
+            "capture_kind": "PARSER_REJECT_OBSERVATION",
+            "capture_schema": PYTHON_REJECT_CAPTURE_SCHEMA,
+            "case_id": case_id,
+            "input_sha256": hashlib.sha256(input_bytes).hexdigest(),
+            "parse_outcome": "REJECT",
+            "profile": PYTHON_REJECT_PROFILE,
+        }
+        return PythonLiveCapture(
+            kind="PARSER_REJECT_OBSERVATION",
+            payload=_canonical_json_bytes(observation, "python_capture"),
+            profile_id=PYTHON_REJECT_PROFILE,
+        )
+    _fail("PYTHON_EXPECTED_REJECT_WAS_ACCEPTED", "python_capture")
+
+
+def _validate_python_live_capture(
+    case: LiveCorpusCase, capture: PythonLiveCapture
+) -> None:
+    if type(capture) is not PythonLiveCapture:
+        _fail("PYTHON_CAPTURE_TYPE_INVALID", "python_capture")
+    if type(capture.payload) is not bytes:
+        _fail("ARTIFACT_NOT_BYTES", "python_capture")
+    value = _load_json_object(capture.payload, "python_capture")
+    if capture.payload != _canonical_json_bytes(value, "python_capture"):
+        _fail("PYTHON_CAPTURE_NOT_CANONICAL", "python_capture")
+    if case.expected_parse_outcome == "ACCEPT":
+        if capture.kind != "REPLAY_TRANSCRIPT" or capture.profile_id != PYTHON_PROFILE:
+            _fail("PYTHON_ACCEPT_CAPTURE_PROFILE_INVALID", "python_capture")
+        _declare(value, "artifact_schema", PYTHON_TRANSCRIPT_SCHEMA, "python_capture")
+        _declare(value, "artifact_version", PYTHON_TRANSCRIPT_VERSION, "python_capture")
+        return
+    if (
+        capture.kind != "PARSER_REJECT_OBSERVATION"
+        or capture.profile_id != PYTHON_REJECT_PROFILE
+    ):
+        _fail("PYTHON_REJECT_CAPTURE_PROFILE_INVALID", "python_capture")
+    if set(value) != {
+        "capture_kind",
+        "capture_schema",
+        "case_id",
+        "input_sha256",
+        "parse_outcome",
+        "profile",
+    }:
+        _fail("PYTHON_REJECT_CAPTURE_FIELDS_INVALID", "python_capture")
+    _declare(value, "capture_schema", PYTHON_REJECT_CAPTURE_SCHEMA, "python_capture")
+    _declare(value, "profile", PYTHON_REJECT_PROFILE, "python_capture")
+    if _field(value, "capture_kind", "python_capture") != "PARSER_REJECT_OBSERVATION":
+        _fail("PYTHON_REJECT_CAPTURE_KIND_INVALID", "python_capture.capture_kind")
+    if _field(value, "parse_outcome", "python_capture") != "REJECT":
+        _fail("PYTHON_REJECT_CAPTURE_OUTCOME_INVALID", "python_capture.parse_outcome")
+    if _field(value, "case_id", "python_capture") != case.case_id:
+        _fail("PYTHON_REJECT_CAPTURE_CASE_MISMATCH", "python_capture.case_id")
+    expected_input_sha = hashlib.sha256(case.input_bytes).hexdigest()
+    if _field(value, "input_sha256", "python_capture") != expected_input_sha:
+        _fail("PYTHON_REJECT_CAPTURE_INPUT_MISMATCH", "python_capture.input_sha256")
+
+
+def _validate_rust_executable(value: str | os.PathLike[str]) -> Path:
+    executable = _path_argument(value, "rust_verifier")
+    try:
+        if executable.is_symlink():
+            _fail("RUST_EXECUTABLE_SYMLINK_REJECTED", "rust_verifier")
+        information = executable.stat()
+    except OSError:
+        _fail("RUST_EXECUTABLE_UNAVAILABLE", "rust_verifier")
+    if not stat.S_ISREG(information.st_mode):
+        _fail("RUST_EXECUTABLE_REGULAR_FILE_REQUIRED", "rust_verifier")
+    if not os.access(executable, os.X_OK):
+        _fail("RUST_EXECUTABLE_NOT_EXECUTABLE", "rust_verifier")
+    try:
+        return executable.resolve(strict=True)
+    except OSError:
+        _fail("RUST_EXECUTABLE_UNAVAILABLE", "rust_verifier")
+
+
+def run_rust_raw_v1(
+    executable: str | os.PathLike[str], input_path: str | os.PathLike[str]
+) -> bytes:
+    """Run the documented Rust CLI with bounded output and elapsed time."""
+
+    verifier = _validate_rust_executable(executable)
+    input_file = _path_argument(input_path, "rust_input")
+    try:
+        process = subprocess.Popen(
+            [os.fspath(verifier), os.fspath(input_file)],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+    except OSError:
+        _fail("RUST_PROCESS_START_FAILED", "rust_execution")
+    if process.stdout is None or process.stderr is None:  # pragma: no cover
+        process.kill()
+        process.wait()
+        _fail("RUST_PROCESS_PIPE_SETUP_FAILED", "rust_execution")
+
+    selector = selectors.DefaultSelector()
+    streams = {
+        process.stdout.fileno(): ("stdout", MAX_RUST_STDOUT_BYTES),
+        process.stderr.fileno(): ("stderr", MAX_RUST_STDERR_BYTES),
+    }
+    buffers = {"stdout": bytearray(), "stderr": bytearray()}
+    for stream in (process.stdout, process.stderr):
+        os.set_blocking(stream.fileno(), False)
+        selector.register(stream, selectors.EVENT_READ)
+    deadline = time.monotonic() + RUST_TIMEOUT_SECONDS
+    failure_code: str | None = None
+    try:
+        while selector.get_map():
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                failure_code = "RUST_PROCESS_TIMEOUT"
+                break
+            events = selector.select(min(remaining, 0.25))
+            for key, _mask in events:
+                descriptor = key.fileobj.fileno()
+                name, limit = streams[descriptor]
+                try:
+                    chunk = os.read(descriptor, 64 * 1024)
+                except BlockingIOError:
+                    continue
+                if not chunk:
+                    selector.unregister(key.fileobj)
+                    continue
+                buffer = buffers[name]
+                if len(buffer) + len(chunk) > limit:
+                    failure_code = f"RUST_{name.upper()}_LIMIT_EXCEEDED"
+                    break
+                buffer.extend(chunk)
+            if failure_code is not None:
+                break
+        if failure_code is not None:
+            process.kill()
+            process.wait()
+            _fail(failure_code, "rust_execution")
+        remaining = deadline - time.monotonic()
+        try:
+            return_code = process.wait(timeout=max(remaining, 0.0))
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait()
+            _fail("RUST_PROCESS_TIMEOUT", "rust_execution")
+    finally:
+        selector.close()
+        process.stdout.close()
+        process.stderr.close()
+        if process.poll() is None:
+            process.kill()
+            process.wait()
+
+    stdout = bytes(buffers["stdout"])
+    stderr = bytes(buffers["stderr"])
+    if return_code != 0:
+        _fail("RUST_PROCESS_EXIT_NONZERO", "rust_execution")
+    if stderr:
+        _fail("RUST_PROCESS_STDERR_NOT_EMPTY", "rust_execution")
+    if not stdout:
+        _fail("RUST_PROCESS_STDOUT_EMPTY", "rust_execution")
+    if stdout.endswith(b"\n"):
+        _fail("RUST_PROCESS_STDOUT_TRAILING_NEWLINE", "rust_execution")
+    _load_json_object(stdout, "rust_execution")
+    return stdout
+
+
+PythonCaptureAdapter = Callable[[str, bytes, str], PythonLiveCapture]
+RustExecutionRunner = Callable[[str | os.PathLike[str], Path], bytes]
+
+
+def _compare_live_case(
+    case: LiveCorpusCase,
+    rust_executable: str | os.PathLike[str],
+    python_capture_adapter: PythonCaptureAdapter,
+    rust_execution_runner: RustExecutionRunner,
+) -> dict[str, Any]:
+    capture = python_capture_adapter(
+        case.case_id, case.input_bytes, case.expected_parse_outcome
+    )
+    _validate_python_live_capture(case, capture)
+    with tempfile.TemporaryDirectory(prefix="raw-v1-differential-") as temporary:
+        temporary_root = Path(temporary)
+        os.chmod(temporary_root, 0o700)
+        private_input = temporary_root / "captured-input.raw"
+        descriptor = os.open(
+            private_input,
+            os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_CLOEXEC", 0),
+            0o600,
+        )
+        write_failed = False
+        try:
+            offset = 0
+            while offset < len(case.input_bytes):
+                try:
+                    written = os.write(descriptor, case.input_bytes[offset:])
+                except OSError:
+                    write_failed = True
+                    break
+                if written <= 0:
+                    write_failed = True
+                    break
+                offset += written
+        finally:
+            try:
+                os.close(descriptor)
+            except OSError:
+                write_failed = True
+        if write_failed:
+            _fail("RUST_PRIVATE_INPUT_WRITE_FAILED", "rust_private_input")
+        rust_execution = rust_execution_runner(rust_executable, private_input)
+        retained_private_input = _read_regular_file_bounded(
+            private_input, "rust_private_input"
+        )
+        if retained_private_input != case.input_bytes:
+            _fail("RUST_PRIVATE_INPUT_MUTATED", "rust_private_input")
+    if type(rust_execution) is not bytes:
+        _fail("ARTIFACT_NOT_BYTES", "rust_execution")
+    if len(rust_execution) > MAX_ARTIFACT_BYTES:
+        _fail("JSON_ARTIFACT_SIZE_LIMIT_EXCEEDED", "rust_execution")
+
+    python_transcript = capture.payload if capture.kind == "REPLAY_TRANSCRIPT" else None
+    result = compare_case(
+        case.case_id,
+        case.input_bytes,
+        case.expectation_bytes,
+        python_transcript,
+        rust_execution,
+    )
+    capture_sha256 = hashlib.sha256(capture.payload).hexdigest()
+    result["python_capture_kind"] = capture.kind
+    result["sha256_bindings"]["python_capture_sha256"] = capture_sha256
+    if capture.kind == "REPLAY_TRANSCRIPT":
+        result["profiles"]["python"] = {
+            "capture_kind": capture.kind,
+            "capture_schema": PYTHON_TRANSCRIPT_SCHEMA,
+            "profile_id": PYTHON_PROFILE,
+            "source_marker": PYTHON_LIVE_REPLAY_SOURCE_MARKER,
+            "transcript_present": True,
+        }
+    else:
+        result["profiles"]["python"] = {
+            "capture_kind": capture.kind,
+            "capture_schema": PYTHON_REJECT_CAPTURE_SCHEMA,
+            "profile_id": PYTHON_REJECT_PROFILE,
+            "source_marker": PYTHON_LIVE_REJECT_SOURCE_MARKER,
+            "transcript_present": False,
+        }
+        if result["differential_gate_passed"]:
+            result["comparison_status"] = "PARSER_PROFILE_COMPATIBILITY_OBSERVED"
+    return result
+
+
+def run_live_corpus(
+    corpus_root: str | os.PathLike[str],
+    rust_verifier_executable: str | os.PathLike[str],
+    *,
+    jobs: int = MAX_LIVE_JOBS,
+    python_capture_adapter: PythonCaptureAdapter | None = None,
+    rust_execution_runner: RustExecutionRunner | None = None,
+) -> bytes:
+    """Freshly capture and compare every mechanically bound corpus case."""
+
+    if type(jobs) is not int or not 1 <= jobs <= MAX_LIVE_JOBS:
+        _fail("LIVE_JOBS_OUT_OF_RANGE", "jobs")
+    cases = enumerate_live_corpus(corpus_root)
+    python_adapter = python_capture_adapter or capture_python_raw_v1
+    if rust_execution_runner is None:
+        rust_executable = _validate_rust_executable(rust_verifier_executable)
+        rust_runner = run_rust_raw_v1
+    else:
+        rust_executable = _path_argument(rust_verifier_executable, "rust_verifier")
+        rust_runner = rust_execution_runner
+
+    def capture(case: LiveCorpusCase) -> dict[str, Any]:
+        return _compare_live_case(
+            case,
+            rust_executable,
+            python_adapter,
+            rust_runner,
+        )
+
+    with ThreadPoolExecutor(max_workers=jobs) as executor:
+        results = list(executor.map(capture, cases))
+    return build_report(results, capture_mode=LIVE_CAPTURE_MODE)
+
+
+def _write_report_file(path_value: str | os.PathLike[str], payload: bytes) -> None:
+    output_path = _path_argument(path_value, "output")
+    parent = output_path.parent
+    try:
+        if parent.is_symlink() or not parent.is_dir():
+            _fail("OUTPUT_PARENT_DIRECTORY_INVALID", "output")
+        if output_path.is_symlink():
+            _fail("OUTPUT_SYMLINK_REJECTED", "output")
+    except OSError:
+        _fail("OUTPUT_PATH_UNAVAILABLE", "output")
+    temporary_path: str | None = None
+    try:
+        descriptor, temporary_path = tempfile.mkstemp(
+            dir=parent, prefix=f".{output_path.name}.", suffix=".tmp"
+        )
+    except OSError:
+        _fail("OUTPUT_OPEN_FAILED", "output")
+    write_failed = False
+    try:
+        os.fchmod(descriptor, 0o644)
+        offset = 0
+        while offset < len(payload):
+            written = os.write(descriptor, payload[offset:])
+            if written <= 0:
+                write_failed = True
+                break
+            offset += written
+        os.fsync(descriptor)
+    except OSError:
+        write_failed = True
+    finally:
+        os.close(descriptor)
+    if write_failed:
+        try:
+            os.unlink(temporary_path)
+        except OSError:
+            pass
+        _fail("OUTPUT_WRITE_FAILED", "output")
+    try:
+        os.replace(temporary_path, output_path)
+    except OSError:
+        try:
+            os.unlink(temporary_path)
+        except OSError:
+            pass
+        _fail("OUTPUT_REPLACE_FAILED", "output")
+
+
+def _argument_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description="Bounded raw-v1 cross-profile compatibility comparison"
+    )
+    commands = parser.add_subparsers(dest="command", required=True)
+    live = commands.add_parser(
+        "live", help="freshly capture and compare the complete raw-v1 corpus"
+    )
+    live.add_argument("--corpus-root", required=True, type=Path)
+    live.add_argument("--rust-verifier", required=True, type=Path)
+    live.add_argument("--output", required=True, type=Path)
+    live.add_argument(
+        "--jobs", type=int, choices=range(1, MAX_LIVE_JOBS + 1), default=MAX_LIVE_JOBS
+    )
+    return parser
+
+
+def main(
+    argv: list[str] | None = None,
+    *,
+    live_runner: Callable[..., bytes] = run_live_corpus,
+) -> int:
+    args = _argument_parser().parse_args(argv)
+    try:
+        if args.command != "live":  # pragma: no cover - argparse enforces this
+            _fail("CLI_COMMAND_INVALID", "command")
+        report_bytes = live_runner(
+            args.corpus_root,
+            args.rust_verifier,
+            jobs=args.jobs,
+        )
+        report = _load_json_object(report_bytes, "report")
+        aggregate = _mapping(_field(report, "aggregate", "report"), "report.aggregate")
+        passed = _boolean(
+            _field(aggregate, "differential_gate_passed", "report.aggregate"),
+            "report.aggregate.differential_gate_passed",
+        )
+        _write_report_file(args.output, report_bytes)
+        if passed:
+            return 0
+        print("raw-v1-live:DIFFERENTIAL_DISAGREEMENT", file=sys.stderr)
+        return 1
+    except DifferentialGateError as error:
+        print(f"raw-v1-live:{error.code}", file=sys.stderr)
+        return 2
+    except Exception:
+        print("raw-v1-live:INTERNAL_CAPTURE_FAILURE", file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

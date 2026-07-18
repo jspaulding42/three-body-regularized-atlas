@@ -4,12 +4,16 @@ import importlib.util
 import hashlib
 import json
 from pathlib import Path
+import subprocess
+import sys
 
 import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / "scripts" / "raw_v1_differential_gate.py"
+CORPUS_ROOT = ROOT / "conformance" / "raw-v1"
+RUST_VERIFIER = ROOT / "verifiers" / "rust-v1" / "target" / "debug" / "raw_v1_verify"
 SPEC = importlib.util.spec_from_file_location("raw_v1_differential_gate", SCRIPT)
 assert SPEC is not None and SPEC.loader is not None
 gate = importlib.util.module_from_spec(SPEC)
@@ -292,6 +296,51 @@ def rejected_fixture():
     return input_bytes, json_bytes(expectation), None, json_bytes(rust)
 
 
+def python_reject_capture(case_id: str, input_bytes: bytes):
+    observation = {
+        "capture_kind": "PARSER_REJECT_OBSERVATION",
+        "capture_schema": gate.PYTHON_REJECT_CAPTURE_SCHEMA,
+        "case_id": case_id,
+        "input_sha256": hashlib.sha256(input_bytes).hexdigest(),
+        "parse_outcome": "REJECT",
+        "profile": gate.PYTHON_REJECT_PROFILE,
+    }
+    return gate.PythonLiveCapture(
+        kind="PARSER_REJECT_OBSERVATION",
+        payload=json_bytes(observation),
+        profile_id=gate.PYTHON_REJECT_PROFILE,
+    )
+
+
+def write_fake_live_corpus(root: Path):
+    expectation_root = root / "expectations"
+    input_root = root / "inputs"
+    expectation_root.mkdir(parents=True)
+    input_root.mkdir()
+    captures = {}
+    rust_executions = {}
+    for case_id, fixture in (
+        ("synthetic-success", accepted_fixture()),
+        ("synthetic-reject", rejected_fixture()),
+    ):
+        input_bytes, expectation_bytes, python_bytes, rust_bytes = fixture
+        expectation = json.loads(expectation_bytes)
+        input_name = Path(expectation["input_file"]).name
+        (expectation_root / f"{case_id}.expected.json").write_bytes(expectation_bytes)
+        (input_root / input_name).write_bytes(input_bytes)
+        captures[case_id] = (
+            gate.PythonLiveCapture(
+                kind="REPLAY_TRANSCRIPT",
+                payload=python_bytes,
+                profile_id=gate.PYTHON_PROFILE,
+            )
+            if python_bytes is not None
+            else python_reject_capture(case_id, input_bytes)
+        )
+        rust_executions[hashlib.sha256(input_bytes).hexdigest()] = rust_bytes
+    return captures, rust_executions
+
+
 @pytest.mark.parametrize(
     ("left", "right", "expected"),
     (
@@ -372,6 +421,154 @@ def test_compare_case_parser_reject_has_no_theorem_status_or_python_hash() -> No
     assert result["profiles"]["rust_semantic"] is None
     assert result["sha256_bindings"]["python_transcript_sha256"] is None
     assert result["sha256_bindings"]["theorem_evidence_sha256"] is None
+
+
+@pytest.mark.parametrize(
+    ("fixture_factory", "updates", "removed_field", "code"),
+    (
+        (
+            accepted_fixture,
+            {"unexpected": None},
+            None,
+            "RUST_EXECUTION_FIELDS_INVALID",
+        ),
+        (
+            accepted_fixture,
+            {},
+            "semantic_result",
+            "RUST_EXECUTION_FIELDS_INVALID",
+        ),
+        (
+            rejected_fixture,
+            {"rejection_stage": None},
+            None,
+            "RUST_REJECTION_STAGE_INVALID",
+        ),
+        (
+            rejected_fixture,
+            {"rejection_stage": "OTHER"},
+            None,
+            "RUST_REJECTION_STAGE_INVALID",
+        ),
+        (
+            rejected_fixture,
+            {"evaluation_outcome": "RESULT"},
+            None,
+            "RUST_REJECT_ENVELOPE_INCONSISTENT",
+        ),
+        (
+            rejected_fixture,
+            {"evaluation_error_stage": "NAMESPACE"},
+            None,
+            "RUST_REJECT_ENVELOPE_INCONSISTENT",
+        ),
+        (
+            rejected_fixture,
+            {"semantic_result": {}},
+            None,
+            "RUST_REJECT_ENVELOPE_INCONSISTENT",
+        ),
+        (
+            accepted_fixture,
+            {"rejection_stage": "SCHEMA"},
+            None,
+            "RUST_ACCEPT_REJECTION_STAGE_NOT_NULL",
+        ),
+        (
+            accepted_fixture,
+            {"evaluation_outcome": "NOT_RUN"},
+            None,
+            "RUST_ACCEPT_ENVELOPE_INCONSISTENT",
+        ),
+        (
+            accepted_fixture,
+            {"evaluation_error_stage": "NAMESPACE"},
+            None,
+            "RUST_RESULT_ENVELOPE_INCONSISTENT",
+        ),
+        (
+            accepted_fixture,
+            {"semantic_result": None},
+            None,
+            "RUST_RESULT_ENVELOPE_INCONSISTENT",
+        ),
+        (
+            accepted_fixture,
+            {
+                "evaluation_outcome": "ERROR",
+                "evaluation_error_stage": None,
+                "semantic_result": None,
+            },
+            None,
+            "RUST_ERROR_ENVELOPE_INCONSISTENT",
+        ),
+        (
+            accepted_fixture,
+            {
+                "evaluation_outcome": "ERROR",
+                "evaluation_error_stage": "NAMESPACE",
+            },
+            None,
+            "RUST_ERROR_ENVELOPE_INCONSISTENT",
+        ),
+        (
+            accepted_fixture,
+            {"evaluation_error_stage": "OTHER"},
+            None,
+            "RUST_EVALUATION_ERROR_STAGE_INVALID",
+        ),
+        (
+            accepted_fixture,
+            {"semantic_result": "not-an-object"},
+            None,
+            "RUST_SEMANTIC_RESULT_OBJECT_OR_NULL_REQUIRED",
+        ),
+    ),
+)
+def test_compare_case_rejects_mutated_rust_execution_envelope(
+    fixture_factory, updates, removed_field, code
+) -> None:
+    input_bytes, expectation_bytes, python_bytes, rust_bytes = fixture_factory()
+    rust_execution = json.loads(rust_bytes)
+    rust_execution.update(updates)
+    if removed_field is not None:
+        del rust_execution[removed_field]
+    case_id = json.loads(expectation_bytes)["case_id"]
+    with pytest.raises(gate.DifferentialGateError) as error:
+        gate.compare_case(
+            case_id,
+            input_bytes,
+            expectation_bytes,
+            python_bytes,
+            json_bytes(rust_execution),
+        )
+    assert error.value.code == code
+
+
+def test_compare_case_accepts_consistent_rust_error_envelope_as_a_mismatch() -> None:
+    input_bytes, expectation_bytes, python_bytes, rust_bytes = accepted_fixture()
+    rust_execution = json.loads(rust_bytes)
+    rust_execution.update(
+        {
+            "evaluation_outcome": "ERROR",
+            "evaluation_error_stage": "MIXED_REPLAY",
+            "semantic_result": None,
+        }
+    )
+    result = gate.compare_case(
+        "synthetic-success",
+        input_bytes,
+        expectation_bytes,
+        python_bytes,
+        json_bytes(rust_execution),
+    )
+    assert result["differential_gate_passed"] is False
+    assert result["mismatch_ids"] == [
+        "RUST_ACCEPT_EVALUATION_OUTCOME_MISMATCH",
+        "RUST_ACCEPT_SEMANTIC_RESULT_ABSENT",
+        "RUST_ACCEPT_EVALUATION_ERROR_STAGE_PRESENT",
+    ]
+    assert result["profiles"]["rust_semantic"] is None
 
 
 def test_compare_case_records_stable_semantic_mismatch_without_exception() -> None:
@@ -554,6 +751,53 @@ def test_build_report_is_canonical_blocked_and_explicitly_nonclaiming() -> None:
     assert str(ROOT).lower() not in lowered
 
 
+def test_offline_v1_report_shape_and_bytes_match_pushed_1ac2175_contract() -> None:
+    cases = [
+        gate.compare_case("synthetic-success", *accepted_fixture()),
+        gate.compare_case("synthetic-reject", *rejected_fixture()),
+    ]
+    report_bytes = gate.build_report(cases)
+    report = json.loads(report_bytes)
+
+    assert hashlib.sha256(report_bytes).hexdigest() == (
+        "63bc1903bdb5385149afc697ed9fe454aa00b5999ea4f48dcec17c5ca4a14b43"
+    )
+    assert set(report) == {
+        "aggregate",
+        "cases",
+        "comparator_id",
+        "comparison_kind",
+        "report_schema",
+    }
+    assert report["report_schema"] == gate.REPORT_SCHEMA
+    assert "capture_mode" not in report
+    for case in report["cases"]:
+        assert set(case) == {
+            "case_id",
+            "comparison_status",
+            "differential_gate_passed",
+            "expected_parse_outcome",
+            "interval_relations",
+            "mismatch_ids",
+            "profiles",
+            "sha256_bindings",
+            "theorem_status",
+        }
+        assert set(case["profiles"]["python"]) == {
+            "profile_id",
+            "source_marker",
+            "transcript_present",
+        }
+        assert set(case["sha256_bindings"]) == {
+            "expectation_sha256",
+            "input_sha256",
+            "python_transcript_sha256",
+            "rust_execution_sha256",
+            "theorem_evidence_sha256",
+        }
+        assert "python_capture_kind" not in case
+
+
 def test_build_report_adds_differential_blocker_and_disjoint_count() -> None:
     def mutation(_expectation, _python, rust):
         rust["semantic_result"]["current_clock_origin"] = interval("2", "3")
@@ -602,6 +846,306 @@ def test_compare_case_rejects_surrogate_case_id_with_stable_error() -> None:
     with pytest.raises(gate.DifferentialGateError) as error:
         gate.compare_case("\ud800", *accepted_fixture())
     assert error.value.code == "STRING_NOT_UTF8_ENCODABLE"
+
+
+def test_live_corpus_fake_adapters_are_fresh_bound_ordered_and_deterministic(
+    tmp_path,
+) -> None:
+    corpus = tmp_path / "corpus"
+    captures, rust_executions = write_fake_live_corpus(corpus)
+
+    def python_adapter(case_id, _input_bytes, _expected_parse):
+        return captures[case_id]
+
+    def rust_runner(_executable, input_path):
+        captured = input_path.read_bytes()
+        return rust_executions[hashlib.sha256(captured).hexdigest()]
+
+    first = gate.run_live_corpus(
+        corpus,
+        "fake-rust",
+        jobs=2,
+        python_capture_adapter=python_adapter,
+        rust_execution_runner=rust_runner,
+    )
+    second = gate.run_live_corpus(
+        corpus,
+        "fake-rust",
+        jobs=2,
+        python_capture_adapter=python_adapter,
+        rust_execution_runner=rust_runner,
+    )
+    assert first == second
+    assert not first.endswith(b"\n")
+    report = json.loads(first)
+    assert report["capture_mode"] == gate.LIVE_CAPTURE_MODE
+    assert report["report_schema"] == gate.LIVE_REPORT_SCHEMA
+    assert report["aggregate"]["differential_gate_passed"] is True
+    assert [case["case_id"] for case in report["cases"]] == [
+        "synthetic-reject",
+        "synthetic-success",
+    ]
+    rejected, accepted = report["cases"]
+    assert rejected["python_capture_kind"] == "PARSER_REJECT_OBSERVATION"
+    assert rejected["profiles"]["python"] == {
+        "capture_kind": "PARSER_REJECT_OBSERVATION",
+        "capture_schema": gate.PYTHON_REJECT_CAPTURE_SCHEMA,
+        "profile_id": gate.PYTHON_REJECT_PROFILE,
+        "source_marker": gate.PYTHON_LIVE_REJECT_SOURCE_MARKER,
+        "transcript_present": False,
+    }
+    assert (
+        rejected["sha256_bindings"]["python_capture_sha256"]
+        == hashlib.sha256(captures["synthetic-reject"].payload).hexdigest()
+    )
+    assert rejected["sha256_bindings"]["python_transcript_sha256"] is None
+    assert accepted["python_capture_kind"] == "REPLAY_TRANSCRIPT"
+    assert (
+        accepted["sha256_bindings"]["python_capture_sha256"]
+        == accepted["sha256_bindings"]["python_transcript_sha256"]
+    )
+    lowered = first.decode().lower()
+    assert str(tmp_path).lower() not in lowered
+    assert "timestamp" not in lowered
+    assert "exception" not in lowered
+
+
+def test_live_corpus_rejects_unbound_input_and_path_traversal(tmp_path) -> None:
+    corpus = tmp_path / "corpus"
+    write_fake_live_corpus(corpus)
+    (corpus / "inputs" / "unbound.json").write_bytes(b"{}")
+    with pytest.raises(gate.DifferentialGateError) as unbound:
+        gate.enumerate_live_corpus(corpus)
+    assert unbound.value.code == "CORPUS_INPUT_SET_NOT_EXACTLY_BOUND"
+
+    (corpus / "inputs" / "unbound.json").unlink()
+    expectation_path = corpus / "expectations" / "synthetic-reject.expected.json"
+    expectation = json.loads(expectation_path.read_bytes())
+    expectation["input_file"] = "inputs/../synthetic.json"
+    expectation_path.write_bytes(json_bytes(expectation))
+    with pytest.raises(gate.DifferentialGateError) as traversal:
+        gate.enumerate_live_corpus(corpus)
+    assert traversal.value.code == "CORPUS_INPUT_BINDING_PATH_INVALID"
+
+
+def test_live_corpus_rejects_symlinked_input(tmp_path) -> None:
+    corpus = tmp_path / "corpus"
+    write_fake_live_corpus(corpus)
+    input_path = corpus / "inputs" / "synthetic.json"
+    payload = input_path.read_bytes()
+    target = tmp_path / "target.json"
+    target.write_bytes(payload)
+    input_path.unlink()
+    try:
+        input_path.symlink_to(target)
+    except OSError:
+        pytest.skip("symlinks are unavailable")
+    with pytest.raises(gate.DifferentialGateError) as error:
+        gate.enumerate_live_corpus(corpus)
+    assert error.value.code == "CORPUS_SYMLINK_REJECTED"
+
+
+def test_live_jobs_are_bounded_before_capture(tmp_path) -> None:
+    corpus = tmp_path / "corpus"
+    write_fake_live_corpus(corpus)
+    with pytest.raises(gate.DifferentialGateError) as error:
+        gate.run_live_corpus(
+            corpus,
+            "fake-rust",
+            jobs=3,
+            python_capture_adapter=lambda *_args: None,
+            rust_execution_runner=lambda *_args: b"{}",
+        )
+    assert error.value.code == "LIVE_JOBS_OUT_OF_RANGE"
+
+
+def test_live_rust_handoff_detects_private_input_mutation(tmp_path) -> None:
+    corpus = tmp_path / "corpus"
+    captures, rust_executions = write_fake_live_corpus(corpus)
+
+    def python_adapter(case_id, _input_bytes, _expected_parse):
+        return captures[case_id]
+
+    def mutating_rust_runner(_executable, input_path):
+        original = input_path.read_bytes()
+        execution = rust_executions[hashlib.sha256(original).hexdigest()]
+        input_path.write_bytes(b"mutated")
+        return execution
+
+    with pytest.raises(gate.DifferentialGateError) as error:
+        gate.run_live_corpus(
+            corpus,
+            "fake-rust",
+            jobs=1,
+            python_capture_adapter=python_adapter,
+            rust_execution_runner=mutating_rust_runner,
+        )
+    assert error.value.code == "RUST_PRIVATE_INPUT_MUTATED"
+
+
+def test_live_rust_handoff_rejects_zero_byte_private_input_write(
+    tmp_path, monkeypatch
+) -> None:
+    corpus = tmp_path / "corpus"
+    captures, _rust_executions = write_fake_live_corpus(corpus)
+
+    def python_adapter(case_id, _input_bytes, _expected_parse):
+        return captures[case_id]
+
+    monkeypatch.setattr(gate.os, "write", lambda _descriptor, _payload: 0)
+    with pytest.raises(gate.DifferentialGateError) as error:
+        gate.run_live_corpus(
+            corpus,
+            "fake-rust",
+            jobs=1,
+            python_capture_adapter=python_adapter,
+            rust_execution_runner=lambda *_args: pytest.fail(
+                "Rust must not run after a failed private input write"
+            ),
+        )
+    assert error.value.code == "RUST_PRIVATE_INPUT_WRITE_FAILED"
+
+
+def test_python_reject_adapter_catches_only_public_artifact_error(monkeypatch) -> None:
+    from three_body_symmetry import planar_chain_review_artifact as artifact
+
+    def internal_failure(_payload):
+        raise RuntimeError("internal")
+
+    monkeypatch.setattr(
+        artifact, "strict_load_raw_planar_chain_bytes", internal_failure
+    )
+    with pytest.raises(RuntimeError, match="internal"):
+        gate.capture_python_raw_v1("reject", b"bad", "REJECT")
+
+    def public_reject(_payload):
+        raise artifact.ReviewArtifactError("expected")
+
+    monkeypatch.setattr(artifact, "strict_load_raw_planar_chain_bytes", public_reject)
+    capture = gate.capture_python_raw_v1("reject", b"bad", "REJECT")
+    assert capture.kind == "PARSER_REJECT_OBSERVATION"
+    assert "expected" not in capture.payload.decode()
+
+    with pytest.raises(gate.DifferentialGateError) as accepted_error:
+        gate.capture_python_raw_v1("accept", b"bad", "ACCEPT")
+    assert accepted_error.value.code == "PYTHON_EXPECTED_ACCEPT_WAS_REJECTED"
+
+
+def test_real_reject_live_capture_and_rust_envelope_are_compatible() -> None:
+    if not RUST_VERIFIER.is_file():
+        pytest.skip("debug Rust verifier executable is not built")
+    case = next(
+        item
+        for item in gate.enumerate_live_corpus(CORPUS_ROOT)
+        if item.case_id == "reject-trailing-newline"
+    )
+    result = gate._compare_live_case(
+        case,
+        RUST_VERIFIER,
+        gate.capture_python_raw_v1,
+        gate.run_rust_raw_v1,
+    )
+    assert result["differential_gate_passed"] is True
+    assert result["comparison_status"] == "PARSER_PROFILE_COMPATIBILITY_OBSERVED"
+    assert result["python_capture_kind"] == "PARSER_REJECT_OBSERVATION"
+    assert result["sha256_bindings"]["python_capture_sha256"] is not None
+    assert result["sha256_bindings"]["rust_execution_sha256"] is not None
+
+
+def test_direct_script_live_command_runs_one_cheap_real_reject(tmp_path) -> None:
+    if not RUST_VERIFIER.is_file():
+        pytest.skip("debug Rust verifier executable is not built")
+    corpus = tmp_path / "corpus"
+    (corpus / "expectations").mkdir(parents=True)
+    (corpus / "inputs").mkdir()
+    expectation_name = "reject-trailing-newline.expected.json"
+    input_name = "reject-trailing-newline.json"
+    (corpus / "expectations" / expectation_name).write_bytes(
+        (CORPUS_ROOT / "expectations" / expectation_name).read_bytes()
+    )
+    (corpus / "inputs" / input_name).write_bytes(
+        (CORPUS_ROOT / "inputs" / input_name).read_bytes()
+    )
+    output = tmp_path / "live-report.json"
+    completed = subprocess.run(
+        [
+            sys.executable,
+            SCRIPT,
+            "live",
+            "--corpus-root",
+            corpus,
+            "--rust-verifier",
+            RUST_VERIFIER,
+            "--output",
+            output,
+            "--jobs",
+            "1",
+        ],
+        cwd=ROOT,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+        timeout=30,
+    )
+    assert completed.returncode == 0
+    assert completed.stdout == b""
+    assert completed.stderr == b""
+    report_bytes = output.read_bytes()
+    assert not report_bytes.endswith(b"\n")
+    report = json.loads(report_bytes)
+    assert report["capture_mode"] == gate.LIVE_CAPTURE_MODE
+    assert report["cases"][0]["python_capture_kind"] == "PARSER_REJECT_OBSERVATION"
+
+
+def test_live_cli_writes_canonical_report_and_uses_gate_result_for_exit(
+    tmp_path, capsys
+) -> None:
+    output = tmp_path / "report.json"
+    case = gate.compare_case("synthetic-reject", *rejected_fixture())
+    report = gate.build_report([case], capture_mode=gate.LIVE_CAPTURE_MODE)
+
+    def fake_live_runner(_corpus, _rust, *, jobs):
+        assert jobs == 1
+        return report
+
+    exit_code = gate.main(
+        [
+            "live",
+            "--corpus-root",
+            str(tmp_path),
+            "--rust-verifier",
+            str(tmp_path / "rust"),
+            "--output",
+            str(output),
+            "--jobs",
+            "1",
+        ],
+        live_runner=fake_live_runner,
+    )
+    assert exit_code == 0
+    assert output.read_bytes() == report
+    assert not output.read_bytes().endswith(b"\n")
+    assert capsys.readouterr().err == ""
+
+
+def test_live_cli_capture_failure_has_stable_stderr(tmp_path, capsys) -> None:
+    def failed_runner(*_args, **_kwargs):
+        raise gate.DifferentialGateError("FAKE_CAPTURE_FAILURE", "fake")
+
+    exit_code = gate.main(
+        [
+            "live",
+            "--corpus-root",
+            str(tmp_path),
+            "--rust-verifier",
+            str(tmp_path / "rust"),
+            "--output",
+            str(tmp_path / "report.json"),
+        ],
+        live_runner=failed_runner,
+    )
+    assert exit_code == 2
+    assert capsys.readouterr().err == "raw-v1-live:FAKE_CAPTURE_FAILURE\n"
 
 
 @pytest.mark.parametrize(
