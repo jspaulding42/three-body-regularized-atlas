@@ -516,12 +516,14 @@ implemented by `project_planar_lc_full_state_exact_rational` in
 [`planar_lc_projection.rs`](../verifiers/rust-v1/src/planar_lc_projection.rs).
 The obligation `carried_lc_exit_deck_equivariant_newton_projection_kernel`
 marks use of this mathematical lemma. The code's Boolean dependency alone is
-not its proof. Two implementation gates remain open: a line-by-line
-correspondence argument must show that the Rust field, projection, and exact
-mass-profile formulas are precisely the formulas proved above, and the
-rational-interval arithmetic must satisfy an inclusion contract showing that
-the projected interval box contains every exact point projection when its
-\(\rho\) lower bound is positive.
+not its proof. The source-level
+[Rust LC formula-correspondence and interval-inclusion audit](rust-lc-formula-and-interval-inclusion-audit.md)
+closes the line-by-line field/lift/projection/mass correspondence and proves
+the rational-interval inclusion contract, including complete
+positive-\(\rho\) slice projection, conditional on its stated Rust and
+`num-bigint`/`num-rational` arithmetic trust boundary. The remaining
+implementation gap is foundational verification of that boundary, not an
+unidentified formula or interval-inclusion step.
 
 ### Lemma 6 (LC passage handoff)
 
@@ -549,8 +551,8 @@ regularized point and selects the outgoing continuation. Lemma 3 keeps this
 one lifted solution constrained, Lemma 4 strictly orders its physical clock,
 and Lemma 5 projects its outgoing punctured component to Newton.
 
-Assuming the interval-inclusion contract just identified, at an exit whose
-complete slice has \(\rho>0\), the interval projection contains the exact
+Under the audited arithmetic trust boundary, at an exit whose complete slice
+has \(\rho>0\), the interval projection contains the exact
 projected state of this same lifted solution. If the complete projected box is
 contained in the target ordinary tube's initial ball, instantiate Theorem 1
 with that exact projected exit state as the target anchor state. The resulting
@@ -707,7 +709,8 @@ following gates should be closed explicitly.
   change to the implemented field normalization.
 - Regression-check the displayed deck-equivariant, relative, and full-body
   projection proof against future changes in lift, field, or mass conventions;
-  the Rust correspondence and interval-inclusion gates remain below.
+  the current Rust correspondence and interval-inclusion argument is recorded
+  in the source audit linked from Lemma 5.
 - Prove the strict-clock lemma from positive entry \(\rho\), analyticity, and
   \(t'=|z|^2\).
 - Record the displayed ordinary and LC same-branch handoff arguments and finite
@@ -716,9 +719,11 @@ following gates should be closed explicitly.
 
 ### Arithmetic and implementation gates
 
-- Define the inclusion contract for rational intervals, interval Horner
-  evaluation, interval dual differentiation, dyadic square-root enclosures,
-  and exponential enclosures; resource exhaustion must fail closed.
+- Retain the proved source-level inclusion contract for rational intervals,
+  interval Horner evaluation, interval dual differentiation, and dyadic
+  square-root enclosures; separately close its Rust/`num-bigint`/
+  `num-rational` trust boundary. Define the analogous exponential-enclosure
+  contract; resource exhaustion must fail closed.
 - Establish that ordinary defect, LC defect, LC field, lift, and projection use
   the same exact serialized positive masses, with the exact-derived outward LC
   mass profile wherever ratios occur.
