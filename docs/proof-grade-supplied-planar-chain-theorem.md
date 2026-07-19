@@ -437,13 +437,91 @@ On the constrained set \(C=0\) with \(\rho>0\), the implemented projection from
    integral curves of the planar Newton field with the same exact masses; and
 3. agree with the entry lift formulas.
 
+Here is the full mass-weighted projection proof. Put
+
+\[
+ M=m_i+m_j,\qquad
+ \alpha=\frac{m_j}{M},\qquad
+ \beta=\frac{m_i}{M},
+\]
+
+and, with \(q=Q(z)\), define the two third-body displacement and force blocks
+
+\[
+\begin{aligned}
+ d_i&=y+\alpha q,& f_i&=\frac{d_i}{|d_i|^3},\\
+ d_j&=y-\beta q,& f_j&=\frac{d_j}{|d_j|^3}.
+\end{aligned}
+\]
+
+The exact lifted equations use
+
+\[
+\begin{aligned}
+ P&=m_k(f_j-f_i),\\
+ B&=\frac{m_k}{M}(m_i f_i+m_j f_j),\\
+ A_k&=-m_i f_i-m_j f_j,\qquad Y=A_k-B.
+\end{aligned}
+\]
+
+Constraint invariance and the relative LC calculation give, on \(\rho>0\),
+
+\[
+ \ddot q=-M\frac{q}{|q|^3}+P.
+\]
+
+Differentiating
+\(q_i=R-\alpha q\), \(q_j=R+\beta q\), and \(q_k=R+y\) in
+physical time therefore gives
+
+\[
+\begin{aligned}
+ \ddot q_i
+ &=B-\alpha\ddot q
+ =m_j\frac{q}{|q|^3}+m_kf_i,\\
+ \ddot q_j
+ &=B+\beta\ddot q
+ =-m_i\frac{q}{|q|^3}+m_kf_j,\\
+ \ddot q_k
+ &=B+Y=A_k=-m_if_i-m_jf_j.
+\end{aligned}
+\]
+
+For example, the noncentral force in the first equality reduces as
+
+\[
+ \frac{m_k}{M}(m_if_i+m_jf_j)
+ -\frac{m_jm_k}{M}(f_j-f_i)=m_kf_i;
+\]
+
+the second equality is analogous. Since
+\(d_i=q_k-q_i\) and \(d_j=q_k-q_j\), the three displayed equations are exactly
+the three planar Newton acceleration equations.
+
+Deck equivariance also follows for the complete force blocks, not only for the
+relative kinematics. The identities \(Q(-z)=Q(z)\) and unchanged \(y\) imply
+that \(d_i,d_j\), hence \(f_i,f_j,P,B,Y\), are unchanged. Together with the
+deck identities in Lemma 2, this proves that the punctured Cartesian projection
+is deck invariant and that deck-related lifted solutions have the same
+physical projection.
+
+The displayed algebra is the proof. The exact symbolic checks in
+[verify_lc_projection_identities.py](../scripts/verify_lc_projection_identities.py)
+are regression checks against transcription or convention drift; they are not
+a foundational proof system.
+
 The exact-derived mass profile used by field, lift, and projection must denote
 one and the same positive mass problem. The finite interval projection is
 implemented by `project_planar_lc_full_state_exact_rational` in
 [`planar_lc_projection.rs`](../verifiers/rust-v1/src/planar_lc_projection.rs).
 The obligation `carried_lc_exit_deck_equivariant_newton_projection_kernel`
 marks use of this mathematical lemma. The code's Boolean dependency alone is
-not its proof.
+not its proof. Two implementation gates remain open: a line-by-line
+correspondence argument must show that the Rust field, projection, and exact
+mass-profile formulas are precisely the formulas proved above, and the
+rational-interval arithmetic must satisfy an inclusion contract showing that
+the projected interval box contains every exact point projection when its
+\(\rho\) lower bound is positive.
 
 ### Lemma 6 (LC passage handoff)
 
@@ -455,12 +533,34 @@ tube's initial ball, that representative satisfies the anchor premise of the
 lifted tube theorem. It therefore generates a unique lifted solution in the LC
 tube.
 
-At a punctured exit with a complete-slice lower bound \(\rho>0\), Lemmas 3 and 5
-show that the complete projected exit box contains the same physical branch.
-If that box is contained in the target ordinary tube's initial ball, Theorem 1
-produces a target ordinary solution, and ordinary IVP uniqueness identifies it
-with the punctured LC projection. Lemma 4 carries the strict physical-time
-ordering and the fourteenth component carries the clock interval.
+This establishes branch identity, rather than mere intersection of enclosures,
+as follows. At the punctured entry, projection of the chosen exact lift is
+exactly the actual source endpoint state, and its fourteenth component is the
+same physical time carried by the parent clock. On the connected incoming
+punctured component, Lemma 5 makes the LC projection a solution of the same
+autonomous Newton equation as the source ordinary branch. They have the same
+state at the entry time, so local Newton IVP uniqueness makes them equal near
+entry; continuation of that uniqueness along the connected component makes
+them equal up to the collision boundary.
+
+If \(z\) vanishes, no uniqueness of the singular Cartesian Newton equation is
+invoked at that instant. The unique analytic lifted IVP itself crosses the
+regularized point and selects the outgoing continuation. Lemma 3 keeps this
+one lifted solution constrained, Lemma 4 strictly orders its physical clock,
+and Lemma 5 projects its outgoing punctured component to Newton.
+
+Assuming the interval-inclusion contract just identified, at an exit whose
+complete slice has \(\rho>0\), the interval projection contains the exact
+projected state of this same lifted solution. If the complete projected box is
+contained in the target ordinary tube's initial ball, instantiate Theorem 1
+with that exact projected exit state as the target anchor state. The resulting
+target ordinary solution and the outgoing LC
+projection solve the same Newton IVP at the same physical time, so ordinary
+local uniqueness identifies them near the handoff and hence throughout their
+common connected domain. Complete containment is what supplies the actual
+anchor premise; overlap of two boxes would not suffice. The fourteenth lifted
+component and the exact clock cocycle carry the physical-time identity through
+both handoffs.
 
 The entry arithmetic is in
 `replay_carried_planar_lc_entry_exact_rational_v04` in
@@ -605,12 +705,14 @@ following gates should be closed explicitly.
 - Prove Lemma 2 for every canonical square-root-cover case and its parity graph.
 - Regression-check the displayed proof of \(D C\,F_{LC}=0\) against any future
   change to the implemented field normalization.
-- Prove the deck-equivariant punctured LC-to-Newton projection identities for
-  the implemented lift, field, and mass conventions.
+- Regression-check the displayed deck-equivariant, relative, and full-body
+  projection proof against future changes in lift, field, or mass conventions;
+  the Rust correspondence and interval-inclusion gates remain below.
 - Prove the strict-clock lemma from positive entry \(\rho\), analyticity, and
   \(t'=|z|^2\).
-- Prove the ordinary and LC same-branch handoff lemmas and finite induction,
-  rather than treating implementation IDs as proof objects.
+- Record the displayed ordinary and LC same-branch handoff arguments and finite
+  induction as named theorem dependencies, rather than treating implementation
+  IDs as proof objects.
 
 ### Arithmetic and implementation gates
 

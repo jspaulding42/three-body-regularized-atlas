@@ -2,8 +2,9 @@
 """Exact symbolic audit of the planar Levi-Civita projection algebra.
 
 This script checks the algebra used by the regularized vector field in
-``three_body_symmetry.binary_chart``.  It deliberately uses independent
-SymPy expressions rather than floating-point evaluations.
+``three_body_symmetry.binary_chart`` and mirrored by the exact-rational Rust
+LC field/projection kernels.  It deliberately uses independent SymPy
+expressions rather than floating-point evaluations.
 """
 
 from __future__ import annotations
@@ -23,6 +24,10 @@ def verify_identities() -> dict[str, bool]:
     u1, u2 = sp.symbols("U1 U2", real=True)
     v1, v2 = sp.symbols("V1 V2", real=True)
     b1, b2, a1, a2 = sp.symbols("B1 B2 Y1 Y2", real=True)
+    mass_i, mass_j, mass_k = sp.symbols("m_i m_j m_k", positive=True)
+    inverse_radius_cubed = sp.symbols("r_inv_3", positive=True)
+    fi1, fi2, fj1, fj2 = sp.symbols("fi1 fi2 fj1 fj2", real=True)
+    y1, y2 = sp.symbols("y1 y2", real=True)
     z = sp.Matrix([z1, z2])
     w = sp.Matrix([w1, w2])
     perturbation = sp.Matrix([p1, p2])
@@ -41,9 +46,7 @@ def verify_identities() -> dict[str, bool]:
 
     w_prime = h * z / 2 + rho * matrix.T * perturbation / 4
     h_prime = sp.expand((matrix * w).dot(perturbation))
-    constraint_prime = sp.expand(
-        4 * w.dot(w_prime) - rho_prime * h - rho * h_prime
-    )
+    constraint_prime = sp.expand(4 * w.dot(w_prime) - rho_prime * h - rho * h_prime)
 
     q_second = matrix_prime * w + matrix * w_prime
     projected_numerator = sp.expand(rho * q_second - rho_prime * q_prime)
@@ -64,9 +67,38 @@ def verify_identities() -> dict[str, bool]:
     gamma_w_prime = h * gamma_z / 2 + gamma_rho * gamma_matrix.T * perturbation / 4
     gamma_h_prime = sp.expand((gamma_matrix * gamma_w).dot(perturbation))
     constraint = sp.expand(2 * speed_square - pair_mass - rho * h)
-    gamma_constraint = sp.expand(
-        2 * gamma_w.dot(gamma_w) - pair_mass - gamma_rho * h
+    gamma_constraint = sp.expand(2 * gamma_w.dot(gamma_w) - pair_mass - gamma_rho * h)
+
+    # Full three-body reconstruction from the relative, binary-center, and
+    # third-offset blocks.  The force vectors f_i and f_j point from each pair
+    # body to the third body.  Keeping them symbolic makes these identities
+    # generic in geometry as well as in the three positive masses.
+    mass_pair = mass_i + mass_j
+    alpha = mass_j / mass_pair
+    beta = mass_i / mass_pair
+    force_i = sp.Matrix([fi1, fi2])
+    force_j = sp.Matrix([fj1, fj2])
+    relative_perturbation = mass_k * (force_j - force_i)
+    center_acceleration = mass_k * (mass_i * force_i + mass_j * force_j) / mass_pair
+    third_acceleration = -mass_i * force_i - mass_j * force_j
+    offset_acceleration = third_acceleration - center_acceleration
+    relative_acceleration = (
+        -mass_pair * inverse_radius_cubed * q + relative_perturbation
     )
+    projected_first_acceleration = center_acceleration - alpha * relative_acceleration
+    projected_second_acceleration = center_acceleration + beta * relative_acceleration
+    projected_third_acceleration = center_acceleration + offset_acceleration
+    newton_first_acceleration = mass_j * inverse_radius_cubed * q + mass_k * force_i
+    newton_second_acceleration = -mass_i * inverse_radius_cubed * q + mass_k * force_j
+
+    # The third-body displacement blocks depend on z only through Q(z).
+    # Their equality under the deck action is the premise needed to conclude
+    # invariance of the composed radial inverse-cube forces.
+    third_offset = sp.Matrix([y1, y2])
+    displacement_i = third_offset + alpha * q
+    displacement_j = third_offset - beta * q
+    gamma_displacement_i = third_offset + alpha * gamma_q
+    gamma_displacement_j = third_offset - beta * gamma_q
 
     binary_center_velocity = sp.Matrix([u1, u2])
     third_offset_velocity = sp.Matrix([v1, v2])
@@ -115,12 +147,24 @@ def verify_identities() -> dict[str, bool]:
         "gauge_velocity_numerator": _matrix_is_zero(
             gamma_matrix * gamma_w - matrix * w
         ),
-        "gauge_pair_energy_constraint": sp.simplify(
-            gamma_constraint - constraint
-        )
-        == 0,
+        "gauge_pair_energy_constraint": sp.simplify(gamma_constraint - constraint) == 0,
         "gauge_full_rhs_equivariance": _matrix_is_zero(
             gamma_rhs - deck_derivative * rhs
+        ),
+        "full_newton_first_body_acceleration": _matrix_is_zero(
+            projected_first_acceleration - newton_first_acceleration
+        ),
+        "full_newton_second_body_acceleration": _matrix_is_zero(
+            projected_second_acceleration - newton_second_acceleration
+        ),
+        "full_newton_third_body_acceleration": _matrix_is_zero(
+            projected_third_acceleration - third_acceleration
+        ),
+        "deck_third_body_displacement_first": _matrix_is_zero(
+            gamma_displacement_i - displacement_i
+        ),
+        "deck_third_body_displacement_second": _matrix_is_zero(
+            gamma_displacement_j - displacement_j
         ),
     }
     return results
