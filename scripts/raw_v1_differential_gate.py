@@ -2544,16 +2544,7 @@ def _validate_live_case_evidence(
     if type(evidence) is not LiveCaseEvidence:
         _fail("LIVE_CASE_EVIDENCE_TYPE_INVALID", "live_evidence")
     _validate_python_live_capture(case, evidence.python_capture)
-    rust_value = _load_json_object(
-        evidence.rust_execution_bytes, "live_evidence.rust_execution"
-    )
-    if evidence.rust_execution_bytes != _canonical_json_bytes(
-        rust_value, "live_evidence.rust_execution"
-    ):
-        _fail(
-            "LIVE_BUNDLE_RUST_EXECUTION_NOT_CANONICAL",
-            "live_evidence.rust_execution",
-        )
+    _load_json_object(evidence.rust_execution_bytes, "live_evidence.rust_execution")
     expected_comparison = _live_comparison_from_evidence(
         case, evidence.python_capture, evidence.rust_execution_bytes
     )
@@ -3113,6 +3104,7 @@ def _publish_live_bundle(
 ) -> None:
     expected_payloads = {"manifest.json": manifest_bytes, "report.json": report_bytes}
     expected_directories = {"cases"}
+    rust_execution_paths: set[str] = set()
     for index, (case, item) in enumerate(zip(cases, evidence)):
         _validate_live_case_evidence(case, item)
         case_directory = f"cases/{index:04d}"
@@ -3120,13 +3112,15 @@ def _publish_live_bundle(
         expected_payloads[f"{case_directory}/python-capture.json"] = (
             item.python_capture.payload
         )
-        expected_payloads[f"{case_directory}/rust-execution.json"] = (
-            item.rust_execution_bytes
-        )
+        rust_execution_path = f"{case_directory}/rust-execution.json"
+        rust_execution_paths.add(rust_execution_path)
+        expected_payloads[rust_execution_path] = item.rust_execution_bytes
     for relative, payload in expected_payloads.items():
         _strict_relative_path(relative, "bundle.file")
         value = _load_json_object(payload, f"bundle.{relative}")
-        if payload != _canonical_json_bytes(value, f"bundle.{relative}"):
+        if relative not in rust_execution_paths and payload != _canonical_json_bytes(
+            value, f"bundle.{relative}"
+        ):
             _fail("LIVE_BUNDLE_JSON_NOT_CANONICAL", f"bundle.{relative}")
 
     _ensure_bundle_target_absent(bundle_path)

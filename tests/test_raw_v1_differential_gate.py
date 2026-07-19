@@ -33,6 +33,26 @@ def json_bytes(value) -> bytes:
     return json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
 
 
+def rust_stdout_bytes(payload: bytes) -> bytes:
+    value = json.loads(payload)
+    field_order = (
+        "schema",
+        "profile",
+        "parse_outcome",
+        "rejection_stage",
+        "evaluation_outcome",
+        "evaluation_error_stage",
+        "semantic_result",
+    )
+    ordered = {field: value[field] for field in field_order}
+    return json.dumps(
+        ordered,
+        allow_nan=False,
+        ensure_ascii=False,
+        separators=(",", ":"),
+    ).encode()
+
+
 def obligation_rows(certified: bool = True) -> list[dict[str, object]]:
     return [
         {"obligation": f"obligation-{index:02d}", "certified": certified}
@@ -939,6 +959,10 @@ def test_live_evidence_bundle_is_deterministic_complete_and_fully_bound(
 ) -> None:
     corpus = tmp_path / "corpus"
     captures, rust_executions = write_fake_live_corpus(corpus)
+    rust_executions = {
+        input_sha: rust_stdout_bytes(payload)
+        for input_sha, payload in rust_executions.items()
+    }
     executable = write_fake_rust_executable(tmp_path)
     input_sha_to_case = {
         hashlib.sha256(
@@ -998,9 +1022,12 @@ def test_live_evidence_bundle_is_deterministic_complete_and_fully_bound(
         "cases/0001/rust-execution.json",
     }
     assert files_a["report.json"] == report_a
-    for payload in files_a.values():
+    for relative, payload in files_a.items():
         assert not payload.endswith(b"\n")
-        assert payload == json_bytes(json.loads(payload))
+        if relative.endswith("/rust-execution.json"):
+            assert payload != json_bytes(json.loads(payload))
+        else:
+            assert payload == json_bytes(json.loads(payload))
 
     report = json.loads(report_a)
     manifest = json.loads(files_a["manifest.json"])
@@ -1069,6 +1096,9 @@ def test_live_evidence_bundle_is_deterministic_complete_and_fully_bound(
         ).read_bytes()
         expected_rust = rust_executions[hashlib.sha256(input_payload).hexdigest()]
         assert rust_payload == expected_rust
+        assert rust_payload == rust_stdout_bytes(rust_payload)
+        assert rust_payload != json_bytes(json.loads(rust_payload))
+        assert not rust_payload.endswith(b"\n")
         assert rust_binding["byte_length"] == len(rust_payload)
         assert rust_binding["sha256"] == hashlib.sha256(rust_payload).hexdigest()
         assert rust_binding["evidence_kind"] == gate.RUST_EXECUTION_EVIDENCE_KIND
@@ -1099,6 +1129,36 @@ def test_live_evidence_bundle_is_deterministic_complete_and_fully_bound(
     with pytest.raises(gate.DifferentialGateError) as traversal_error:
         gate._validate_live_bundle_manifest(traversal, 2)
     assert traversal_error.value.code == "LIVE_BUNDLE_RELATIVE_PATH_INVALID"
+
+
+def test_live_case_evidence_retains_valid_unsorted_rust_stdout_exactly(
+    tmp_path,
+) -> None:
+    corpus = tmp_path / "corpus"
+    captures, rust_executions = write_fake_live_corpus(corpus)
+    case = next(
+        item
+        for item in gate.enumerate_live_corpus(corpus)
+        if item.case_id == "synthetic-reject"
+    )
+    input_sha = hashlib.sha256(case.input_bytes).hexdigest()
+    rust_stdout = rust_stdout_bytes(rust_executions[input_sha])
+    assert rust_stdout != json_bytes(json.loads(rust_stdout))
+    assert not rust_stdout.endswith(b"\n")
+
+    capture = captures[case.case_id]
+    evidence = gate.LiveCaseEvidence(
+        comparison_result=gate._live_comparison_from_evidence(
+            case, capture, rust_stdout
+        ),
+        python_capture=capture,
+        rust_execution_bytes=rust_stdout,
+    )
+    gate._validate_live_case_evidence(case, evidence)
+    assert evidence.rust_execution_bytes == rust_stdout
+    assert evidence.comparison_result["sha256_bindings"]["rust_execution_sha256"] == (
+        hashlib.sha256(rust_stdout).hexdigest()
+    )
 
 
 def test_live_corpus_rejects_unbound_input_and_path_traversal(tmp_path) -> None:
