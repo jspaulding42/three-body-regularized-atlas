@@ -362,8 +362,14 @@ pub fn replay_admitted_raw_v1_outcome_exact_rational_v04(
         .binary64_rational();
     let requested_width_admissible = !requested_width.is_negative();
 
-    let mixed_replay = replay_raw_mixed_planar_chain_exact_rational_v04(admission)
-        .map_err(RawV1OutcomeError::MixedReplay)?;
+    let mixed_replay =
+        replay_raw_mixed_planar_chain_exact_rational_v04(admission).map_err(|source| {
+            // The current wrapper keeps its exact v0.4 error mapping.  The
+            // private disposition is computed only to keep the future v2
+            // classification path total and compiler-checked.
+            let _failure_disposition = source.disposition();
+            RawV1OutcomeError::MixedReplay(source)
+        })?;
 
     let outer_satisfaction = [
         outer_schema_exact,

@@ -38,6 +38,11 @@ impl PlanarLcProjectionPair {
     pub const fn second(self) -> usize {
         self.second
     }
+
+    #[cfg(test)]
+    pub(crate) const fn for_failure_disposition_test(first: usize, second: usize) -> Self {
+        Self { first, second }
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]

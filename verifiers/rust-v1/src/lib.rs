@@ -38,6 +38,7 @@ mod binary64;
 mod dual;
 mod error;
 mod exp;
+mod failure_disposition;
 mod interval;
 mod json_number;
 mod mixed_chain;

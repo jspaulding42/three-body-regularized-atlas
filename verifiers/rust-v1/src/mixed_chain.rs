@@ -877,6 +877,12 @@ pub fn replay_raw_mixed_planar_chain_exact_rational_v04(
             .map(MixedChainRetainedRegion::CurrentOrdinaryRight)
     };
 
+    // Populate the private typed foundation for every retained failure while
+    // preserving the v0.4 replay object and all public outcomes unchanged.
+    let _failure_disposition = replay_failure
+        .as_ref()
+        .map(MixedChainReplayFailure::disposition);
+
     Ok(RawMixedPlanarChainReplay {
         obligations: std::array::from_fn(|index| RawMixedPlanarChainObligation {
             id: RAW_MIXED_PLANAR_CHAIN_OBLIGATION_IDS[index],
