@@ -316,6 +316,12 @@ establish them.
 
 ### Lemma 2 (complete square-root lift cover)
 
+Subject to its stated arithmetic and source-to-binary trust boundary, the
+[canonical planar LC square-root lift-cover audit](canonical-planar-lc-lift-cover-audit.md)
+closes the source-level finite-cover and deck-parity argument for this
+construction. Its fixed-resolution square-root limitation remains a
+fail-closed completeness limitation.
+
 Let a Cartesian source box exclude selected-pair collision. The canonical
 one- or two-patch square-root construction in
 `replay_planar_lc_lift_cover_exact_rational_v04`, implemented in
@@ -360,9 +366,11 @@ The elementary projection part is immediate from the displayed conventions:
 \]
 
 Thus relative position, punctured relative velocity, and the physical clock
-rate are deck invariant. The nontrivial remaining assertion is that the finite
+rate are deck invariant. The nontrivial finite assertion is that the finite
 interval patch construction is a complete cover and that its parity graph
 selects one coherent representative for every actual source state.
+The linked canonical lift-cover audit establishes that assertion at source
+level, subject to its stated arithmetic and source-to-binary trust boundary.
 `planar_lc_constrained_lift_deck_gauge_kernel_v1` names this intended lemma; it
 does not numerically recheck the identities for every real point in a patch.
 
@@ -685,11 +693,13 @@ A separately named proof-grade chain profile should:
 - use new obligation and profile identifiers rather than silently changing a
   frozen compatibility profile.
 
-In particular, current calls to a claimed-tail replay in
-[`ordinary_chain.rs`](../verifiers/rust-v1/src/ordinary_chain.rs),
-[`mixed_chain.rs`](../verifiers/rust-v1/src/mixed_chain.rs), and
-[`planar_lc_entry.rs`](../verifiers/rust-v1/src/planar_lc_entry.rs) must not feed
-the acceptance Boolean of the new proof-grade profile.
+The local
+`exact_rational_proof_grade_carried_planar_lc_entry_v04` profile is now
+implemented in [`planar_lc_entry.rs`](../verifiers/rust-v1/src/planar_lc_entry.rs)
+with a 19-row decisive entry ledger. Its source and target claimed-tail chart
+`Result` values are retained only as diagnostic, nondecisive outputs and do
+not feed `conditional_profile_satisfied()`. A proof-grade LC exit, mixed, or
+full-chain profile is still missing.
 
 ## Exact remaining proof and code gates
 
@@ -704,7 +714,10 @@ following gates should be closed explicitly.
   bound against the exact implemented coordinate order.
 - Prove that the exact LC formulas in `evaluate_planar_lc_field` are analytic
   whenever the two third-body denominators are nonzero.
-- Prove Lemma 2 for every canonical square-root-cover case and its parity graph.
+- The [canonical planar LC square-root lift-cover audit](canonical-planar-lc-lift-cover-audit.md)
+  closes the source-level proof of every canonical square-root-cover case and
+  its parity graph under its stated trust boundary. The fixed-resolution
+  square-root limitation remains a fail-closed completeness limitation.
 - Regression-check the displayed proof of \(D C\,F_{LC}=0\) against any future
   change to the implemented field normalization.
 - Regression-check the displayed deck-equivariant, relative, and full-body
@@ -722,13 +735,23 @@ following gates should be closed explicitly.
 - Retain the proved source-level inclusion contract for rational intervals,
   interval Horner evaluation, interval dual differentiation, and dyadic
   square-root enclosures; separately close its Rust/`num-bigint`/
-  `num-rational` trust boundary. Define the analogous exponential-enclosure
-  contract; resource exhaustion must fail closed.
-- Establish that ordinary defect, LC defect, LC field, lift, and projection use
-  the same exact serialized positive masses, with the exact-derived outward LC
-  mass profile wherever ratios occur.
-- Add a new proof-grade dependency graph in which no claimed-tail
-  `conditional_profile_satisfied()` value is decisive.
+  `num-rational` trust boundary. The analogous exponential-enclosure and
+  complete ordinary/LC Grönwall contract is proved in the
+  [Rust exponential and Grönwall source audit](rust-exp-gronwall-source-audit.md),
+  conditional on the same explicitly retained arithmetic, compiler, and
+  source-to-binary trust boundary; resource exhaustion fails closed on these
+  audited paths.
+- Retain the source-level
+  [mass identity and flow audit](rust-mass-identity-and-flow-audit.md), which
+  establishes that ordinary/LC defect, tube, field, series, lift, projection,
+  entry, exit, and mixed-chain handoffs use one exact serialized positive mass
+  triple and freshly validated exact-derived LC profiles. Its trust boundary
+  remains open. The profile's tight outward binary64 enclosures are validated
+  witnesses; exact rational profile members, rather than those endpoints, are
+  the scalars propagated by the exact-rational verifier.
+- Extend the implemented local proof-grade entry dependency graph through
+  proof-grade exit, mixed, and full-chain profiles, with no claimed-tail
+  `conditional_profile_satisfied()` value decisive.
 - Preserve claimed-tail and recurrence outputs as labeled diagnostics and test
   that mutations confined to those claims do not change proof-grade tubes,
   clocks, handoffs, or terminal enclosures.
