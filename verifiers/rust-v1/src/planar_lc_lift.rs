@@ -168,6 +168,7 @@ impl PlanarLcLiftReplay {
 pub enum PlanarLcLiftError {
     CartesianStateDimension { expected: usize, actual: usize },
     SqrtPrecisionExceeded { requested: usize, limit: usize },
+    PositiveRadiusUnresolved { precision_bits: usize },
     MassDecode { index: usize, source: NumericError },
     MassProfile(MassProfileError),
     SquareRootDomain { stage: &'static str },
@@ -403,6 +404,15 @@ fn build_patch(
     let distance_squared =
         interval_square(&relative_position[0])?.add(&interval_square(&relative_position[1])?)?;
     let radius = sqrt_interval(&distance_squared, sqrt_precision_bits, "radius")?;
+    // A positive exact lower bound can still round down to the zero dyadic
+    // grid point; attribute that resolution limit before radius division.
+    if distance_squared.lower().numer().sign() == Sign::Plus
+        && radius.lower().numer().sign() != Sign::Plus
+    {
+        return Err(PlanarLcLiftError::PositiveRadiusUnresolved {
+            precision_bits: sqrt_precision_bits,
+        });
+    }
     let half = BigRational::new(BigInt::one(), BigInt::from(2));
     let real_radicand = radius.add(&relative_position[0])?.scale(&half)?;
     let imaginary_radicand = radius.subtract(&relative_position[0])?.scale(&half)?;
@@ -932,6 +942,19 @@ mod tests {
                 requested: HARD_MAX_SQRT_PRECISION_BITS + 1,
                 limit: HARD_MAX_SQRT_PRECISION_BITS,
             })
+        );
+    }
+
+    #[test]
+    fn sub_grid_positive_radius_fails_with_typed_precision_error() {
+        let chart = &charts()[0];
+        let separation =
+            RationalInterval::try_point(BigRational::new(BigInt::one(), BigInt::from(32))).unwrap();
+        let state = branch_state(chart, separation, point(0));
+
+        assert_eq!(
+            replay_planar_lc_lift_cover_exact_rational(chart, &state, 4),
+            Err(PlanarLcLiftError::PositiveRadiusUnresolved { precision_bits: 4 })
         );
     }
 

@@ -669,6 +669,9 @@ fn planar_lc_lift(error: &PlanarLcLiftError) -> LeafDisposition {
         PlanarLcLiftError::SqrtPrecisionExceeded { requested, limit } => {
             bounded(MixedChainResource::SquareRootPrecision, *requested, *limit)
         }
+        PlanarLcLiftError::PositiveRadiusUnresolved { .. } => {
+            unmeasured(MixedChainResource::SquareRootPrecision)
+        }
         PlanarLcLiftError::MassDecode { source, .. } => numeric(source),
         PlanarLcLiftError::MassProfile(source) => mass_profile(source),
         PlanarLcLiftError::SquareRootDomain { .. } => LeafDisposition::CertificateDefect,
@@ -1220,7 +1223,6 @@ mod tests {
             None,
             None,
         );
-
         assert_eq!(
             planar_lc_series(&PlanarLcSeriesError::ThirdBodyCollision {
                 denominator: PlanarLcSeriesDenominator::Second,
@@ -1234,6 +1236,82 @@ mod tests {
             })
             .at(MixedChainResourceStage::PlanarLcExit),
             MixedChainFailureDisposition::CertificateDefect
+        );
+    }
+
+    #[test]
+    fn lift_positive_radius_unresolved_is_square_root_precision_exhaustion() {
+        assert_resource(
+            planar_lc_lift(&PlanarLcLiftError::PositiveRadiusUnresolved { precision_bits: 4 })
+                .at(MixedChainResourceStage::PlanarLcExit),
+            MixedChainResourceStage::PlanarLcExit,
+            MixedChainResource::SquareRootPrecision,
+            None,
+            None,
+        );
+        assert_eq!(
+            planar_lc_lift(&PlanarLcLiftError::Numeric(
+                NumericError::DivisionByZeroInterval,
+            )),
+            LeafDisposition::InternalInvariant
+        );
+        assert_eq!(
+            planar_lc_lift(&PlanarLcLiftError::InternalShapeInvariant),
+            LeafDisposition::InternalInvariant
+        );
+    }
+
+    #[test]
+    fn lift_positive_radius_resource_classification_propagates_through_retained_exit() {
+        let entry = CarriedPlanarLcEntryError::Lift(PlanarLcLiftError::PositiveRadiusUnresolved {
+            precision_bits: 4,
+        });
+        assert_resource(
+            planar_lc_entry(&entry).at(MixedChainResourceStage::PlanarLcExit),
+            MixedChainResourceStage::PlanarLcExit,
+            MixedChainResource::SquareRootPrecision,
+            None,
+            None,
+        );
+
+        let exit = CarriedPlanarLcExitError::Entry(entry.clone());
+        assert_resource(
+            planar_lc_exit(&exit).at(MixedChainResourceStage::PlanarLcExit),
+            MixedChainResourceStage::PlanarLcExit,
+            MixedChainResource::SquareRootPrecision,
+            None,
+            None,
+        );
+        assert_resource(
+            MixedChainReplayFailure::PlanarLcExitKernel {
+                segment_index: 1,
+                source: exit,
+            }
+            .disposition(),
+            MixedChainResourceStage::PlanarLcExit,
+            MixedChainResource::SquareRootPrecision,
+            None,
+            None,
+        );
+
+        let generic_division_by_zero =
+            CarriedPlanarLcEntryError::Numeric(NumericError::DivisionByZeroInterval);
+        assert_eq!(
+            planar_lc_entry(&generic_division_by_zero).at(MixedChainResourceStage::PlanarLcExit),
+            MixedChainFailureDisposition::InternalInvariant
+        );
+        let exit = CarriedPlanarLcExitError::Entry(generic_division_by_zero);
+        assert_eq!(
+            planar_lc_exit(&exit).at(MixedChainResourceStage::PlanarLcExit),
+            MixedChainFailureDisposition::InternalInvariant
+        );
+        assert_eq!(
+            MixedChainReplayFailure::PlanarLcExitKernel {
+                segment_index: 1,
+                source: exit,
+            }
+            .disposition(),
+            MixedChainFailureDisposition::InternalInvariant
         );
     }
 
