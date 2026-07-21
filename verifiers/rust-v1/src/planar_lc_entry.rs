@@ -31,6 +31,8 @@ use crate::{
 
 pub const EXACT_RATIONAL_CARRIED_PLANAR_LC_ENTRY_V04_PROFILE_ID: &str =
     "exact_rational_carried_planar_lc_entry_v04";
+pub const EXACT_RATIONAL_PROOF_GRADE_CARRIED_PLANAR_LC_ENTRY_V04_PROFILE_ID: &str =
+    "exact_rational_proof_grade_carried_planar_lc_entry_v04";
 pub const HARD_MAX_RAW_V1_NAMESPACE_SEGMENTS: usize = 256;
 
 pub const CARRIED_PLANAR_LC_ENTRY_OBLIGATION_IDS: [&str; 21] = [
@@ -55,6 +57,28 @@ pub const CARRIED_PLANAR_LC_ENTRY_OBLIGATION_IDS: [&str; 21] = [
     "carried_lc_entry_target_fourteen_dimensional_anchor_reconstructed",
     "carried_lc_entry_trusted_constrained_lift_deck_gauge_kernel",
     "carried_lc_entry_one_global_complement_contains_all_complete_patches",
+];
+
+pub const PROOF_GRADE_CARRIED_PLANAR_LC_ENTRY_OBLIGATION_IDS: [&str; 19] = [
+    "proof_grade_carried_lc_entry_exact_raw_schemas",
+    "proof_grade_carried_lc_entry_transition_canonical_round_trip",
+    "proof_grade_carried_lc_entry_identifiers_match_and_are_unique",
+    "proof_grade_carried_lc_entry_parent_clock_origin_is_exact_interval",
+    "proof_grade_carried_lc_entry_source_ordinary_tube_freshly_certified",
+    "proof_grade_carried_lc_entry_target_lc_tube_freshly_certified",
+    "proof_grade_carried_lc_entry_common_planar_mass_problem",
+    "proof_grade_carried_lc_entry_pair_is_canonical_ascending",
+    "proof_grade_carried_lc_entry_outward_mass_arithmetic_certified",
+    "proof_grade_carried_lc_entry_exact_source_right_to_lc_left_anchor",
+    "proof_grade_carried_lc_entry_complete_source_endpoint_box_reconstructed",
+    "proof_grade_carried_lc_entry_selected_pair_collision_free",
+    "proof_grade_carried_lc_entry_canonical_square_root_atlas_reconstructed",
+    "proof_grade_carried_lc_entry_derived_parity_graph_certified",
+    "proof_grade_carried_lc_entry_physical_time_interval_exactly_derived",
+    "proof_grade_carried_lc_entry_all_lift_patches_have_positive_rho",
+    "proof_grade_carried_lc_entry_target_fourteen_dimensional_anchor_reconstructed",
+    "proof_grade_carried_lc_entry_trusted_constrained_lift_deck_gauge_kernel",
+    "proof_grade_carried_lc_entry_one_global_complement_contains_all_complete_patches",
 ];
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -159,6 +183,160 @@ impl CarriedPlanarLcEntryReplay {
     pub const fn analytic_kernel_id(&self) -> Option<&'static str> {
         self.analytic_kernel_id
     }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ProofGradeCarriedPlanarLcEntryObligation {
+    id: &'static str,
+    satisfied: bool,
+}
+
+impl ProofGradeCarriedPlanarLcEntryObligation {
+    pub const fn id(&self) -> &'static str {
+        self.id
+    }
+
+    pub const fn satisfied(&self) -> bool {
+        self.satisfied
+    }
+}
+
+/// Proof-grade carried entry evidence.  Claimed-tail chart replays are
+/// retained as diagnostics and are intentionally absent from the decisive
+/// obligation ledger.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct ProofGradeCarriedPlanarLcEntryReplay {
+    obligations: [ProofGradeCarriedPlanarLcEntryObligation; 19],
+    source_claimed_tail_chart_diagnostic: Result<OrdinaryChartReplay, OrdinaryChartReplayError>,
+    target_claimed_tail_chart_diagnostic: Result<PlanarLcChartReplay, PlanarLcChartReplayError>,
+    source_tube_replay: OrdinaryTubeReplay,
+    target_tube_replay: PlanarLcTubeReplay,
+    direct_evidence: Option<CarriedPlanarLcEntryDirectEvidence>,
+    mass_kernel_id: Option<&'static str>,
+}
+
+impl ProofGradeCarriedPlanarLcEntryReplay {
+    pub const fn profile_id(&self) -> &'static str {
+        EXACT_RATIONAL_PROOF_GRADE_CARRIED_PLANAR_LC_ENTRY_V04_PROFILE_ID
+    }
+
+    pub fn obligations(&self) -> &[ProofGradeCarriedPlanarLcEntryObligation; 19] {
+        &self.obligations
+    }
+
+    /// Conditional on the parent chain induction premise that its actual
+    /// branch lies in the freshly replayed source tube.
+    pub fn conditional_profile_satisfied(&self) -> bool {
+        self.obligations
+            .iter()
+            .all(ProofGradeCarriedPlanarLcEntryObligation::satisfied)
+    }
+
+    pub fn source_claimed_tail_chart_diagnostic(
+        &self,
+    ) -> Result<&OrdinaryChartReplay, &OrdinaryChartReplayError> {
+        self.source_claimed_tail_chart_diagnostic.as_ref()
+    }
+
+    pub fn target_claimed_tail_chart_diagnostic(
+        &self,
+    ) -> Result<&PlanarLcChartReplay, &PlanarLcChartReplayError> {
+        self.target_claimed_tail_chart_diagnostic.as_ref()
+    }
+
+    pub fn source_tube_replay(&self) -> &OrdinaryTubeReplay {
+        &self.source_tube_replay
+    }
+
+    pub fn target_tube_replay(&self) -> &PlanarLcTubeReplay {
+        &self.target_tube_replay
+    }
+
+    pub fn source_endpoint_state_box(&self) -> Option<&[RationalInterval]> {
+        self.direct_evidence
+            .as_ref()
+            .map(|evidence| evidence.source_endpoint_state_box.as_slice())
+    }
+
+    pub fn lift_replay(&self) -> Option<&PlanarLcLiftReplay> {
+        self.direct_evidence
+            .as_ref()
+            .map(|evidence| &evidence.lift_replay)
+    }
+
+    pub fn entry_time_interval(&self) -> Option<&RationalInterval> {
+        self.direct_evidence
+            .as_ref()
+            .map(|evidence| &evidence.entry_time_interval)
+    }
+
+    pub fn target_anchor(&self) -> Option<&[BigRational; 14]> {
+        self.direct_evidence
+            .as_ref()
+            .map(|evidence| &evidence.target_anchor)
+    }
+
+    pub fn gauge_assignments(&self) -> Option<&[Vec<u8>; 2]> {
+        self.direct_evidence
+            .as_ref()
+            .and_then(|evidence| evidence.gauge_assignments.as_ref())
+    }
+
+    pub fn assignment_maximum_gaps(&self) -> Option<&[BigRational; 2]> {
+        self.direct_evidence
+            .as_ref()
+            .and_then(|evidence| evidence.assignment_maximum_gaps.as_ref())
+    }
+
+    pub fn assignment_containments(&self) -> Option<&[bool; 2]> {
+        self.direct_evidence
+            .as_ref()
+            .and_then(|evidence| evidence.assignment_containments.as_ref())
+    }
+
+    pub fn selected_assignment_index(&self) -> Option<usize> {
+        self.direct_evidence
+            .as_ref()
+            .and_then(|evidence| evidence.selected_assignment_index)
+    }
+
+    pub fn selected_assignment(&self) -> Option<&[u8]> {
+        self.direct_evidence
+            .as_ref()
+            .and_then(|evidence| evidence.selected_assignment.as_deref())
+    }
+
+    pub fn selected_transformed_patches(&self) -> Option<&[[RationalInterval; 14]]> {
+        self.direct_evidence
+            .as_ref()
+            .and_then(|evidence| evidence.selected_transformed_patches.as_deref())
+    }
+
+    pub const fn mass_kernel_id(&self) -> Option<&'static str> {
+        self.mass_kernel_id
+    }
+
+    pub fn analytic_kernel_id(&self) -> Option<&'static str> {
+        self.direct_evidence
+            .as_ref()
+            .and_then(|evidence| evidence.analytic_kernel_id)
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct CarriedPlanarLcEntryDirectEvidence {
+    source_endpoint_state_box: Vec<RationalInterval>,
+    lift_replay: PlanarLcLiftReplay,
+    entry_time_interval: RationalInterval,
+    target_anchor: [BigRational; 14],
+    gauge_assignments: Option<[Vec<u8>; 2]>,
+    assignment_maximum_gaps: Option<[BigRational; 2]>,
+    assignment_containments: Option<[bool; 2]>,
+    selected_assignment_index: Option<usize>,
+    selected_assignment: Option<Vec<u8>>,
+    selected_transformed_patches: Option<Vec<[RationalInterval; 14]>>,
+    analytic_kernel_id: Option<&'static str>,
+    derived_satisfaction: [bool; 9],
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -293,51 +471,177 @@ pub fn replay_carried_planar_lc_entry_exact_rational_v04(
         ));
     }
 
-    let source_endpoint = reconstruct_source_endpoint(
+    let CarriedPlanarLcEntryDirectEvidence {
+        source_endpoint_state_box,
+        lift_replay,
+        entry_time_interval,
+        target_anchor,
+        gauge_assignments,
+        assignment_maximum_gaps,
+        assignment_containments,
+        selected_assignment_index,
+        selected_assignment,
+        selected_transformed_patches,
+        analytic_kernel_id,
+        derived_satisfaction,
+    } = replay_carried_planar_lc_entry_direct_evidence(
+        &entry,
+        source_chart,
+        &source_tube_replay,
+        &parent_clock,
+    )?;
+    Ok(build_replay(
+        base,
+        source_chart_replay,
+        source_tube_replay,
+        target_chart_replay,
+        target_tube_replay,
+        Some(source_endpoint_state_box),
+        Some(lift_replay),
+        Some(entry_time_interval),
+        Some(target_anchor),
+        gauge_assignments,
+        assignment_maximum_gaps,
+        assignment_containments,
+        selected_assignment_index,
+        selected_assignment,
+        Some(mass_kernel_id),
+        analytic_kernel_id,
+    )
+    .with_derived(derived_satisfaction, selected_transformed_patches))
+}
+
+/// Replay the proof-grade carried ordinary-to-LC entry profile.
+///
+/// The ordinary and LC claimed-tail chart profiles are retained only as
+/// diagnostics.  Their false obligations and typed resource/errors cannot
+/// gate or erase the direct tube, lift-cover, clock, gauge, and containment
+/// evidence in this result.
+pub fn replay_proof_grade_carried_planar_lc_entry_exact_rational_v04(
+    admission: &CanonicalRawV1Admission,
+    segment_index: usize,
+    source_chart: &OrdinaryChartInput,
+    source_tube: &OrdinaryTubeInput,
+    parent_clock_origin: &RationalInterval,
+) -> Result<ProofGradeCarriedPlanarLcEntryReplay, CarriedPlanarLcEntryError> {
+    require_admission_bound_source(admission, segment_index, source_chart, source_tube)?;
+    let entry =
+        planar_lc_entry_input_from_admission(admission, segment_index, source_chart, source_tube)?;
+    let namespace_unique = raw_v1_defining_namespace_unique(admission)?;
+    let parent_clock = RationalInterval::new(
+        parent_clock_origin.lower().clone(),
+        parent_clock_origin.upper().clone(),
+    )?;
+
+    let source_claimed_tail_chart_diagnostic =
+        replay_ordinary_chart_exact_rational_claimed_tail_v04(source_chart);
+    let target_claimed_tail_chart_diagnostic =
+        replay_planar_lc_chart_exact_rational_claimed_tail_v04(entry.target_chart());
+    let source_tube_replay = replay_ordinary_tube_exact_rational_v04(source_chart, source_tube)
+        .map_err(CarriedPlanarLcEntryError::SourceTube)?;
+    let target_tube_replay =
+        replay_planar_lc_tube_exact_rational_v04(entry.target_chart(), entry.target_tube())
+            .map_err(CarriedPlanarLcEntryError::TargetTube)?;
+
+    let common_masses = source_chart.masses() == entry.target_chart().masses();
+    let pair = entry.target_chart().pair();
+    let canonical_pair = pair[0] < pair[1] && pair[1] < 3;
+    let mass_kernel_id = revalidate_mass_kernel(entry.target_chart())?;
+    let endpoints = entry.source_right_parameter() == source_chart.parameter_interval().upper()
+        && entry.target_left_parameter() == entry.target_chart().parameter_interval().lower()
+        && entry.target_left_parameter() == entry.target_tube().anchor_parameter();
+    let base = [
+        true,
+        true,
+        namespace_unique,
+        true,
+        source_tube_replay.certified(),
+        target_tube_replay.certified(),
+        common_masses,
+        canonical_pair,
+        mass_kernel_id == PLANAR_LC_MASS_KERNEL_ID,
+        endpoints,
+    ];
+    let direct_evidence = if base.iter().all(|value| *value) {
+        Some(replay_carried_planar_lc_entry_direct_evidence(
+            &entry,
+            source_chart,
+            &source_tube_replay,
+            &parent_clock,
+        )?)
+    } else {
+        None
+    };
+
+    Ok(build_proof_grade_replay(
+        base,
+        source_claimed_tail_chart_diagnostic,
+        target_claimed_tail_chart_diagnostic,
+        source_tube_replay,
+        target_tube_replay,
+        Some(mass_kernel_id),
+        direct_evidence,
+    ))
+}
+
+fn replay_carried_planar_lc_entry_direct_evidence(
+    entry: &PlanarLcEntryInput,
+    source_chart: &OrdinaryChartInput,
+    source_tube_replay: &OrdinaryTubeReplay,
+    parent_clock: &RationalInterval,
+) -> Result<CarriedPlanarLcEntryDirectEvidence, CarriedPlanarLcEntryError> {
+    let source_endpoint_state_box = reconstruct_source_endpoint(
         source_chart,
         entry.source_right_parameter(),
-        &source_tube_replay,
+        source_tube_replay,
     )?;
-    let endpoint_reconstructed = source_endpoint.len() == 12;
-    let lift =
-        replay_planar_lc_lift_cover_exact_rational_v04(entry.target_chart(), &source_endpoint)
-            .map_err(CarriedPlanarLcEntryError::Lift)?;
-    let collision_free = lift.collision_free();
-    let atlas_reconstructed = lift.complete_cover() && matches!(lift.patches().len(), 1 | 2);
-    let gauge_assignments = canonical_gauge_assignments(&lift);
+    let endpoint_reconstructed = source_endpoint_state_box.len() == 12;
+    let lift_replay = replay_planar_lc_lift_cover_exact_rational_v04(
+        entry.target_chart(),
+        &source_endpoint_state_box,
+    )
+    .map_err(CarriedPlanarLcEntryError::Lift)?;
+    let collision_free = lift_replay.collision_free();
+    let atlas_reconstructed =
+        lift_replay.complete_cover() && matches!(lift_replay.patches().len(), 1 | 2);
+    let gauge_assignments = canonical_gauge_assignments(&lift_replay);
     let graph_certified = gauge_assignments.is_some();
-    let entry_time = derive_entry_time(&parent_clock, entry.source_right_parameter())?;
-    let positive_rho = !lift.patches().is_empty()
-        && lift
+    let entry_time_interval = derive_entry_time(parent_clock, entry.source_right_parameter())?;
+    let positive_rho = !lift_replay.patches().is_empty()
+        && lift_replay
             .patches()
             .iter()
             .all(|patch| patch.rho_lower_bound().numer().sign() == Sign::Plus);
-    let target_anchor = reconstruct_target_anchor(&entry)?;
+    let target_anchor = reconstruct_target_anchor(entry)?;
     let target_anchor_reconstructed = true;
-    let analytic_kernel_id = lift.analytic_kernel_id();
+    let analytic_kernel_id = lift_replay.analytic_kernel_id();
     let analytic_kernel =
         analytic_kernel_id == Some(PLANAR_LC_CONSTRAINED_LIFT_DECK_GAUGE_KERNEL_V1_ID);
 
-    let (assignment_gaps, assignment_containments, selected_index, selected_patches) =
-        if let Some(assignments) = &gauge_assignments {
-            let (gaps, containments, selected, patches) = evaluate_global_assignments(
-                lift.patches(),
-                assignments,
-                &entry_time,
-                &target_anchor,
-                entry.target_tube().initial_error_bound(),
-            )?;
-            (Some(gaps), Some(containments), selected, patches)
-        } else {
-            (None, None, None, None)
-        };
-    let containment = selected_index.is_some();
-    let selected_assignment = selected_index.and_then(|index| {
+    let (
+        assignment_maximum_gaps,
+        assignment_containments,
+        selected_assignment_index,
+        selected_transformed_patches,
+    ) = if let Some(assignments) = &gauge_assignments {
+        let (gaps, containments, selected, patches) = evaluate_global_assignments(
+            lift_replay.patches(),
+            assignments,
+            &entry_time_interval,
+            &target_anchor,
+            entry.target_tube().initial_error_bound(),
+        )?;
+        (Some(gaps), Some(containments), selected, patches)
+    } else {
+        (None, None, None, None)
+    };
+    let containment = selected_assignment_index.is_some();
+    let selected_assignment = selected_assignment_index.and_then(|index| {
         gauge_assignments
             .as_ref()
             .map(|values| values[index].clone())
     });
-    let derived = derived_satisfaction(
+    let derived_satisfaction = derived_satisfaction(
         endpoint_reconstructed,
         collision_free,
         atlas_reconstructed,
@@ -348,25 +652,20 @@ pub fn replay_carried_planar_lc_entry_exact_rational_v04(
         analytic_kernel,
         containment,
     );
-    Ok(build_replay(
-        base,
-        source_chart_replay,
-        source_tube_replay,
-        target_chart_replay,
-        target_tube_replay,
-        Some(source_endpoint),
-        Some(lift),
-        Some(entry_time),
-        Some(target_anchor),
+    Ok(CarriedPlanarLcEntryDirectEvidence {
+        source_endpoint_state_box,
+        lift_replay,
+        entry_time_interval,
+        target_anchor,
         gauge_assignments,
-        assignment_gaps,
+        assignment_maximum_gaps,
         assignment_containments,
-        selected_index,
+        selected_assignment_index,
         selected_assignment,
-        Some(mass_kernel_id),
+        selected_transformed_patches,
         analytic_kernel_id,
-    )
-    .with_derived(derived, selected_patches))
+        derived_satisfaction,
+    })
 }
 
 fn require_admission_bound_source(
@@ -711,6 +1010,35 @@ fn revalidate_mass_kernel(
 }
 
 #[allow(clippy::too_many_arguments)]
+fn build_proof_grade_replay(
+    base: [bool; 10],
+    source_claimed_tail_chart_diagnostic: Result<OrdinaryChartReplay, OrdinaryChartReplayError>,
+    target_claimed_tail_chart_diagnostic: Result<PlanarLcChartReplay, PlanarLcChartReplayError>,
+    source_tube_replay: OrdinaryTubeReplay,
+    target_tube_replay: PlanarLcTubeReplay,
+    mass_kernel_id: Option<&'static str>,
+    direct_evidence: Option<CarriedPlanarLcEntryDirectEvidence>,
+) -> ProofGradeCarriedPlanarLcEntryReplay {
+    let mut satisfaction = [false; 19];
+    satisfaction[..10].copy_from_slice(&base);
+    if let Some(evidence) = &direct_evidence {
+        satisfaction[10..].copy_from_slice(&evidence.derived_satisfaction);
+    }
+    ProofGradeCarriedPlanarLcEntryReplay {
+        obligations: std::array::from_fn(|index| ProofGradeCarriedPlanarLcEntryObligation {
+            id: PROOF_GRADE_CARRIED_PLANAR_LC_ENTRY_OBLIGATION_IDS[index],
+            satisfied: satisfaction[index],
+        }),
+        source_claimed_tail_chart_diagnostic,
+        target_claimed_tail_chart_diagnostic,
+        source_tube_replay,
+        target_tube_replay,
+        direct_evidence,
+        mass_kernel_id,
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
 fn build_replay(
     base: [bool; 12],
     source_chart_replay: OrdinaryChartReplay,
@@ -764,7 +1092,7 @@ mod tests {
     use super::*;
     use crate::{
         checked_real_binary64_from_json, ordinary_chart_input_from_wire,
-        ordinary_tube_input_from_wire, DEFAULT_JSON_NUMBER_LIMITS,
+        ordinary_tube_input_from_wire, PlanarLcSeriesError, DEFAULT_JSON_NUMBER_LIMITS,
     };
 
     const SUCCESS_RAW: &[u8] = include_bytes!(concat!(
@@ -812,8 +1140,459 @@ mod tests {
         REPLAYS.get_or_init(|| [replay(SUCCESS_RAW), replay(FAILED_REVISIT_RAW)])
     }
 
+    fn proof_grade_replay(bytes: &[u8]) -> ProofGradeCarriedPlanarLcEntryReplay {
+        let admission = CanonicalRawV1Admission::admit(bytes).unwrap();
+        proof_grade_replay_admission(
+            &admission,
+            &RationalInterval::try_point(BigRational::new(
+                BigInt::from(1),
+                BigInt::from(1_u64 << 40),
+            ))
+            .unwrap(),
+        )
+    }
+
+    fn proof_grade_replay_admission(
+        admission: &CanonicalRawV1Admission,
+        parent: &RationalInterval,
+    ) -> ProofGradeCarriedPlanarLcEntryReplay {
+        let SegmentWire::OrdinaryBridge(bridge) = &admission.wire().segments[0] else {
+            panic!()
+        };
+        let source_chart = ordinary_chart_input_from_wire(&bridge.target_chart).unwrap();
+        let source_tube = ordinary_tube_input_from_wire(&bridge.target_tube);
+        replay_proof_grade_carried_planar_lc_entry_exact_rational_v04(
+            admission,
+            1,
+            &source_chart,
+            &source_tube,
+            parent,
+        )
+        .unwrap()
+    }
+
+    fn proof_grade_canonical_replays() -> &'static [ProofGradeCarriedPlanarLcEntryReplay; 2] {
+        static REPLAYS: OnceLock<[ProofGradeCarriedPlanarLcEntryReplay; 2]> = OnceLock::new();
+        REPLAYS.get_or_init(|| {
+            [
+                proof_grade_replay(SUCCESS_RAW),
+                proof_grade_replay(FAILED_REVISIT_RAW),
+            ]
+        })
+    }
+
     fn truth(replay: &CarriedPlanarLcEntryReplay) -> [bool; 21] {
         std::array::from_fn(|index| replay.obligations()[index].satisfied())
+    }
+
+    fn proof_grade_truth(replay: &ProofGradeCarriedPlanarLcEntryReplay) -> [bool; 19] {
+        std::array::from_fn(|index| replay.obligations()[index].satisfied())
+    }
+
+    fn assert_direct_artifacts_equal(
+        left: &ProofGradeCarriedPlanarLcEntryReplay,
+        right: &ProofGradeCarriedPlanarLcEntryReplay,
+    ) {
+        assert_eq!(left.source_tube_replay(), right.source_tube_replay());
+        assert_eq!(left.target_tube_replay(), right.target_tube_replay());
+        assert_eq!(
+            left.source_endpoint_state_box(),
+            right.source_endpoint_state_box()
+        );
+        assert_eq!(left.lift_replay(), right.lift_replay());
+        assert_eq!(left.entry_time_interval(), right.entry_time_interval());
+        assert_eq!(left.target_anchor(), right.target_anchor());
+        assert_eq!(left.gauge_assignments(), right.gauge_assignments());
+        assert_eq!(
+            left.assignment_maximum_gaps(),
+            right.assignment_maximum_gaps()
+        );
+        assert_eq!(
+            left.assignment_containments(),
+            right.assignment_containments()
+        );
+        assert_eq!(
+            left.selected_assignment_index(),
+            right.selected_assignment_index()
+        );
+        assert_eq!(left.selected_assignment(), right.selected_assignment());
+        assert_eq!(
+            left.selected_transformed_patches(),
+            right.selected_transformed_patches()
+        );
+        assert_eq!(left.mass_kernel_id(), right.mass_kernel_id());
+        assert_eq!(left.analytic_kernel_id(), right.analytic_kernel_id());
+    }
+
+    fn replace_scalar_after(raw: &str, anchor: &str, field: &str, replacement: &str) -> String {
+        let anchor_start = raw.find(anchor).expect("missing record anchor");
+        let marker = format!("\"{field}\":");
+        let value_start = anchor_start
+            + raw[anchor_start..]
+                .find(&marker)
+                .expect("missing anchored scalar")
+            + marker.len();
+        let value_end = raw[value_start..]
+            .find([',', '}'])
+            .map(|offset| value_start + offset)
+            .expect("unterminated scalar");
+        format!(
+            "{}{}{}",
+            &raw[..value_start],
+            replacement,
+            &raw[value_end..]
+        )
+    }
+
+    fn matching_array_end(raw: &str, start: usize) -> usize {
+        let bytes = raw.as_bytes();
+        assert_eq!(bytes[start], b'[');
+        let mut depth = 0_usize;
+        let mut in_string = false;
+        let mut escaped = false;
+        for (index, byte) in bytes.iter().copied().enumerate().skip(start) {
+            if in_string {
+                if escaped {
+                    escaped = false;
+                } else if byte == b'\\' {
+                    escaped = true;
+                } else if byte == b'"' {
+                    in_string = false;
+                }
+                continue;
+            }
+            match byte {
+                b'"' => in_string = true,
+                b'[' => depth += 1,
+                b']' => {
+                    depth -= 1;
+                    if depth == 0 {
+                        return index;
+                    }
+                }
+                _ => {}
+            }
+        }
+        panic!("unterminated array")
+    }
+
+    fn containing_object_start(raw: &str, position: usize) -> usize {
+        let mut object_stack = Vec::new();
+        let mut in_string = false;
+        let mut escaped = false;
+        for (index, byte) in raw.as_bytes().iter().copied().enumerate().take(position) {
+            if in_string {
+                if escaped {
+                    escaped = false;
+                } else if byte == b'\\' {
+                    escaped = true;
+                } else if byte == b'"' {
+                    in_string = false;
+                }
+                continue;
+            }
+            match byte {
+                b'"' => in_string = true,
+                b'{' => object_stack.push(index),
+                b'}' => {
+                    object_stack.pop().expect("unbalanced object");
+                }
+                _ => {}
+            }
+        }
+        *object_stack.last().expect("anchor outside object")
+    }
+
+    fn extend_ordinary_coefficients_to(raw: &str, certificate_id: &str, count: usize) -> String {
+        let anchor = format!("\"certificate_id\":\"{certificate_id}\"");
+        let zero = "[[0.0,0.0],[0.0,0.0],[0.0,0.0]]";
+        let mut result = raw.to_owned();
+        for field in ["position_coefficients", "velocity_coefficients"] {
+            let anchor_start = result.find(&anchor).expect("missing record anchor");
+            let object_start = containing_object_start(&result, anchor_start);
+            let marker = format!("\"{field}\":[");
+            let relative = result[object_start..]
+                .find(&marker)
+                .expect("missing anchored coefficient array");
+            let array_start = object_start + relative + marker.len() - 1;
+            let array_end = matching_array_end(&result, array_start);
+            let inner = &result[array_start + 1..array_end];
+            let mut depth = 0_usize;
+            let mut existing = usize::from(!inner.is_empty());
+            for byte in inner.as_bytes() {
+                match byte {
+                    b'[' => depth += 1,
+                    b']' => depth -= 1,
+                    b',' if depth == 0 => existing += 1,
+                    _ => {}
+                }
+            }
+            assert!(existing <= count);
+            let padding = vec![zero; count - existing].join(",");
+            let replacement = if padding.is_empty() {
+                format!("[{inner}]")
+            } else {
+                format!("[{inner},{padding}]")
+            };
+            result = format!(
+                "{}{}{}",
+                &result[..array_start],
+                replacement,
+                &result[array_end + 1..]
+            );
+        }
+        result
+    }
+
+    fn extend_planar_lc_coefficients_to(raw: &str, certificate_id: &str, count: usize) -> String {
+        let anchor = format!("\"certificate_id\":\"{certificate_id}\"");
+        let mut result = raw.to_owned();
+        for (field, zero) in [
+            ("z_coefficients", "[0.0,0.0]"),
+            ("z_velocity_coefficients", "[0.0,0.0]"),
+            ("pair_energy_coefficients", "0.0"),
+            ("binary_center_coefficients", "[0.0,0.0]"),
+            ("binary_center_velocity_coefficients", "[0.0,0.0]"),
+            ("third_offset_coefficients", "[0.0,0.0]"),
+            ("third_offset_velocity_coefficients", "[0.0,0.0]"),
+            ("physical_time_coefficients", "0.0"),
+        ] {
+            let anchor_start = result.find(&anchor).expect("missing record anchor");
+            let object_start = containing_object_start(&result, anchor_start);
+            let marker = format!("\"{field}\":[");
+            let relative = result[object_start..]
+                .find(&marker)
+                .expect("missing anchored coefficient array");
+            let array_start = object_start + relative + marker.len() - 1;
+            let array_end = matching_array_end(&result, array_start);
+            let inner = &result[array_start + 1..array_end];
+            let mut depth = 0_usize;
+            let mut existing = usize::from(!inner.is_empty());
+            for byte in inner.as_bytes() {
+                match byte {
+                    b'[' => depth += 1,
+                    b']' => depth -= 1,
+                    b',' if depth == 0 => existing += 1,
+                    _ => {}
+                }
+            }
+            assert!(existing <= count);
+            let padding = vec![zero; count - existing].join(",");
+            let replacement = if padding.is_empty() {
+                format!("[{inner}]")
+            } else {
+                format!("[{inner},{padding}]")
+            };
+            result = format!(
+                "{}{}{}",
+                &result[..array_start],
+                replacement,
+                &result[array_end + 1..]
+            );
+        }
+        result
+    }
+
+    #[test]
+    fn proof_grade_canonical_entries_have_distinct_all_true_direct_ledgers() {
+        for (compatibility, proof_grade) in canonical_replays()
+            .iter()
+            .zip(proof_grade_canonical_replays())
+        {
+            assert_eq!(
+                compatibility.profile_id(),
+                EXACT_RATIONAL_CARRIED_PLANAR_LC_ENTRY_V04_PROFILE_ID
+            );
+            assert_eq!(
+                proof_grade.profile_id(),
+                EXACT_RATIONAL_PROOF_GRADE_CARRIED_PLANAR_LC_ENTRY_V04_PROFILE_ID
+            );
+            assert_eq!(
+                proof_grade
+                    .obligations()
+                    .iter()
+                    .map(ProofGradeCarriedPlanarLcEntryObligation::id)
+                    .collect::<Vec<_>>(),
+                PROOF_GRADE_CARRIED_PLANAR_LC_ENTRY_OBLIGATION_IDS
+            );
+            assert_eq!(proof_grade_truth(proof_grade), [true; 19]);
+            assert!(proof_grade.conditional_profile_satisfied());
+            assert!(proof_grade
+                .source_claimed_tail_chart_diagnostic()
+                .unwrap()
+                .conditional_profile_satisfied());
+            assert!(proof_grade
+                .target_claimed_tail_chart_diagnostic()
+                .unwrap()
+                .conditional_profile_satisfied());
+            assert_eq!(
+                proof_grade.source_endpoint_state_box(),
+                compatibility.source_endpoint_state_box()
+            );
+            assert_eq!(proof_grade.lift_replay(), compatibility.lift_replay());
+            assert_eq!(
+                proof_grade.entry_time_interval(),
+                compatibility.entry_time_interval()
+            );
+            assert_eq!(proof_grade.target_anchor(), compatibility.target_anchor());
+            assert_eq!(
+                proof_grade.assignment_containments(),
+                compatibility.assignment_containments()
+            );
+            assert_eq!(
+                proof_grade.selected_transformed_patches(),
+                compatibility.selected_transformed_patches()
+            );
+        }
+    }
+
+    #[test]
+    fn proof_grade_claimed_tail_failures_are_diagnostic_only_and_preserve_direct_artifacts() {
+        let raw = std::str::from_utf8(SUCCESS_RAW).unwrap();
+        let canonical = &proof_grade_canonical_replays()[0];
+        for (certificate_id, source_diagnostic_fails) in [
+            ("review-v03:n:certificate:1", true),
+            ("review-v03:lc:certificate:0", false),
+        ] {
+            let anchor = format!("\"certificate_id\":\"{certificate_id}\"");
+            let mutated = replace_scalar_after(raw, &anchor, "tail_bound", "-1.0");
+            assert_ne!(mutated, raw);
+            let admission = CanonicalRawV1Admission::admit(mutated.as_bytes()).unwrap();
+            let parent = RationalInterval::try_point(BigRational::new(
+                BigInt::from(1),
+                BigInt::from(1_u64 << 40),
+            ))
+            .unwrap();
+
+            let compatibility = replay_admission(&admission, &parent);
+            assert!(!compatibility.conditional_profile_satisfied());
+            let proof_grade = proof_grade_replay_admission(&admission, &parent);
+            assert_eq!(proof_grade_truth(&proof_grade), [true; 19]);
+            assert!(proof_grade.conditional_profile_satisfied());
+            assert_direct_artifacts_equal(&proof_grade, canonical);
+
+            let source_diagnostic = proof_grade
+                .source_claimed_tail_chart_diagnostic()
+                .unwrap()
+                .conditional_profile_satisfied();
+            let target_diagnostic = proof_grade
+                .target_claimed_tail_chart_diagnostic()
+                .unwrap()
+                .conditional_profile_satisfied();
+            assert_eq!(source_diagnostic, !source_diagnostic_fails);
+            assert_eq!(target_diagnostic, source_diagnostic_fails);
+        }
+    }
+
+    #[test]
+    fn proof_grade_source_chart_resource_exhaustion_is_retained_without_gating_direct_entry() {
+        let raw = std::str::from_utf8(SUCCESS_RAW).unwrap();
+        let mutated = extend_ordinary_coefficients_to(raw, "review-v03:n:certificate:1", 146);
+        let admission = CanonicalRawV1Admission::admit(mutated.as_bytes()).unwrap();
+        let SegmentWire::OrdinaryBridge(bridge) = &admission.wire().segments[0] else {
+            panic!()
+        };
+        let source_chart = ordinary_chart_input_from_wire(&bridge.target_chart).unwrap();
+        let source_tube = ordinary_tube_input_from_wire(&bridge.target_tube);
+        let parent = RationalInterval::try_point(BigRational::new(
+            BigInt::from(1),
+            BigInt::from(1_u64 << 40),
+        ))
+        .unwrap();
+
+        assert!(matches!(
+            replay_carried_planar_lc_entry_exact_rational_v04(
+                &admission,
+                1,
+                &source_chart,
+                &source_tube,
+                &parent,
+            ),
+            Err(CarriedPlanarLcEntryError::SourceChart(
+                OrdinaryChartReplayError::WorkLimitExceeded {
+                    required: 2_018_400,
+                    limit: 2_000_000,
+                }
+            ))
+        ));
+
+        let proof_grade = replay_proof_grade_carried_planar_lc_entry_exact_rational_v04(
+            &admission,
+            1,
+            &source_chart,
+            &source_tube,
+            &parent,
+        )
+        .unwrap();
+        assert!(matches!(
+            proof_grade.source_claimed_tail_chart_diagnostic(),
+            Err(OrdinaryChartReplayError::WorkLimitExceeded {
+                required: 2_018_400,
+                limit: 2_000_000,
+            })
+        ));
+        assert_eq!(proof_grade_truth(&proof_grade), [true; 19]);
+        assert!(proof_grade.conditional_profile_satisfied());
+        assert!(proof_grade.source_tube_replay().certified());
+        assert!(proof_grade.target_tube_replay().certified());
+        assert!(proof_grade.source_endpoint_state_box().is_some());
+        assert!(proof_grade.lift_replay().is_some());
+        assert!(proof_grade.target_anchor().is_some());
+    }
+
+    #[test]
+    fn proof_grade_target_chart_resource_exhaustion_is_retained_without_gating_direct_entry() {
+        let raw = std::str::from_utf8(SUCCESS_RAW).unwrap();
+        let mutated = extend_planar_lc_coefficients_to(raw, "review-v03:lc:certificate:0", 89);
+        let admission = CanonicalRawV1Admission::admit(mutated.as_bytes()).unwrap();
+        let SegmentWire::OrdinaryBridge(bridge) = &admission.wire().segments[0] else {
+            panic!()
+        };
+        let source_chart = ordinary_chart_input_from_wire(&bridge.target_chart).unwrap();
+        let source_tube = ordinary_tube_input_from_wire(&bridge.target_tube);
+        let parent = RationalInterval::try_point(BigRational::new(
+            BigInt::from(1),
+            BigInt::from(1_u64 << 40),
+        ))
+        .unwrap();
+
+        assert!(matches!(
+            replay_carried_planar_lc_entry_exact_rational_v04(
+                &admission,
+                1,
+                &source_chart,
+                &source_tube,
+                &parent,
+            ),
+            Err(CarriedPlanarLcEntryError::TargetChart(
+                PlanarLcChartReplayError::Series(PlanarLcSeriesError::WorkLimitExceeded {
+                    required: 4_055_552,
+                    limit: 4_000_000,
+                })
+            ))
+        ));
+
+        let proof_grade = replay_proof_grade_carried_planar_lc_entry_exact_rational_v04(
+            &admission,
+            1,
+            &source_chart,
+            &source_tube,
+            &parent,
+        )
+        .unwrap();
+        assert!(matches!(
+            proof_grade.target_claimed_tail_chart_diagnostic(),
+            Err(PlanarLcChartReplayError::Series(
+                PlanarLcSeriesError::WorkLimitExceeded {
+                    required: 4_055_552,
+                    limit: 4_000_000,
+                }
+            ))
+        ));
+        assert_eq!(proof_grade_truth(&proof_grade), [true; 19]);
+        assert!(proof_grade.conditional_profile_satisfied());
+        assert!(proof_grade.target_tube_replay().certified());
+        assert_direct_artifacts_equal(&proof_grade, &proof_grade_canonical_replays()[0]);
     }
 
     #[test]

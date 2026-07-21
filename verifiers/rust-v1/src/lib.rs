@@ -153,9 +153,12 @@ pub use planar_lc_defect::{
 };
 pub use planar_lc_entry::{
     raw_v1_defining_namespace_unique, replay_carried_planar_lc_entry_exact_rational_v04,
-    CarriedPlanarLcEntryError, CarriedPlanarLcEntryObligation, CarriedPlanarLcEntryReplay,
+    replay_proof_grade_carried_planar_lc_entry_exact_rational_v04, CarriedPlanarLcEntryError,
+    CarriedPlanarLcEntryObligation, CarriedPlanarLcEntryReplay,
+    ProofGradeCarriedPlanarLcEntryObligation, ProofGradeCarriedPlanarLcEntryReplay,
     CARRIED_PLANAR_LC_ENTRY_OBLIGATION_IDS, EXACT_RATIONAL_CARRIED_PLANAR_LC_ENTRY_V04_PROFILE_ID,
-    HARD_MAX_RAW_V1_NAMESPACE_SEGMENTS,
+    EXACT_RATIONAL_PROOF_GRADE_CARRIED_PLANAR_LC_ENTRY_V04_PROFILE_ID,
+    HARD_MAX_RAW_V1_NAMESPACE_SEGMENTS, PROOF_GRADE_CARRIED_PLANAR_LC_ENTRY_OBLIGATION_IDS,
 };
 pub use planar_lc_exit::{
     replay_carried_planar_lc_exit_exact_rational_v04, CarriedPlanarLcExitError,
