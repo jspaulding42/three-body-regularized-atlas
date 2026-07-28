@@ -161,10 +161,14 @@ pub use planar_lc_entry::{
     HARD_MAX_RAW_V1_NAMESPACE_SEGMENTS, PROOF_GRADE_CARRIED_PLANAR_LC_ENTRY_OBLIGATION_IDS,
 };
 pub use planar_lc_exit::{
-    replay_carried_planar_lc_exit_exact_rational_v04, CarriedPlanarLcExitError,
+    replay_carried_planar_lc_exit_exact_rational_v04,
+    replay_proof_grade_carried_planar_lc_exit_exact_rational_v04, CarriedPlanarLcExitError,
     CarriedPlanarLcExitObligation, CarriedPlanarLcExitReplay,
+    ProofGradeCarriedPlanarLcExitObligation, ProofGradeCarriedPlanarLcExitReplay,
     CARRIED_PLANAR_LC_EXIT_OBLIGATION_IDS, EXACT_RATIONAL_CARRIED_PLANAR_LC_EXIT_V04_PROFILE_ID,
+    EXACT_RATIONAL_PROOF_GRADE_CARRIED_PLANAR_LC_EXIT_V04_PROFILE_ID,
     PARENT_CARRIED_ORDINARY_SOLUTION_INVARIANT_V1_ID, PLANAR_LC_ANALYTIC_KERNEL_V1_ID,
+    PROOF_GRADE_CARRIED_PLANAR_LC_EXIT_OBLIGATION_IDS,
 };
 pub use planar_lc_field::{
     evaluate_planar_lc_field, evaluate_planar_lc_field_default, PlanarLcFieldEnclosure,
