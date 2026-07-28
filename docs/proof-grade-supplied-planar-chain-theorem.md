@@ -706,13 +706,30 @@ in [`planar_lc_exit.rs`](../verifiers/rust-v1/src/planar_lc_exit.rs) with a
 21-row decisive exit ledger. It nests the proof-grade entry chart diagnostics
 without making them decisive, while freshly replayed direct slice, projection,
 containment, time, and clock evidence remains decisive. These entry and exit
-kernels are tested independently of the frozen compatibility profiles. A
-proof-grade mixed or full-chain profile is still missing.
+kernels are tested independently of the frozen compatibility profiles.
+
+The separately named
+`exact_rational_proof_grade_raw_mixed_planar_chain_v04` profile is now
+implemented in
+[`proof_grade_mixed_chain.rs`](../verifiers/rust-v1/src/proof_grade_mixed_chain.rs).
+Its eight decisive rows fold the exact root, direct local ordinary or LC
+evidence, exact clock/preimage derivation, direct terminal evaluation, and the
+requested width bound. The root ordinary claimed-tail replay is retained as a
+typed, nondecisive diagnostic. Proof-grade LC exits are committed
+transactionally: an LC passage changes the carried chart and clock only after
+its proof-grade exit ledger succeeds. On an uncommitted LC passage the profile
+retains a proof-only lifted LC-right frontier when the direct evidence supports
+one; this retained frontier is diagnostic coverage, not a terminal acceptance.
+
+The separately named admitted 13-row/full outcome and its execution,
+conformance-corpus, and release integration are still missing. Accordingly,
+the implemented mixed fold does not establish the full theorem, a release
+gate, or an independent-replay claim.
 
 ## Exact remaining proof and code gates
 
-Before the separately named profile can support a publication-grade claim, the
-following gates should be closed explicitly.
+Before the assembled proof-grade surface can support a publication-grade claim,
+the following gates should be closed explicitly.
 
 ### Mathematical lemmas
 
@@ -757,8 +774,9 @@ following gates should be closed explicitly.
   remains open. The profile's tight outward binary64 enclosures are validated
   witnesses; exact rational profile members, rather than those endpoints, are
   the scalars propagated by the exact-rational verifier.
-- Extend the implemented local proof-grade entry-and-exit dependency graph
-  through proof-grade mixed and full-chain profiles, with no claimed-tail
+- Extend the implemented proof-grade entry, exit, and mixed dependency graph
+  through the separately named admitted 13-row/full outcome and its
+  execution/corpus/release integration, with no claimed-tail
   `conditional_profile_satisfied()` value decisive.
 - Preserve claimed-tail and recurrence outputs as labeled diagnostics and test
   that mutations confined to those claims do not change proof-grade tubes,
