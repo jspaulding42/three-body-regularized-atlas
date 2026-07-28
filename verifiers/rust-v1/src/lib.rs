@@ -69,6 +69,7 @@ mod raw_admission;
 pub mod raw_schema;
 mod raw_v1_execution;
 mod raw_v1_outcome;
+mod raw_v1_proof_grade_execution;
 mod raw_v1_proof_grade_outcome;
 mod sqrt;
 mod wire_json;
@@ -237,6 +238,13 @@ pub use raw_v1_outcome::{
     RawV1OutcomeSerializationError, RawV1OutcomeStatus,
     EXACT_RATIONAL_ADMITTED_RAW_V1_OUTCOME_V04_PROFILE_ID, RAW_V1_OUTCOME_OBLIGATION_IDS,
     RAW_V1_RUST_SEMANTIC_OUTCOME_V1_SCHEMA_ID,
+};
+pub use raw_v1_proof_grade_execution::{
+    execute_proof_grade_raw_v1_bytes_exact_rational_v04, ProofGradeRawV1EvaluationErrorStage,
+    ProofGradeRawV1EvaluationOutcome, ProofGradeRawV1Execution,
+    ProofGradeRawV1ExecutionSerializationError, ProofGradeRawV1ParseOutcome,
+    ProofGradeRawV1RejectionStage, EXACT_RATIONAL_PROOF_GRADE_RAW_V1_EXECUTION_V04_PROFILE_ID,
+    RAW_V1_RUST_PROOF_GRADE_EXECUTION_V1_SCHEMA_ID,
 };
 pub use raw_v1_proof_grade_outcome::{
     replay_admitted_proof_grade_raw_v1_outcome_exact_rational_v04, ProofGradeRawV1Outcome,

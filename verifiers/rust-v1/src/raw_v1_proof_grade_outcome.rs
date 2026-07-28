@@ -272,7 +272,7 @@ impl ProofGradeRawV1Outcome {
             .map_err(|source| ProofGradeRawV1OutcomeSerializationError { source })
     }
 
-    fn portable_projection(&self) -> ProofGradePortableOutcomeProjection<'_> {
+    pub(crate) fn portable_projection(&self) -> ProofGradePortableOutcomeProjection<'_> {
         let replay = &self.mixed_replay;
         ProofGradePortableOutcomeProjection {
             schema: RAW_V1_RUST_PROOF_GRADE_SEMANTIC_OUTCOME_V1_SCHEMA_ID,
@@ -474,7 +474,7 @@ fn first_failed_obligation(
 }
 
 #[derive(Serialize)]
-struct ProofGradePortableOutcomeProjection<'a> {
+pub(crate) struct ProofGradePortableOutcomeProjection<'a> {
     schema: &'static str,
     profile: &'static str,
     status: &'static str,
