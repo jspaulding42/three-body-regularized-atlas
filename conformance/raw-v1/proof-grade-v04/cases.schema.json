@@ -1,0 +1,214 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "raw-v1-proof-grade-v04-cases-schema-v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "corpus_status",
+    "frozen_specification",
+    "rust_execution",
+    "cases"
+  ],
+  "properties": {
+    "schema": {"const": "raw-v1-proof-grade-v04-cases-v1"},
+    "corpus_status": {"const": "foundation_incomplete"},
+    "frozen_specification": {"$ref": "#/$defs/hash_binding"},
+    "rust_execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "profile"],
+      "properties": {
+        "schema": {"const": "raw-v1-rust-proof-grade-execution-v1"},
+        "profile": {"const": "exact_rational_proof_grade_raw_v1_execution_v04"}
+      }
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 18,
+      "maxItems": 18,
+      "items": {"$ref": "#/$defs/case"}
+    }
+  },
+  "$defs": {
+    "hash_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository_relative_path", "sha256"],
+      "properties": {
+        "repository_relative_path": {"type": "string", "minLength": 1},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
+    "rational": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["numerator", "denominator"],
+      "properties": {
+        "numerator": {"type": "string", "pattern": "^(0|[1-9][0-9]*|-[1-9][0-9]*)$"},
+        "denominator": {"type": "string", "pattern": "^[1-9][0-9]*$"}
+      }
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target_physical_time", "maximum_component_width"],
+      "properties": {
+        "target_physical_time": {"$ref": "#/$defs/rational"},
+        "maximum_component_width": {"$ref": "#/$defs/rational"}
+      }
+    },
+    "obligation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "certified"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "certified": {"type": "boolean"}
+      }
+    },
+    "segment_profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["segment_index", "kind", "profile", "pair"],
+      "properties": {
+        "segment_index": {"type": "integer", "minimum": 0},
+        "kind": {"type": "string", "minLength": 1},
+        "profile": {"type": "string", "minLength": 1},
+        "pair": {
+          "oneOf": [
+            {"type": "null"},
+            {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "integer", "minimum": 0, "maximum": 2}}
+          ]
+        }
+      }
+    },
+    "presence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "current_clock_origin",
+        "covered_physical_time_interval",
+        "target_parameter_preimage_interval",
+        "maximum_final_component_width"
+      ],
+      "properties": {
+        "current_clock_origin": {"type": "boolean"},
+        "covered_physical_time_interval": {"type": "boolean"},
+        "target_parameter_preimage_interval": {"type": "boolean"},
+        "maximum_final_component_width": {"type": "boolean"}
+      }
+    },
+    "final_enclosure": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["enclosure_type", "coordinate_system", "component_count"],
+          "properties": {
+            "enclosure_type": {"type": "string", "minLength": 1},
+            "coordinate_system": {"type": "string", "minLength": 1},
+            "component_count": {"type": "integer", "minimum": 1}
+          }
+        }
+      ]
+    },
+    "retained_region": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["region_type", "coordinate_system", "pair", "component_count"],
+          "properties": {
+            "region_type": {"type": "string", "minLength": 1},
+            "coordinate_system": {"type": "string", "minLength": 1},
+            "pair": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "integer", "minimum": 0, "maximum": 2}},
+            "component_count": {"type": "integer", "minimum": 1}
+          }
+        }
+      ]
+    },
+    "semantic_signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "profile",
+        "status",
+        "certificate_id",
+        "evidence_sha256",
+        "request",
+        "obligations",
+        "first_failed_obligation",
+        "certified_segment_count",
+        "failed_segment_index",
+        "failed_segment_missing_obligations",
+        "segment_profiles",
+        "clock_ledger_count",
+        "current_chart_id",
+        "presence",
+        "final_enclosure",
+        "retained_region"
+      ],
+      "properties": {
+        "schema": {"const": "raw-v1-rust-proof-grade-semantic-outcome-v1"},
+        "profile": {"const": "exact_rational_proof_grade_admitted_raw_v1_outcome_v04"},
+        "status": {"enum": ["CERTIFIED_TO_T", "UNRESOLVED"]},
+        "certificate_id": {"type": "string", "minLength": 1},
+        "evidence_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "request": {"$ref": "#/$defs/request"},
+        "obligations": {"type": "array", "minItems": 13, "maxItems": 13, "items": {"$ref": "#/$defs/obligation"}},
+        "first_failed_obligation": {"oneOf": [{"type": "null"}, {"type": "string", "minLength": 1}]},
+        "certified_segment_count": {"type": "integer", "minimum": 0},
+        "failed_segment_index": {"oneOf": [{"type": "null"}, {"type": "integer", "minimum": 0}]},
+        "failed_segment_missing_obligations": {"type": "array", "items": {"type": "string", "minLength": 1}},
+        "segment_profiles": {"type": "array", "items": {"$ref": "#/$defs/segment_profile"}},
+        "clock_ledger_count": {"type": "integer", "minimum": 0},
+        "current_chart_id": {"oneOf": [{"type": "null"}, {"type": "string", "minLength": 1}]},
+        "presence": {"$ref": "#/$defs/presence"},
+        "final_enclosure": {"$ref": "#/$defs/final_enclosure"},
+        "retained_region": {"$ref": "#/$defs/retained_region"}
+      }
+    },
+    "case": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["case_id", "input_path", "input_sha256", "expected"],
+      "properties": {
+        "case_id": {"type": "string", "pattern": "^[a-z0-9-]+$"},
+        "input_path": {"type": "string", "pattern": "^conformance/raw-v1/inputs/[^/]+$"},
+        "input_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "expected": {
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["parse_outcome", "rejection_stage", "evaluation_outcome", "evaluation_error_stage", "semantic_signature"],
+              "properties": {
+                "parse_outcome": {"const": "REJECT"},
+                "rejection_stage": {"enum": ["CANONICAL_WIRE", "SCHEMA"]},
+                "evaluation_outcome": {"const": "NOT_RUN"},
+                "evaluation_error_stage": {"type": "null"},
+                "semantic_signature": {"type": "null"}
+              }
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["parse_outcome", "rejection_stage", "evaluation_outcome", "evaluation_error_stage", "semantic_signature"],
+              "properties": {
+                "parse_outcome": {"const": "ACCEPT"},
+                "rejection_stage": {"type": "null"},
+                "evaluation_outcome": {"const": "RESULT"},
+                "evaluation_error_stage": {"type": "null"},
+                "semantic_signature": {"$ref": "#/$defs/semantic_signature"}
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

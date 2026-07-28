@@ -1,0 +1,47 @@
+{
+  "manifest_schema": "raw-v1-proof-grade-v04-manifest-v1",
+  "corpus_status": "foundation_incomplete",
+  "hash_algorithm": "sha256",
+  "manifest_self_hash": null,
+  "manifest_self_hash_exclusion": "manifest.json is intentionally excluded from its own payload hash table.",
+  "frozen_specification": {
+    "repository_relative_path": "docs/raw-v1-certificate-specification.md",
+    "sha256": "18a131cb559dc74d86c33a61de8b252402b2b2e41755f789f66bc67f61238cac"
+  },
+  "cases_file": {
+    "repository_relative_path": "conformance/raw-v1/proof-grade-v04/cases.json",
+    "sha256": "75bcc3bc788da7cd0165a92c2a91483438eabc172dfe4c85ea44a513da97d7ad"
+  },
+  "schema_file": {
+    "repository_relative_path": "conformance/raw-v1/proof-grade-v04/cases.schema.json",
+    "sha256": "4272e5ef6886eadf40a67218b3e9a1a70666525749930c817fea1bb3e5eb8f5b"
+  },
+  "readme_file": {
+    "repository_relative_path": "conformance/raw-v1/proof-grade-v04/README.md",
+    "sha256": "deffa55c3a157c30f5c5b2c2697f256a1b5c0416ca4f9ed9b98916fce7b0baa0"
+  },
+  "runner_script": {
+    "repository_relative_path": "scripts/proof_grade_v04_conformance.py",
+    "sha256": "745665d740cbd74452430b6a0ecb711b41170dd9d53d85b6b70fda0ed8d558f1"
+  },
+  "referenced_inputs": [
+    {"repository_relative_path": "conformance/raw-v1/inputs/failed-revisit.raw.json", "sha256": "c6830919726c22fbca6e45d5781b2465e54876bfa89c25bc26e97284ff918727"},
+    {"repository_relative_path": "conformance/raw-v1/inputs/reject-alternate-real-spelling.json", "sha256": "399149365959ce41413482232e78736e65db0a73b65e6d26466e7b3e85a7f0f2"},
+    {"repository_relative_path": "conformance/raw-v1/inputs/reject-decoded-duplicate-unicode-key.json", "sha256": "b195c5fbcc1b57486c92a5c99baee535e4104005061cfbda806605a55f5258f2"},
+    {"repository_relative_path": "conformance/raw-v1/inputs/reject-duplicate-outer-key.json", "sha256": "5485eccfc8971dfc2ececd42a6a88387333703e6429254329d9bf279730e9ff5"},
+    {"repository_relative_path": "conformance/raw-v1/inputs/reject-invalid-utf8.bin", "sha256": "f83579f6b92fbcbf33eb86a7518ce15db8b484e15874de7d14c61b07c9e11766"},
+    {"repository_relative_path": "conformance/raw-v1/inputs/reject-leading-whitespace.json", "sha256": "c2a58237ffc72f493c98ea70c4f4faf2390b1fc339371ce1c7573628851cfa3c"},
+    {"repository_relative_path": "conformance/raw-v1/inputs/reject-lone-surrogate.json", "sha256": "4fe66de5abd9ee075f6132e274af7bdcdfbc0d97fbb7d44a3c58305e75d3a26c"},
+    {"repository_relative_path": "conformance/raw-v1/inputs/reject-missing-outer-field.json", "sha256": "4e2dcd608228a5b596c58e3d9deacb50eeb962df9ca3f7689848ef80b438737b"},
+    {"repository_relative_path": "conformance/raw-v1/inputs/reject-nonfinite-token.json", "sha256": "354eb40a7aba19d59f1cf1f207e4717fee856009288e00ad70b4815e60b78d1a"},
+    {"repository_relative_path": "conformance/raw-v1/inputs/reject-overflow-real.json", "sha256": "48f7bebf69f7a6232c815d66ed12e525eb6463bc80c95a79506448a042e28d3f"},
+    {"repository_relative_path": "conformance/raw-v1/inputs/reject-trailing-newline.json", "sha256": "9a9a364326af54d117c7a44b31df7c44606646d97a933a02c2e135f950c624a1"},
+    {"repository_relative_path": "conformance/raw-v1/inputs/reject-unknown-outer-field.json", "sha256": "914bef779c76598c74830895d1386ed6b20e81e47d84dc10c095864b86c1a5c8"},
+    {"repository_relative_path": "conformance/raw-v1/inputs/reject-unknown-segment-tag.json", "sha256": "8cbfc2dc63ba20af2401cd0258c7d2b2a23061b2e11dd9a34ba4e8ace6ba81b2"},
+    {"repository_relative_path": "conformance/raw-v1/inputs/reject-unsorted-outer-keys.json", "sha256": "f9a18c276f5717925ce7e410bd69f6ccd6a4ff19829c74d8001e28c871473593"},
+    {"repository_relative_path": "conformance/raw-v1/inputs/reject-wrong-interval-length.json", "sha256": "27d155afb4c524a3a8ba5a2860faf589a931bee403348836e110266dfbb22187"},
+    {"repository_relative_path": "conformance/raw-v1/inputs/reject-wrong-outer-scalar-class.json", "sha256": "73ec6ec66de24bd8d3eee504bbe138f7b80fb78f71f22f5ff35b80e17bf1cdaa"},
+    {"repository_relative_path": "conformance/raw-v1/inputs/reject-wrong-pair-length.json", "sha256": "80f98122d584ef736b0a03dfb97fa990a5351a67328cf6ca9f67097b87aa121c"},
+    {"repository_relative_path": "conformance/raw-v1/inputs/success.raw.json", "sha256": "ede15b0f35cf741f542a6cd260470a93ee5ff85dc5ae2371db1b88819b821f11"}
+  ]
+}

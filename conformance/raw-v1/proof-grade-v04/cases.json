@@ -1,0 +1,155 @@
+{
+  "schema": "raw-v1-proof-grade-v04-cases-v1",
+  "corpus_status": "foundation_incomplete",
+  "frozen_specification": {
+    "repository_relative_path": "docs/raw-v1-certificate-specification.md",
+    "sha256": "18a131cb559dc74d86c33a61de8b252402b2b2e41755f789f66bc67f61238cac"
+  },
+  "rust_execution": {
+    "schema": "raw-v1-rust-proof-grade-execution-v1",
+    "profile": "exact_rational_proof_grade_raw_v1_execution_v04"
+  },
+  "cases": [
+    {
+      "case_id": "success",
+      "input_path": "conformance/raw-v1/inputs/success.raw.json",
+      "input_sha256": "ede15b0f35cf741f542a6cd260470a93ee5ff85dc5ae2371db1b88819b821f11",
+      "expected": {
+        "parse_outcome": "ACCEPT",
+        "rejection_stage": null,
+        "evaluation_outcome": "RESULT",
+        "evaluation_error_stage": null,
+        "semantic_signature": {
+          "schema": "raw-v1-rust-proof-grade-semantic-outcome-v1",
+          "profile": "exact_rational_proof_grade_admitted_raw_v1_outcome_v04",
+          "status": "CERTIFIED_TO_T",
+          "certificate_id": "review-v03:chain:success",
+          "evidence_sha256": "ede15b0f35cf741f542a6cd260470a93ee5ff85dc5ae2371db1b88819b821f11",
+          "request": {
+            "target_physical_time": {"numerator": "2308213854898857", "denominator": "288230376151711744"},
+            "maximum_component_width": {"numerator": "3602879701896397", "denominator": "36028797018963968"}
+          },
+          "obligations": [
+            {"id": "proof_grade_raw_planar_chain_outer_schema_exact", "certified": true},
+            {"id": "proof_grade_raw_planar_chain_global_identifier_namespace_unique", "certified": true},
+            {"id": "proof_grade_raw_planar_chain_canonical_evidence_serializable", "certified": true},
+            {"id": "proof_grade_raw_planar_chain_requested_target_finite", "certified": true},
+            {"id": "proof_grade_raw_planar_chain_requested_width_admissible", "certified": true},
+            {"id": "proof_grade_raw_planar_chain_root_exact_point_left_anchor", "certified": true},
+            {"id": "proof_grade_raw_planar_chain_root_direct_tube_and_binding_certified", "certified": true},
+            {"id": "proof_grade_raw_planar_chain_all_segments_direct_evidence_folded", "certified": true},
+            {"id": "proof_grade_raw_planar_chain_target_not_before_current_left_clock", "certified": true},
+            {"id": "proof_grade_raw_planar_chain_fixed_time_preimage_exactly_derived", "certified": true},
+            {"id": "proof_grade_raw_planar_chain_fixed_time_preimage_inside_forward_current_domain", "certified": true},
+            {"id": "proof_grade_raw_planar_chain_target_state_directly_evaluated_and_inflated", "certified": true},
+            {"id": "proof_grade_raw_planar_chain_final_component_width_within_requested_bound", "certified": true}
+          ],
+          "first_failed_obligation": null,
+          "certified_segment_count": 5,
+          "failed_segment_index": null,
+          "failed_segment_missing_obligations": [],
+          "segment_profiles": [
+            {"segment_index": 0, "kind": "ordinary_bridge", "profile": "exact_rational_carried_ordinary_bridge_v04", "pair": null},
+            {"segment_index": 1, "kind": "planar_lc_passage", "profile": "exact_rational_proof_grade_carried_planar_lc_exit_v04", "pair": [0, 1]},
+            {"segment_index": 2, "kind": "planar_lc_passage", "profile": "exact_rational_proof_grade_carried_planar_lc_exit_v04", "pair": [0, 2]},
+            {"segment_index": 3, "kind": "planar_lc_passage", "profile": "exact_rational_proof_grade_carried_planar_lc_exit_v04", "pair": [1, 2]},
+            {"segment_index": 4, "kind": "planar_lc_passage", "profile": "exact_rational_proof_grade_carried_planar_lc_exit_v04", "pair": [0, 1]}
+          ],
+          "clock_ledger_count": 6,
+          "current_chart_id": "review-v03:n:chart:5",
+          "presence": {
+            "current_clock_origin": true,
+            "covered_physical_time_interval": true,
+            "target_parameter_preimage_interval": true,
+            "maximum_final_component_width": true
+          },
+          "final_enclosure": {
+            "enclosure_type": "validated_planar_chain_fixed_physical_time",
+            "coordinate_system": "planar_cartesian_12",
+            "component_count": 12
+          },
+          "retained_region": null
+        }
+      }
+    },
+    {
+      "case_id": "failed-revisit",
+      "input_path": "conformance/raw-v1/inputs/failed-revisit.raw.json",
+      "input_sha256": "c6830919726c22fbca6e45d5781b2465e54876bfa89c25bc26e97284ff918727",
+      "expected": {
+        "parse_outcome": "ACCEPT",
+        "rejection_stage": null,
+        "evaluation_outcome": "RESULT",
+        "evaluation_error_stage": null,
+        "semantic_signature": {
+          "schema": "raw-v1-rust-proof-grade-semantic-outcome-v1",
+          "profile": "exact_rational_proof_grade_admitted_raw_v1_outcome_v04",
+          "status": "UNRESOLVED",
+          "certificate_id": "review-v03:chain:failed-revisit",
+          "evidence_sha256": "c6830919726c22fbca6e45d5781b2465e54876bfa89c25bc26e97284ff918727",
+          "request": {
+            "target_physical_time": {"numerator": "2308213854898857", "denominator": "288230376151711744"},
+            "maximum_component_width": {"numerator": "3602879701896397", "denominator": "36028797018963968"}
+          },
+          "obligations": [
+            {"id": "proof_grade_raw_planar_chain_outer_schema_exact", "certified": true},
+            {"id": "proof_grade_raw_planar_chain_global_identifier_namespace_unique", "certified": true},
+            {"id": "proof_grade_raw_planar_chain_canonical_evidence_serializable", "certified": true},
+            {"id": "proof_grade_raw_planar_chain_requested_target_finite", "certified": true},
+            {"id": "proof_grade_raw_planar_chain_requested_width_admissible", "certified": true},
+            {"id": "proof_grade_raw_planar_chain_root_exact_point_left_anchor", "certified": true},
+            {"id": "proof_grade_raw_planar_chain_root_direct_tube_and_binding_certified", "certified": true},
+            {"id": "proof_grade_raw_planar_chain_all_segments_direct_evidence_folded", "certified": false},
+            {"id": "proof_grade_raw_planar_chain_target_not_before_current_left_clock", "certified": false},
+            {"id": "proof_grade_raw_planar_chain_fixed_time_preimage_exactly_derived", "certified": false},
+            {"id": "proof_grade_raw_planar_chain_fixed_time_preimage_inside_forward_current_domain", "certified": false},
+            {"id": "proof_grade_raw_planar_chain_target_state_directly_evaluated_and_inflated", "certified": false},
+            {"id": "proof_grade_raw_planar_chain_final_component_width_within_requested_bound", "certified": false}
+          ],
+          "first_failed_obligation": "segment[4]:proof_grade_carried_lc_exit_target_initial_ball_contains_complete_projection",
+          "certified_segment_count": 4,
+          "failed_segment_index": 4,
+          "failed_segment_missing_obligations": ["proof_grade_carried_lc_exit_target_initial_ball_contains_complete_projection"],
+          "segment_profiles": [
+            {"segment_index": 0, "kind": "ordinary_bridge", "profile": "exact_rational_carried_ordinary_bridge_v04", "pair": null},
+            {"segment_index": 1, "kind": "planar_lc_passage", "profile": "exact_rational_proof_grade_carried_planar_lc_exit_v04", "pair": [0, 1]},
+            {"segment_index": 2, "kind": "planar_lc_passage", "profile": "exact_rational_proof_grade_carried_planar_lc_exit_v04", "pair": [0, 2]},
+            {"segment_index": 3, "kind": "planar_lc_passage", "profile": "exact_rational_proof_grade_carried_planar_lc_exit_v04", "pair": [1, 2]},
+            {"segment_index": 4, "kind": "planar_lc_passage", "profile": "exact_rational_proof_grade_carried_planar_lc_exit_v04", "pair": [0, 1]}
+          ],
+          "clock_ledger_count": 5,
+          "current_chart_id": "review-v03:n:chart:4",
+          "presence": {
+            "current_clock_origin": true,
+            "covered_physical_time_interval": true,
+            "target_parameter_preimage_interval": false,
+            "maximum_final_component_width": false
+          },
+          "final_enclosure": null,
+          "retained_region": {
+            "region_type": "certified_lifted_lc_right_frontier",
+            "coordinate_system": "planar_lc_lifted_14",
+            "pair": [0, 1],
+            "component_count": 14
+          }
+        }
+      }
+    },
+    {"case_id": "reject-alternate-real-spelling", "input_path": "conformance/raw-v1/inputs/reject-alternate-real-spelling.json", "input_sha256": "399149365959ce41413482232e78736e65db0a73b65e6d26466e7b3e85a7f0f2", "expected": {"parse_outcome": "REJECT", "rejection_stage": "CANONICAL_WIRE", "evaluation_outcome": "NOT_RUN", "evaluation_error_stage": null, "semantic_signature": null}},
+    {"case_id": "reject-decoded-duplicate-unicode-key", "input_path": "conformance/raw-v1/inputs/reject-decoded-duplicate-unicode-key.json", "input_sha256": "b195c5fbcc1b57486c92a5c99baee535e4104005061cfbda806605a55f5258f2", "expected": {"parse_outcome": "REJECT", "rejection_stage": "CANONICAL_WIRE", "evaluation_outcome": "NOT_RUN", "evaluation_error_stage": null, "semantic_signature": null}},
+    {"case_id": "reject-duplicate-outer-key", "input_path": "conformance/raw-v1/inputs/reject-duplicate-outer-key.json", "input_sha256": "5485eccfc8971dfc2ececd42a6a88387333703e6429254329d9bf279730e9ff5", "expected": {"parse_outcome": "REJECT", "rejection_stage": "CANONICAL_WIRE", "evaluation_outcome": "NOT_RUN", "evaluation_error_stage": null, "semantic_signature": null}},
+    {"case_id": "reject-invalid-utf8", "input_path": "conformance/raw-v1/inputs/reject-invalid-utf8.bin", "input_sha256": "f83579f6b92fbcbf33eb86a7518ce15db8b484e15874de7d14c61b07c9e11766", "expected": {"parse_outcome": "REJECT", "rejection_stage": "CANONICAL_WIRE", "evaluation_outcome": "NOT_RUN", "evaluation_error_stage": null, "semantic_signature": null}},
+    {"case_id": "reject-leading-whitespace", "input_path": "conformance/raw-v1/inputs/reject-leading-whitespace.json", "input_sha256": "c2a58237ffc72f493c98ea70c4f4faf2390b1fc339371ce1c7573628851cfa3c", "expected": {"parse_outcome": "REJECT", "rejection_stage": "CANONICAL_WIRE", "evaluation_outcome": "NOT_RUN", "evaluation_error_stage": null, "semantic_signature": null}},
+    {"case_id": "reject-lone-surrogate", "input_path": "conformance/raw-v1/inputs/reject-lone-surrogate.json", "input_sha256": "4fe66de5abd9ee075f6132e274af7bdcdfbc0d97fbb7d44a3c58305e75d3a26c", "expected": {"parse_outcome": "REJECT", "rejection_stage": "CANONICAL_WIRE", "evaluation_outcome": "NOT_RUN", "evaluation_error_stage": null, "semantic_signature": null}},
+    {"case_id": "reject-missing-outer-field", "input_path": "conformance/raw-v1/inputs/reject-missing-outer-field.json", "input_sha256": "4e2dcd608228a5b596c58e3d9deacb50eeb962df9ca3f7689848ef80b438737b", "expected": {"parse_outcome": "REJECT", "rejection_stage": "SCHEMA", "evaluation_outcome": "NOT_RUN", "evaluation_error_stage": null, "semantic_signature": null}},
+    {"case_id": "reject-nonfinite-token", "input_path": "conformance/raw-v1/inputs/reject-nonfinite-token.json", "input_sha256": "354eb40a7aba19d59f1cf1f207e4717fee856009288e00ad70b4815e60b78d1a", "expected": {"parse_outcome": "REJECT", "rejection_stage": "CANONICAL_WIRE", "evaluation_outcome": "NOT_RUN", "evaluation_error_stage": null, "semantic_signature": null}},
+    {"case_id": "reject-overflow-real", "input_path": "conformance/raw-v1/inputs/reject-overflow-real.json", "input_sha256": "48f7bebf69f7a6232c815d66ed12e525eb6463bc80c95a79506448a042e28d3f", "expected": {"parse_outcome": "REJECT", "rejection_stage": "CANONICAL_WIRE", "evaluation_outcome": "NOT_RUN", "evaluation_error_stage": null, "semantic_signature": null}},
+    {"case_id": "reject-trailing-newline", "input_path": "conformance/raw-v1/inputs/reject-trailing-newline.json", "input_sha256": "9a9a364326af54d117c7a44b31df7c44606646d97a933a02c2e135f950c624a1", "expected": {"parse_outcome": "REJECT", "rejection_stage": "CANONICAL_WIRE", "evaluation_outcome": "NOT_RUN", "evaluation_error_stage": null, "semantic_signature": null}},
+    {"case_id": "reject-unknown-outer-field", "input_path": "conformance/raw-v1/inputs/reject-unknown-outer-field.json", "input_sha256": "914bef779c76598c74830895d1386ed6b20e81e47d84dc10c095864b86c1a5c8", "expected": {"parse_outcome": "REJECT", "rejection_stage": "SCHEMA", "evaluation_outcome": "NOT_RUN", "evaluation_error_stage": null, "semantic_signature": null}},
+    {"case_id": "reject-unknown-segment-tag", "input_path": "conformance/raw-v1/inputs/reject-unknown-segment-tag.json", "input_sha256": "8cbfc2dc63ba20af2401cd0258c7d2b2a23061b2e11dd9a34ba4e8ace6ba81b2", "expected": {"parse_outcome": "REJECT", "rejection_stage": "SCHEMA", "evaluation_outcome": "NOT_RUN", "evaluation_error_stage": null, "semantic_signature": null}},
+    {"case_id": "reject-unsorted-outer-keys", "input_path": "conformance/raw-v1/inputs/reject-unsorted-outer-keys.json", "input_sha256": "f9a18c276f5717925ce7e410bd69f6ccd6a4ff19829c74d8001e28c871473593", "expected": {"parse_outcome": "REJECT", "rejection_stage": "CANONICAL_WIRE", "evaluation_outcome": "NOT_RUN", "evaluation_error_stage": null, "semantic_signature": null}},
+    {"case_id": "reject-wrong-interval-length", "input_path": "conformance/raw-v1/inputs/reject-wrong-interval-length.json", "input_sha256": "27d155afb4c524a3a8ba5a2860faf589a931bee403348836e110266dfbb22187", "expected": {"parse_outcome": "REJECT", "rejection_stage": "SCHEMA", "evaluation_outcome": "NOT_RUN", "evaluation_error_stage": null, "semantic_signature": null}},
+    {"case_id": "reject-wrong-outer-scalar-class", "input_path": "conformance/raw-v1/inputs/reject-wrong-outer-scalar-class.json", "input_sha256": "73ec6ec66de24bd8d3eee504bbe138f7b80fb78f71f22f5ff35b80e17bf1cdaa", "expected": {"parse_outcome": "REJECT", "rejection_stage": "SCHEMA", "evaluation_outcome": "NOT_RUN", "evaluation_error_stage": null, "semantic_signature": null}},
+    {"case_id": "reject-wrong-pair-length", "input_path": "conformance/raw-v1/inputs/reject-wrong-pair-length.json", "input_sha256": "80f98122d584ef736b0a03dfb97fa990a5351a67328cf6ca9f67097b87aa121c", "expected": {"parse_outcome": "REJECT", "rejection_stage": "SCHEMA", "evaluation_outcome": "NOT_RUN", "evaluation_error_stage": null, "semantic_signature": null}}
+  ]
+}
