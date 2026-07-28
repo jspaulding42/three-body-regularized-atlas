@@ -63,6 +63,7 @@ mod planar_lc_series;
 mod planar_lc_state;
 mod planar_lc_tube;
 mod polynomial;
+mod proof_grade_mixed_chain;
 mod rational_input;
 mod raw_admission;
 pub mod raw_schema;
@@ -213,6 +214,14 @@ pub use planar_lc_tube::{
 pub use polynomial::{
     ExactRationalPolynomial, PolynomialError, HARD_MAX_POLYNOMIAL_DEGREE,
     HARD_MAX_POLYNOMIAL_DIMENSION, HARD_MAX_POLYNOMIAL_WORK_UNITS,
+};
+pub use proof_grade_mixed_chain::{
+    replay_proof_grade_raw_mixed_planar_chain_exact_rational_v04,
+    ProofGradeMixedPlanarLcSegmentReplay, ProofGradeMixedPlanarSegmentReplay,
+    ProofGradeRawMixedPlanarChainObligation, ProofGradeRawMixedPlanarChainReplay,
+    ProofGradeRawMixedPlanarChainReplayError,
+    EXACT_RATIONAL_PROOF_GRADE_RAW_MIXED_PLANAR_CHAIN_V04_PROFILE_ID,
+    PROOF_GRADE_RAW_MIXED_PLANAR_CHAIN_OBLIGATION_IDS,
 };
 pub use rational_input::HARD_MAX_RATIONAL_COMPONENT_BITS;
 pub use raw_admission::{CanonicalRawV1Admission, CanonicalRawV1AdmissionError};

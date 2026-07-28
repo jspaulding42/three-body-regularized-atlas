@@ -1,11 +1,8 @@
-//! Bounded exact-rational replay of one admitted mixed ordinary/planar-LC
-//! chain after the outer raw-v1 admission boundary.
+//! Proof-grade transactional mixed ordinary/planar-LC chain replay.
 //!
-//! This profile covers only the existing ordered top-level obligations 6--13.
-//! It transactionally folds freshly replayed local bridge and LC-exit profiles,
-//! derives every clock internally, and implements the frozen retained-frontier
-//! priority.  It does not establish outer obligations 1--5, raw hashing,
-//! serialization, frozen arithmetic parity, or verifier independence.
+//! This profile retains compatibility claimed-tail chart replays as typed
+//! diagnostics only.  Its eight decisive rows are derived from the exact root,
+//! direct ordinary bridges, proof-grade LC exits, and terminal enclosure.
 
 use core::fmt;
 
@@ -13,39 +10,53 @@ use num_rational::BigRational;
 use num_traits::Zero;
 
 use crate::{
+    mixed_chain::{
+        MixedChainClockLedgerEntry, MixedChainCocycleLedgerEntry, MixedChainLiftedLcRightFrontier,
+        MixedChainReplayFailure, MixedChainRetainedRegion, MixedOrdinaryCocycle,
+        MixedOrdinarySegmentReplay, MixedPlanarLcCocycle, MixedPlanarSegmentKind,
+    },
     ordinary_chain::{
         checked_add, checked_subtract, evaluate_and_inflate,
         reconstruct_ordinary_right_frontier_exact_rational_v04, strict_root_exact_gate,
     },
     ordinary_chart_input_from_wire, ordinary_tube_input_from_wire,
-    planar_lc_exit::replay_admission_bound_planar_lc_right_exact_rational_v04,
+    planar_lc_exit::replay_proof_grade_admission_bound_planar_lc_right_exact_rational_v04,
     rational_input::validate_public_rational,
     raw_schema::SegmentWire,
     replay_carried_ordinary_bridge_exact_rational_v04,
-    replay_carried_planar_lc_exit_exact_rational_v04,
     replay_ordinary_chart_exact_rational_claimed_tail_v04, replay_ordinary_tube_exact_rational_v04,
-    replay_validated_ordinary_root_exact_rational_v04, CanonicalRawV1Admission,
-    CarriedPlanarLcExitError, CarriedPlanarLcExitReplay, NumericError, OrdinaryBridgeReplay,
-    OrdinaryBridgeReplayError, OrdinaryChainFinalEnclosure, OrdinaryChainRightFrontier,
-    OrdinaryChartInput, OrdinaryChartReplay, OrdinaryChartReplayError, OrdinarySemanticError,
-    OrdinaryTubeReplay, OrdinaryTubeReplayError, PolynomialError, RationalInterval,
-    RawOrdinaryOnlyChainReplayError, ValidatedOrdinaryRootReplay, ValidatedOrdinaryRootReplayError,
-    HARD_MAX_RAW_ORDINARY_CHAIN_SEGMENTS, RAW_ORDINARY_ONLY_CHAIN_OBLIGATION_IDS,
+    replay_proof_grade_carried_planar_lc_exit_exact_rational_v04,
+    replay_validated_ordinary_root_exact_rational_v04, CanonicalRawV1Admission, NumericError,
+    OrdinaryChainFinalEnclosure, OrdinaryChartInput, OrdinaryChartReplay, OrdinaryChartReplayError,
+    OrdinarySemanticError, OrdinaryTubeReplay, PolynomialError,
+    ProofGradeCarriedPlanarLcExitReplay, RationalInterval, RawOrdinaryOnlyChainReplayError,
+    ValidatedOrdinaryRootReplay, ValidatedOrdinaryRootReplayError,
+    HARD_MAX_RAW_ORDINARY_CHAIN_SEGMENTS,
 };
 
 const POSITION_DIMENSION: usize = 6;
 
-pub const EXACT_RATIONAL_RAW_MIXED_PLANAR_CHAIN_V04_PROFILE_ID: &str =
-    "exact_rational_raw_mixed_planar_chain_v04";
-pub const RAW_MIXED_PLANAR_CHAIN_OBLIGATION_IDS: [&str; 8] = RAW_ORDINARY_ONLY_CHAIN_OBLIGATION_IDS;
+pub const EXACT_RATIONAL_PROOF_GRADE_RAW_MIXED_PLANAR_CHAIN_V04_PROFILE_ID: &str =
+    "exact_rational_proof_grade_raw_mixed_planar_chain_v04";
+
+pub const PROOF_GRADE_RAW_MIXED_PLANAR_CHAIN_OBLIGATION_IDS: [&str; 8] = [
+    "proof_grade_raw_planar_chain_root_exact_point_left_anchor",
+    "proof_grade_raw_planar_chain_root_direct_tube_and_binding_certified",
+    "proof_grade_raw_planar_chain_all_segments_direct_evidence_folded",
+    "proof_grade_raw_planar_chain_target_not_before_current_left_clock",
+    "proof_grade_raw_planar_chain_fixed_time_preimage_exactly_derived",
+    "proof_grade_raw_planar_chain_fixed_time_preimage_inside_forward_current_domain",
+    "proof_grade_raw_planar_chain_target_state_directly_evaluated_and_inflated",
+    "proof_grade_raw_planar_chain_final_component_width_within_requested_bound",
+];
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct RawMixedPlanarChainObligation {
+pub struct ProofGradeRawMixedPlanarChainObligation {
     id: &'static str,
     satisfied: bool,
 }
 
-impl RawMixedPlanarChainObligation {
+impl ProofGradeRawMixedPlanarChainObligation {
     pub const fn id(&self) -> &'static str {
         self.id
     }
@@ -55,20 +66,17 @@ impl RawMixedPlanarChainObligation {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum MixedPlanarSegmentKind {
-    OrdinaryBridge,
-    PlanarLcPassage,
-}
-
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct MixedOrdinarySegmentReplay {
+pub struct ProofGradeMixedPlanarLcSegmentReplay {
     segment_index: usize,
-    replay: OrdinaryBridgeReplay,
+    replay: ProofGradeCarriedPlanarLcExitReplay,
 }
 
-impl MixedOrdinarySegmentReplay {
-    pub(crate) const fn new(segment_index: usize, replay: OrdinaryBridgeReplay) -> Self {
+impl ProofGradeMixedPlanarLcSegmentReplay {
+    pub(crate) const fn new(
+        segment_index: usize,
+        replay: ProofGradeCarriedPlanarLcExitReplay,
+    ) -> Self {
         Self {
             segment_index,
             replay,
@@ -79,38 +87,22 @@ impl MixedOrdinarySegmentReplay {
         self.segment_index
     }
 
-    pub fn replay(&self) -> &OrdinaryBridgeReplay {
+    pub fn replay(&self) -> &ProofGradeCarriedPlanarLcExitReplay {
         &self.replay
     }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct MixedPlanarLcSegmentReplay {
-    segment_index: usize,
-    replay: CarriedPlanarLcExitReplay,
-}
-
-impl MixedPlanarLcSegmentReplay {
-    pub const fn segment_index(&self) -> usize {
-        self.segment_index
-    }
-
-    pub fn replay(&self) -> &CarriedPlanarLcExitReplay {
-        &self.replay
-    }
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum MixedPlanarSegmentReplay {
+pub enum ProofGradeMixedPlanarSegmentReplay {
     Ordinary(Box<MixedOrdinarySegmentReplay>),
-    PlanarLc(Box<MixedPlanarLcSegmentReplay>),
+    PlanarLc(Box<ProofGradeMixedPlanarLcSegmentReplay>),
 }
 
-impl MixedPlanarSegmentReplay {
+impl ProofGradeMixedPlanarSegmentReplay {
     pub const fn segment_index(&self) -> usize {
         match self {
-            Self::Ordinary(value) => value.segment_index,
-            Self::PlanarLc(value) => value.segment_index,
+            Self::Ordinary(value) => value.segment_index(),
+            Self::PlanarLc(value) => value.segment_index(),
         }
     }
 
@@ -123,287 +115,12 @@ impl MixedPlanarSegmentReplay {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct MixedChainClockLedgerEntry {
-    vertex_index: usize,
-    chart_id: String,
-    clock_origin: RationalInterval,
-}
-
-impl MixedChainClockLedgerEntry {
-    pub(crate) fn new(
-        vertex_index: usize,
-        chart_id: String,
-        clock_origin: RationalInterval,
-    ) -> Self {
-        Self {
-            vertex_index,
-            chart_id,
-            clock_origin,
-        }
-    }
-
-    pub const fn vertex_index(&self) -> usize {
-        self.vertex_index
-    }
-
-    pub fn chart_id(&self) -> &str {
-        &self.chart_id
-    }
-
-    pub fn clock_origin(&self) -> &RationalInterval {
-        &self.clock_origin
-    }
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct MixedOrdinaryCocycle {
-    segment_index: usize,
-    transition_id: String,
-    source_chart_id: String,
-    target_chart_id: String,
-    source_clock_origin: RationalInterval,
-    parameter_translation: BigRational,
-    target_clock_origin: RationalInterval,
-}
-
-impl MixedOrdinaryCocycle {
-    pub(crate) fn new(
-        segment_index: usize,
-        transition_id: String,
-        source_chart_id: String,
-        target_chart_id: String,
-        source_clock_origin: RationalInterval,
-        parameter_translation: BigRational,
-        target_clock_origin: RationalInterval,
-    ) -> Self {
-        Self {
-            segment_index,
-            transition_id,
-            source_chart_id,
-            target_chart_id,
-            source_clock_origin,
-            parameter_translation,
-            target_clock_origin,
-        }
-    }
-
-    pub const fn segment_index(&self) -> usize {
-        self.segment_index
-    }
-    pub fn transition_id(&self) -> &str {
-        &self.transition_id
-    }
-    pub fn source_chart_id(&self) -> &str {
-        &self.source_chart_id
-    }
-    pub fn target_chart_id(&self) -> &str {
-        &self.target_chart_id
-    }
-    pub fn source_clock_origin(&self) -> &RationalInterval {
-        &self.source_clock_origin
-    }
-    /// Exact `e-a` translation from source right to target left parameter.
-    pub fn parameter_translation(&self) -> &BigRational {
-        &self.parameter_translation
-    }
-    pub fn target_clock_origin(&self) -> &RationalInterval {
-        &self.target_clock_origin
-    }
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct MixedPlanarLcCocycle {
-    segment_index: usize,
-    entry_transition_id: String,
-    exit_transition_id: String,
-    source_chart_id: String,
-    lc_chart_id: String,
-    target_chart_id: String,
-    source_clock_origin: RationalInterval,
-    entry_time_interval: RationalInterval,
-    exit_time_interval: RationalInterval,
-    target_clock_origin: RationalInterval,
-    pair: [usize; 2],
-    selected_gauge_assignment: Vec<u8>,
-}
-
-impl MixedPlanarLcCocycle {
-    #[allow(clippy::too_many_arguments)]
-    pub(crate) fn new(
-        segment_index: usize,
-        entry_transition_id: String,
-        exit_transition_id: String,
-        source_chart_id: String,
-        lc_chart_id: String,
-        target_chart_id: String,
-        source_clock_origin: RationalInterval,
-        entry_time_interval: RationalInterval,
-        exit_time_interval: RationalInterval,
-        target_clock_origin: RationalInterval,
-        pair: [usize; 2],
-        selected_gauge_assignment: Vec<u8>,
-    ) -> Self {
-        Self {
-            segment_index,
-            entry_transition_id,
-            exit_transition_id,
-            source_chart_id,
-            lc_chart_id,
-            target_chart_id,
-            source_clock_origin,
-            entry_time_interval,
-            exit_time_interval,
-            target_clock_origin,
-            pair,
-            selected_gauge_assignment,
-        }
-    }
-
-    pub const fn segment_index(&self) -> usize {
-        self.segment_index
-    }
-    pub fn entry_transition_id(&self) -> &str {
-        &self.entry_transition_id
-    }
-    pub fn exit_transition_id(&self) -> &str {
-        &self.exit_transition_id
-    }
-    pub fn source_chart_id(&self) -> &str {
-        &self.source_chart_id
-    }
-    pub fn lc_chart_id(&self) -> &str {
-        &self.lc_chart_id
-    }
-    pub fn target_chart_id(&self) -> &str {
-        &self.target_chart_id
-    }
-    pub fn source_clock_origin(&self) -> &RationalInterval {
-        &self.source_clock_origin
-    }
-    pub fn entry_time_interval(&self) -> &RationalInterval {
-        &self.entry_time_interval
-    }
-    pub fn exit_time_interval(&self) -> &RationalInterval {
-        &self.exit_time_interval
-    }
-    pub fn target_clock_origin(&self) -> &RationalInterval {
-        &self.target_clock_origin
-    }
-    pub const fn pair(&self) -> [usize; 2] {
-        self.pair
-    }
-    pub fn selected_gauge_assignment(&self) -> &[u8] {
-        &self.selected_gauge_assignment
-    }
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum MixedChainCocycleLedgerEntry {
-    Ordinary(Box<MixedOrdinaryCocycle>),
-    PlanarLc(Box<MixedPlanarLcCocycle>),
-}
-
-impl MixedChainCocycleLedgerEntry {
-    pub const fn segment_index(&self) -> usize {
-        match self {
-            Self::Ordinary(value) => value.segment_index,
-            Self::PlanarLc(value) => value.segment_index,
-        }
-    }
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct MixedChainLiftedLcRightFrontier {
-    failed_segment_index: usize,
-    lc_chart_id: String,
-    pair: [usize; 2],
-    right_parameter: BigRational,
-    physical_time_interval: RationalInterval,
-    lifted_state: crate::PlanarLcIntervalState,
-}
-
-impl MixedChainLiftedLcRightFrontier {
-    pub(crate) fn new(
-        failed_segment_index: usize,
-        lc_chart_id: String,
-        pair: [usize; 2],
-        right_parameter: BigRational,
-        physical_time_interval: RationalInterval,
-        lifted_state: crate::PlanarLcIntervalState,
-    ) -> Self {
-        Self {
-            failed_segment_index,
-            lc_chart_id,
-            pair,
-            right_parameter,
-            physical_time_interval,
-            lifted_state,
-        }
-    }
-
-    pub const fn failed_segment_index(&self) -> usize {
-        self.failed_segment_index
-    }
-    pub fn lc_chart_id(&self) -> &str {
-        &self.lc_chart_id
-    }
-    pub const fn pair(&self) -> [usize; 2] {
-        self.pair
-    }
-    pub fn right_parameter(&self) -> &BigRational {
-        &self.right_parameter
-    }
-    pub fn physical_time_interval(&self) -> &RationalInterval {
-        &self.physical_time_interval
-    }
-    pub fn lifted_state(&self) -> &crate::PlanarLcIntervalState {
-        &self.lifted_state
-    }
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum MixedChainRetainedRegion {
-    OrdinaryFixedTime(Box<OrdinaryChainFinalEnclosure>),
-    LiftedPlanarLcRight(Box<MixedChainLiftedLcRightFrontier>),
-    CurrentOrdinaryRight(Box<OrdinaryChainRightFrontier>),
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum MixedChainReplayFailure {
-    InitialChartSemantic {
-        source: OrdinarySemanticError,
-    },
-    SegmentLimitExceeded {
-        actual: usize,
-        limit: usize,
-    },
-    LocalObligations {
-        segment_index: usize,
-        kind: MixedPlanarSegmentKind,
-    },
-    OrdinaryTargetSemantic {
-        segment_index: usize,
-        source: OrdinarySemanticError,
-    },
-    OrdinaryBridgeKernel {
-        segment_index: usize,
-        source: OrdinaryBridgeReplayError,
-    },
-    PlanarLcExitKernel {
-        segment_index: usize,
-        source: CarriedPlanarLcExitError,
-    },
-    FinalTube {
-        source: OrdinaryTubeReplayError,
-    },
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct RawMixedPlanarChainReplay {
-    obligations: [RawMixedPlanarChainObligation; 8],
-    initial_chart_replay: Option<OrdinaryChartReplay>,
+pub struct ProofGradeRawMixedPlanarChainReplay {
+    obligations: [ProofGradeRawMixedPlanarChainObligation; 8],
+    initial_claimed_tail_chart_diagnostic:
+        Option<Result<OrdinaryChartReplay, OrdinaryChartReplayError>>,
     root_replay: Option<ValidatedOrdinaryRootReplay>,
-    segment_replays: Vec<MixedPlanarSegmentReplay>,
+    segment_replays: Vec<ProofGradeMixedPlanarSegmentReplay>,
     clock_ledger: Vec<MixedChainClockLedgerEntry>,
     cocycle_ledger: Vec<MixedChainCocycleLedgerEntry>,
     certified_segment_count: usize,
@@ -421,20 +138,22 @@ pub struct RawMixedPlanarChainReplay {
     mathematical_to_target: bool,
 }
 
-impl RawMixedPlanarChainReplay {
+impl ProofGradeRawMixedPlanarChainReplay {
     pub const fn profile_id(&self) -> &'static str {
-        EXACT_RATIONAL_RAW_MIXED_PLANAR_CHAIN_V04_PROFILE_ID
+        EXACT_RATIONAL_PROOF_GRADE_RAW_MIXED_PLANAR_CHAIN_V04_PROFILE_ID
     }
-    pub fn obligations(&self) -> &[RawMixedPlanarChainObligation; 8] {
+    pub fn obligations(&self) -> &[ProofGradeRawMixedPlanarChainObligation; 8] {
         &self.obligations
     }
-    pub fn initial_chart_replay(&self) -> Option<&OrdinaryChartReplay> {
-        self.initial_chart_replay.as_ref()
+    pub fn initial_claimed_tail_chart_diagnostic(
+        &self,
+    ) -> Option<&Result<OrdinaryChartReplay, OrdinaryChartReplayError>> {
+        self.initial_claimed_tail_chart_diagnostic.as_ref()
     }
     pub fn root_replay(&self) -> Option<&ValidatedOrdinaryRootReplay> {
         self.root_replay.as_ref()
     }
-    pub fn segment_replays(&self) -> &[MixedPlanarSegmentReplay] {
+    pub fn segment_replays(&self) -> &[ProofGradeMixedPlanarSegmentReplay] {
         &self.segment_replays
     }
     pub fn clock_ledger(&self) -> &[MixedChainClockLedgerEntry] {
@@ -488,9 +207,8 @@ impl RawMixedPlanarChainReplay {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub enum RawMixedPlanarChainReplayError {
+pub enum ProofGradeRawMixedPlanarChainReplayError {
     InitialChartSemantic(OrdinarySemanticError),
-    InitialChartReplay(OrdinaryChartReplayError),
     Root(ValidatedOrdinaryRootReplayError),
     OrdinaryShared(RawOrdinaryOnlyChainReplayError),
     PositionPolynomial(PolynomialError),
@@ -499,17 +217,19 @@ pub enum RawMixedPlanarChainReplayError {
     InternalInvariant { detail: &'static str },
 }
 
-impl fmt::Display for RawMixedPlanarChainReplayError {
+impl fmt::Display for ProofGradeRawMixedPlanarChainReplayError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(formatter, "mixed planar chain replay failed: {self:?}")
+        write!(
+            formatter,
+            "proof-grade mixed planar chain replay failed: {self:?}"
+        )
     }
 }
 
-impl std::error::Error for RawMixedPlanarChainReplayError {
+impl std::error::Error for ProofGradeRawMixedPlanarChainReplayError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             Self::InitialChartSemantic(source) => Some(source),
-            Self::InitialChartReplay(source) => Some(source),
             Self::Root(source) => Some(source),
             Self::OrdinaryShared(source) => Some(source),
             Self::PositionPolynomial(source) | Self::VelocityPolynomial(source) => Some(source),
@@ -519,18 +239,17 @@ impl std::error::Error for RawMixedPlanarChainReplayError {
     }
 }
 
-impl From<NumericError> for RawMixedPlanarChainReplayError {
+impl From<NumericError> for ProofGradeRawMixedPlanarChainReplayError {
     fn from(source: NumericError) -> Self {
         Self::Numeric(source)
     }
 }
 
-/// Fold an admitted finite raw-v1 segment word under the bounded v0.4 mixed
-/// profile.  A successful local replay is committed atomically; failed target
-/// records and clocks remain diagnostic only.
-pub fn replay_raw_mixed_planar_chain_exact_rational_v04(
+/// Fold an admitted segment word using only the direct root and local direct
+/// evidence.  Claimed-tail replays are retained as non-decisive diagnostics.
+pub fn replay_proof_grade_raw_mixed_planar_chain_exact_rational_v04(
     admission: &CanonicalRawV1Admission,
-) -> Result<RawMixedPlanarChainReplay, RawMixedPlanarChainReplayError> {
+) -> Result<ProofGradeRawMixedPlanarChainReplay, ProofGradeRawMixedPlanarChainReplayError> {
     let chain = admission.wire();
     let initial_chart = match ordinary_chart_input_from_wire(&chain.initial_chart) {
         Ok(value) => value,
@@ -538,13 +257,13 @@ pub fn replay_raw_mixed_planar_chain_exact_rational_v04(
             return Ok(initial_chart_semantic_failure_replay(source));
         }
         Err(source) => {
-            return Err(RawMixedPlanarChainReplayError::InitialChartSemantic(source));
+            return Err(ProofGradeRawMixedPlanarChainReplayError::InitialChartSemantic(source))
         }
     };
     let initial_tube = ordinary_tube_input_from_wire(&chain.initial_tube);
     let root_exact = strict_root_exact_gate(chain, &initial_chart, &initial_tube);
 
-    let mut initial_chart_replay = None;
+    let mut initial_claimed_tail_chart_diagnostic = None;
     let mut root_replay = None;
     let mut segment_replays = Vec::new();
     let mut clock_ledger = Vec::new();
@@ -565,31 +284,31 @@ pub fn replay_raw_mixed_planar_chain_exact_rational_v04(
     let mut current_clock = None;
 
     if root_exact {
-        let chart_replay = replay_ordinary_chart_exact_rational_claimed_tail_v04(&current_chart)
-            .map_err(RawMixedPlanarChainReplayError::InitialChartReplay)?;
+        // Deliberately do not branch on, unwrap, or inspect this diagnostic.
+        initial_claimed_tail_chart_diagnostic = Some(
+            replay_ordinary_chart_exact_rational_claimed_tail_v04(&current_chart),
+        );
         let validated_root = replay_validated_ordinary_root_exact_rational_v04(
             &chain.root_binding,
             &current_chart,
             &current_tube,
         )
-        .map_err(RawMixedPlanarChainReplayError::Root)?;
-        root_certified = chart_replay.conditional_profile_satisfied()
-            && validated_root.validated_root_satisfied();
+        .map_err(ProofGradeRawMixedPlanarChainReplayError::Root)?;
+        root_certified = validated_root.validated_root_satisfied();
         if root_certified {
             let origin = validated_root.root_clock_origin().ok_or(
-                RawMixedPlanarChainReplayError::InternalInvariant {
+                ProofGradeRawMixedPlanarChainReplayError::InternalInvariant {
                     detail: "satisfied validated root has no exact clock origin",
                 },
             )?;
             let point = RationalInterval::try_point(origin.clone())?;
-            clock_ledger.push(MixedChainClockLedgerEntry {
-                vertex_index: 0,
-                chart_id: current_chart.chart_id().to_owned(),
-                clock_origin: point.clone(),
-            });
+            clock_ledger.push(MixedChainClockLedgerEntry::new(
+                0,
+                current_chart.chart_id().to_owned(),
+                point.clone(),
+            ));
             current_clock = Some(point);
         }
-        initial_chart_replay = Some(chart_replay);
         root_replay = Some(validated_root);
     }
 
@@ -601,8 +320,8 @@ pub fn replay_raw_mixed_planar_chain_exact_rational_v04(
     } else if root_certified {
         for (segment_index, segment) in chain.segments.iter().enumerate() {
             let parent_clock = current_clock.as_ref().ok_or(
-                RawMixedPlanarChainReplayError::InternalInvariant {
-                    detail: "certified mixed prefix has no current clock",
+                ProofGradeRawMixedPlanarChainReplayError::InternalInvariant {
+                    detail: "certified proof-grade mixed prefix has no current clock",
                 },
             )?;
             match segment {
@@ -647,11 +366,8 @@ pub fn replay_raw_mixed_planar_chain_exact_rational_v04(
                             .collect();
                     }
                     let committed_clock = bridge.target_clock_origin().cloned();
-                    segment_replays.push(MixedPlanarSegmentReplay::Ordinary(Box::new(
-                        MixedOrdinarySegmentReplay {
-                            segment_index,
-                            replay: bridge,
-                        },
+                    segment_replays.push(ProofGradeMixedPlanarSegmentReplay::Ordinary(Box::new(
+                        MixedOrdinarySegmentReplay::new(segment_index, bridge),
                     )));
                     if !commits {
                         failed_segment_index = Some(segment_index);
@@ -662,7 +378,7 @@ pub fn replay_raw_mixed_planar_chain_exact_rational_v04(
                         break;
                     }
                     let target_clock = committed_clock.ok_or(
-                        RawMixedPlanarChainReplayError::InternalInvariant {
+                        ProofGradeRawMixedPlanarChainReplayError::InternalInvariant {
                             detail: "satisfied ordinary bridge has no target clock",
                         },
                     )?;
@@ -670,37 +386,37 @@ pub fn replay_raw_mixed_planar_chain_exact_rational_v04(
                         segment.transition.source_parameter.binary64_rational(),
                         segment.transition.target_parameter.binary64_rational(),
                     )
-                    .map_err(RawMixedPlanarChainReplayError::OrdinaryShared)?;
+                    .map_err(ProofGradeRawMixedPlanarChainReplayError::OrdinaryShared)?;
                     cocycle_ledger.push(MixedChainCocycleLedgerEntry::Ordinary(Box::new(
-                        MixedOrdinaryCocycle {
+                        MixedOrdinaryCocycle::new(
                             segment_index,
-                            transition_id: segment.transition.transition_id.clone(),
-                            source_chart_id: current_chart.chart_id().to_owned(),
-                            target_chart_id: target_chart.chart_id().to_owned(),
-                            source_clock_origin: parent_clock.clone(),
-                            parameter_translation: translation,
-                            target_clock_origin: target_clock.clone(),
-                        },
+                            segment.transition.transition_id.clone(),
+                            current_chart.chart_id().to_owned(),
+                            target_chart.chart_id().to_owned(),
+                            parent_clock.clone(),
+                            translation,
+                            target_clock.clone(),
+                        ),
                     )));
                     current_chart = target_chart;
                     current_tube = target_tube;
                     current_clock = Some(target_clock.clone());
                     certified_segment_count += 1;
-                    clock_ledger.push(MixedChainClockLedgerEntry {
-                        vertex_index: certified_segment_count,
-                        chart_id: current_chart.chart_id().to_owned(),
-                        clock_origin: target_clock,
-                    });
+                    clock_ledger.push(MixedChainClockLedgerEntry::new(
+                        certified_segment_count,
+                        current_chart.chart_id().to_owned(),
+                        target_clock,
+                    ));
                 }
                 SegmentWire::PlanarLcPassage(segment) => {
-                    let exit = match replay_carried_planar_lc_exit_exact_rational_v04(
+                    let exit = match replay_proof_grade_carried_planar_lc_exit_exact_rational_v04(
                         admission,
                         segment_index,
                         parent_clock,
                     ) {
                         Ok(value) => value,
                         Err(source) => {
-                            failed_lc_frontier = reconstruct_failed_lc_frontier(
+                            failed_lc_frontier = reconstruct_failed_proof_grade_lc_frontier(
                                 admission,
                                 segment_index,
                                 parent_clock,
@@ -724,7 +440,7 @@ pub fn replay_raw_mixed_planar_chain_exact_rational_v04(
                     }
                     let committed_clock = exit.target_clock_origin().cloned();
                     if !commits {
-                        failed_lc_frontier = reconstruct_failed_lc_frontier(
+                        failed_lc_frontier = reconstruct_failed_proof_grade_lc_frontier(
                             admission,
                             segment_index,
                             parent_clock,
@@ -737,11 +453,8 @@ pub fn replay_raw_mixed_planar_chain_exact_rational_v04(
                         .entry_replay()
                         .selected_assignment()
                         .map(<[u8]>::to_vec);
-                    segment_replays.push(MixedPlanarSegmentReplay::PlanarLc(Box::new(
-                        MixedPlanarLcSegmentReplay {
-                            segment_index,
-                            replay: exit,
-                        },
+                    segment_replays.push(ProofGradeMixedPlanarSegmentReplay::PlanarLc(Box::new(
+                        ProofGradeMixedPlanarLcSegmentReplay::new(segment_index, exit),
                     )));
                     if !commits {
                         failed_segment_index = Some(segment_index);
@@ -752,50 +465,50 @@ pub fn replay_raw_mixed_planar_chain_exact_rational_v04(
                         break;
                     }
                     let target_chart = ordinary_chart_input_from_wire(&segment.target_chart)
-                        .map_err(RawMixedPlanarChainReplayError::InitialChartSemantic)?;
+                        .map_err(ProofGradeRawMixedPlanarChainReplayError::InitialChartSemantic)?;
                     let target_tube = ordinary_tube_input_from_wire(&segment.target_tube);
                     let target_clock = committed_clock.ok_or(
-                        RawMixedPlanarChainReplayError::InternalInvariant {
+                        ProofGradeRawMixedPlanarChainReplayError::InternalInvariant {
                             detail: "satisfied planar LC exit has no target clock",
                         },
                     )?;
                     cocycle_ledger.push(MixedChainCocycleLedgerEntry::PlanarLc(Box::new(
-                        MixedPlanarLcCocycle {
+                        MixedPlanarLcCocycle::new(
                             segment_index,
-                            entry_transition_id: segment.entry_transition.transition_id.clone(),
-                            exit_transition_id: segment.exit_transition.transition_id.clone(),
-                            source_chart_id: current_chart.chart_id().to_owned(),
-                            lc_chart_id: segment.lc_chart.chart_id.clone(),
-                            target_chart_id: target_chart.chart_id().to_owned(),
-                            source_clock_origin: parent_clock.clone(),
-                            entry_time_interval: entry_time.ok_or(
-                                RawMixedPlanarChainReplayError::InternalInvariant {
+                            segment.entry_transition.transition_id.clone(),
+                            segment.exit_transition.transition_id.clone(),
+                            current_chart.chart_id().to_owned(),
+                            segment.lc_chart.chart_id.clone(),
+                            target_chart.chart_id().to_owned(),
+                            parent_clock.clone(),
+                            entry_time.ok_or(
+                                ProofGradeRawMixedPlanarChainReplayError::InternalInvariant {
                                     detail: "satisfied planar LC entry has no D_in",
                                 },
                             )?,
-                            exit_time_interval: exit_time.ok_or(
-                                RawMixedPlanarChainReplayError::InternalInvariant {
+                            exit_time.ok_or(
+                                ProofGradeRawMixedPlanarChainReplayError::InternalInvariant {
                                     detail: "satisfied planar LC exit has no D_out",
                                 },
                             )?,
-                            target_clock_origin: target_clock.clone(),
-                            pair: canonical_pair(segment)?,
-                            selected_gauge_assignment: selected_gauge.ok_or(
-                                RawMixedPlanarChainReplayError::InternalInvariant {
+                            target_clock.clone(),
+                            canonical_pair(segment)?,
+                            selected_gauge.ok_or(
+                                ProofGradeRawMixedPlanarChainReplayError::InternalInvariant {
                                     detail: "satisfied planar LC entry has no selected gauge",
                                 },
                             )?,
-                        },
+                        ),
                     )));
                     current_chart = target_chart;
                     current_tube = target_tube;
                     current_clock = Some(target_clock.clone());
                     certified_segment_count += 1;
-                    clock_ledger.push(MixedChainClockLedgerEntry {
-                        vertex_index: certified_segment_count,
-                        chart_id: current_chart.chart_id().to_owned(),
-                        clock_origin: target_clock,
-                    });
+                    clock_ledger.push(MixedChainClockLedgerEntry::new(
+                        certified_segment_count,
+                        current_chart.chart_id().to_owned(),
+                        target_clock,
+                    ));
                 }
             }
         }
@@ -812,23 +525,22 @@ pub fn replay_raw_mixed_planar_chain_exact_rational_v04(
     let mut width_within = false;
 
     if all_segments_folded {
-        let clock =
-            current_clock
-                .as_ref()
-                .ok_or(RawMixedPlanarChainReplayError::InternalInvariant {
-                    detail: "fully folded mixed chain has no current clock",
-                })?;
+        let clock = current_clock.as_ref().ok_or(
+            ProofGradeRawMixedPlanarChainReplayError::InternalInvariant {
+                detail: "fully folded proof-grade mixed chain has no current clock",
+            },
+        )?;
         let target = chain.requested_target_time.binary64_rational();
         let domain = current_chart.parameter_interval();
         let current_left_physical = checked_add(domain.lower(), clock.upper())
-            .map_err(RawMixedPlanarChainReplayError::OrdinaryShared)?;
+            .map_err(ProofGradeRawMixedPlanarChainReplayError::OrdinaryShared)?;
         target_not_before = target >= &current_left_physical;
         if target_not_before {
             let candidate = RationalInterval::new(
                 checked_subtract(target, clock.upper())
-                    .map_err(RawMixedPlanarChainReplayError::OrdinaryShared)?,
+                    .map_err(ProofGradeRawMixedPlanarChainReplayError::OrdinaryShared)?,
                 checked_subtract(target, clock.lower())
-                    .map_err(RawMixedPlanarChainReplayError::OrdinaryShared)?,
+                    .map_err(ProofGradeRawMixedPlanarChainReplayError::OrdinaryShared)?,
             )?;
             preimage_derived = true;
             preimage_inside = domain.contains_interval(&candidate);
@@ -838,7 +550,7 @@ pub fn replay_raw_mixed_planar_chain_exact_rational_v04(
                     Ok(tube_replay) => {
                         if tube_replay.certified() {
                             let radius = tube_replay.gronwall_upper().ok_or(
-                                RawMixedPlanarChainReplayError::InternalInvariant {
+                                ProofGradeRawMixedPlanarChainReplayError::InternalInvariant {
                                     detail: "certified final tube has no Gronwall upper bound",
                                 },
                             )?;
@@ -848,19 +560,19 @@ pub fn replay_raw_mixed_planar_chain_exact_rational_v04(
                                 radius,
                                 true,
                             )
-                            .map_err(RawMixedPlanarChainReplayError::OrdinaryShared)?;
+                            .map_err(ProofGradeRawMixedPlanarChainReplayError::OrdinaryShared)?;
                             let velocity_intervals = evaluate_and_inflate(
                                 current_chart.velocity_polynomial(),
                                 &candidate,
                                 radius,
                                 false,
                             )
-                            .map_err(RawMixedPlanarChainReplayError::OrdinaryShared)?;
+                            .map_err(ProofGradeRawMixedPlanarChainReplayError::OrdinaryShared)?;
                             if position_intervals.len() != POSITION_DIMENSION
                                 || velocity_intervals.len() != POSITION_DIMENSION
                             {
-                                return Err(RawMixedPlanarChainReplayError::InternalInvariant {
-                                    detail: "mixed final enclosure is not planar three-body",
+                                return Err(ProofGradeRawMixedPlanarChainReplayError::InternalInvariant {
+                                    detail: "proof-grade mixed final enclosure is not planar three-body",
                                 });
                             }
                             let maximum_width = position_intervals
@@ -902,13 +614,14 @@ pub fn replay_raw_mixed_planar_chain_exact_rational_v04(
                 &current_chart,
                 &current_tube,
                 current_clock.as_ref().ok_or(
-                    RawMixedPlanarChainReplayError::InternalInvariant {
-                        detail: "certified mixed prefix has no current clock for retention",
+                    ProofGradeRawMixedPlanarChainReplayError::InternalInvariant {
+                        detail:
+                            "certified proof-grade mixed prefix has no current clock for retention",
                     },
                 )?,
                 certified_segment_count,
             )
-            .map_err(RawMixedPlanarChainReplayError::OrdinaryShared)?,
+            .map_err(ProofGradeRawMixedPlanarChainReplayError::OrdinaryShared)?,
         )
         .flatten()
     } else {
@@ -948,9 +661,11 @@ pub fn replay_raw_mixed_planar_chain_exact_rational_v04(
         Some(MixedChainRetainedRegion::OrdinaryFixedTime(Box::new(
             final_enclosure
                 .as_ref()
-                .ok_or(RawMixedPlanarChainReplayError::InternalInvariant {
-                    detail: "width-only failure has no fixed-time enclosure",
-                })?
+                .ok_or(
+                    ProofGradeRawMixedPlanarChainReplayError::InternalInvariant {
+                        detail: "width-only failure has no fixed-time enclosure",
+                    },
+                )?
                 .clone(),
         )))
     } else if mathematical_to_target {
@@ -965,18 +680,16 @@ pub fn replay_raw_mixed_planar_chain_exact_rational_v04(
             .map(MixedChainRetainedRegion::CurrentOrdinaryRight)
     };
 
-    // Populate the private typed foundation for every retained failure while
-    // preserving the v0.4 replay object and all public outcomes unchanged.
     let _failure_disposition = replay_failure
         .as_ref()
         .map(MixedChainReplayFailure::disposition);
 
-    Ok(RawMixedPlanarChainReplay {
-        obligations: std::array::from_fn(|index| RawMixedPlanarChainObligation {
-            id: RAW_MIXED_PLANAR_CHAIN_OBLIGATION_IDS[index],
+    Ok(ProofGradeRawMixedPlanarChainReplay {
+        obligations: std::array::from_fn(|index| ProofGradeRawMixedPlanarChainObligation {
+            id: PROOF_GRADE_RAW_MIXED_PLANAR_CHAIN_OBLIGATION_IDS[index],
             satisfied: satisfaction[index],
         }),
-        initial_chart_replay,
+        initial_claimed_tail_chart_diagnostic,
         root_replay,
         segment_replays,
         clock_ledger,
@@ -999,13 +712,13 @@ pub fn replay_raw_mixed_planar_chain_exact_rational_v04(
 
 fn initial_chart_semantic_failure_replay(
     source: OrdinarySemanticError,
-) -> RawMixedPlanarChainReplay {
-    RawMixedPlanarChainReplay {
-        obligations: std::array::from_fn(|index| RawMixedPlanarChainObligation {
-            id: RAW_MIXED_PLANAR_CHAIN_OBLIGATION_IDS[index],
+) -> ProofGradeRawMixedPlanarChainReplay {
+    ProofGradeRawMixedPlanarChainReplay {
+        obligations: std::array::from_fn(|index| ProofGradeRawMixedPlanarChainObligation {
+            id: PROOF_GRADE_RAW_MIXED_PLANAR_CHAIN_OBLIGATION_IDS[index],
             satisfied: false,
         }),
-        initial_chart_replay: None,
+        initial_claimed_tail_chart_diagnostic: None,
         root_replay: None,
         segment_replays: Vec::new(),
         clock_ledger: Vec::new(),
@@ -1026,12 +739,12 @@ fn initial_chart_semantic_failure_replay(
     }
 }
 
-fn reconstruct_failed_lc_frontier(
+fn reconstruct_failed_proof_grade_lc_frontier(
     admission: &CanonicalRawV1Admission,
     segment_index: usize,
     parent_clock: &RationalInterval,
-    exit_replay: Option<&CarriedPlanarLcExitReplay>,
-) -> Result<Option<MixedChainLiftedLcRightFrontier>, RawMixedPlanarChainReplayError> {
+    exit_replay: Option<&ProofGradeCarriedPlanarLcExitReplay>,
+) -> Result<Option<MixedChainLiftedLcRightFrontier>, ProofGradeRawMixedPlanarChainReplayError> {
     if let Some(replay) = exit_replay {
         if let Some(state) = replay.lifted_exit_slice() {
             return build_lc_frontier(admission, segment_index, state.clone()).map(Some);
@@ -1042,7 +755,7 @@ fn reconstruct_failed_lc_frontier(
             return Ok(None);
         }
     }
-    match replay_admission_bound_planar_lc_right_exact_rational_v04(
+    match replay_proof_grade_admission_bound_planar_lc_right_exact_rational_v04(
         admission,
         segment_index,
         parent_clock,
@@ -1052,19 +765,18 @@ fn reconstruct_failed_lc_frontier(
             .cloned()
             .map(|state| {
                 let physical_time_interval = state.physical_time().clone();
-                Ok(MixedChainLiftedLcRightFrontier {
-                    failed_segment_index: segment_index,
-                    lc_chart_id: replay.lc_chart_id().to_owned(),
-                    pair: replay.pair(),
-                    right_parameter: replay.right_parameter().clone(),
+                Ok(MixedChainLiftedLcRightFrontier::new(
+                    segment_index,
+                    replay.lc_chart_id().to_owned(),
+                    replay.pair(),
+                    replay.right_parameter().clone(),
                     physical_time_interval,
-                    lifted_state: state,
-                })
+                    state,
+                ))
             })
             .transpose(),
-        // The primary local error remains the structured failure.  Failure to
-        // independently justify a later frontier merely selects the ordinary
-        // fallback; it cannot turn rejected evidence into a verifier error.
+        // A missing proof right cannot turn locally rejected evidence into an
+        // execution error; ordinary retention remains the fail-closed fallback.
         Err(_) => Ok(None),
     }
 }
@@ -1073,34 +785,36 @@ fn build_lc_frontier(
     admission: &CanonicalRawV1Admission,
     segment_index: usize,
     state: crate::PlanarLcIntervalState,
-) -> Result<MixedChainLiftedLcRightFrontier, RawMixedPlanarChainReplayError> {
+) -> Result<MixedChainLiftedLcRightFrontier, ProofGradeRawMixedPlanarChainReplayError> {
     let passage = admission.planar_lc_passage(segment_index).ok_or(
-        RawMixedPlanarChainReplayError::InternalInvariant {
+        ProofGradeRawMixedPlanarChainReplayError::InternalInvariant {
             detail: "LC replay has no admission-bound passage",
         },
     )?;
-    Ok(MixedChainLiftedLcRightFrontier {
-        failed_segment_index: segment_index,
-        lc_chart_id: passage.lc_chart.chart_id.clone(),
-        pair: canonical_pair(passage)?,
-        right_parameter: passage.lc_chart.parameter_interval[1]
+    Ok(MixedChainLiftedLcRightFrontier::new(
+        segment_index,
+        passage.lc_chart.chart_id.clone(),
+        canonical_pair(passage)?,
+        passage.lc_chart.parameter_interval[1]
             .binary64_rational()
             .clone(),
-        physical_time_interval: state.physical_time().clone(),
-        lifted_state: state,
-    })
+        state.physical_time().clone(),
+        state,
+    ))
 }
 
 fn canonical_pair(
     passage: &crate::raw_schema::PlanarLcPassageSegmentWire,
-) -> Result<[usize; 2], RawMixedPlanarChainReplayError> {
+) -> Result<[usize; 2], ProofGradeRawMixedPlanarChainReplayError> {
     use num_traits::ToPrimitive;
     let left = passage.lc_chart.pair[0].value().to_usize();
     let right = passage.lc_chart.pair[1].value().to_usize();
     match (left, right) {
         (Some(left), Some(right)) if left < right && right < 3 => Ok([left, right]),
-        _ => Err(RawMixedPlanarChainReplayError::InternalInvariant {
-            detail: "certified LC replay lost its canonical pair",
-        }),
+        _ => Err(
+            ProofGradeRawMixedPlanarChainReplayError::InternalInvariant {
+                detail: "certified LC replay lost its canonical pair",
+            },
+        ),
     }
 }

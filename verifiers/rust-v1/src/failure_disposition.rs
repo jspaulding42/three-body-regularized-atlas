@@ -14,8 +14,9 @@ use crate::{
     OrdinaryTubeReplayError, PlanarLcChartReplayError, PlanarLcFieldError, PlanarLcLiftError,
     PlanarLcPolynomialDefectError, PlanarLcProjectionError, PlanarLcSemanticError,
     PlanarLcSemanticResource, PlanarLcSeriesError, PlanarLcSeriesKind, PlanarLcStateError,
-    PlanarLcTubeReplayError, PolynomialError, RawMixedPlanarChainReplayError,
-    RawOrdinaryOnlyChainReplayError, ValidatedOrdinaryRootReplayError,
+    PlanarLcTubeReplayError, PolynomialError, ProofGradeRawMixedPlanarChainReplayError,
+    RawMixedPlanarChainReplayError, RawOrdinaryOnlyChainReplayError,
+    ValidatedOrdinaryRootReplayError,
 };
 
 /// The three disposition classes consumed by the planned v2 executor.
@@ -794,6 +795,29 @@ impl RawMixedPlanarChainReplayError {
             }
             Self::InitialChartReplay(source) => {
                 ordinary_chart(source).at(MixedChainResourceStage::InitialChartReplay)
+            }
+            Self::Root(source) => validated_root(source).at(MixedChainResourceStage::Root),
+            Self::OrdinaryShared(source) => {
+                ordinary_chain(source).at(MixedChainResourceStage::OrdinaryShared)
+            }
+            Self::PositionPolynomial(source) | Self::VelocityPolynomial(source) => {
+                polynomial(source).at(MixedChainResourceStage::MixedArithmetic)
+            }
+            Self::Numeric(source) => numeric(source).at(MixedChainResourceStage::MixedArithmetic),
+            Self::InternalInvariant { .. } => MixedChainFailureDisposition::InternalInvariant,
+        }
+    }
+}
+
+impl ProofGradeRawMixedPlanarChainReplayError {
+    /// Classify every decisive top-level proof-grade mixed replay error.  A
+    /// claimed-tail diagnostic is intentionally absent: it cannot escape the
+    /// successful replay object or alter the classification of direct evidence.
+    #[allow(dead_code)] // Reserved for the future execution-envelope wrapper.
+    pub(crate) fn disposition(&self) -> MixedChainFailureDisposition {
+        match self {
+            Self::InitialChartSemantic(source) => {
+                ordinary_semantic(source).at(MixedChainResourceStage::InitialChartSemantic)
             }
             Self::Root(source) => validated_root(source).at(MixedChainResourceStage::Root),
             Self::OrdinaryShared(source) => {
