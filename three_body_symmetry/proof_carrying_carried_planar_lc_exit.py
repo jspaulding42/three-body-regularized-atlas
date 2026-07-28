@@ -47,11 +47,18 @@ from .planar_lc_mass_coefficients import (
 from .proof_carrying_carried_planar_lc_entry import (
     CarriedPlanarLCEntryResult,
     CarriedPlanarLCEntryTransitionRecord,
+    ProofGradeCarriedPlanarLCEntryResult,
     check_carried_planar_lc_entry,
+    check_proof_grade_carried_planar_lc_entry,
 )
 
 
 _CHECKER_ID = "carried_planar_lc_exit_checker_v2"
+_PROOF_GRADE_CHECKER_ID = "proof_grade_carried_planar_lc_exit_checker_v04"
+_PROOF_GRADE_PROFILE_ID = (
+    "binary64_outward_proof_grade_carried_planar_lc_exit_v04"
+)
+PROOF_GRADE_CARRIED_PLANAR_LC_EXIT_PROFILE_ID = _PROOF_GRADE_PROFILE_ID
 _ANALYTIC_KERNEL_ID = "planar_lc_analytic_kernel_v1"
 _PARENT_INVARIANT_ID = "parent_carried_ordinary_solution_invariant_v1"
 _OBLIGATION_NAMES = (
@@ -77,6 +84,30 @@ _OBLIGATION_NAMES = (
     "carried_lc_exit_time_interval_derived_from_component_fourteen",
     "carried_lc_exit_target_clock_origin_exactly_derived",
 )
+_PROOF_GRADE_OBLIGATION_NAMES = (
+    "proof_grade_carried_lc_exit_exact_raw_schemas",
+    "proof_grade_carried_lc_exit_identifiers_match_and_are_unique",
+    "proof_grade_carried_lc_exit_parent_source_invariant_is_explicit_condition",
+    "proof_grade_carried_lc_exit_entry_freshly_replayed_and_certified",
+    "proof_grade_carried_lc_exit_common_planar_mass_problem",
+    "proof_grade_carried_lc_exit_pair_is_canonical_ascending",
+    "proof_grade_carried_lc_exit_outward_mass_arithmetic_certified",
+    "proof_grade_carried_lc_exit_exact_right_to_left_endpoint_handoff",
+    "proof_grade_carried_lc_exit_constrained_entry_branch_carried",
+    "proof_grade_carried_lc_exit_constraint_invariance_kernel",
+    "proof_grade_carried_lc_exit_lc_tube_freshly_certified",
+    "proof_grade_carried_lc_exit_third_body_separated",
+    "proof_grade_carried_lc_exit_target_ordinary_tube_freshly_certified",
+    "proof_grade_carried_lc_exit_strict_physical_clock_kernel",
+    "proof_grade_carried_lc_exit_complete_inflated_slice_reconstructed",
+    "proof_grade_carried_lc_exit_complete_slice_rho_positive",
+    "proof_grade_carried_lc_exit_complete_cartesian_projection_reconstructed",
+    "proof_grade_carried_lc_exit_deck_equivariant_newton_projection_kernel",
+    "proof_grade_carried_lc_exit_target_initial_ball_contains_complete_projection",
+    "proof_grade_carried_lc_exit_time_interval_derived_from_component_fourteen",
+    "proof_grade_carried_lc_exit_target_clock_origin_exactly_derived",
+)
+PROOF_GRADE_CARRIED_PLANAR_LC_EXIT_OBLIGATION_IDS = _PROOF_GRADE_OBLIGATION_NAMES
 
 FractionInterval = tuple[Fraction, Fraction]
 FractionMatrix = tuple[tuple[FractionInterval, ...], ...]
@@ -618,6 +649,583 @@ def check_carried_planar_lc_exit(
     )
 
 
+@dataclass(frozen=True)
+class ProofGradeCarriedPlanarLCExitResult:
+    """Separate direct-evidence ``N -> LC -> N`` proof-grade replay."""
+
+    transition_id: str
+    checker_id: str
+    analytic_kernel_id: str
+    mass_arithmetic_kernel_id: str
+    parent_source_invariant_id: str
+    raw_entry_transition: CarriedPlanarLCEntryTransitionRecord
+    raw_source_chart: OrdinaryTaylorChartCertificate
+    raw_source_tube: OrdinaryAposterioriTubeCertificate
+    parent_source_clock_origin_interval: FractionInterval
+    raw_lc_chart: PlanarLeviCivitaBinaryChartCertificate
+    raw_lc_tube: PlanarLCAposterioriTubeCertificate
+    raw_exit_transition: PlanarLCToOrdinaryEnclosureTransitionCertificate
+    raw_target_chart: OrdinaryTaylorChartCertificate
+    raw_target_tube: OrdinaryAposterioriTubeCertificate
+    entry_result: ProofGradeCarriedPlanarLCEntryResult | None
+    lc_tube_result: PlanarLCAposterioriTubeCheckResult | None
+    target_tube_result: OrdinaryAposterioriTubeCheckResult | None
+    obligations: tuple[CertificateCheckObligation, ...]
+    lifted_exit_slice: tuple[FractionInterval, ...]
+    exit_rho_interval: FractionInterval | tuple[()]
+    projected_position_intervals: FractionMatrix
+    projected_velocity_intervals: FractionMatrix
+    maximum_projected_anchor_gap: Fraction | None
+    exit_time_interval: FractionInterval | tuple[()]
+    target_clock_origin_interval: FractionInterval | tuple[()]
+
+    @property
+    def profile_id(self) -> str:
+        return _PROOF_GRADE_PROFILE_ID
+
+    def _snapshot_certified(self) -> bool:
+        target_anchor = (
+            Fraction.from_float(self.raw_exit_transition.target_parameter)
+            if _exit_schema(self.raw_exit_transition)
+            else None
+        )
+        expected_clock = (
+            (
+                self.exit_time_interval[0] - target_anchor,
+                self.exit_time_interval[1] - target_anchor,
+            )
+            if target_anchor is not None
+            and _fraction_interval(self.exit_time_interval)
+            else ()
+        )
+        return bool(
+            type(self) is ProofGradeCarriedPlanarLCExitResult
+            and type(self.transition_id) is str
+            and bool(self.transition_id)
+            and type(self.checker_id) is str
+            and self.checker_id == _PROOF_GRADE_CHECKER_ID
+            and type(self.analytic_kernel_id) is str
+            and self.analytic_kernel_id == _ANALYTIC_KERNEL_ID
+            and type(self.mass_arithmetic_kernel_id) is str
+            and self.mass_arithmetic_kernel_id
+            == PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID
+            and type(self.parent_source_invariant_id) is str
+            and self.parent_source_invariant_id == _PARENT_INVARIANT_ID
+            and type(self.raw_entry_transition)
+            is CarriedPlanarLCEntryTransitionRecord
+            and type(self.raw_source_chart) is OrdinaryTaylorChartCertificate
+            and type(self.raw_source_tube) is OrdinaryAposterioriTubeCertificate
+            and type(self.raw_lc_chart)
+            is PlanarLeviCivitaBinaryChartCertificate
+            and type(self.raw_lc_tube) is PlanarLCAposterioriTubeCertificate
+            and type(self.raw_exit_transition)
+            is PlanarLCToOrdinaryEnclosureTransitionCertificate
+            and type(self.raw_target_chart) is OrdinaryTaylorChartCertificate
+            and type(self.raw_target_tube) is OrdinaryAposterioriTubeCertificate
+            and _entry_schema(self.raw_entry_transition)
+            and _ordinary_chart_schema(self.raw_source_chart)
+            and _ordinary_tube_schema(self.raw_source_tube)
+            and _lc_chart_schema(self.raw_lc_chart)
+            and _lc_tube_schema(self.raw_lc_tube)
+            and _exit_schema(self.raw_exit_transition)
+            and _ordinary_chart_schema(self.raw_target_chart)
+            and _ordinary_tube_schema(self.raw_target_tube)
+            and _identifiers_match_and_unique(
+                self.raw_entry_transition,
+                self.raw_source_chart,
+                self.raw_source_tube,
+                self.raw_lc_chart,
+                self.raw_lc_tube,
+                self.raw_exit_transition,
+                self.raw_target_chart,
+                self.raw_target_tube,
+            )
+            and self.transition_id == self.raw_exit_transition.transition_id
+            and _fraction_interval(self.parent_source_clock_origin_interval)
+            and _canonical_proof_grade_entry_result(
+                self.entry_result,
+                self.raw_entry_transition,
+                self.raw_source_chart,
+                self.raw_source_tube,
+                self.raw_lc_chart,
+                self.raw_lc_tube,
+                self.parent_source_clock_origin_interval,
+            )
+            and _canonical_lc_tube_result(
+                self.lc_tube_result,
+                self.raw_lc_tube,
+                self.raw_lc_chart,
+            )
+            and _canonical_ordinary_tube_result(
+                self.target_tube_result,
+                self.raw_target_tube,
+                self.raw_target_chart,
+            )
+            and _proof_grade_obligation_manifest(self.obligations)
+            and _fraction_box(self.lifted_exit_slice, 14)
+            and _fraction_interval(self.exit_rho_interval, positive=True)
+            and _fraction_matrix(self.projected_position_intervals)
+            and _fraction_matrix(self.projected_velocity_intervals)
+            and type(self.maximum_projected_anchor_gap) is Fraction
+            and self.maximum_projected_anchor_gap >= 0
+            and _fraction_interval(self.exit_time_interval)
+            and self.exit_time_interval == self.lifted_exit_slice[13]
+            and _fraction_interval(self.target_clock_origin_interval)
+            and self.target_clock_origin_interval == expected_clock
+        )
+
+    @property
+    def certified(self) -> bool:
+        """Freshly replay and exact-compare every proof-grade artifact."""
+
+        try:
+            if (
+                type(self) is not ProofGradeCarriedPlanarLCExitResult
+                or not self._snapshot_certified()
+            ):
+                return False
+            fresh = check_proof_grade_carried_planar_lc_exit(
+                self.raw_entry_transition,
+                self.raw_source_chart,
+                self.raw_source_tube,
+                self.raw_lc_chart,
+                self.raw_lc_tube,
+                self.raw_exit_transition,
+                self.raw_target_chart,
+                self.raw_target_tube,
+                self.parent_source_clock_origin_interval,
+            )
+            return bool(
+                type(fresh) is ProofGradeCarriedPlanarLCExitResult
+                and fresh._snapshot_certified()
+                and fresh == self
+            )
+        except Exception:
+            return False
+
+    @property
+    def missing_obligations(self) -> tuple[str, ...]:
+        missing = []
+        for index, obligation in enumerate(self.obligations):
+            if type(obligation) is not CertificateCheckObligation:
+                missing.append(
+                    f"proof_grade_carried_lc_exit_malformed_obligation:{index}"
+                )
+            elif obligation.certified is not True:
+                missing.append(obligation.obligation)
+        return tuple(missing)
+
+
+def check_proof_grade_carried_planar_lc_exit(
+    entry_transition: CarriedPlanarLCEntryTransitionRecord,
+    source_chart: OrdinaryTaylorChartCertificate,
+    source_tube: OrdinaryAposterioriTubeCertificate,
+    lc_chart: PlanarLeviCivitaBinaryChartCertificate,
+    lc_tube: PlanarLCAposterioriTubeCertificate,
+    exit_transition: PlanarLCToOrdinaryEnclosureTransitionCertificate,
+    target_chart: OrdinaryTaylorChartCertificate,
+    target_tube: OrdinaryAposterioriTubeCertificate,
+    parent_source_clock_origin_interval: FractionInterval,
+) -> ProofGradeCarriedPlanarLCExitResult:
+    """Replay the direct-evidence proof-grade carried planar-LC exit.
+
+    The nested proof-grade entry authenticates claimed-tail chart diagnostics
+    without making their truth values proof prerequisites.  A rejected target
+    ordinary tube suppresses containment only: direct LC-right slice,
+    projection, physical time, and (when endpoints match) target-clock
+    evidence are deliberately retained.
+    """
+
+    expected_types = (
+        (entry_transition, CarriedPlanarLCEntryTransitionRecord),
+        (source_chart, OrdinaryTaylorChartCertificate),
+        (source_tube, OrdinaryAposterioriTubeCertificate),
+        (lc_chart, PlanarLeviCivitaBinaryChartCertificate),
+        (lc_tube, PlanarLCAposterioriTubeCertificate),
+        (exit_transition, PlanarLCToOrdinaryEnclosureTransitionCertificate),
+        (target_chart, OrdinaryTaylorChartCertificate),
+        (target_tube, OrdinaryAposterioriTubeCertificate),
+    )
+    if any(type(value) is not expected for value, expected in expected_types):
+        raise TypeError("all proof-grade carried LC exit raw inputs must have exact classes")
+
+    parent_clock_valid = _fraction_interval(parent_source_clock_origin_interval)
+    raw_schemas = bool(
+        _entry_schema(entry_transition)
+        and _ordinary_chart_schema(source_chart)
+        and _ordinary_tube_schema(source_tube)
+        and _lc_chart_schema(lc_chart)
+        and _lc_tube_schema(lc_tube)
+        and _exit_schema(exit_transition)
+        and _ordinary_chart_schema(target_chart)
+        and _ordinary_tube_schema(target_tube)
+    )
+    identifiers = _identifiers_match_and_unique(
+        entry_transition,
+        source_chart,
+        source_tube,
+        lc_chart,
+        lc_tube,
+        exit_transition,
+        target_chart,
+        target_tube,
+    )
+    common_problem = _common_problem(source_chart, lc_chart, target_chart)
+    canonical_pair = bool(
+        type(lc_chart.pair) is tuple
+        and lc_chart.pair in ((0, 1), (0, 2), (1, 2))
+    )
+    try:
+        mass_witness = derive_planar_lc_mass_coefficient_witness(
+            lc_chart.masses,
+            lc_chart.pair,
+        )
+        outward_mass_arithmetic = bool(canonical_pair and mass_witness.certified)
+    except Exception:
+        outward_mass_arithmetic = False
+    entry_handoff, lc_right, target_left = _proof_grade_endpoint_components(
+        entry_transition,
+        source_chart,
+        source_tube,
+        lc_chart,
+        lc_tube,
+        exit_transition,
+        target_chart,
+        target_tube,
+    )
+    full_endpoint_handoff = bool(entry_handoff and lc_right and target_left)
+
+    entry_result: ProofGradeCarriedPlanarLCEntryResult | None = None
+    lc_result: PlanarLCAposterioriTubeCheckResult | None = None
+    target_result: OrdinaryAposterioriTubeCheckResult | None = None
+    try:
+        entry_result = check_proof_grade_carried_planar_lc_entry(
+            entry_transition,
+            source_chart,
+            source_tube,
+            lc_chart,
+            lc_tube,
+            parent_source_clock_origin_interval,
+        )
+    except Exception:
+        pass
+    try:
+        if raw_schemas:
+            lc_result = check_planar_lc_aposteriori_tube(lc_tube, lc_chart)
+    except Exception:
+        pass
+    try:
+        if raw_schemas:
+            target_result = check_ordinary_aposteriori_tube(
+                target_tube,
+                target_chart,
+            )
+    except Exception:
+        pass
+
+    entry_certified = _canonical_proof_grade_entry_result(
+        entry_result,
+        entry_transition,
+        source_chart,
+        source_tube,
+        lc_chart,
+        lc_tube,
+        parent_source_clock_origin_interval,
+    )
+    lc_certified = _canonical_lc_tube_result(lc_result, lc_tube, lc_chart)
+    target_certified = _canonical_ordinary_tube_result(
+        target_result,
+        target_tube,
+        target_chart,
+    )
+    constrained_entry = bool(
+        entry_certified
+        and _proof_grade_entry_constrained(entry_result)
+    )
+    constraint_kernel = bool(constrained_entry and lc_certified)
+    third_body_separated = bool(
+        lc_certified
+        and lc_result is not None
+        and type(lc_result.third_body_distance_floor) is float
+        and math.isfinite(lc_result.third_body_distance_floor)
+        and lc_result.third_body_distance_floor > 0
+    )
+    strict_clock_kernel = bool(
+        full_endpoint_handoff
+        and constrained_entry
+        and constraint_kernel
+        and lc_certified
+        and third_body_separated
+    )
+
+    lifted: tuple[FractionInterval, ...] = ()
+    rho: FractionInterval | tuple[()] = ()
+    positions: FractionMatrix = ()
+    velocities: FractionMatrix = ()
+    maximum_gap: Fraction | None = None
+    exit_time: FractionInterval | tuple[()] = ()
+    target_clock: FractionInterval | tuple[()] = ()
+    slice_reconstructed = False
+    rho_positive = False
+    projection_reconstructed = False
+    deck_projection_kernel = False
+    target_contains = False
+    time_derived = False
+    clock_derived = False
+
+    slice_dependencies = (
+        entry_certified,
+        entry_handoff,
+        lc_right,
+        constrained_entry,
+        constraint_kernel,
+        lc_certified,
+    )
+    if all(slice_dependencies):
+        try:
+            if lc_result is None:
+                raise ValueError("fresh LC tube result missing")
+            solution = _regularized_binary_solution_from_certificate(lc_chart)
+            state = _planar_lc_state_intervals(
+                solution,
+                (
+                    exit_transition.source_parameter,
+                    exit_transition.source_parameter,
+                ),
+                inflate=lc_result.gronwall_error_bound,
+            )
+            lifted = tuple(_fraction_bounds(item) for item in state)
+            slice_reconstructed = _fraction_box(lifted, 14)
+            if slice_reconstructed:
+                rho_interval = state[0] * state[0] + state[1] * state[1]
+                rho = _fraction_bounds(rho_interval)
+                rho_positive = bool(_fraction_interval(rho) and rho[0] > 0)
+                exit_time = lifted[13]
+                time_derived = True
+
+            if rho_positive:
+                projected_q, projected_v, _, projected_rho = (
+                    _project_interval_planar_lc_state(
+                        state,
+                        np.asarray(lc_chart.masses, dtype=float),
+                        lc_chart.pair,
+                    )
+                )
+                rho = _fraction_bounds(projected_rho)
+                positions = _fraction_matrix_from_intervals(projected_q)
+                velocities = _fraction_matrix_from_intervals(projected_v)
+                projection_reconstructed = bool(
+                    _fraction_matrix(positions)
+                    and _fraction_matrix(velocities)
+                )
+                deck_projection_kernel = bool(
+                    constraint_kernel
+                    and rho_positive
+                    and projection_reconstructed
+                    and outward_mass_arithmetic
+                )
+                target_anchor = Fraction.from_float(
+                    exit_transition.target_parameter
+                )
+                centers_q, centers_v = (
+                    _exact_rational_chart_projected_state_at_parameter(
+                        target_chart,
+                        target_anchor,
+                    )
+                )
+                target_radius = Fraction.from_float(
+                    target_tube.initial_error_bound
+                )
+                gaps: list[Fraction] = []
+                contains = True
+                for box, centers in (
+                    (positions, centers_q),
+                    (velocities, centers_v),
+                ):
+                    for index in np.ndindex(np.asarray(centers).shape):
+                        lower, upper = box[index[0]][index[1]]
+                        center = centers[index]
+                        gaps.extend((abs(lower - center), abs(upper - center)))
+                        contains = bool(
+                            contains
+                            and center - target_radius <= lower
+                            and upper <= center + target_radius
+                        )
+                maximum_gap = max(gaps, default=Fraction(0))
+                target_contains = bool(
+                    common_problem
+                    and full_endpoint_handoff
+                    and target_certified
+                    and projection_reconstructed
+                    and deck_projection_kernel
+                    and contains
+                )
+            if full_endpoint_handoff and time_derived:
+                target_anchor = Fraction.from_float(
+                    exit_transition.target_parameter
+                )
+                target_clock = (
+                    exit_time[0] - target_anchor,
+                    exit_time[1] - target_anchor,
+                )
+                clock_derived = _fraction_interval(target_clock)
+        except Exception:
+            pass
+
+    obligations = (
+        _obligation(
+            _PROOF_GRADE_OBLIGATION_NAMES[0],
+            raw_schemas,
+            "exact built-in raw source, LC, exit, and target schemas",
+        ),
+        _obligation(
+            _PROOF_GRADE_OBLIGATION_NAMES[1],
+            identifiers,
+            "all raw references bind distinct source/LC/target components",
+        ),
+        _obligation(
+            _PROOF_GRADE_OBLIGATION_NAMES[2],
+            parent_clock_valid,
+            (
+                f"conditional kernel={_PARENT_INVARIANT_ID!r}; the parent must "
+                "prove one carried source branch and supplies only its derived "
+                f"clock enclosure B={parent_source_clock_origin_interval!s}"
+            ),
+        ),
+        _obligation(
+            _PROOF_GRADE_OBLIGATION_NAMES[3],
+            entry_certified,
+            _nested_detail(entry_result),
+        ),
+        _obligation(
+            _PROOF_GRADE_OBLIGATION_NAMES[4],
+            common_problem,
+            f"masses={lc_chart.masses!r}",
+        ),
+        _obligation(
+            _PROOF_GRADE_OBLIGATION_NAMES[5],
+            canonical_pair,
+            f"pair={lc_chart.pair!r}",
+        ),
+        _obligation(
+            _PROOF_GRADE_OBLIGATION_NAMES[6],
+            outward_mass_arithmetic,
+            f"kernel={PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID}",
+        ),
+        _obligation(
+            _PROOF_GRADE_OBLIGATION_NAMES[7],
+            full_endpoint_handoff,
+            (
+                f"entry_handoff={entry_handoff}; lc_right={lc_right}; "
+                f"target_left={target_left}"
+            ),
+        ),
+        _obligation(
+            _PROOF_GRADE_OBLIGATION_NAMES[8],
+            constrained_entry,
+            "fresh proof-grade entry supplies one selected constrained lift",
+        ),
+        _obligation(
+            _PROOF_GRADE_OBLIGATION_NAMES[9],
+            constraint_kernel,
+            "pinned C'=0 lemma carries that selected lift",
+        ),
+        _obligation(
+            _PROOF_GRADE_OBLIGATION_NAMES[10],
+            lc_certified,
+            _nested_detail(lc_result),
+        ),
+        _obligation(
+            _PROOF_GRADE_OBLIGATION_NAMES[11],
+            third_body_separated,
+            (
+                "fresh LC tube third-body floor="
+                f"{getattr(lc_result, 'third_body_distance_floor', None)!r}"
+            ),
+        ),
+        _obligation(
+            _PROOF_GRADE_OBLIGATION_NAMES[12],
+            target_certified,
+            _nested_detail(target_result),
+        ),
+        _obligation(
+            _PROOF_GRADE_OBLIGATION_NAMES[13],
+            strict_clock_kernel,
+            "pinned t'=rho and nontrivial analytic-z lemma gives strict forward physical time",
+        ),
+        _obligation(
+            _PROOF_GRADE_OBLIGATION_NAMES[14],
+            slice_reconstructed,
+            f"components={len(lifted)}",
+        ),
+        _obligation(
+            _PROOF_GRADE_OBLIGATION_NAMES[15],
+            rho_positive,
+            f"rho={rho!s}",
+        ),
+        _obligation(
+            _PROOF_GRADE_OBLIGATION_NAMES[16],
+            projection_reconstructed,
+            "all 12 projected position/velocity intervals",
+        ),
+        _obligation(
+            _PROOF_GRADE_OBLIGATION_NAMES[17],
+            deck_projection_kernel,
+            "punctured constrained LC projection is Newtonian and deck equivariant",
+        ),
+        _obligation(
+            _PROOF_GRADE_OBLIGATION_NAMES[18],
+            target_contains,
+            (
+                f"maximum_gap={maximum_gap!s}; "
+                f"target_radius={target_tube.initial_error_bound!r}"
+            ),
+        ),
+        _obligation(
+            _PROOF_GRADE_OBLIGATION_NAMES[19],
+            time_derived,
+            f"D_out={exit_time!s}",
+        ),
+        _obligation(
+            _PROOF_GRADE_OBLIGATION_NAMES[20],
+            clock_derived,
+            f"B_target=D_out-a={target_clock!s}",
+        ),
+    )
+    transition_id = (
+        exit_transition.transition_id
+        if type(exit_transition.transition_id) is str
+        else ""
+    )
+    return ProofGradeCarriedPlanarLCExitResult(
+        transition_id=transition_id,
+        checker_id=_PROOF_GRADE_CHECKER_ID,
+        analytic_kernel_id=_ANALYTIC_KERNEL_ID,
+        mass_arithmetic_kernel_id=PLANAR_LC_MASS_COEFFICIENT_KERNEL_ID,
+        parent_source_invariant_id=_PARENT_INVARIANT_ID,
+        raw_entry_transition=entry_transition,
+        raw_source_chart=source_chart,
+        raw_source_tube=source_tube,
+        parent_source_clock_origin_interval=parent_source_clock_origin_interval,
+        raw_lc_chart=lc_chart,
+        raw_lc_tube=lc_tube,
+        raw_exit_transition=exit_transition,
+        raw_target_chart=target_chart,
+        raw_target_tube=target_tube,
+        entry_result=entry_result,
+        lc_tube_result=lc_result,
+        target_tube_result=target_result,
+        obligations=obligations,
+        lifted_exit_slice=lifted,
+        exit_rho_interval=rho,
+        projected_position_intervals=positions,
+        projected_velocity_intervals=velocities,
+        maximum_projected_anchor_gap=maximum_gap,
+        exit_time_interval=exit_time,
+        target_clock_origin_interval=target_clock,
+    )
+
+
 def _obligation(
     name: str,
     certified: bool,
@@ -707,6 +1315,104 @@ def _canonical_entry_result(
         )
     except Exception:
         return False
+
+
+def _canonical_proof_grade_entry_result(
+    value: object,
+    raw_transition: CarriedPlanarLCEntryTransitionRecord,
+    raw_source_chart: OrdinaryTaylorChartCertificate,
+    raw_source_tube: OrdinaryAposterioriTubeCertificate,
+    raw_lc_chart: PlanarLeviCivitaBinaryChartCertificate,
+    raw_lc_tube: PlanarLCAposterioriTubeCertificate,
+    parent_clock: FractionInterval,
+) -> bool:
+    """Authenticate nested proof entry without compatibility chart gates."""
+
+    try:
+        return bool(
+            type(value) is ProofGradeCarriedPlanarLCEntryResult
+            and type(value.checker_id) is str
+            and value.checker_id == "proof_grade_carried_planar_lc_entry_checker_v04"
+            and type(value.profile_id) is str
+            and value.profile_id
+            == "binary64_outward_proof_grade_carried_planar_lc_entry_v04"
+            and type(value.raw_transition)
+            is CarriedPlanarLCEntryTransitionRecord
+            and value.raw_transition == raw_transition
+            and type(value.raw_source_chart) is OrdinaryTaylorChartCertificate
+            and value.raw_source_chart == raw_source_chart
+            and type(value.raw_source_tube)
+            is OrdinaryAposterioriTubeCertificate
+            and value.raw_source_tube == raw_source_tube
+            and type(value.raw_lc_chart)
+            is PlanarLeviCivitaBinaryChartCertificate
+            and value.raw_lc_chart == raw_lc_chart
+            and type(value.raw_lc_tube) is PlanarLCAposterioriTubeCertificate
+            and value.raw_lc_tube == raw_lc_tube
+            and value.parent_source_clock_origin_interval == parent_clock
+            and _proof_grade_entry_ledger(value.obligations)
+            and value.certified
+        )
+    except Exception:
+        return False
+
+
+def _proof_grade_entry_constrained(value: object) -> bool:
+    """Read the direct constrained-lift evidence without compatibility APIs."""
+
+    return bool(
+        type(value) is ProofGradeCarriedPlanarLCEntryResult
+        and type(value.selected_complement_index) is int
+        and value.selected_complement_index in (0, 1)
+        and type(value.selected_assignment) is tuple
+        and bool(value.selected_assignment)
+        and type(value.selected_transformed_timed_patch_boxes) is tuple
+        and bool(value.selected_transformed_timed_patch_boxes)
+        and all(
+            _fraction_box(box, 14)
+            for box in value.selected_transformed_timed_patch_boxes
+        )
+        and type(value.entry_rho_lower_bound) is Fraction
+        and value.entry_rho_lower_bound > 0
+        and _proof_grade_entry_ledger(value.obligations)
+    )
+
+
+def _proof_grade_entry_ledger(value: object) -> bool:
+    return bool(
+        type(value) is tuple
+        and len(value) == 19
+        and all(
+            type(item) is CertificateCheckObligation
+            and type(item.obligation) is str
+            and type(item.certified) is bool
+            and item.certified is True
+            and type(item.detail) is str
+            for item in value
+        )
+        and tuple(item.obligation for item in value)
+        == (
+            "proof_grade_carried_lc_entry_exact_raw_schemas",
+            "proof_grade_carried_lc_entry_transition_canonical_round_trip",
+            "proof_grade_carried_lc_entry_identifiers_match_and_are_unique",
+            "proof_grade_carried_lc_entry_parent_clock_origin_is_exact_interval",
+            "proof_grade_carried_lc_entry_source_ordinary_tube_freshly_certified",
+            "proof_grade_carried_lc_entry_target_lc_tube_freshly_certified",
+            "proof_grade_carried_lc_entry_common_planar_mass_problem",
+            "proof_grade_carried_lc_entry_pair_is_canonical_ascending",
+            "proof_grade_carried_lc_entry_outward_mass_arithmetic_certified",
+            "proof_grade_carried_lc_entry_exact_source_right_to_lc_left_anchor",
+            "proof_grade_carried_lc_entry_complete_source_endpoint_box_reconstructed",
+            "proof_grade_carried_lc_entry_selected_pair_collision_free",
+            "proof_grade_carried_lc_entry_canonical_square_root_atlas_reconstructed",
+            "proof_grade_carried_lc_entry_derived_parity_graph_certified",
+            "proof_grade_carried_lc_entry_physical_time_interval_exactly_derived",
+            "proof_grade_carried_lc_entry_all_lift_patches_have_positive_rho",
+            "proof_grade_carried_lc_entry_target_fourteen_dimensional_anchor_reconstructed",
+            "proof_grade_carried_lc_entry_trusted_constrained_lift_deck_gauge_kernel",
+            "proof_grade_carried_lc_entry_one_global_complement_contains_all_complete_patches",
+        )
+    )
 
 
 def _canonical_nested_obligations(value: object) -> bool:
@@ -804,6 +1510,22 @@ def _exact_obligation_manifest(value: object) -> bool:
             and item.certified is True
             and type(item.detail) is str
             for item, expected in zip(value, _OBLIGATION_NAMES)
+        )
+    )
+
+
+def _proof_grade_obligation_manifest(value: object) -> bool:
+    return bool(
+        type(value) is tuple
+        and len(value) == len(_PROOF_GRADE_OBLIGATION_NAMES)
+        and all(
+            type(item) is CertificateCheckObligation
+            and type(item.obligation) is str
+            and item.obligation == expected
+            and type(item.certified) is bool
+            and item.certified is True
+            and type(item.detail) is str
+            for item, expected in zip(value, _PROOF_GRADE_OBLIGATION_NAMES)
         )
     )
 
@@ -1117,6 +1839,58 @@ def _exact_endpoint_handoff(
         )
     except Exception:
         return False
+
+
+def _proof_grade_endpoint_components(
+    entry: CarriedPlanarLCEntryTransitionRecord,
+    source: OrdinaryTaylorChartCertificate,
+    source_tube: OrdinaryAposterioriTubeCertificate,
+    lc: PlanarLeviCivitaBinaryChartCertificate,
+    lc_tube: PlanarLCAposterioriTubeCertificate,
+    exit_transition: PlanarLCToOrdinaryEnclosureTransitionCertificate,
+    target: OrdinaryTaylorChartCertificate,
+    target_tube: OrdinaryAposterioriTubeCertificate,
+) -> tuple[bool, bool, bool]:
+    """Split N-right/LC-right/N-left anchors for proof-grade dependencies."""
+
+    try:
+        source_domain = tuple(
+            Fraction.from_float(item) for item in source.parameter_interval
+        )
+        lc_domain = tuple(
+            Fraction.from_float(item) for item in lc.parameter_interval
+        )
+        target_domain = tuple(
+            Fraction.from_float(item) for item in target.parameter_interval
+        )
+        source_domain_valid = source_domain[0] < source_domain[1]
+        lc_domain_valid = lc_domain[0] < lc_domain[1]
+        target_domain_valid = target_domain[0] < target_domain[1]
+        entry_handoff = bool(
+            source_domain_valid
+            and lc_domain_valid
+            and Fraction.from_float(source_tube.anchor_parameter)
+            == source_domain[0]
+            and Fraction.from_float(entry.source_right_parameter)
+            == source_domain[1]
+            and Fraction.from_float(entry.target_left_parameter) == lc_domain[0]
+            and Fraction.from_float(lc_tube.anchor_parameter) == lc_domain[0]
+        )
+        lc_right = bool(
+            lc_domain_valid
+            and Fraction.from_float(exit_transition.source_parameter)
+            == lc_domain[1]
+        )
+        target_left = bool(
+            target_domain_valid
+            and Fraction.from_float(exit_transition.target_parameter)
+            == target_domain[0]
+            and Fraction.from_float(target_tube.anchor_parameter)
+            == target_domain[0]
+        )
+        return entry_handoff, lc_right, target_left
+    except Exception:
+        return False, False, False
 
 
 def _float_interval(value: object) -> bool:
