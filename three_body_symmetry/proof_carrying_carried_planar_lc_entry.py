@@ -80,6 +80,14 @@ _ANALYTIC_KERNEL_ID = "planar_lc_constrained_lift_deck_gauge_kernel_v1"
 _ORDINARY_TUBE_CHECKER_ID = "independent_ordinary_aposteriori_tube_checker_v1"
 _LC_TUBE_CHECKER_ID = "independent_planar_lc_aposteriori_tube_checker_v2"
 _GAUGE_CHECKER_ID = "planar_lc_z2_gauge_gluing_checker_v1"
+_PROOF_GRADE_CHECKER_ID = "proof_grade_carried_planar_lc_entry_checker_v04"
+_PROOF_GRADE_PROFILE_ID = (
+    "binary64_outward_proof_grade_carried_planar_lc_entry_v04"
+)
+BINARY64_OUTWARD_PROOF_GRADE_CARRIED_PLANAR_LC_ENTRY_V04_PROFILE_ID = (
+    _PROOF_GRADE_PROFILE_ID
+)
+PROOF_GRADE_CARRIED_PLANAR_LC_ENTRY_PROFILE_ID = _PROOF_GRADE_PROFILE_ID
 _OBLIGATION_NAMES = (
     "carried_lc_entry_exact_raw_schemas",
     "carried_lc_entry_transition_canonical_round_trip",
@@ -102,6 +110,30 @@ _OBLIGATION_NAMES = (
     "carried_lc_entry_target_fourteen_dimensional_anchor_reconstructed",
     "carried_lc_entry_trusted_constrained_lift_deck_gauge_kernel",
     "carried_lc_entry_one_global_complement_contains_all_complete_patches",
+)
+_PROOF_GRADE_OBLIGATION_NAMES = (
+    "proof_grade_carried_lc_entry_exact_raw_schemas",
+    "proof_grade_carried_lc_entry_transition_canonical_round_trip",
+    "proof_grade_carried_lc_entry_identifiers_match_and_are_unique",
+    "proof_grade_carried_lc_entry_parent_clock_origin_is_exact_interval",
+    "proof_grade_carried_lc_entry_source_ordinary_tube_freshly_certified",
+    "proof_grade_carried_lc_entry_target_lc_tube_freshly_certified",
+    "proof_grade_carried_lc_entry_common_planar_mass_problem",
+    "proof_grade_carried_lc_entry_pair_is_canonical_ascending",
+    "proof_grade_carried_lc_entry_outward_mass_arithmetic_certified",
+    "proof_grade_carried_lc_entry_exact_source_right_to_lc_left_anchor",
+    "proof_grade_carried_lc_entry_complete_source_endpoint_box_reconstructed",
+    "proof_grade_carried_lc_entry_selected_pair_collision_free",
+    "proof_grade_carried_lc_entry_canonical_square_root_atlas_reconstructed",
+    "proof_grade_carried_lc_entry_derived_parity_graph_certified",
+    "proof_grade_carried_lc_entry_physical_time_interval_exactly_derived",
+    "proof_grade_carried_lc_entry_all_lift_patches_have_positive_rho",
+    "proof_grade_carried_lc_entry_target_fourteen_dimensional_anchor_reconstructed",
+    "proof_grade_carried_lc_entry_trusted_constrained_lift_deck_gauge_kernel",
+    "proof_grade_carried_lc_entry_one_global_complement_contains_all_complete_patches",
+)
+PROOF_GRADE_CARRIED_PLANAR_LC_ENTRY_OBLIGATION_IDS = (
+    _PROOF_GRADE_OBLIGATION_NAMES
 )
 
 FractionInterval = tuple[Fraction, Fraction]
@@ -475,19 +507,21 @@ class CarriedPlanarLCEntryResult:
         return tuple(missing)
 
 
-def check_carried_planar_lc_entry(
+def _check_carried_planar_lc_entry_core(
     transition: CarriedPlanarLCEntryTransitionRecord,
     source_chart: OrdinaryTaylorChartCertificate,
     source_tube: OrdinaryAposterioriTubeCertificate,
     target_chart: PlanarLeviCivitaBinaryChartCertificate,
     target_tube: PlanarLCAposterioriTubeCertificate,
     parent_source_clock_origin_interval: FractionInterval,
+    *,
+    require_claimed_tail_chart_results: bool,
 ) -> CarriedPlanarLCEntryResult:
-    """Check one conditional carried ``N -> LC`` endpoint handoff.
+    """Compute carried-entry evidence in compatibility or proof-grade mode.
 
-    The caller/parent is responsible for proving that its carried solution is
-    in the source tube at that tube's anchor and that the supplied ``B`` is the
-    correlated clock-origin enclosure for that same solution.
+    Compatibility mode retains the frozen claimed-tail chart gates.  The
+    proof-grade wrapper deliberately leaves those two checks diagnostic-only:
+    the direct a-posteriori tubes are the decisive local evidence there.
     """
 
     expected_types = (
@@ -625,15 +659,27 @@ def check_carried_planar_lc_entry(
         raw_schemas,
         identifiers,
         clock_valid,
-        source_chart_certified,
         source_certified,
-        target_chart_certified,
         target_certified,
         common_problem,
         canonical_pair,
         outward_mass_arithmetic,
         endpoints,
     )
+    if require_claimed_tail_chart_results:
+        prerequisites = (
+            raw_schemas,
+            identifiers,
+            clock_valid,
+            source_chart_certified,
+            source_certified,
+            target_chart_certified,
+            target_certified,
+            common_problem,
+            canonical_pair,
+            outward_mass_arithmetic,
+            endpoints,
+        )
     if all(prerequisites):
         try:
             source_parameter = Fraction.from_float(
@@ -1039,11 +1085,432 @@ def check_carried_planar_lc_entry(
     )
 
 
+@dataclass(frozen=True)
+class ProofGradeCarriedPlanarLCEntryResult:
+    """Proof-grade carried-entry evidence with claimed-tail diagnostics only.
+
+    The source and target chart results are deliberately retained for audit
+    visibility, but they are not proof prerequisites.  The finite direct tube
+    replays, canonical lift cover, exact carried clock, gauge cover, and
+    target-ball containment are the decisive evidence for this profile.
+    """
+
+    transition_id: str
+    checker_id: str
+    raw_transition: CarriedPlanarLCEntryTransitionRecord
+    raw_source_chart: OrdinaryTaylorChartCertificate
+    raw_source_tube: OrdinaryAposterioriTubeCertificate
+    raw_target_chart: PlanarLeviCivitaBinaryChartCertificate
+    raw_target_tube: PlanarLCAposterioriTubeCertificate
+    parent_source_clock_origin_interval: FractionInterval
+    source_chart_result: CertificateCheckResult | None
+    source_tube_result: OrdinaryAposterioriTubeCheckResult | None
+    target_chart_result: CertificateCheckResult | None
+    target_tube_result: PlanarLCAposterioriTubeCheckResult | None
+    obligations: tuple[CertificateCheckObligation, ...]
+    source_endpoint_state_box: FractionBox
+    relative_position_box: tuple[FractionInterval, FractionInterval]
+    canonical_lift_case: str
+    patch_vertex_ids: tuple[str, ...]
+    lifted_patch_boxes: tuple[FractionBox, ...]
+    entry_time_interval: FractionInterval | tuple[()]
+    timed_lifted_patch_boxes: tuple[FractionBox, ...]
+    derived_edges: tuple[PlanarLCGaugeOverlapEdge, ...]
+    gauge_result: PlanarLCGaugeGluingCheckResult | None
+    tested_assignments: tuple[tuple[tuple[str, int], ...], ...]
+    target_anchor: tuple[Fraction, ...]
+    tested_lift_max_gaps: tuple[Fraction, ...]
+    tested_containments: tuple[bool, ...]
+    selected_complement_index: int
+    selected_assignment: tuple[tuple[str, int], ...]
+    selected_transformed_timed_patch_boxes: tuple[FractionBox, ...]
+    entry_rho_lower_bound: Fraction
+
+    @property
+    def profile_id(self) -> str:
+        """The separately versioned proof-grade theorem profile."""
+
+        return _PROOF_GRADE_PROFILE_ID
+
+    @property
+    def source_claimed_tail_chart_diagnostic(
+        self,
+    ) -> CertificateCheckResult | None:
+        """Read-only claimed-tail ordinary-chart diagnostic."""
+
+        return self.source_chart_result
+
+    @property
+    def target_claimed_tail_chart_diagnostic(
+        self,
+    ) -> CertificateCheckResult | None:
+        """Read-only claimed-tail LC-chart diagnostic."""
+
+        return self.target_chart_result
+
+    def _snapshot_certified(self) -> bool:
+        case_suffixes = {
+            "closed_upper_singleton": ("upper",),
+            "closed_lower_singleton": ("lower",),
+            "right_half_singleton": ("right",),
+            "strict_negative_cut_two_patch": ("upper", "lower"),
+        }.get(self.canonical_lift_case)
+        if case_suffixes is None:
+            return False
+        expected_patch_ids = tuple(
+            f"{self.transition_id}:patch:{index}-{suffix}"
+            for index, suffix in enumerate(case_suffixes)
+        )
+        expected_edges: tuple[PlanarLCGaugeOverlapEdge, ...]
+        if len(expected_patch_ids) == 1:
+            expected_edges = ()
+        else:
+            expected_edges = (
+                PlanarLCGaugeOverlapEdge(
+                    overlap_id=f"{self.transition_id}:negative-axis-overlap",
+                    source_chart_id=expected_patch_ids[0],
+                    target_chart_id=expected_patch_ids[1],
+                    parity=1,
+                ),
+            )
+        assignments_valid = bool(
+            type(self.tested_assignments) is tuple
+            and len(self.tested_assignments) == 2
+            and all(
+                _assignment(value, expected_patch_ids)
+                for value in self.tested_assignments
+            )
+        )
+        selected_assignment_map = (
+            dict(self.selected_assignment)
+            if _assignment(self.selected_assignment, expected_patch_ids)
+            else {}
+        )
+        expected_transformed = (
+            tuple(
+                _deck_transform_box(
+                    box,
+                    selected_assignment_map[expected_patch_ids[index]],
+                )
+                for index, box in enumerate(self.timed_lifted_patch_boxes)
+            )
+            if (
+                selected_assignment_map
+                and type(self.timed_lifted_patch_boxes) is tuple
+                and len(self.timed_lifted_patch_boxes) == len(expected_patch_ids)
+                and all(
+                    _fraction_box(box, 14)
+                    for box in self.timed_lifted_patch_boxes
+                )
+            )
+            else ()
+        )
+        return bool(
+            type(self) is ProofGradeCarriedPlanarLCEntryResult
+            and type(self.transition_id) is str
+            and bool(self.transition_id)
+            and type(self.checker_id) is str
+            and self.checker_id == _PROOF_GRADE_CHECKER_ID
+            and type(self.raw_transition) is CarriedPlanarLCEntryTransitionRecord
+            and _transition_schema(self.raw_transition)
+            and self.transition_id == self.raw_transition.transition_id
+            and type(self.raw_source_chart) is OrdinaryTaylorChartCertificate
+            and type(self.raw_source_tube) is OrdinaryAposterioriTubeCertificate
+            and type(self.raw_target_chart)
+            is PlanarLeviCivitaBinaryChartCertificate
+            and type(self.raw_target_tube) is PlanarLCAposterioriTubeCertificate
+            and _ordinary_chart_schema(self.raw_source_chart)
+            and _ordinary_tube_schema(self.raw_source_tube)
+            and _lc_chart_schema(self.raw_target_chart)
+            and _lc_tube_schema(self.raw_target_tube)
+            and _identifiers_match_and_unique(
+                self.raw_transition,
+                self.raw_source_chart,
+                self.raw_source_tube,
+                self.raw_target_chart,
+                self.raw_target_tube,
+            )
+            and _fraction_interval(self.parent_source_clock_origin_interval)
+            and _claimed_tail_chart_diagnostic(
+                self.source_chart_result,
+                self.raw_source_chart.certificate_id,
+                certificate_type="ordinary_taylor",
+                checker_id="independent_ordinary_taylor_checker_interval_v2",
+            )
+            and _canonical_ordinary_tube_result(
+                self.source_tube_result,
+                self.raw_source_tube,
+                self.raw_source_chart,
+            )
+            and _claimed_tail_chart_diagnostic(
+                self.target_chart_result,
+                self.raw_target_chart.certificate_id,
+                certificate_type="planar_levi_civita_binary",
+                checker_id="independent_planar_lc_binary_checker_interval_v2",
+            )
+            and _canonical_lc_tube_result(
+                self.target_tube_result,
+                self.raw_target_tube,
+                self.raw_target_chart,
+            )
+            and _proof_grade_obligation_manifest(self.obligations)
+            and _fraction_box(self.source_endpoint_state_box, 12)
+            and type(self.relative_position_box) is tuple
+            and len(self.relative_position_box) == 2
+            and all(_fraction_interval(value) for value in self.relative_position_box)
+            and type(self.canonical_lift_case) is str
+            and type(self.patch_vertex_ids) is tuple
+            and all(
+                type(patch_id) is str and bool(patch_id)
+                for patch_id in self.patch_vertex_ids
+            )
+            and self.patch_vertex_ids == expected_patch_ids
+            and type(self.lifted_patch_boxes) is tuple
+            and len(self.lifted_patch_boxes) == len(expected_patch_ids)
+            and all(_fraction_box(box, 13) for box in self.lifted_patch_boxes)
+            and _fraction_interval(self.entry_time_interval)
+            and type(self.timed_lifted_patch_boxes) is tuple
+            and len(self.timed_lifted_patch_boxes) == len(expected_patch_ids)
+            and all(_fraction_box(box, 14) for box in self.timed_lifted_patch_boxes)
+            and self.timed_lifted_patch_boxes
+            == tuple(
+                box + (self.entry_time_interval,)
+                for box in self.lifted_patch_boxes
+            )
+            and type(self.derived_edges) is tuple
+            and _edge_tuple_schema(self.derived_edges)
+            and self.derived_edges == expected_edges
+            and _canonical_gauge_result(
+                self.gauge_result,
+                self.transition_id,
+                expected_patch_ids,
+                expected_edges,
+            )
+            and assignments_valid
+            and self.gauge_result is not None
+            and self.tested_assignments[0] == self.gauge_result.gauge_assignment
+            and self.tested_assignments[1]
+            == tuple(
+                (chart_id, bit ^ 1)
+                for chart_id, bit in self.tested_assignments[0]
+            )
+            and type(self.target_anchor) is tuple
+            and len(self.target_anchor) == 14
+            and all(type(value) is Fraction for value in self.target_anchor)
+            and type(self.tested_lift_max_gaps) is tuple
+            and len(self.tested_lift_max_gaps) == 2
+            and all(
+                type(value) is Fraction and value >= 0
+                for value in self.tested_lift_max_gaps
+            )
+            and type(self.tested_containments) is tuple
+            and len(self.tested_containments) == 2
+            and all(type(value) is bool for value in self.tested_containments)
+            and type(self.selected_complement_index) is int
+            and self.selected_complement_index in (0, 1)
+            and _assignment(self.selected_assignment, expected_patch_ids)
+            and self.selected_assignment
+            == self.tested_assignments[self.selected_complement_index]
+            and self.tested_containments[self.selected_complement_index] is True
+            and type(self.selected_transformed_timed_patch_boxes) is tuple
+            and self.selected_transformed_timed_patch_boxes == expected_transformed
+            and all(
+                _fraction_box(box, 14)
+                for box in self.selected_transformed_timed_patch_boxes
+            )
+            and type(self.entry_rho_lower_bound) is Fraction
+            and self.entry_rho_lower_bound > 0
+        )
+
+    @property
+    def certified(self) -> bool:
+        """Freshly replay direct evidence without reintroducing chart gates."""
+
+        try:
+            if (
+                type(self) is not ProofGradeCarriedPlanarLCEntryResult
+                or not self._snapshot_certified()
+            ):
+                return False
+            fresh = check_proof_grade_carried_planar_lc_entry(
+                self.raw_transition,
+                self.raw_source_chart,
+                self.raw_source_tube,
+                self.raw_target_chart,
+                self.raw_target_tube,
+                self.parent_source_clock_origin_interval,
+            )
+            return bool(
+                type(fresh) is ProofGradeCarriedPlanarLCEntryResult
+                and fresh._snapshot_certified()
+                and fresh == self
+            )
+        except Exception:
+            return False
+
+    @property
+    def conditional_containment_certified(self) -> bool:
+        return self.certified
+
+    @property
+    def constrained_newtonian_lift_certified(self) -> bool:
+        return self.certified
+
+    @property
+    def physical_time_strictly_monotone_certified(self) -> bool:
+        return bool(self.certified and self.entry_rho_lower_bound > 0)
+
+    @property
+    def exact_initial_value_problem_binding_certified(self) -> bool:
+        return False
+
+    @property
+    def raw_lc_chart(self) -> PlanarLeviCivitaBinaryChartCertificate:
+        return self.raw_target_chart
+
+    @property
+    def raw_lc_tube(self) -> PlanarLCAposterioriTubeCertificate:
+        return self.raw_target_tube
+
+    @property
+    def missing_obligations(self) -> tuple[str, ...]:
+        missing = []
+        for index, obligation in enumerate(self.obligations):
+            if type(obligation) is not CertificateCheckObligation:
+                missing.append(
+                    f"proof_grade_carried_lc_entry_malformed_obligation:{index}"
+                )
+            elif obligation.certified is not True:
+                missing.append(obligation.obligation)
+        return tuple(missing)
+
+
+def check_carried_planar_lc_entry(
+    transition: CarriedPlanarLCEntryTransitionRecord,
+    source_chart: OrdinaryTaylorChartCertificate,
+    source_tube: OrdinaryAposterioriTubeCertificate,
+    target_chart: PlanarLeviCivitaBinaryChartCertificate,
+    target_tube: PlanarLCAposterioriTubeCertificate,
+    parent_source_clock_origin_interval: FractionInterval,
+) -> CarriedPlanarLCEntryResult:
+    """Check the frozen compatibility carried ``N -> LC`` handoff profile."""
+
+    return _check_carried_planar_lc_entry_core(
+        transition,
+        source_chart,
+        source_tube,
+        target_chart,
+        target_tube,
+        parent_source_clock_origin_interval,
+        require_claimed_tail_chart_results=True,
+    )
+
+
+def check_proof_grade_carried_planar_lc_entry(
+    transition: CarriedPlanarLCEntryTransitionRecord,
+    source_chart: OrdinaryTaylorChartCertificate,
+    source_tube: OrdinaryAposterioriTubeCertificate,
+    target_chart: PlanarLeviCivitaBinaryChartCertificate,
+    target_tube: PlanarLCAposterioriTubeCertificate,
+    parent_source_clock_origin_interval: FractionInterval,
+) -> ProofGradeCarriedPlanarLCEntryResult:
+    """Replay the binary64-outward proof-grade carried-entry profile.
+
+    Claimed-tail chart replays are performed only to expose diagnostics; the
+    core's direct evidence mode excludes them from all lift/containment
+    prerequisites and from this profile's decisive obligation ledger.
+    """
+
+    core = _check_carried_planar_lc_entry_core(
+        transition,
+        source_chart,
+        source_tube,
+        target_chart,
+        target_tube,
+        parent_source_clock_origin_interval,
+        require_claimed_tail_chart_results=False,
+    )
+    compatibility_indices = (
+        0,
+        1,
+        2,
+        3,
+        5,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+    )
+    obligations = tuple(
+        CertificateCheckObligation(
+            obligation=name,
+            certified=bool(core.obligations[index].certified),
+            detail=core.obligations[index].detail,
+        )
+        for name, index in zip(
+            _PROOF_GRADE_OBLIGATION_NAMES,
+            compatibility_indices,
+            strict=True,
+        )
+    )
+    transition_id = (
+        transition.transition_id if type(transition.transition_id) is str else ""
+    )
+    return ProofGradeCarriedPlanarLCEntryResult(
+        transition_id=transition_id,
+        checker_id=_PROOF_GRADE_CHECKER_ID,
+        raw_transition=transition,
+        raw_source_chart=source_chart,
+        raw_source_tube=source_tube,
+        raw_target_chart=target_chart,
+        raw_target_tube=target_tube,
+        parent_source_clock_origin_interval=parent_source_clock_origin_interval,
+        source_chart_result=core.source_chart_result,
+        source_tube_result=core.source_tube_result,
+        target_chart_result=core.target_chart_result,
+        target_tube_result=core.target_tube_result,
+        obligations=obligations,
+        source_endpoint_state_box=core.source_endpoint_state_box,
+        relative_position_box=core.relative_position_box,
+        canonical_lift_case=core.canonical_lift_case,
+        patch_vertex_ids=core.patch_vertex_ids,
+        lifted_patch_boxes=core.lifted_patch_boxes,
+        entry_time_interval=core.entry_time_interval,
+        timed_lifted_patch_boxes=core.timed_lifted_patch_boxes,
+        derived_edges=core.derived_edges,
+        gauge_result=core.gauge_result,
+        tested_assignments=core.tested_assignments,
+        target_anchor=core.target_anchor,
+        tested_lift_max_gaps=core.tested_lift_max_gaps,
+        tested_containments=core.tested_containments,
+        selected_complement_index=core.selected_complement_index,
+        selected_assignment=core.selected_assignment,
+        selected_transformed_timed_patch_boxes=(
+            core.selected_transformed_timed_patch_boxes
+        ),
+        entry_rho_lower_bound=core.entry_rho_lower_bound,
+    )
+
+
 # Composition-facing aliases use the longer ordinary-to-LC spelling expected
 # by the repeated-chain layer.  They are aliases, not subclasses or alternate
 # checker paths, so exact-type replay remains single-valued.
 CarriedOrdinaryToPlanarLCEntryResult = CarriedPlanarLCEntryResult
 check_carried_ordinary_to_planar_lc_entry = check_carried_planar_lc_entry
+ProofGradeCarriedOrdinaryToPlanarLCEntryResult = ProofGradeCarriedPlanarLCEntryResult
+check_proof_grade_carried_ordinary_to_planar_lc_entry = (
+    check_proof_grade_carried_planar_lc_entry
+)
 
 
 def _canonical_json(data: dict[str, Any]) -> str:
@@ -1369,6 +1836,41 @@ def _canonical_chart_result(
     )
 
 
+def _claimed_tail_chart_diagnostic(
+    result: object,
+    certificate_id: str,
+    *,
+    certificate_type: str,
+    checker_id: str,
+) -> bool:
+    """Validate a retained chart diagnostic without making it a proof gate."""
+
+    return bool(
+        result is None
+        or (
+            type(result) is CertificateCheckResult
+            and type(result.certificate_id) is str
+            and result.certificate_id == certificate_id
+            and type(result.certificate_type) is str
+            and result.certificate_type == certificate_type
+            and type(result.checker_id) is str
+            and result.checker_id == checker_id
+            and type(result.obligations) is tuple
+            and bool(result.obligations)
+            and all(
+                type(item) is CertificateCheckObligation
+                and type(item.obligation) is str
+                and bool(item.obligation)
+                and type(item.certified) is bool
+                and type(item.detail) is str
+                for item in result.obligations
+            )
+            and _finite_float(result.max_coefficient_residual)
+            and _finite_float(result.max_sampled_newton_residual)
+        )
+    )
+
+
 def _canonical_lc_tube_result(
     result: object,
     raw_tube: PlanarLCAposterioriTubeCertificate,
@@ -1494,6 +1996,25 @@ def _exact_obligation_manifest(value: object) -> bool:
             for item in value
         )
         and tuple(item.obligation for item in value) == _OBLIGATION_NAMES
+    )
+
+
+def _proof_grade_obligation_manifest(value: object) -> bool:
+    """Validate the frozen 19-row proof-grade decisive ledger exactly."""
+
+    return bool(
+        type(value) is tuple
+        and len(value) == len(_PROOF_GRADE_OBLIGATION_NAMES)
+        and all(
+            type(item) is CertificateCheckObligation
+            and type(item.obligation) is str
+            and type(item.certified) is bool
+            and item.certified is True
+            and type(item.detail) is str
+            for item in value
+        )
+        and tuple(item.obligation for item in value)
+        == _PROOF_GRADE_OBLIGATION_NAMES
     )
 
 
