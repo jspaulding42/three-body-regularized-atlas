@@ -42,6 +42,30 @@
       "sha256": "7d7b8222a04e33b5fef310d7e23b2226d27ad478d4bc70ee6e59ee0adcb6de2e"
     },
     {
+      "path": "proof-grade-v04/README.md",
+      "role": "proof_grade_conformance_documentation",
+      "bytes": 1324,
+      "sha256": "deffa55c3a157c30f5c5b2c2697f256a1b5c0416ca4f9ed9b98916fce7b0baa0"
+    },
+    {
+      "path": "proof-grade-v04/cases.json",
+      "role": "proof_grade_conformance_case_table",
+      "bytes": 14478,
+      "sha256": "75bcc3bc788da7cd0165a92c2a91483438eabc172dfe4c85ea44a513da97d7ad"
+    },
+    {
+      "path": "proof-grade-v04/cases.schema.json",
+      "role": "proof_grade_conformance_schema",
+      "bytes": 7972,
+      "sha256": "4272e5ef6886eadf40a67218b3e9a1a70666525749930c817fea1bb3e5eb8f5b"
+    },
+    {
+      "path": "proof-grade-v04/manifest.json",
+      "role": "proof_grade_conformance_manifest",
+      "bytes": 4322,
+      "sha256": "346425aafcc6e226d858ff2a598fbef43af48ec40ee02f682bd2e7ceed441362"
+    },
+    {
       "path": "inputs/failed-revisit.raw.json",
       "role": "canonical_raw_input",
       "bytes": 51176,
