@@ -721,10 +721,78 @@ its proof-grade exit ledger succeeds. On an uncommitted LC passage the profile
 retains a proof-only lifted LC-right frontier when the direct evidence supports
 one; this retained frontier is diagnostic coverage, not a terminal acceptance.
 
-The separately named admitted 13-row/full outcome and its execution,
-conformance-corpus, and release integration are still missing. Accordingly,
-the implemented mixed fold does not establish the full theorem, a release
-gate, or an independent-replay claim.
+The separately named admitted outcome
+`exact_rational_proof_grade_admitted_raw_v1_outcome_v04` is now implemented in
+[`raw_v1_proof_grade_outcome.rs`](../verifiers/rust-v1/src/raw_v1_proof_grade_outcome.rs).
+It is deliberately a profile-local semantic result *after* strict opaque
+`CanonicalRawV1Admission`; it is not a parser result, CLI envelope, or
+cross-verifier result. Its ordered 13-row ledger is:
+
+1. `proof_grade_raw_planar_chain_outer_schema_exact`;
+2. `proof_grade_raw_planar_chain_global_identifier_namespace_unique`;
+3. `proof_grade_raw_planar_chain_canonical_evidence_serializable`;
+4. `proof_grade_raw_planar_chain_requested_target_finite`;
+5. `proof_grade_raw_planar_chain_requested_width_admissible`;
+6. `proof_grade_raw_planar_chain_root_exact_point_left_anchor`;
+7. `proof_grade_raw_planar_chain_root_direct_tube_and_binding_certified`;
+8. `proof_grade_raw_planar_chain_all_segments_direct_evidence_folded`;
+9. `proof_grade_raw_planar_chain_target_not_before_current_left_clock`;
+10. `proof_grade_raw_planar_chain_fixed_time_preimage_exactly_derived`;
+11. `proof_grade_raw_planar_chain_fixed_time_preimage_inside_forward_current_domain`;
+12. `proof_grade_raw_planar_chain_target_state_directly_evaluated_and_inflated`;
+13. `proof_grade_raw_planar_chain_final_component_width_within_requested_bound`.
+
+Rows 1--5 are the admitted outer checks: possession of the immutable
+canonical-and-typed token, namespace replay, the token's canonical byte
+ownership, finite binary64 target decoding, and nonnegative requested width.
+Rows 6--13 are exactly the eight decisive rows of the proof-grade mixed
+replay. `CERTIFIED_TO_T` means that all thirteen rows are true; otherwise the
+result is `UNRESOLVED` and the first failure records the outer row or the
+root/segment-local decisive row that failed. This is a total Boolean result
+only once strict admission and the bounded replay have both returned normally;
+it does not turn malformed bytes, admission failure, or resource/error paths
+outside that execution envelope into a portable semantic classification.
+
+The portable projection has its own schema,
+`raw-v1-rust-proof-grade-semantic-outcome-v1`, rather than reusing the
+compatibility semantic-outcome schema. It hashes precisely the immutable
+canonical admission bytes with SHA-256 and emits that lower-case hexadecimal
+digest as `evidence_sha256`; for the canonical success input the digest is
+`ede15b0f35cf741f542a6cd260470a93ee5ff85dc5ae2371db1b88819b821f11`.
+Its deterministic compact UTF-8 JSON has no trailing newline and contains the
+request as exact rational numerator/denominator strings, the full top-level
+ledger, status and first failure, clock ledger, current chart/clock, coverage
+and preimage intervals, width, and source-derived segment metadata. A segment
+metadata record gives its index, kind, profile, and (for an LC passage) the
+canonical pair. In the canonical five-segment success this is one
+`exact_rational_carried_ordinary_bridge_v04` segment followed by four
+`exact_rational_proof_grade_carried_planar_lc_exit_v04` segments for pairs
+`[0,1]`, `[0,2]`, `[1,2]`, and `[0,1]`. The metadata is descriptive only; the
+owned proof-grade mixed replay remains the certification authority.
+
+For a successful terminal replay, the portable object includes the direct
+12-component planar Cartesian fixed-physical-time enclosure. An unresolved
+replay that fails before target-state evaluation has no such final enclosure;
+it can instead retain a certified ordinary right frontier or a 14-component
+lifted LC-right frontier, with its clock/time interval, chart, pair, and
+certified/failed segment counts. If all target-state rows succeed and only the
+requested-width row fails, the computed fixed-time enclosure remains present
+and is also identified as the retained ordinary fixed-time region. Every
+retained region reports the strongest committed direct evidence, not
+acceptance under all thirteen rows. Claimed-tail results, recurrence data,
+typed diagnostics, resource limits, and diagnostic error strings are
+deliberately omitted from this portable JSON. Tests mutate all claimed tails
+and trigger a claimed-tail resource diagnostic while preserving the decisive
+ledger, clocks, terminal/retained evidence, and diagnostic-free projection
+(apart from the intentionally changed evidence hash).
+
+This is therefore an important closure of the local proof-grade replay surface,
+but not the v0.4 release gate. A strict proof-grade execution envelope and CLI
+with a total classification of admission, replay, resource, and serialization
+outcomes are still absent. So are a versioned proof-grade corpus and
+cross-verifier comparator, two isolated pinned-environment replays, and the
+review-paper/release integration. No execution, corpus agreement,
+independence, or release claim follows from this admitted-only profile.
 
 ## Exact remaining proof and code gates
 
@@ -774,10 +842,12 @@ the following gates should be closed explicitly.
   remains open. The profile's tight outward binary64 enclosures are validated
   witnesses; exact rational profile members, rather than those endpoints, are
   the scalars propagated by the exact-rational verifier.
-- Extend the implemented proof-grade entry, exit, and mixed dependency graph
-  through the separately named admitted 13-row/full outcome and its
-  execution/corpus/release integration, with no claimed-tail
-  `conditional_profile_satisfied()` value decisive.
+- Complete the proof-grade execution envelope around the admitted 13-row
+  outcome: strict admission/CLI behavior, total classification of parser,
+  resource, replay, and serialization outcomes, a versioned proof-grade
+  corpus and cross-verifier comparator, two isolated pinned-environment
+  replays, and paper/release integration. Keep every claimed-tail
+  `conditional_profile_satisfied()` value nondecisive.
 - Preserve claimed-tail and recurrence outputs as labeled diagnostics and test
   that mutations confined to those claims do not change proof-grade tubes,
   clocks, handoffs, or terminal enclosures.
