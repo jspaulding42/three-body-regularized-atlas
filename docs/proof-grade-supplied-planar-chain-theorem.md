@@ -698,8 +698,16 @@ The local
 implemented in [`planar_lc_entry.rs`](../verifiers/rust-v1/src/planar_lc_entry.rs)
 with a 19-row decisive entry ledger. Its source and target claimed-tail chart
 `Result` values are retained only as diagnostic, nondecisive outputs and do
-not feed `conditional_profile_satisfied()`. A proof-grade LC exit, mixed, or
-full-chain profile is still missing.
+not feed `conditional_profile_satisfied()`.
+
+The matching local
+`exact_rational_proof_grade_carried_planar_lc_exit_v04` profile is implemented
+in [`planar_lc_exit.rs`](../verifiers/rust-v1/src/planar_lc_exit.rs) with a
+21-row decisive exit ledger. It nests the proof-grade entry chart diagnostics
+without making them decisive, while freshly replayed direct slice, projection,
+containment, time, and clock evidence remains decisive. These entry and exit
+kernels are tested independently of the frozen compatibility profiles. A
+proof-grade mixed or full-chain profile is still missing.
 
 ## Exact remaining proof and code gates
 
@@ -749,8 +757,8 @@ following gates should be closed explicitly.
   remains open. The profile's tight outward binary64 enclosures are validated
   witnesses; exact rational profile members, rather than those endpoints, are
   the scalars propagated by the exact-rational verifier.
-- Extend the implemented local proof-grade entry dependency graph through
-  proof-grade exit, mixed, and full-chain profiles, with no claimed-tail
+- Extend the implemented local proof-grade entry-and-exit dependency graph
+  through proof-grade mixed and full-chain profiles, with no claimed-tail
   `conditional_profile_satisfied()` value decisive.
 - Preserve claimed-tail and recurrence outputs as labeled diagnostics and test
   that mutations confined to those claims do not change proof-grade tubes,
