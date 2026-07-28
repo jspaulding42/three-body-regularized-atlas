@@ -786,13 +786,42 @@ and trigger a claimed-tail resource diagnostic while preserving the decisive
 ledger, clocks, terminal/retained evidence, and diagnostic-free projection
 (apart from the intentionally changed evidence hash).
 
-This is therefore an important closure of the local proof-grade replay surface,
-but not the v0.4 release gate. A strict proof-grade execution envelope and CLI
-with a total classification of admission, replay, resource, and serialization
-outcomes are still absent. So are a versioned proof-grade corpus and
-cross-verifier comparator, two isolated pinned-environment replays, and the
-review-paper/release integration. No execution, corpus agreement,
-independence, or release claim follows from this admitted-only profile.
+The byte-level execution checkpoint is separately implemented in
+[`raw_v1_proof_grade_execution.rs`](../verifiers/rust-v1/src/raw_v1_proof_grade_execution.rs)
+as `exact_rational_proof_grade_raw_v1_execution_v04`, with its own
+`raw-v1-rust-proof-grade-execution-v1` schema. It strictly admits the supplied
+raw-v1 bytes canonically before evaluating the admitted 13-row outcome. Its
+portable envelope gives the stable, diagnostic-free classifications
+`REJECT`/`CANONICAL_WIRE`/`NOT_RUN` or `REJECT`/`SCHEMA`/`NOT_RUN` for failed
+admission; `ACCEPT`/`RESULT` with the exact nested proof-grade semantic
+projection for an admitted replay result; and `ACCEPT`/`ERROR` with exactly
+`NAMESPACE` or `MIXED_REPLAY` for a returned evaluation error. It emits no
+private source errors, typed diagnostics, tail values, resource details, or
+error strings.
+
+The corresponding CLI binary is
+[`raw_v1_proof_grade_verify.rs`](../verifiers/rust-v1/src/bin/raw_v1_proof_grade_verify.rs),
+invoked as `raw_v1_proof_grade_verify <raw-v1-path>` (or through Cargo with
+`--bin raw_v1_proof_grade_verify -- <raw-v1-path>`). It writes the compact
+execution JSON without a newline and exits 0 for a semantic result or a stable
+rejection, 2 for a classified evaluation error, 1 for I/O, allocation, input
+limit-representation, or serialization failure, and 64 for misuse. Its input
+reader reserves and reads at most `DEFAULT_WIRE_JSON_LIMITS.max_input_bytes +
+1` bytes, so an oversized file is bounded and then reaches canonical-wire
+rejection rather than being read without limit. The execution tests include an
+actual 4,097-coefficient initial ordinary-chart mutation, which is admitted
+but produces the stable `ACCEPT`/`ERROR`/`MIXED_REPLAY` envelope (and CLI exit
+2) without exposing its resource diagnostic.
+
+This closes the current bounded `Result` paths only: it is not a proof of
+total behavior under process OOM, panic, hostile operating-system failure, or
+other termination outside the implemented reader/admission/replay/
+serialization paths. It remains an important local proof-grade checkpoint,
+not the v0.4 release gate. A versioned proof-grade corpus and cross-verifier
+comparator, Python proof-grade parity/agreement, two isolated
+pinned-environment replays, and review-paper/release integration are still
+missing. No corpus agreement, independence, or release claim follows from
+this execution profile.
 
 ## Exact remaining proof and code gates
 
@@ -842,11 +871,11 @@ the following gates should be closed explicitly.
   remains open. The profile's tight outward binary64 enclosures are validated
   witnesses; exact rational profile members, rather than those endpoints, are
   the scalars propagated by the exact-rational verifier.
-- Complete the proof-grade execution envelope around the admitted 13-row
-  outcome: strict admission/CLI behavior, total classification of parser,
-  resource, replay, and serialization outcomes, a versioned proof-grade
-  corpus and cross-verifier comparator, two isolated pinned-environment
-  replays, and paper/release integration. Keep every claimed-tail
+- Extend the current bounded proof-grade execution envelope into its release
+  gate: a versioned proof-grade corpus and cross-verifier comparator, explicit
+  Python proof-grade parity/agreement, two isolated pinned-environment
+  replays, and paper/release integration. Retain the bounded-reader and
+  process-failure boundary explicitly, and keep every claimed-tail
   `conditional_profile_satisfied()` value nondecisive.
 - Preserve claimed-tail and recurrence outputs as labeled diagnostics and test
   that mutations confined to those claims do not change proof-grade tubes,
